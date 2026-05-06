@@ -2,21 +2,20 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro LAB v3</title>
+<title>ColorMatch Pro ENGINE v4</title>
 
 <style>
 body { text-align:center; font-family:Arial; background:#111; color:#fff; }
 video { width:90%; border-radius:10px; }
 #colorBox { width:120px; height:120px; margin:15px auto; border-radius:10px; border:2px solid #fff; }
-button { padding:10px; margin:10px; }
 </style>
 </head>
 
 <body>
 
-<h2>ColorMatch Pro 🎯 v3 (Ultra Engine)</h2>
+<h2>Color Engine v4 🚗 (Industrial Core)</h2>
 
-<button onclick="calibrate()">Calibrar Branco</button>
+<button onclick="calibrate()">Calibrar Iluminação</button>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
@@ -30,55 +29,37 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 let whiteRef = null;
-
-// 🔥 BUFFER TEMPORAL (NOVA CAMADA)
-let frameBuffer = [];
+let buffer = [];
 
 // -------------------------
-// CÂMERA
+// CAMERA
 // -------------------------
 navigator.mediaDevices.getUserMedia({
   video: { facingMode: { ideal: "environment" } }
-})
-.then(stream => video.srcObject = stream);
+}).then(stream => video.srcObject = stream);
 
 // -------------------------
-// CALIBRAÇÃO
+// CALIBRAÇÃO (BASE DE LUZ)
 // -------------------------
-function calibrate() {
-  captureFrame((r,g,b)=>{
+function calibrate(){
+  sampleFrame((r,g,b)=>{
     whiteRef = {r,g,b};
-    alert("Calibrado com base de iluminação");
+    alert("Calibração de iluminação aplicada");
   });
 }
 
 // -------------------------
-// NORMALIZAÇÃO MAIS ESTÁVEL
+// REMOÇÃO DE REFLEXO (IMPORTANTE AUTOMOTIVO)
 // -------------------------
-function normalizeLight(r,g,b){
-
-  const ref = whiteRef || {r:255,g:255,b:255};
-
-  let nr = r / ref.r;
-  let ng = g / ref.g;
-  let nb = b / ref.b;
-
-  // normalização de energia (mais estável que média simples)
-  const max = Math.max(nr, ng, nb);
-
-  nr = nr / max;
-  ng = ng / max;
-  nb = nb / max;
-
-  return {
-    r: Math.min(255, nr * 255),
-    g: Math.min(255, ng * 255),
-    b: Math.min(255, nb * 255)
-  };
+function isValidPixel(r,g,b){
+  const avg = (r+g+b)/3;
+  if(avg > 245) return false; // brilho extremo (reflexo)
+  if(avg < 5) return false;   // sombra total
+  return true;
 }
 
 // -------------------------
-// RGB -> LAB (inalterado, já bom)
+// RGB -> LAB (base correta já mantida)
 // -------------------------
 function rgbToLab(r,g,b){
 
@@ -108,80 +89,84 @@ function rgbToLab(r,g,b){
 // -------------------------
 // DELTA E
 // -------------------------
-function deltaE(lab1, lab2){
+function deltaE(l1,l2){
   return Math.sqrt(
-    (lab1.L-lab2.L)**2 +
-    (lab1.a-lab2.a)**2 +
-    (lab1.b-lab2.b)**2
+    (l1.L-l2.L)**2 +
+    (l1.a-l2.a)**2 +
+    (l1.b-l2.b)**2
   );
 }
 
 // -------------------------
 // BASE DE CORES
 // -------------------------
-const colorBase = [
+const colors = [
   {name:"Vermelho", lab:rgbToLab(255,0,0)},
   {name:"Verde", lab:rgbToLab(0,255,0)},
   {name:"Azul", lab:rgbToLab(0,0,255)},
   {name:"Amarelo", lab:rgbToLab(255,255,0)},
   {name:"Laranja", lab:rgbToLab(255,165,0)},
   {name:"Roxo", lab:rgbToLab(128,0,128)},
-  {name:"Rosa", lab:rgbToLab(255,192,203)},
-  {name:"Marrom", lab:rgbToLab(139,69,19)},
   {name:"Branco", lab:rgbToLab(255,255,255)},
   {name:"Preto", lab:rgbToLab(0,0,0)},
   {name:"Cinza", lab:rgbToLab(128,128,128)}
 ];
 
 // -------------------------
-// DETECÇÃO COM CONFIDÊNCIA
+// SEPARAÇÃO LUMINÂNCIA / CROMINÂNCIA (ESSENCIAL)
 // -------------------------
-function detectColor(r,g,b){
+function normalizeColor(r,g,b){
 
-  const lab = rgbToLab(r,g,b);
+  const ref = whiteRef || {r:255,g:255,b:255};
 
-  let min = Infinity;
-  let result = "Indefinida";
+  // correção de iluminação
+  r = (r / ref.r) * 255;
+  g = (g / ref.g) * 255;
+  b = (b / ref.b) * 255;
 
-  for(const c of colorBase){
-    const d = deltaE(lab, c.lab);
-    if(d < min){
-      min = d;
-      result = c.name;
-    }
-  }
+  // normalização de energia (reduz influência de brilho)
+  const max = Math.max(r,g,b);
+  r = r / max * 255;
+  g = g / max * 255;
+  b = b / max * 255;
 
-  const confidence = Math.max(0, 100 - min * 2.5);
-
-  return { name: result, confidence: confidence.toFixed(1) };
+  return {r,g,b};
 }
 
 // -------------------------
-// CAPTURA FRAME INDIVIDUAL
+// CAPTURA ROBUSTA (COM FILTRO REAL)
 // -------------------------
-function captureFrame(callback){
+function sampleFrame(callback){
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
   ctx.drawImage(video,0,0);
 
-  const size = 25;
-  const x = canvas.width/2;
-  const y = canvas.height/2;
+  const size = 30;
+  const cx = canvas.width/2;
+  const cy = canvas.height/2;
 
-  const data = ctx.getImageData(x-size,y-size,size*2,size*2).data;
+  const data = ctx.getImageData(cx-size,cy-size,size*2,size*2).data;
 
   let pixels = [];
 
   for(let i=0;i<data.length;i+=4){
-    pixels.push([data[i], data[i+1], data[i+2]]);
+
+    const r = data[i];
+    const g = data[i+1];
+    const b = data[i+2];
+
+    if(!isValidPixel(r,g,b)) continue;
+
+    pixels.push([r,g,b]);
   }
 
-  // remove extremos (25% mais forte agora)
-  pixels.sort((a,b)=>(a[0]+a[1]+a[2])-(b[0]+b[1]+b[2]));
+  if(pixels.length < 10) return;
 
-  const cut = Math.floor(pixels.length * 0.25);
+  // REMOVE OUTLIERS (20% extremos)
+  pixels.sort((a,b)=> (a[0]+a[1]+a[2]) - (b[0]+b[1]+b[2]));
+  const cut = Math.floor(pixels.length * 0.2);
   pixels = pixels.slice(cut, pixels.length-cut);
 
   let r=0,g=0,b=0;
@@ -192,58 +177,87 @@ function captureFrame(callback){
     b += p[2];
   }
 
-  r /= pixels.length;
-  g /= pixels.length;
-  b /= pixels.length;
+  r/=pixels.length;
+  g/=pixels.length;
+  b/=pixels.length;
 
-  const norm = normalizeLight(r,g,b);
+  const norm = normalizeColor(r,g,b);
 
   callback(norm.r, norm.g, norm.b);
 }
 
 // -------------------------
-// ESTABILIZAÇÃO TEMPORAL REAL
+// ESTABILIZAÇÃO TEMPORAL REAL (VARIÂNCIA)
 // -------------------------
-function getStableFrame(callback){
+function getStable(callback){
 
-  captureFrame((r,g,b)=>{
+  sampleFrame((r,g,b)=>{
 
-    frameBuffer.push([r,g,b]);
+    buffer.push([r,g,b]);
 
-    if(frameBuffer.length > 7){
-      frameBuffer.shift();
+    if(buffer.length > 9){
+      buffer.shift();
     }
 
-    if(frameBuffer.length < 5) return;
+    if(buffer.length < 6) return;
 
-    // mediana temporal
-    let rs = frameBuffer.map(v=>v[0]).sort((a,b)=>a-b);
-    let gs = frameBuffer.map(v=>v[1]).sort((a,b)=>a-b);
-    let bs = frameBuffer.map(v=>v[2]).sort((a,b)=>a-b);
+    // cálculo de média + variância
+    let rs = buffer.map(v=>v[0]);
+    let gs = buffer.map(v=>v[1]);
+    let bs = buffer.map(v=>v[2]);
 
-    const mid = Math.floor(frameBuffer.length/2);
+    const avg = arr => arr.reduce((a,b)=>a+b)/arr.length;
+    const variance = arr => {
+      const m = avg(arr);
+      return avg(arr.map(v=> (v-m)**2));
+    };
 
-    const fr = rs[mid];
-    const fg = gs[mid];
-    const fb = bs[mid];
+    const rMean = avg(rs);
+    const gMean = avg(gs);
+    const bMean = avg(bs);
 
-    callback(fr, fg, fb);
+    const v = variance(rs) + variance(gs) + variance(bs);
+
+    const confidence = Math.max(0, 100 - v / 10);
+
+    callback(rMean, gMean, bMean, confidence);
   });
 }
 
 // -------------------------
-// INTERAÇÃO FINAL
+// DETECÇÃO FINAL
 // -------------------------
-video.addEventListener('click', ()=>{
+function detect(r,g,b){
 
-  getStableFrame((r,g,b)=>{
+  const lab = rgbToLab(r,g,b);
+
+  let best = {name:"Indefinida", d:999};
+
+  for(const c of colors){
+    const d = deltaE(lab,c.lab);
+    if(d < best.d){
+      best = {name:c.name, d};
+    }
+  }
+
+  return best;
+}
+
+// -------------------------
+// INTERAÇÃO
+// -------------------------
+video.addEventListener('click',()=>{
+
+  getStable((r,g,b,conf)=>{
+
+    const result = detect(r,g,b);
 
     const color = `rgb(${r},${g},${b})`;
-    const result = detectColor(r,g,b);
 
     document.getElementById('colorBox').style.background = color;
+
     document.getElementById('colorText').innerText =
-      `${color} - ${result.name} (${result.confidence}% conf)`;
+      `${result.name} | conf: ${conf.toFixed(1)}%`;
   });
 });
 
