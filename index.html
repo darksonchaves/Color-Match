@@ -31,40 +31,56 @@ navigator.mediaDevices.getUserMedia({
 .then(stream => video.srcObject = stream)
 .catch(err => alert("Erro câmera: " + err));
 
-// NOVO SISTEMA DE CORES (CORRIGIDO)
+// CONVERTER PARA NOME DA COR (HSL)
 function getColorName(r, g, b) {
 
-  const colors = [
-    { name: "Vermelho", r: 255, g: 0, b: 0 },
-    { name: "Verde", r: 0, g: 255, b: 0 },
-    { name: "Azul", r: 0, g: 0, b: 255 },
-    { name: "Amarelo", r: 255, g: 255, b: 0 },
-    { name: "Laranja", r: 255, g: 165, b: 0 },
-    { name: "Roxo", r: 128, g: 0, b: 128 },
-    { name: "Rosa", r: 255, g: 192, b: 203 },
-    { name: "Marrom", r: 139, g: 69, b: 19 },
-    { name: "Branco", r: 255, g: 255, b: 255 },
-    { name: "Preto", r: 0, g: 0, b: 0 },
-    { name: "Cinza", r: 128, g: 128, b: 128 }
-  ];
+  r /= 255;
+  g /= 255;
+  b /= 255;
 
-  let minDistance = Infinity;
-  let closestColor = "Indefinida";
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h, s, l;
 
-  colors.forEach(color => {
-    const distance = Math.sqrt(
-      (r - color.r) ** 2 +
-      (g - color.g) ** 2 +
-      (b - color.b) ** 2
-    );
+  l = (max + min) / 2;
 
-    if (distance < minDistance) {
-      minDistance = distance;
-      closestColor = color.name;
+  if (max === min) {
+    h = s = 0;
+  } else {
+    const d = max - min;
+
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+    switch (max) {
+      case r: h = ((g - b) / d) % 6; break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
     }
-  });
 
-  return closestColor;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+
+  s *= 100;
+  l *= 100;
+
+  // tons neutros
+  if (s < 10) {
+    if (l > 85) return "Branco";
+    if (l < 15) return "Preto";
+    return "Cinza";
+  }
+
+  // cores principais
+  if (h >= 0 && h < 15) return "Vermelho";
+  if (h >= 15 && h < 45) return "Laranja";
+  if (h >= 45 && h < 70) return "Amarelo";
+  if (h >= 70 && h < 160) return "Verde";
+  if (h >= 160 && h < 260) return "Azul";
+  if (h >= 260 && h < 320) return "Roxo";
+  if (h >= 320 && h <= 360) return "Rosa";
+
+  return "Indefinida";
 }
 
 // CAPTURA AO TOCAR
@@ -79,11 +95,22 @@ video.addEventListener('click', (e) => {
   const x = (e.clientX - rect.left) * (canvas.width / rect.width);
   const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
-  const pixel = ctx.getImageData(x, y, 1, 1).data;
+  // MÉDIA DE PIXELS (MAIOR PRECISÃO)
+  const pixelData = ctx.getImageData(x, y, 5, 5).data;
 
-  const r = pixel[0];
-  const g = pixel[1];
-  const b = pixel[2];
+  let r = 0, g = 0, b = 0;
+
+  for (let i = 0; i < pixelData.length; i += 4) {
+    r += pixelData[i];
+    g += pixelData[i + 1];
+    b += pixelData[i + 2];
+  }
+
+  const total = pixelData.length / 4;
+
+  r = Math.floor(r / total);
+  g = Math.floor(g / total);
+  b = Math.floor(b / total);
 
   const color = `rgb(${r}, ${g}, ${b})`;
   const colorName = getColorName(r, g, b);
