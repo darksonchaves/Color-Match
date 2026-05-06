@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAW Color Touch Reader</title>
+<title>ColorMatch Pro MAX Engine</title>
 
 <style>
 body { text-align:center; font-family:Arial; background:#111; color:#fff; }
@@ -13,20 +13,18 @@ video { width:90%; border-radius:10px; }
 
 <body>
 
-<h2>RAW Color Touch Reader 📷</h2>
+<h2>ColorMatch Pro MAX (Perceptual Engine)</h2>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
 
 <div id="colorBox"></div>
-<p id="colorText">Toque na imagem para capturar cor</p>
+<p id="colorText">Toque na imagem</p>
 
 <script>
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-
-let lastTouch = { x: 0, y: 0 };
 
 // -------------------------
 // CAMERA RAW
@@ -36,101 +34,145 @@ navigator.mediaDevices.getUserMedia({
 }).then(stream => video.srcObject = stream);
 
 // -------------------------
-// CAPTURA NO PONTO TOCADO
+// RGB -> LAB (percepção humana real)
 // -------------------------
-function captureAt(x, y, callback){
+function rgbToLab(r,g,b){
+
+  r/=255; g/=255; b/=255;
+
+  [r,g,b]=[r,g,b].map(v=>{
+    return v>0.04045?Math.pow((v+0.055)/1.055,2.4):v/12.92;
+  });
+
+  let x=r*0.4124 + g*0.3576 + b*0.1805;
+  let y=r*0.2126 + g*0.7152 + b*0.0722;
+  let z=r*0.0193 + g*0.1192 + b*0.9505;
+
+  x/=0.95047; y/=1.00000; z/=1.08883;
+
+  [x,y,z]=[x,y,z].map(v=>{
+    return v>0.008856?Math.cbrt(v):(7.787*v)+(16/116);
+  });
+
+  return {
+    L:(116*y)-16,
+    a:500*(x-y),
+    b:200*(y-z)
+  };
+}
+
+// -------------------------
+// DISTÂNCIA PERCEPTUAL (DeltaE simplificado)
+// -------------------------
+function deltaE(l1,l2){
+  return Math.sqrt(
+    (l1.L-l2.L)**2 +
+    (l1.a-l2.a)**2 +
+    (l1.b-l2.b)**2
+  );
+}
+
+// -------------------------
+// BASE UNIVERSAL (LAB FIXA)
+// -------------------------
+const colors = [
+  {name:"Preto", lab:rgbToLab(0,0,0)},
+  {name:"Branco", lab:rgbToLab(255,255,255)},
+  {name:"Cinza", lab:rgbToLab(128,128,128)},
+
+  {name:"Vermelho", lab:rgbToLab(255,0,0)},
+  {name:"Verde", lab:rgbToLab(0,255,0)},
+  {name:"Azul", lab:rgbToLab(0,0,255)},
+
+  {name:"Amarelo", lab:rgbToLab(255,255,0)},
+  {name:"Laranja", lab:rgbToLab(255,165,0)},
+  {name:"Rosa", lab:rgbToLab(255,105,180)},
+  {name:"Roxo", lab:rgbToLab(128,0,128)},
+  {name:"Marrom", lab:rgbToLab(139,69,19)}
+];
+
+// -------------------------
+// CAPTURA RAW NO TOQUE
+// -------------------------
+function captureAt(x,y,callback){
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
   ctx.drawImage(video,0,0);
 
-  const size = 10;
+  const size = 12;
+  const data = ctx.getImageData(x-size,y-size,size*2,size*2).data;
 
-  const data = ctx.getImageData(x-size, y-size, size*2, size*2).data;
-
-  let r=0,g=0,b=0;
-  let count=0;
+  let r=0,g=0,b=0,count=0;
 
   for(let i=0;i<data.length;i+=4){
 
-    const rr = data[i];
-    const gg = data[i+1];
-    const bb = data[i+2];
-
-    // filtro mínimo (não altera cor, só remove erro extremo)
-    if(rr === 0 && gg === 0 && bb === 0) continue;
-
-    r += rr;
-    g += gg;
-    b += bb;
-
+    r += data[i];
+    g += data[i+1];
+    b += data[i+2];
     count++;
   }
-
-  if(count === 0) return;
 
   callback(r/count, g/count, b/count);
 }
 
 // -------------------------
-// CLASSIFICAÇÃO SIMPLES E ESTÁVEL
+// CLASSIFICAÇÃO PERCEPTUAL ROBUSTA
+// (ESSA É A PARTE MAIS IMPORTANTE)
 // -------------------------
-function getColorName(r,g,b){
+function detectColor(r,g,b){
 
-  const brightness = (r+g+b)/3;
-  const max = Math.max(r,g,b);
-  const min = Math.min(r,g,b);
-  const diff = max - min;
+  const lab = rgbToLab(r,g,b);
 
-  if(brightness < 40) return "Preto";
-  if(brightness > 220) return "Branco";
-  if(diff < 18) return "Cinza";
+  let best = {name:"Indefinido", dist:999};
 
-  if(max === r) return "Vermelho";
-  if(max === g) return "Verde";
-  if(max === b) return "Azul";
+  for(const c of colors){
 
-  if(r > 180 && g > 160) return "Amarelo";
-  if(r > 200 && g > 120) return "Laranja";
-  if(r > 120 && b > 120) return "Roxo";
+    const d = deltaE(lab, c.lab);
 
-  return "Indefinido";
+    if(d < best.dist){
+      best = {name:c.name, dist:d};
+    }
+  }
+
+  const confidence = Math.max(0, 100 - best.dist * 2);
+
+  return {
+    name: best.name,
+    confidence
+  };
 }
 
 // -------------------------
-// RENDER
+// VISUALIZAÇÃO
 // -------------------------
 function render(r,g,b){
 
   const color = `rgb(${r},${g},${b})`;
-  const name = getColorName(r,g,b);
+  const result = detectColor(r,g,b);
 
   document.getElementById('colorBox').style.background = color;
 
   document.getElementById('colorText').innerText =
-    `${name} | RAW: ${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}`;
+    `${result.name} | conf: ${result.confidence.toFixed(1)}% | RAW: ${Math.round(r)},${Math.round(g)},${Math.round(b)}`;
 }
 
 // -------------------------
-// TOQUE NA TELA (POSIÇÃO REAL)
+// TOQUE NA TELA
 // -------------------------
-video.addEventListener('click', (event)=>{
+video.addEventListener('click', (e)=>{
 
   const rect = video.getBoundingClientRect();
 
-  const scaleX = video.videoWidth / rect.width;
-  const scaleY = video.videoHeight / rect.height;
+  const x = (e.clientX - rect.left) * (video.videoWidth / rect.width);
+  const y = (e.clientY - rect.top) * (video.videoHeight / rect.height);
 
-  const x = (event.clientX - rect.left) * scaleX;
-  const y = (event.clientY - rect.top) * scaleY;
-
-  captureAt(x, y, (r,g,b)=>{
+  captureAt(x,y,(r,g,b)=>{
 
     render(r,g,b);
 
   });
-
 });
 </script>
 
