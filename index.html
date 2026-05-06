@@ -2,40 +2,36 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro MAX Engine</title>
+<title>ColorMatch Pro - Max Stability Engine</title>
 
 <style>
 body { text-align:center; font-family:Arial; background:#111; color:#fff; }
 video { width:90%; border-radius:10px; }
-#colorBox { width:120px; height:120px; margin:15px auto; border-radius:10px; border:2px solid #fff; }
+#box { width:120px; height:120px; margin:15px auto; border-radius:10px; border:2px solid #fff; }
 </style>
 </head>
 
 <body>
 
-<h2>ColorMatch Pro MAX (Perceptual Engine)</h2>
+<h2>ColorMatch Pro MAX Engine</h2>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
 
-<div id="colorBox"></div>
-<p id="colorText">Toque na imagem</p>
+<div id="box"></div>
+<p id="txt">Toque na imagem</p>
 
 <script>
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
-// -------------------------
-// CAMERA RAW
-// -------------------------
+// ---------------- CAMERA ----------------
 navigator.mediaDevices.getUserMedia({
   video: { facingMode: { ideal: "environment" } }
 }).then(stream => video.srcObject = stream);
 
-// -------------------------
-// RGB -> LAB (percepção humana real)
-// -------------------------
+// ---------------- RGB -> LAB (perceptual standard) ----------------
 function rgbToLab(r,g,b){
 
   r/=255; g/=255; b/=255;
@@ -48,7 +44,7 @@ function rgbToLab(r,g,b){
   let y=r*0.2126 + g*0.7152 + b*0.0722;
   let z=r*0.0193 + g*0.1192 + b*0.9505;
 
-  x/=0.95047; y/=1.00000; z/=1.08883;
+  x/=0.95047; y/=1.0; z/=1.08883;
 
   [x,y,z]=[x,y,z].map(v=>{
     return v>0.008856?Math.cbrt(v):(7.787*v)+(16/116);
@@ -61,118 +57,144 @@ function rgbToLab(r,g,b){
   };
 }
 
-// -------------------------
-// DISTÂNCIA PERCEPTUAL (DeltaE simplificado)
-// -------------------------
-function deltaE(l1,l2){
+// ---------------- ΔE (perceptual distance) ----------------
+function deltaE(a,b){
   return Math.sqrt(
-    (l1.L-l2.L)**2 +
-    (l1.a-l2.a)**2 +
-    (l1.b-l2.b)**2
+    (a.L-b.L)**2 +
+    (a.a-b.a)**2 +
+    (a.b-b.b)**2
   );
 }
 
-// -------------------------
-// BASE UNIVERSAL (LAB FIXA)
-// -------------------------
+// ---------------- COLOR MODEL (estável e reduzido ruído perceptual) ----------------
 const colors = [
-  {name:"Preto", lab:rgbToLab(0,0,0)},
-  {name:"Branco", lab:rgbToLab(255,255,255)},
-  {name:"Cinza", lab:rgbToLab(128,128,128)},
+  {n:"Preto", lab:rgbToLab(15,15,15)},
+  {n:"Branco", lab:rgbToLab(245,245,245)},
+  {n:"Cinza", lab:rgbToLab(128,128,128)},
 
-  {name:"Vermelho", lab:rgbToLab(255,0,0)},
-  {name:"Verde", lab:rgbToLab(0,255,0)},
-  {name:"Azul", lab:rgbToLab(0,0,255)},
+  {n:"Vermelho", lab:rgbToLab(220,60,60)},
+  {n:"Verde", lab:rgbToLab(60,200,60)},
+  {n:"Azul", lab:rgbToLab(60,80,220)},
 
-  {name:"Amarelo", lab:rgbToLab(255,255,0)},
-  {name:"Laranja", lab:rgbToLab(255,165,0)},
-  {name:"Rosa", lab:rgbToLab(255,105,180)},
-  {name:"Roxo", lab:rgbToLab(128,0,128)},
-  {name:"Marrom", lab:rgbToLab(139,69,19)}
+  {n:"Amarelo", lab:rgbToLab(240,220,80)},
+  {n:"Laranja", lab:rgbToLab(240,150,80)},
+  {n:"Rosa", lab:rgbToLab(240,120,180)},
+  {n:"Roxo", lab:rgbToLab(140,70,170)},
+  {n:"Marrom", lab:rgbToLab(120,80,60)}
 ];
 
-// -------------------------
-// CAPTURA RAW NO TOQUE
-// -------------------------
-function captureAt(x,y,callback){
+// ---------------- CAPTURA ULTRA ROBUSTA (MULTI FRAME + OUTLIER FILTER) ----------------
+function capture(x,y,cb){
 
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  let samples = [];
+  let frames = 6;
 
-  ctx.drawImage(video,0,0);
+  function grab(){
 
-  const size = 12;
-  const data = ctx.getImageData(x-size,y-size,size*2,size*2).data;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
 
-  let r=0,g=0,b=0,count=0;
+    ctx.drawImage(video,0,0);
 
-  for(let i=0;i<data.length;i+=4){
+    const size = 14;
+    const d = ctx.getImageData(x-size,y-size,size*2,size*2).data;
 
-    r += data[i];
-    g += data[i+1];
-    b += data[i+2];
-    count++;
-  }
+    let pixels = [];
 
-  callback(r/count, g/count, b/count);
-}
+    for(let i=0;i<d.length;i+=4){
+      const r=d[i], g=d[i+1], b=d[i+2];
 
-// -------------------------
-// CLASSIFICAÇÃO PERCEPTUAL ROBUSTA
-// (ESSA É A PARTE MAIS IMPORTANTE)
-// -------------------------
-function detectColor(r,g,b){
+      // remove pixels inválidos extremos (ruído sensor real)
+      if(r+g+b < 10 || r+g+b > 740) continue;
 
-  const lab = rgbToLab(r,g,b);
+      pixels.push([r,g,b]);
+    }
 
-  let best = {name:"Indefinido", dist:999};
+    // ordenação por intensidade (redução de ruído óptico)
+    pixels.sort((a,b)=>(a[0]+a[1]+a[2])-(b[0]+b[1]+b[2]));
 
-  for(const c of colors){
+    const cut = Math.floor(pixels.length * 0.2);
+    pixels = pixels.slice(cut,pixels.length-cut);
 
-    const d = deltaE(lab, c.lab);
+    let r=0,g=0,b=0,c=0;
 
-    if(d < best.dist){
-      best = {name:c.name, dist:d};
+    for(const p of pixels){
+      r+=p[0]; g+=p[1]; b+=p[2];
+      c++;
+    }
+
+    samples.push([r/c,g/c,b/c]);
+
+    frames--;
+
+    if(frames > 0){
+      requestAnimationFrame(grab);
+    } else {
+      process();
     }
   }
 
-  const confidence = Math.max(0, 100 - best.dist * 2);
+  function process(){
+
+    // mediana temporal (máxima estabilidade real possível no browser)
+    const rs = samples.map(s=>s[0]).sort((a,b)=>a-b);
+    const gs = samples.map(s=>s[1]).sort((a,b)=>a-b);
+    const bs = samples.map(s=>s[2]).sort((a,b)=>a-b);
+
+    const mid = Math.floor(samples.length/2);
+
+    cb(rs[mid],gs[mid],bs[mid]);
+  }
+
+  grab();
+}
+
+// ---------------- CLASSIFICAÇÃO PERCEPTUAL FINAL ----------------
+function detect(r,g,b){
+
+  const lab = rgbToLab(r,g,b);
+
+  let best = {n:"Indefinido", d:999};
+
+  for(const c of colors){
+
+    const d = deltaE(lab,c.lab);
+
+    if(d < best.d){
+      best = {n:c.n, d};
+    }
+  }
+
+  const confidence = Math.max(0, 100 - best.d * 2.0);
 
   return {
-    name: best.name,
+    name: best.n,
     confidence
   };
 }
 
-// -------------------------
-// VISUALIZAÇÃO
-// -------------------------
+// ---------------- RENDER ----------------
 function render(r,g,b){
 
-  const color = `rgb(${r},${g},${b})`;
-  const result = detectColor(r,g,b);
+  const res = detect(r,g,b);
 
-  document.getElementById('colorBox').style.background = color;
+  document.getElementById("box").style.background =
+    `rgb(${r},${g},${b})`;
 
-  document.getElementById('colorText').innerText =
-    `${result.name} | conf: ${result.confidence.toFixed(1)}% | RAW: ${Math.round(r)},${Math.round(g)},${Math.round(b)}`;
+  document.getElementById("txt").innerText =
+    `${res.name} | confiança: ${res.confidence.toFixed(1)}%`;
 }
 
-// -------------------------
-// TOQUE NA TELA
-// -------------------------
-video.addEventListener('click', (e)=>{
+// ---------------- TOUCH ----------------
+video.addEventListener("click",(e)=>{
 
   const rect = video.getBoundingClientRect();
 
-  const x = (e.clientX - rect.left) * (video.videoWidth / rect.width);
-  const y = (e.clientY - rect.top) * (video.videoHeight / rect.height);
+  const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
+  const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
 
-  captureAt(x,y,(r,g,b)=>{
+  capture(x,y,(r,g,b)=>render(r,g,b));
 
-    render(r,g,b);
-
-  });
 });
 </script>
 
