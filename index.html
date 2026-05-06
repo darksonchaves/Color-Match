@@ -1,74 +1,34 @@
-<!DOCTYPE html>
-
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch</title>
-<style>
-body { text-align:center; font-family:Arial; background:#111; color:#fff; }
-video { width:90%; border-radius:10px; }
-#colorBox { width:120px; height:120px; margin:15px auto; border-radius:10px; border:2px solid #fff; }
-</style>
-</head>
-<body>
-
-<h2>Toque na tela para capturar a cor 🎨</h2>
-
-<video id="video" autoplay playsinline></video> <canvas id="canvas" style="display:none;"></canvas>
-
-<div id="colorBox"></div>
-<p id="colorText">---</p>
-
-<script>
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-
-// CÂMERA TRASEIRA
-navigator.mediaDevices.getUserMedia({
-  video: { facingMode: { ideal: "environment" } }
-})
-.then(stream => video.srcObject = stream)
-.catch(err => alert("Erro câmera: " + err));
-
-// FUNÇÃO PARA IDENTIFICAR NOME DA COR
 function getColorName(r, g, b) {
-  if (r > 200 && g < 80 && b < 80) return "Vermelho";
-  if (r < 80 && g > 200 && b < 80) return "Verde";
-  if (r < 80 && g < 80 && b > 200) return "Azul";
-  if (r > 200 && g > 200 && b < 100) return "Amarelo";
-  if (r > 200 && g > 100 && b < 80) return "Laranja";
-  if (r > 200 && g > 200 && b > 200) return "Branco";
-  if (r < 50 && g < 50 && b < 50) return "Preto";
-  if (r > 100 && g > 100 && b > 100) return "Cinza";
-  return "Cor indefinida";
+
+  const colors = [
+    { name: "Vermelho", r: 255, g: 0, b: 0 },
+    { name: "Verde", r: 0, g: 255, b: 0 },
+    { name: "Azul", r: 0, g: 0, b: 255 },
+    { name: "Amarelo", r: 255, g: 255, b: 0 },
+    { name: "Laranja", r: 255, g: 165, b: 0 },
+    { name: "Roxo", r: 128, g: 0, b: 128 },
+    { name: "Rosa", r: 255, g: 192, b: 203 },
+    { name: "Marrom", r: 139, g: 69, b: 19 },
+    { name: "Branco", r: 255, g: 255, b: 255 },
+    { name: "Preto", r: 0, g: 0, b: 0 },
+    { name: "Cinza", r: 128, g: 128, b: 128 }
+  ];
+
+  let minDistance = Infinity;
+  let closestColor = "Indefinida";
+
+  colors.forEach(color => {
+    const distance = Math.sqrt(
+      (r - color.r) ** 2 +
+      (g - color.g) ** 2 +
+      (b - color.b) ** 2
+    );
+
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestColor = color.name;
+    }
+  });
+
+  return closestColor;
 }
-
-// CAPTURA AO TOCAR
-video.addEventListener('click', (e) => {
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  ctx.drawImage(video, 0, 0);
-
-  const rect = video.getBoundingClientRect();
-  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-
-  const pixel = ctx.getImageData(x, y, 1, 1).data;
-
-  const r = pixel[0];
-  const g = pixel[1];
-  const b = pixel[2];
-
-  const color = `rgb(${r}, ${g}, ${b})`;
-  const colorName = getColorName(r, g, b);
-
-  document.getElementById('colorBox').style.background = color;
-  document.getElementById('colorText').innerText = color + " - " + colorName;
-});
-</script>
-
-</body>
-</html>
