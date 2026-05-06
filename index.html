@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - Max Stability Engine</title>
+<title>ColorMatch Pro – Ultimate Perceptual Engine</title>
 
 <style>
 body { text-align:center; font-family:Arial; background:#111; color:#fff; }
@@ -13,25 +13,25 @@ video { width:90%; border-radius:10px; }
 
 <body>
 
-<h2>ColorMatch Pro MAX Engine</h2>
+<h2>ColorMatch Pro – Perceptual Engine MAX</h2>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
 
 <div id="box"></div>
-<p id="txt">Toque na imagem</p>
+<p id="txt">Toque para capturar</p>
 
 <script>
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-// ---------------- CAMERA ----------------
+// CAMERA (sem intervenção de cor manual)
 navigator.mediaDevices.getUserMedia({
   video: { facingMode: { ideal: "environment" } }
-}).then(stream => video.srcObject = stream);
+}).then(s => video.srcObject = s);
 
-// ---------------- RGB -> LAB (perceptual standard) ----------------
+// ---------------- RGB → LAB (percepção humana real) ----------------
 function rgbToLab(r,g,b){
 
   r/=255; g/=255; b/=255;
@@ -57,7 +57,7 @@ function rgbToLab(r,g,b){
   };
 }
 
-// ---------------- ΔE (perceptual distance) ----------------
+// ---------------- ΔE (distância perceptual) ----------------
 function deltaE(a,b){
   return Math.sqrt(
     (a.L-b.L)**2 +
@@ -66,60 +66,49 @@ function deltaE(a,b){
   );
 }
 
-// ---------------- COLOR MODEL (estável e reduzido ruído perceptual) ----------------
+// ---------------- MODELO DE CORES ESTÁVEL ----------------
 const colors = [
-  {n:"Preto", lab:rgbToLab(15,15,15)},
+  {n:"Preto", lab:rgbToLab(12,12,12)},
   {n:"Branco", lab:rgbToLab(245,245,245)},
   {n:"Cinza", lab:rgbToLab(128,128,128)},
 
-  {n:"Vermelho", lab:rgbToLab(220,60,60)},
-  {n:"Verde", lab:rgbToLab(60,200,60)},
-  {n:"Azul", lab:rgbToLab(60,80,220)},
+  {n:"Vermelho", lab:rgbToLab(220,65,65)},
+  {n:"Verde", lab:rgbToLab(65,200,65)},
+  {n:"Azul", lab:rgbToLab(65,85,220)},
 
-  {n:"Amarelo", lab:rgbToLab(240,220,80)},
-  {n:"Laranja", lab:rgbToLab(240,150,80)},
+  {n:"Amarelo", lab:rgbToLab(240,220,85)},
+  {n:"Laranja", lab:rgbToLab(240,150,85)},
   {n:"Rosa", lab:rgbToLab(240,120,180)},
-  {n:"Roxo", lab:rgbToLab(140,70,170)},
+  {n:"Roxo", lab:rgbToLab(140,75,170)},
   {n:"Marrom", lab:rgbToLab(120,80,60)}
 ];
 
-// ---------------- CAPTURA ULTRA ROBUSTA (MULTI FRAME + OUTLIER FILTER) ----------------
+// ---------------- CAPTURA ULTRA ROBUSTA ----------------
 function capture(x,y,cb){
 
   let samples = [];
   let frames = 6;
 
-  function grab(){
+  function loop(){
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
     ctx.drawImage(video,0,0);
 
-    const size = 14;
+    const size = 12;
     const d = ctx.getImageData(x-size,y-size,size*2,size*2).data;
-
-    let pixels = [];
-
-    for(let i=0;i<d.length;i+=4){
-      const r=d[i], g=d[i+1], b=d[i+2];
-
-      // remove pixels inválidos extremos (ruído sensor real)
-      if(r+g+b < 10 || r+g+b > 740) continue;
-
-      pixels.push([r,g,b]);
-    }
-
-    // ordenação por intensidade (redução de ruído óptico)
-    pixels.sort((a,b)=>(a[0]+a[1]+a[2])-(b[0]+b[1]+b[2]));
-
-    const cut = Math.floor(pixels.length * 0.2);
-    pixels = pixels.slice(cut,pixels.length-cut);
 
     let r=0,g=0,b=0,c=0;
 
-    for(const p of pixels){
-      r+=p[0]; g+=p[1]; b+=p[2];
+    for(let i=0;i<d.length;i+=4){
+
+      const rr=d[i], gg=d[i+1], bb=d[i+2];
+
+      // filtro de ruído extremo do sensor
+      if(rr+gg+bb < 8 || rr+gg+bb > 740) continue;
+
+      r+=rr; g+=gg; b+=bb;
       c++;
     }
 
@@ -127,29 +116,25 @@ function capture(x,y,cb){
 
     frames--;
 
-    if(frames > 0){
-      requestAnimationFrame(grab);
+    if(frames>0){
+      requestAnimationFrame(loop);
     } else {
-      process();
+
+      // mediana temporal (robustez máxima prática)
+      const rs = samples.map(s=>s[0]).sort((a,b)=>a-b);
+      const gs = samples.map(s=>s[1]).sort((a,b)=>a-b);
+      const bs = samples.map(s=>s[2]).sort((a,b)=>a-b);
+
+      const mid = Math.floor(samples.length/2);
+
+      cb(rs[mid],gs[mid],bs[mid]);
     }
   }
 
-  function process(){
-
-    // mediana temporal (máxima estabilidade real possível no browser)
-    const rs = samples.map(s=>s[0]).sort((a,b)=>a-b);
-    const gs = samples.map(s=>s[1]).sort((a,b)=>a-b);
-    const bs = samples.map(s=>s[2]).sort((a,b)=>a-b);
-
-    const mid = Math.floor(samples.length/2);
-
-    cb(rs[mid],gs[mid],bs[mid]);
-  }
-
-  grab();
+  loop();
 }
 
-// ---------------- CLASSIFICAÇÃO PERCEPTUAL FINAL ----------------
+// ---------------- CLASSIFICAÇÃO PERCEPTUAL ----------------
 function detect(r,g,b){
 
   const lab = rgbToLab(r,g,b);
@@ -165,11 +150,9 @@ function detect(r,g,b){
     }
   }
 
-  const confidence = Math.max(0, 100 - best.d * 2.0);
-
   return {
     name: best.n,
-    confidence
+    confidence: Math.max(0, 100 - best.d * 2)
   };
 }
 
@@ -185,7 +168,7 @@ function render(r,g,b){
     `${res.name} | confiança: ${res.confidence.toFixed(1)}%`;
 }
 
-// ---------------- TOUCH ----------------
+// ---------------- INPUT ----------------
 video.addEventListener("click",(e)=>{
 
   const rect = video.getBoundingClientRect();
