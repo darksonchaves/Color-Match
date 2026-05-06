@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro LAB v2</title>
+<title>ColorMatch Pro LAB v3</title>
 
 <style>
 body { text-align:center; font-family:Arial; background:#111; color:#fff; }
@@ -14,7 +14,7 @@ button { padding:10px; margin:10px; }
 
 <body>
 
-<h2>ColorMatch Pro 🎯 v2 (Engine)</h2>
+<h2>ColorMatch Pro 🎯 v3 (Ultra Engine)</h2>
 
 <button onclick="calibrate()">Calibrar Branco</button>
 
@@ -31,6 +31,9 @@ const ctx = canvas.getContext('2d');
 
 let whiteRef = null;
 
+// 🔥 BUFFER TEMPORAL (NOVA CAMADA)
+let frameBuffer = [];
+
 // -------------------------
 // CÂMERA
 // -------------------------
@@ -40,33 +43,32 @@ navigator.mediaDevices.getUserMedia({
 .then(stream => video.srcObject = stream);
 
 // -------------------------
-// CALIBRAÇÃO (WHITE BALANCE BASE)
+// CALIBRAÇÃO
 // -------------------------
 function calibrate() {
-  captureRaw((r,g,b)=>{
+  captureFrame((r,g,b)=>{
     whiteRef = {r,g,b};
-    alert("White balance calibrado");
+    alert("Calibrado com base de iluminação");
   });
 }
 
 // -------------------------
-// NORMALIZAÇÃO DE ILUMINAÇÃO (GRAY WORLD + WHITE REF)
+// NORMALIZAÇÃO MAIS ESTÁVEL
 // -------------------------
 function normalizeLight(r,g,b){
 
-  // evita divisão por zero
   const ref = whiteRef || {r:255,g:255,b:255};
 
   let nr = r / ref.r;
   let ng = g / ref.g;
   let nb = b / ref.b;
 
-  // gray world correction leve (normalização luminância)
-  const avg = (nr + ng + nb) / 3;
+  // normalização de energia (mais estável que média simples)
+  const max = Math.max(nr, ng, nb);
 
-  nr = nr / avg;
-  ng = ng / avg;
-  nb = nb / avg;
+  nr = nr / max;
+  ng = ng / max;
+  nb = nb / max;
 
   return {
     r: Math.min(255, nr * 255),
@@ -76,7 +78,7 @@ function normalizeLight(r,g,b){
 }
 
 // -------------------------
-// RGB -> LAB (mantido otimizado)
+// RGB -> LAB (inalterado, já bom)
 // -------------------------
 function rgbToLab(r,g,b){
 
@@ -104,7 +106,7 @@ function rgbToLab(r,g,b){
 }
 
 // -------------------------
-// DELTA E (perceptual distance)
+// DELTA E
 // -------------------------
 function deltaE(lab1, lab2){
   return Math.sqrt(
@@ -132,7 +134,7 @@ const colorBase = [
 ];
 
 // -------------------------
-// DETECÇÃO (ROBUSTA)
+// DETECÇÃO COM CONFIDÊNCIA
 // -------------------------
 function detectColor(r,g,b){
 
@@ -149,20 +151,22 @@ function detectColor(r,g,b){
     }
   }
 
-  return result;
+  const confidence = Math.max(0, 100 - min * 2.5);
+
+  return { name: result, confidence: confidence.toFixed(1) };
 }
 
 // -------------------------
-// CAPTURA ROBUSTA (MEDIANA + MULTI SAMPLE)
+// CAPTURA FRAME INDIVIDUAL
 // -------------------------
-function captureRaw(callback){
+function captureFrame(callback){
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
   ctx.drawImage(video,0,0);
 
-  const size = 20;
+  const size = 25;
   const x = canvas.width/2;
   const y = canvas.height/2;
 
@@ -174,16 +178,12 @@ function captureRaw(callback){
     pixels.push([data[i], data[i+1], data[i+2]]);
   }
 
-  // ordenação por luminância
-  pixels.sort((a,b)=>{
-    return (a[0]+a[1]+a[2]) - (b[0]+b[1]+b[2]);
-  });
+  // remove extremos (25% mais forte agora)
+  pixels.sort((a,b)=>(a[0]+a[1]+a[2])-(b[0]+b[1]+b[2]));
 
-  // REMOVE EXTREMOS (outliers reais)
-  const cut = Math.floor(pixels.length * 0.2);
-  pixels = pixels.slice(cut, pixels.length - cut);
+  const cut = Math.floor(pixels.length * 0.25);
+  pixels = pixels.slice(cut, pixels.length-cut);
 
-  // MEDIANA ESTÁVEL
   let r=0,g=0,b=0;
 
   for(const p of pixels){
@@ -192,9 +192,9 @@ function captureRaw(callback){
     b += p[2];
   }
 
-  r = r / pixels.length;
-  g = g / pixels.length;
-  b = b / pixels.length;
+  r /= pixels.length;
+  g /= pixels.length;
+  b /= pixels.length;
 
   const norm = normalizeLight(r,g,b);
 
@@ -202,18 +202,48 @@ function captureRaw(callback){
 }
 
 // -------------------------
-// CLIQUE (DETECÇÃO FINAL)
+// ESTABILIZAÇÃO TEMPORAL REAL
+// -------------------------
+function getStableFrame(callback){
+
+  captureFrame((r,g,b)=>{
+
+    frameBuffer.push([r,g,b]);
+
+    if(frameBuffer.length > 7){
+      frameBuffer.shift();
+    }
+
+    if(frameBuffer.length < 5) return;
+
+    // mediana temporal
+    let rs = frameBuffer.map(v=>v[0]).sort((a,b)=>a-b);
+    let gs = frameBuffer.map(v=>v[1]).sort((a,b)=>a-b);
+    let bs = frameBuffer.map(v=>v[2]).sort((a,b)=>a-b);
+
+    const mid = Math.floor(frameBuffer.length/2);
+
+    const fr = rs[mid];
+    const fg = gs[mid];
+    const fb = bs[mid];
+
+    callback(fr, fg, fb);
+  });
+}
+
+// -------------------------
+// INTERAÇÃO FINAL
 // -------------------------
 video.addEventListener('click', ()=>{
 
-  captureRaw((r,g,b)=>{
+  getStableFrame((r,g,b)=>{
 
     const color = `rgb(${r},${g},${b})`;
-    const name = detectColor(r,g,b);
+    const result = detectColor(r,g,b);
 
     document.getElementById('colorBox').style.background = color;
     document.getElementById('colorText').innerText =
-      `${color} - ${name}`;
+      `${color} - ${result.name} (${result.confidence}% conf)`;
   });
 });
 
