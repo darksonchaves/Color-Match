@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro ENGINE v4</title>
+<title>Color Engine v5 - Human Vision Model</title>
 
 <style>
 body { text-align:center; font-family:Arial; background:#111; color:#fff; }
@@ -13,9 +13,9 @@ video { width:90%; border-radius:10px; }
 
 <body>
 
-<h2>Color Engine v4 🚗 (Industrial Core)</h2>
+<h2>Color Engine v5 👁️ (Human Vision Simulation)</h2>
 
-<button onclick="calibrate()">Calibrar Iluminação</button>
+<button onclick="calibrate()">Calibrar Ambiente</button>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
@@ -28,8 +28,8 @@ const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-let whiteRef = null;
-let buffer = [];
+let ambientRef = null;
+let temporalBuffer = [];
 
 // -------------------------
 // CAMERA
@@ -39,27 +39,92 @@ navigator.mediaDevices.getUserMedia({
 }).then(stream => video.srcObject = stream);
 
 // -------------------------
-// CALIBRAÇÃO (BASE DE LUZ)
+// CALIBRAÇÃO (ADAPTAÇÃO VISUAL HUMANA)
 // -------------------------
 function calibrate(){
-  sampleFrame((r,g,b)=>{
-    whiteRef = {r,g,b};
-    alert("Calibração de iluminação aplicada");
+  sampleRaw((r,g,b)=>{
+    ambientRef = {r,g,b};
+    alert("Ambiente calibrado (adaptação visual)");
   });
 }
 
 // -------------------------
-// REMOÇÃO DE REFLEXO (IMPORTANTE AUTOMOTIVO)
+// FILTRO DE REFLEXO (SEM DESTRUIR COR)
 // -------------------------
-function isValidPixel(r,g,b){
-  const avg = (r+g+b)/3;
-  if(avg > 245) return false; // brilho extremo (reflexo)
-  if(avg < 5) return false;   // sombra total
-  return true;
+function validPixel(r,g,b){
+  const brightness = (r+g+b)/3;
+  return brightness > 5 && brightness < 245;
 }
 
 // -------------------------
-// RGB -> LAB (base correta já mantida)
+// CAPTURA BRUTA (SEM NORMALIZAÇÃO DESTRUTIVA)
+// -------------------------
+function sampleRaw(callback){
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  ctx.drawImage(video,0,0);
+
+  const size = 30;
+  const cx = canvas.width/2;
+  const cy = canvas.height/2;
+
+  const data = ctx.getImageData(cx-size,cy-size,size*2,size*2).data;
+
+  let pixels = [];
+
+  for(let i=0;i<data.length;i+=4){
+    const r = data[i];
+    const g = data[i+1];
+    const b = data[i+2];
+
+    if(validPixel(r,g,b)){
+      pixels.push([r,g,b]);
+    }
+  }
+
+  if(pixels.length < 10) return;
+
+  // remove extremos (ruído real)
+  pixels.sort((a,b)=> (a[0]+a[1]+a[2]) - (b[0]+b[1]+b[2]));
+  const cut = Math.floor(pixels.length * 0.15);
+  pixels = pixels.slice(cut, pixels.length-cut);
+
+  let r=0,g=0,b=0;
+
+  for(const p of pixels){
+    r += p[0];
+    g += p[1];
+    b += p[2];
+  }
+
+  callback(
+    r/pixels.length,
+    g/pixels.length,
+    b/pixels.length
+  );
+}
+
+// -------------------------
+// ADAPTAÇÃO DE ILUMINAÇÃO (LEVE, NÃO DESTRUTIVA)
+// -------------------------
+function adaptLight(r,g,b){
+
+  if(!ambientRef) return {r,g,b};
+
+  // correção suave (tipo cérebro humano)
+  const strength = 0.35;
+
+  return {
+    r: r * (1-strength) + ambientRef.r * strength,
+    g: g * (1-strength) + ambientRef.g * strength,
+    b: b * (1-strength) + ambientRef.b * strength
+  };
+}
+
+// -------------------------
+// RGB -> LAB (base correta)
 // -------------------------
 function rgbToLab(r,g,b){
 
@@ -98,7 +163,7 @@ function deltaE(l1,l2){
 }
 
 // -------------------------
-// BASE DE CORES
+// CORES BASE
 // -------------------------
 const colors = [
   {name:"Vermelho", lab:rgbToLab(255,0,0)},
@@ -113,115 +178,25 @@ const colors = [
 ];
 
 // -------------------------
-// SEPARAÇÃO LUMINÂNCIA / CROMINÂNCIA (ESSENCIAL)
+// ESTABILIZAÇÃO TEMPORAL REAL (VISÃO HUMANA)
 // -------------------------
-function normalizeColor(r,g,b){
+function temporalStabilization(r,g,b,callback){
 
-  const ref = whiteRef || {r:255,g:255,b:255};
+  temporalBuffer.push([r,g,b]);
 
-  // correção de iluminação
-  r = (r / ref.r) * 255;
-  g = (g / ref.g) * 255;
-  b = (b / ref.b) * 255;
-
-  // normalização de energia (reduz influência de brilho)
-  const max = Math.max(r,g,b);
-  r = r / max * 255;
-  g = g / max * 255;
-  b = b / max * 255;
-
-  return {r,g,b};
-}
-
-// -------------------------
-// CAPTURA ROBUSTA (COM FILTRO REAL)
-// -------------------------
-function sampleFrame(callback){
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  ctx.drawImage(video,0,0);
-
-  const size = 30;
-  const cx = canvas.width/2;
-  const cy = canvas.height/2;
-
-  const data = ctx.getImageData(cx-size,cy-size,size*2,size*2).data;
-
-  let pixels = [];
-
-  for(let i=0;i<data.length;i+=4){
-
-    const r = data[i];
-    const g = data[i+1];
-    const b = data[i+2];
-
-    if(!isValidPixel(r,g,b)) continue;
-
-    pixels.push([r,g,b]);
+  if(temporalBuffer.length > 9){
+    temporalBuffer.shift();
   }
 
-  if(pixels.length < 10) return;
+  if(temporalBuffer.length < 5) return;
 
-  // REMOVE OUTLIERS (20% extremos)
-  pixels.sort((a,b)=> (a[0]+a[1]+a[2]) - (b[0]+b[1]+b[2]));
-  const cut = Math.floor(pixels.length * 0.2);
-  pixels = pixels.slice(cut, pixels.length-cut);
+  let rs = temporalBuffer.map(v=>v[0]).sort((a,b)=>a-b);
+  let gs = temporalBuffer.map(v=>v[1]).sort((a,b)=>a-b);
+  let bs = temporalBuffer.map(v=>v[2]).sort((a,b)=>a-b);
 
-  let r=0,g=0,b=0;
+  const mid = Math.floor(temporalBuffer.length/2);
 
-  for(const p of pixels){
-    r += p[0];
-    g += p[1];
-    b += p[2];
-  }
-
-  r/=pixels.length;
-  g/=pixels.length;
-  b/=pixels.length;
-
-  const norm = normalizeColor(r,g,b);
-
-  callback(norm.r, norm.g, norm.b);
-}
-
-// -------------------------
-// ESTABILIZAÇÃO TEMPORAL REAL (VARIÂNCIA)
-// -------------------------
-function getStable(callback){
-
-  sampleFrame((r,g,b)=>{
-
-    buffer.push([r,g,b]);
-
-    if(buffer.length > 9){
-      buffer.shift();
-    }
-
-    if(buffer.length < 6) return;
-
-    // cálculo de média + variância
-    let rs = buffer.map(v=>v[0]);
-    let gs = buffer.map(v=>v[1]);
-    let bs = buffer.map(v=>v[2]);
-
-    const avg = arr => arr.reduce((a,b)=>a+b)/arr.length;
-    const variance = arr => {
-      const m = avg(arr);
-      return avg(arr.map(v=> (v-m)**2));
-    };
-
-    const rMean = avg(rs);
-    const gMean = avg(gs);
-    const bMean = avg(bs);
-
-    const v = variance(rs) + variance(gs) + variance(bs);
-
-    const confidence = Math.max(0, 100 - v / 10);
-
-    callback(rMean, gMean, bMean, confidence);
-  });
+  callback(rs[mid], gs[mid], bs[mid]);
 }
 
 // -------------------------
@@ -240,27 +215,38 @@ function detect(r,g,b){
     }
   }
 
-  return best;
+  const confidence = Math.max(0, 100 - best.d * 3);
+
+  return {name:best.name, confidence};
 }
 
 // -------------------------
-// INTERAÇÃO
+// CLICK
 // -------------------------
 video.addEventListener('click',()=>{
 
-  getStable((r,g,b,conf)=>{
+  sampleRaw((r,g,b)=>{
 
-    const result = detect(r,g,b);
+    const adapted = adaptLight(r,g,b);
 
-    const color = `rgb(${r},${g},${b})`;
+    temporalStabilization(
+      adapted.r,
+      adapted.g,
+      adapted.b,
+      (fr,fg,fb)=>{
 
-    document.getElementById('colorBox').style.background = color;
+        const result = detect(fr,fg,fb);
 
-    document.getElementById('colorText').innerText =
-      `${result.name} | conf: ${conf.toFixed(1)}%`;
+        const color = `rgb(${fr},${fg},${fb})`;
+
+        document.getElementById('colorBox').style.background = color;
+
+        document.getElementById('colorText').innerText =
+          `${result.name} | conf: ${result.confidence.toFixed(1)}%`;
+      }
+    );
   });
 });
-
 </script>
 
 </body>
