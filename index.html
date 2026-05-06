@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Max Sensor Fidelity Engine</title>
+<title>RAW Color + Universal Names</title>
 
 <style>
 body { text-align:center; font-family:Arial; background:#111; color:#fff; }
@@ -13,7 +13,7 @@ video { width:90%; border-radius:10px; }
 
 <body>
 
-<h2>Sensor Max Fidelity 📷</h2>
+<h2>RAW Sensor + Universal Color Name</h2>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
@@ -27,24 +27,23 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 // -------------------------
-// CAMERA (SEM PROCESSAMENTO)
+// CAMERA
 // -------------------------
 navigator.mediaDevices.getUserMedia({
   video: { facingMode: { ideal: "environment" } }
 }).then(stream => video.srcObject = stream);
 
 // -------------------------
-// CAPTURA MÁXIMA DO SENSOR
-// (sem correção, sem interpretação)
+// CAPTURA RAW (SEM MODIFICAÇÃO)
 // -------------------------
-function captureMax(callback){
+function captureRaw(callback){
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
   ctx.drawImage(video,0,0);
 
-  const size = 25;
+  const size = 20;
   const cx = canvas.width/2;
   const cy = canvas.height/2;
 
@@ -59,9 +58,9 @@ function captureMax(callback){
     const gg = data[i+1];
     const bb = data[i+2];
 
-    // só remove pixels inválidos extremos (sensor noise real)
-    if(rr === 0 && gg === 0 && bb === 0) continue;
-    if(rr === 255 && gg === 255 && bb === 255) continue;
+    const brightness = (rr+gg+bb)/3;
+
+    if(brightness < 2 || brightness > 253) continue;
 
     r += rr;
     g += gg;
@@ -80,16 +79,49 @@ function captureMax(callback){
 }
 
 // -------------------------
-// EXIBIÇÃO DIRETA (SEM INTERPRETAÇÃO)
+// CLASSIFICAÇÃO UNIVERSAL DE CORES
+// (sem correção, só interpretação final)
+// -------------------------
+function getColorName(r,g,b){
+
+  const brightness = (r+g+b)/3;
+
+  // PRETO / BRANCO / CINZA primeiro (mais confiável)
+  if(brightness < 40) return "Preto";
+  if(brightness > 220) return "Branco";
+
+  const max = Math.max(r,g,b);
+  const min = Math.min(r,g,b);
+  const diff = max - min;
+
+  // CINZA
+  if(diff < 20) return "Cinza";
+
+  // cores dominantes simples (base universal)
+  if(max === r) return "Vermelho";
+  if(max === g) return "Verde";
+  if(max === b) return "Azul";
+
+  // intermediárias básicas
+  if(r > 180 && g > 120) return "Amarelo";
+  if(r > 200 && g < 120) return "Laranja";
+  if(r > 120 && b > 120) return "Roxo";
+
+  return "Indefinido";
+}
+
+// -------------------------
+// RENDER FINAL
 // -------------------------
 function render(r,g,b){
 
   const color = `rgb(${r},${g},${b})`;
+  const name = getColorName(r,g,b);
 
   document.getElementById('colorBox').style.background = color;
 
   document.getElementById('colorText').innerText =
-    `RAW SENSOR → ${color}`;
+    `${name} | RAW: ${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}`;
 }
 
 // -------------------------
@@ -97,13 +129,9 @@ function render(r,g,b){
 // -------------------------
 video.addEventListener('click',()=>{
 
-  captureMax((r,g,b)=>{
+  captureRaw((r,g,b)=>{
 
-    render(
-      Math.round(r),
-      Math.round(g),
-      Math.round(b)
-    );
+    render(r,g,b);
 
   });
 
