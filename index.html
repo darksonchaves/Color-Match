@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro RAW vFinal</title>
+<title>RAW Color Touch Reader</title>
 
 <style>
 body { text-align:center; font-family:Arial; background:#111; color:#fff; }
@@ -13,18 +13,20 @@ video { width:90%; border-radius:10px; }
 
 <body>
 
-<h2>RAW Sensor Color Engine (Stable)</h2>
+<h2>RAW Color Touch Reader 📷</h2>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
 
 <div id="colorBox"></div>
-<p id="colorText">---</p>
+<p id="colorText">Toque na imagem para capturar cor</p>
 
 <script>
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+
+let lastTouch = { x: 0, y: 0 };
 
 // -------------------------
 // CAMERA RAW
@@ -34,20 +36,18 @@ navigator.mediaDevices.getUserMedia({
 }).then(stream => video.srcObject = stream);
 
 // -------------------------
-// CAPTURA BRUTA (SEM ALTERAÇÃO)
+// CAPTURA NO PONTO TOCADO
 // -------------------------
-function captureRaw(callback){
+function captureAt(x, y, callback){
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
   ctx.drawImage(video,0,0);
 
-  const size = 20;
-  const cx = canvas.width/2;
-  const cy = canvas.height/2;
+  const size = 10;
 
-  const data = ctx.getImageData(cx-size,cy-size,size*2,size*2).data;
+  const data = ctx.getImageData(x-size, y-size, size*2, size*2).data;
 
   let r=0,g=0,b=0;
   let count=0;
@@ -58,9 +58,8 @@ function captureRaw(callback){
     const gg = data[i+1];
     const bb = data[i+2];
 
-    // remove apenas pixels inválidos extremos (não altera cor real)
+    // filtro mínimo (não altera cor, só remove erro extremo)
     if(rr === 0 && gg === 0 && bb === 0) continue;
-    if(rr === 255 && gg === 255 && bb === 255) continue;
 
     r += rr;
     g += gg;
@@ -75,49 +74,32 @@ function captureRaw(callback){
 }
 
 // -------------------------
-// CLASSIFICAÇÃO UNIVERSAL ROBUSTA
-// (corrigida para tons escuros e variações reais)
+// CLASSIFICAÇÃO SIMPLES E ESTÁVEL
 // -------------------------
 function getColorName(r,g,b){
 
-  const brightness = (r + g + b) / 3;
-
+  const brightness = (r+g+b)/3;
   const max = Math.max(r,g,b);
   const min = Math.min(r,g,b);
   const diff = max - min;
 
-  // 🔴 PRETO / BRANCO (corrigido para estabilidade real)
-  if(brightness < 35 && diff < 25) return "Preto";
-  if(brightness > 225 && diff < 25) return "Branco";
-
-  // ⚪ CINZA (faixa intermediária real)
+  if(brightness < 40) return "Preto";
+  if(brightness > 220) return "Branco";
   if(diff < 18) return "Cinza";
 
-  // 🎨 cores principais com saturação real
-  const saturation = diff / (brightness + 1);
+  if(max === r) return "Vermelho";
+  if(max === g) return "Verde";
+  if(max === b) return "Azul";
 
-  // baixa saturação → tons neutros
-  if(saturation < 0.25){
-    if(brightness < 80) return "Preto Escuro";
-    if(brightness > 180) return "Branco Claro";
-    return "Cinza";
-  }
-
-  // 🔴🔵🟢 classificação principal mais estável
-  if(r > g && r > b) return "Vermelho";
-  if(g > r && g > b) return "Verde";
-  if(b > r && b > g) return "Azul";
-
-  // 🟡🟠🟣 intermediárias mais confiáveis
   if(r > 180 && g > 160) return "Amarelo";
-  if(r > 200 && g > 120 && b < 100) return "Laranja";
+  if(r > 200 && g > 120) return "Laranja";
   if(r > 120 && b > 120) return "Roxo";
 
   return "Indefinido";
 }
 
 // -------------------------
-// RENDER FINAL
+// RENDER
 // -------------------------
 function render(r,g,b){
 
@@ -131,11 +113,19 @@ function render(r,g,b){
 }
 
 // -------------------------
-// CLICK
+// TOQUE NA TELA (POSIÇÃO REAL)
 // -------------------------
-video.addEventListener('click',()=>{
+video.addEventListener('click', (event)=>{
 
-  captureRaw((r,g,b)=>{
+  const rect = video.getBoundingClientRect();
+
+  const scaleX = video.videoWidth / rect.width;
+  const scaleY = video.videoHeight / rect.height;
+
+  const x = (event.clientX - rect.left) * scaleX;
+  const y = (event.clientY - rect.top) * scaleY;
+
+  captureAt(x, y, (r,g,b)=>{
 
     render(r,g,b);
 
