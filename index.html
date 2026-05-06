@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ColorMatch</title>
+<style>
+body { text-align:center; font-family:Arial; background:#111; color:#fff; }
+video { width:90%; border-radius:10px; }
+#colorBox { width:120px; height:120px; margin:15px auto; border-radius:10px; border:2px solid #fff; }
+</style>
+</head>
+<body>
+
+<h2>Toque na tela para capturar a cor 🎨</h2>
+
+<video id="video" autoplay playsinline></video> <canvas id="canvas" style="display:none;"></canvas>
+
+<div id="colorBox"></div>
+<p id="colorText">---</p>
+
+<script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+navigator.mediaDevices.getUserMedia({
+  video: { facingMode: { ideal: "environment" } }
+})
+.then(stream => video.srcObject = stream)
+.catch(err => alert("Erro câmera: " + err));
+
+video.addEventListener('click', (e) => {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  ctx.drawImage(video, 0, 0);
+
+  const rect = video.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+  const pixel = ctx.getImageData(x, y, 1, 1).data;
+  const color = `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`;
+
+  document.getElementById('colorBox').style.background = color;
+  document.getElementById('colorText').innerText = color;
+});
+</script>
+
+</body>
+</html>
