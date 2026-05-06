@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAW Color + Universal Names</title>
+<title>ColorMatch Pro RAW vFinal</title>
 
 <style>
 body { text-align:center; font-family:Arial; background:#111; color:#fff; }
@@ -13,7 +13,7 @@ video { width:90%; border-radius:10px; }
 
 <body>
 
-<h2>RAW Sensor + Universal Color Name</h2>
+<h2>RAW Sensor Color Engine (Stable)</h2>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
@@ -27,14 +27,14 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 // -------------------------
-// CAMERA
+// CAMERA RAW
 // -------------------------
 navigator.mediaDevices.getUserMedia({
   video: { facingMode: { ideal: "environment" } }
 }).then(stream => video.srcObject = stream);
 
 // -------------------------
-// CAPTURA RAW (SEM MODIFICAÇÃO)
+// CAPTURA BRUTA (SEM ALTERAÇÃO)
 // -------------------------
 function captureRaw(callback){
 
@@ -58,9 +58,9 @@ function captureRaw(callback){
     const gg = data[i+1];
     const bb = data[i+2];
 
-    const brightness = (rr+gg+bb)/3;
-
-    if(brightness < 2 || brightness > 253) continue;
+    // remove apenas pixels inválidos extremos (não altera cor real)
+    if(rr === 0 && gg === 0 && bb === 0) continue;
+    if(rr === 255 && gg === 255 && bb === 255) continue;
 
     r += rr;
     g += gg;
@@ -71,40 +71,46 @@ function captureRaw(callback){
 
   if(count === 0) return;
 
-  callback(
-    r/count,
-    g/count,
-    b/count
-  );
+  callback(r/count, g/count, b/count);
 }
 
 // -------------------------
-// CLASSIFICAÇÃO UNIVERSAL DE CORES
-// (sem correção, só interpretação final)
+// CLASSIFICAÇÃO UNIVERSAL ROBUSTA
+// (corrigida para tons escuros e variações reais)
 // -------------------------
 function getColorName(r,g,b){
 
-  const brightness = (r+g+b)/3;
-
-  // PRETO / BRANCO / CINZA primeiro (mais confiável)
-  if(brightness < 40) return "Preto";
-  if(brightness > 220) return "Branco";
+  const brightness = (r + g + b) / 3;
 
   const max = Math.max(r,g,b);
   const min = Math.min(r,g,b);
   const diff = max - min;
 
-  // CINZA
-  if(diff < 20) return "Cinza";
+  // 🔴 PRETO / BRANCO (corrigido para estabilidade real)
+  if(brightness < 35 && diff < 25) return "Preto";
+  if(brightness > 225 && diff < 25) return "Branco";
 
-  // cores dominantes simples (base universal)
-  if(max === r) return "Vermelho";
-  if(max === g) return "Verde";
-  if(max === b) return "Azul";
+  // ⚪ CINZA (faixa intermediária real)
+  if(diff < 18) return "Cinza";
 
-  // intermediárias básicas
-  if(r > 180 && g > 120) return "Amarelo";
-  if(r > 200 && g < 120) return "Laranja";
+  // 🎨 cores principais com saturação real
+  const saturation = diff / (brightness + 1);
+
+  // baixa saturação → tons neutros
+  if(saturation < 0.25){
+    if(brightness < 80) return "Preto Escuro";
+    if(brightness > 180) return "Branco Claro";
+    return "Cinza";
+  }
+
+  // 🔴🔵🟢 classificação principal mais estável
+  if(r > g && r > b) return "Vermelho";
+  if(g > r && g > b) return "Verde";
+  if(b > r && b > g) return "Azul";
+
+  // 🟡🟠🟣 intermediárias mais confiáveis
+  if(r > 180 && g > 160) return "Amarelo";
+  if(r > 200 && g > 120 && b < 100) return "Laranja";
   if(r > 120 && b > 120) return "Roxo";
 
   return "Indefinido";
