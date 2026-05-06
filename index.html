@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Color Engine v5 - Human Vision Model</title>
+<title>Max Sensor Fidelity Engine</title>
 
 <style>
 body { text-align:center; font-family:Arial; background:#111; color:#fff; }
@@ -13,9 +13,7 @@ video { width:90%; border-radius:10px; }
 
 <body>
 
-<h2>Color Engine v5 👁️ (Human Vision Simulation)</h2>
-
-<button onclick="calibrate()">Calibrar Ambiente</button>
+<h2>Sensor Max Fidelity 📷</h2>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
@@ -28,196 +26,70 @@ const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-let ambientRef = null;
-let temporalBuffer = [];
-
 // -------------------------
-// CAMERA
+// CAMERA (SEM PROCESSAMENTO)
 // -------------------------
 navigator.mediaDevices.getUserMedia({
   video: { facingMode: { ideal: "environment" } }
 }).then(stream => video.srcObject = stream);
 
 // -------------------------
-// CALIBRAÇÃO (ADAPTAÇÃO VISUAL HUMANA)
+// CAPTURA MÁXIMA DO SENSOR
+// (sem correção, sem interpretação)
 // -------------------------
-function calibrate(){
-  sampleRaw((r,g,b)=>{
-    ambientRef = {r,g,b};
-    alert("Ambiente calibrado (adaptação visual)");
-  });
-}
-
-// -------------------------
-// FILTRO DE REFLEXO (SEM DESTRUIR COR)
-// -------------------------
-function validPixel(r,g,b){
-  const brightness = (r+g+b)/3;
-  return brightness > 5 && brightness < 245;
-}
-
-// -------------------------
-// CAPTURA BRUTA (SEM NORMALIZAÇÃO DESTRUTIVA)
-// -------------------------
-function sampleRaw(callback){
+function captureMax(callback){
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
   ctx.drawImage(video,0,0);
 
-  const size = 30;
+  const size = 25;
   const cx = canvas.width/2;
   const cy = canvas.height/2;
 
   const data = ctx.getImageData(cx-size,cy-size,size*2,size*2).data;
 
-  let pixels = [];
+  let r=0,g=0,b=0;
+  let count=0;
 
   for(let i=0;i<data.length;i+=4){
-    const r = data[i];
-    const g = data[i+1];
-    const b = data[i+2];
 
-    if(validPixel(r,g,b)){
-      pixels.push([r,g,b]);
-    }
+    const rr = data[i];
+    const gg = data[i+1];
+    const bb = data[i+2];
+
+    // só remove pixels inválidos extremos (sensor noise real)
+    if(rr === 0 && gg === 0 && bb === 0) continue;
+    if(rr === 255 && gg === 255 && bb === 255) continue;
+
+    r += rr;
+    g += gg;
+    b += bb;
+
+    count++;
   }
 
-  if(pixels.length < 10) return;
-
-  // remove extremos (ruído real)
-  pixels.sort((a,b)=> (a[0]+a[1]+a[2]) - (b[0]+b[1]+b[2]));
-  const cut = Math.floor(pixels.length * 0.15);
-  pixels = pixels.slice(cut, pixels.length-cut);
-
-  let r=0,g=0,b=0;
-
-  for(const p of pixels){
-    r += p[0];
-    g += p[1];
-    b += p[2];
-  }
+  if(count === 0) return;
 
   callback(
-    r/pixels.length,
-    g/pixels.length,
-    b/pixels.length
+    r/count,
+    g/count,
+    b/count
   );
 }
 
 // -------------------------
-// ADAPTAÇÃO DE ILUMINAÇÃO (LEVE, NÃO DESTRUTIVA)
+// EXIBIÇÃO DIRETA (SEM INTERPRETAÇÃO)
 // -------------------------
-function adaptLight(r,g,b){
+function render(r,g,b){
 
-  if(!ambientRef) return {r,g,b};
+  const color = `rgb(${r},${g},${b})`;
 
-  // correção suave (tipo cérebro humano)
-  const strength = 0.35;
+  document.getElementById('colorBox').style.background = color;
 
-  return {
-    r: r * (1-strength) + ambientRef.r * strength,
-    g: g * (1-strength) + ambientRef.g * strength,
-    b: b * (1-strength) + ambientRef.b * strength
-  };
-}
-
-// -------------------------
-// RGB -> LAB (base correta)
-// -------------------------
-function rgbToLab(r,g,b){
-
-  r/=255; g/=255; b/=255;
-
-  [r,g,b]=[r,g,b].map(v=>{
-    return v>0.04045?Math.pow((v+0.055)/1.055,2.4):v/12.92;
-  });
-
-  let x=r*0.4124 + g*0.3576 + b*0.1805;
-  let y=r*0.2126 + g*0.7152 + b*0.0722;
-  let z=r*0.0193 + g*0.1192 + b*0.9505;
-
-  x/=0.95047; y/=1.00000; z/=1.08883;
-
-  [x,y,z]=[x,y,z].map(v=>{
-    return v>0.008856?Math.cbrt(v):(7.787*v)+(16/116);
-  });
-
-  return {
-    L:(116*y)-16,
-    a:500*(x-y),
-    b:200*(y-z)
-  };
-}
-
-// -------------------------
-// DELTA E
-// -------------------------
-function deltaE(l1,l2){
-  return Math.sqrt(
-    (l1.L-l2.L)**2 +
-    (l1.a-l2.a)**2 +
-    (l1.b-l2.b)**2
-  );
-}
-
-// -------------------------
-// CORES BASE
-// -------------------------
-const colors = [
-  {name:"Vermelho", lab:rgbToLab(255,0,0)},
-  {name:"Verde", lab:rgbToLab(0,255,0)},
-  {name:"Azul", lab:rgbToLab(0,0,255)},
-  {name:"Amarelo", lab:rgbToLab(255,255,0)},
-  {name:"Laranja", lab:rgbToLab(255,165,0)},
-  {name:"Roxo", lab:rgbToLab(128,0,128)},
-  {name:"Branco", lab:rgbToLab(255,255,255)},
-  {name:"Preto", lab:rgbToLab(0,0,0)},
-  {name:"Cinza", lab:rgbToLab(128,128,128)}
-];
-
-// -------------------------
-// ESTABILIZAÇÃO TEMPORAL REAL (VISÃO HUMANA)
-// -------------------------
-function temporalStabilization(r,g,b,callback){
-
-  temporalBuffer.push([r,g,b]);
-
-  if(temporalBuffer.length > 9){
-    temporalBuffer.shift();
-  }
-
-  if(temporalBuffer.length < 5) return;
-
-  let rs = temporalBuffer.map(v=>v[0]).sort((a,b)=>a-b);
-  let gs = temporalBuffer.map(v=>v[1]).sort((a,b)=>a-b);
-  let bs = temporalBuffer.map(v=>v[2]).sort((a,b)=>a-b);
-
-  const mid = Math.floor(temporalBuffer.length/2);
-
-  callback(rs[mid], gs[mid], bs[mid]);
-}
-
-// -------------------------
-// DETECÇÃO FINAL
-// -------------------------
-function detect(r,g,b){
-
-  const lab = rgbToLab(r,g,b);
-
-  let best = {name:"Indefinida", d:999};
-
-  for(const c of colors){
-    const d = deltaE(lab,c.lab);
-    if(d < best.d){
-      best = {name:c.name, d};
-    }
-  }
-
-  const confidence = Math.max(0, 100 - best.d * 3);
-
-  return {name:best.name, confidence};
+  document.getElementById('colorText').innerText =
+    `RAW SENSOR → ${color}`;
 }
 
 // -------------------------
@@ -225,27 +97,16 @@ function detect(r,g,b){
 // -------------------------
 video.addEventListener('click',()=>{
 
-  sampleRaw((r,g,b)=>{
+  captureMax((r,g,b)=>{
 
-    const adapted = adaptLight(r,g,b);
-
-    temporalStabilization(
-      adapted.r,
-      adapted.g,
-      adapted.b,
-      (fr,fg,fb)=>{
-
-        const result = detect(fr,fg,fb);
-
-        const color = `rgb(${fr},${fg},${fb})`;
-
-        document.getElementById('colorBox').style.background = color;
-
-        document.getElementById('colorText').innerText =
-          `${result.name} | conf: ${result.confidence.toFixed(1)}%`;
-      }
+    render(
+      Math.round(r),
+      Math.round(g),
+      Math.round(b)
     );
+
   });
+
 });
 </script>
 
