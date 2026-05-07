@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Dual Engine</title>
+<title>ColorMatch Pro – Hybrid Vision Engine</title>
 
 <style>
 body {
@@ -27,12 +27,16 @@ video {
   border:2px solid #fff;
 }
 
-button {
-  padding:10px;
-  margin:5px;
+/* snapshot do modo estático */
+#snapshot {
+  width:90%;
+  margin:10px auto;
+  border-radius:10px;
+  display:none;
+  border:2px solid #00ffcc;
 }
 
-/* 🔵 mira central */
+/* mira live */
 #cross {
   position:absolute;
   left:50%;
@@ -47,7 +51,7 @@ button {
   box-shadow:0 0 10px #00ffcc;
 }
 
-/* 🟢 label do modo live */
+/* label live */
 #liveLabel {
   position:absolute;
   left:50%;
@@ -60,18 +64,26 @@ button {
   pointer-events:none;
   display:none;
 }
+
+button {
+  padding:10px;
+  margin:5px;
+}
 </style>
 </head>
 
 <body>
 
-<h2>ColorMatch Pro – Dual Mode Engine</h2>
+<h2>ColorMatch Pro – Hybrid Vision</h2>
 
 <button onclick="setMode('static')">Modo Estático</button>
 <button onclick="setMode('live')">Modo Movimento</button>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
+
+<!-- 🔥 snapshot visual do modo estático -->
+<img id="snapshot"/>
 
 <div id="box"></div>
 <p id="txt">Selecione um modo</p>
@@ -85,6 +97,7 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
+const snapshot = document.getElementById("snapshot");
 const cross = document.getElementById("cross");
 const liveLabel = document.getElementById("liveLabel");
 
@@ -134,7 +147,7 @@ function deltaE(a,b){
   );
 }
 
-// ---------------- BASE DE CORES ----------------
+// ---------------- CORES ----------------
 const colors = [
   {n:"Preto", lab:rgbToLab(15,15,15)},
   {n:"Branco", lab:rgbToLab(245,245,245)},
@@ -169,7 +182,7 @@ function detect(r,g,b){
   };
 }
 
-// ---------------- STATIC MODE ----------------
+// ---------------- STATIC CAPTURE ----------------
 function captureStatic(x,y){
 
   canvas.width = video.videoWidth;
@@ -197,7 +210,7 @@ function captureStatic(x,y){
   return detect(r,g,b);
 }
 
-// ---------------- LIVE MODE ----------------
+// ---------------- LIVE CAPTURE ----------------
 function captureLive(){
 
   canvas.width = video.videoWidth;
@@ -228,7 +241,7 @@ function captureLive(){
   return detect(r,g,b);
 }
 
-// ---------------- CLICK STATIC ----------------
+// ---------------- STATIC MODE CLICK ----------------
 video.addEventListener("click",(e)=>{
 
   if(mode !== "static") return;
@@ -238,32 +251,41 @@ video.addEventListener("click",(e)=>{
   const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
   const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
 
+  // 🔥 snapshot visual
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  ctx.drawImage(video,0,0);
+
+  snapshot.src = canvas.toDataURL();
+  snapshot.style.display = "block";
+
   const res = captureStatic(x,y);
 
   document.getElementById("box").style.background =
     `rgb(255,255,255)`;
 
   document.getElementById("txt").innerText =
-    `${res.name} | ${res.confidence.toFixed(1)}%`;
+    `STATIC: ${res.name} | ${res.confidence.toFixed(1)}%`;
 });
 
-// ---------------- LOOP LIVE ----------------
+// ---------------- LIVE LOOP ----------------
 function loop(){
 
   if(mode !== "live") return;
 
   const res = captureLive();
 
-  document.getElementById("txt").innerText =
-    `LIVE MODE`;
-
   liveLabel.innerText =
     `${res.name} | ${res.confidence.toFixed(1)}%`;
+
+  document.getElementById("txt").innerText =
+    "LIVE MODE ACTIVE";
 
   requestAnimationFrame(loop);
 }
 
-// ---------------- SWITCH MODE ----------------
+// ---------------- MODE SWITCH ----------------
 function setMode(m){
 
   mode = m;
@@ -271,8 +293,11 @@ function setMode(m){
   if(m === "live"){
     cross.style.display = "block";
     liveLabel.style.display = "block";
+    snapshot.style.display = "none";
     loop();
-  } else {
+  }
+
+  if(m === "static"){
     cross.style.display = "none";
     liveLabel.style.display = "none";
   }
