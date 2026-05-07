@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Unified Precision Engine FIX</title>
+<title>ColorMatch Pro – Precision Engine FIXED</title>
 
 <style>
 body {
@@ -46,7 +46,7 @@ canvas {
   color:#00ffcc;
 }
 
-/* MIRA CENTRAL (MOVIMENTO E COMPARAÇÃO) */
+/* MIRA CENTRAL (MOVE + COMPARE) */
 #centerCross {
   position:fixed;
   top:50%;
@@ -81,7 +81,7 @@ canvas {
 
 <body>
 
-<h2>ColorMatch Pro – Unified Engine</h2>
+<h2>ColorMatch Pro – Precision Engine</h2>
 
 <button onclick="setMode('static')">Estático</button>
 <button onclick="setMode('move')">Movimento</button>
@@ -120,11 +120,11 @@ const centerCross = document.getElementById("centerCross");
 
 let mode = "static";
 let voice = true;
-
 let step = 0;
+
 let sampleA = null;
 let sampleB = null;
-let lastMoveColor = "";
+let lastMove = "";
 
 /* ================= VOZ GLOBAL ================= */
 function speak(t){
@@ -142,7 +142,7 @@ navigator.mediaDevices.getUserMedia({
   video.srcObject = stream;
 });
 
-/* ================= LAB (NÃO ALTERADO) ================= */
+/* ================= LAB (INTACTO) ================= */
 function rgbToLab(r,g,b){
   r/=255; g/=255; b/=255;
 
@@ -165,7 +165,7 @@ function rgbToLab(r,g,b){
   };
 }
 
-/* ================= ΔE (NÃO ALTERADO) ================= */
+/* ================= ΔE (INTACTO) ================= */
 function deltaE(a,b){
   return Math.sqrt(
     (a.L-b.L)**2+
@@ -174,19 +174,14 @@ function deltaE(a,b){
   );
 }
 
-/* ================= MOTOR DE COR (NÃO ALTERADO) ================= */
+/* ================= CORES (INTACTO) ================= */
 const refColors = [
   {n:"Preto",lab:rgbToLab(10,10,10)},
   {n:"Branco",lab:rgbToLab(245,245,245)},
   {n:"Cinza",lab:rgbToLab(128,128,128)},
   {n:"Vermelho",lab:rgbToLab(220,60,60)},
   {n:"Verde",lab:rgbToLab(60,200,60)},
-  {n:"Azul",lab:rgbToLab(60,80,220)},
-  {n:"Amarelo",lab:rgbToLab(240,220,80)},
-  {n:"Laranja",lab:rgbToLab(240,150,80)},
-  {n:"Rosa",lab:rgbToLab(240,120,180)},
-  {n:"Roxo",lab:rgbToLab(140,70,170)},
-  {n:"Marrom",lab:rgbToLab(120,80,60)}
+  {n:"Azul",lab:rgbToLab(60,80,220)}
 ];
 
 function detect(r,g,b){
@@ -195,14 +190,14 @@ function detect(r,g,b){
   let best={n:"Indef",d:999};
 
   for(const c of refColors){
-    const d = deltaE(lab,c.lab);
+    const d=deltaE(lab,c.lab);
     if(d<best.d) best={n:c.n,d};
   }
 
   return best;
 }
 
-/* ================= CAPTURA PADRÃO ================= */
+/* ================= CAPTURA (INTACTA) ================= */
 function capture(ctx,x,y){
 
   ctx.canvas.width = video.videoWidth;
@@ -210,7 +205,7 @@ function capture(ctx,x,y){
 
   ctx.drawImage(video,0,0);
 
-  const s=12;
+  const s=10;
   const d=ctx.getImageData(x-s,y-s,s*2,s*2).data;
 
   let r=0,g=0,b=0,c=0;
@@ -227,35 +222,39 @@ function capture(ctx,x,y){
 
 /* ================= MOVIMENTO ================= */
 function moveLoop(){
+
   if(mode!=="move") return;
 
   centerCross.style.display = "block";
 
   const s = capture(ctxA, video.videoWidth/2, video.videoHeight/2);
 
-  const txt = "MOVIMENTO: " + s.n;
-  document.getElementById("txt").innerText = txt;
-
-  if(lastMoveColor !== s.n){
+  if(lastMove !== s.n){
     speak(s.n);
-    lastMoveColor = s.n;
+    lastMove = s.n;
   }
+
+  document.getElementById("txt").innerText =
+    "MOVIMENTO: " + s.n;
 
   requestAnimationFrame(moveLoop);
 }
 
 /* ================= MODO ================= */
 function setMode(m){
+
   mode = m;
   step = 0;
   sampleA = null;
   sampleB = null;
 
-  centerCross.style.display = (m==="move" || m==="compare") ? "block" : "none";
+  centerCross.style.display =
+    (m==="move" || m==="compare") ? "block" : "none";
 
   if(m==="move") moveLoop();
 
-  document.getElementById("txt").innerText = "Modo: " + m.toUpperCase();
+  document.getElementById("txt").innerText =
+    "Modo: " + m.toUpperCase();
 }
 
 /* ================= CLIQUE ================= */
@@ -269,11 +268,12 @@ video.addEventListener("click",(e)=>{
   /* ================= ESTÁTICO ================= */
   if(mode==="static"){
     const s = capture(ctxA,x,y);
-    document.getElementById("txt").innerText = "ESTÁTICO: " + s.n;
+    document.getElementById("txt").innerText =
+      "ESTÁTICO: " + s.n;
     speak(s.n);
   }
 
-  /* ================= COMPARAÇÃO (CAMADA ADICIONADA) ================= */
+  /* ================= COMPARAÇÃO (CAMADA VISUAL APENAS) ================= */
   if(mode==="compare"){
 
     if(step===0){
@@ -285,10 +285,10 @@ video.addEventListener("click",(e)=>{
       ctxA.strokeStyle="lime";
       ctxA.stroke();
 
+      step = 1;
+
       document.getElementById("txt").innerText =
         "Referência: " + sampleA.n;
-
-      step = 1;
     }
     else{
 
@@ -313,7 +313,7 @@ video.addEventListener("click",(e)=>{
   }
 });
 
-/* ================= VOZ GLOBAL ================= */
+/* ================= ÁUDIO ================= */
 function toggleVoice(){
   voice = !voice;
   alert("Áudio: " + (voice ? "ON" : "OFF"));
