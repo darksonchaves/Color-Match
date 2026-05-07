@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Stable Live Fix</title>
+<title>ColorMatch Pro – Stable Live Fix v2</title>
 
 <style>
 body {
@@ -21,8 +21,10 @@ video {
 
 #cross {
   position:absolute;
-  width:18px;
-  height:18px;
+  left:50%;
+  top:50%;
+  width:20px;
+  height:20px;
   border:2px solid #00ffcc;
   border-radius:50%;
   transform:translate(-50%,-50%);
@@ -52,12 +54,11 @@ button {
 
 <body>
 
-<h2>ColorMatch Pro – Stable Engine FIX</h2>
+<h2>ColorMatch Pro – Stable Engine</h2>
 
 <button onclick="setMode('static')">Estático</button>
 <button onclick="setMode('live')">Live</button>
 <button onclick="setMode('compare')">Comparativo</button>
-<button onclick="toggleFlash()">⚡ Flash</button>
 <button onclick="toggleVoice()">🔊 Áudio</button>
 
 <video id="video" autoplay playsinline></video>
@@ -78,28 +79,40 @@ const ctx = canvas.getContext("2d");
 let mode = "static";
 let voice = true;
 
-// 🔥 LIVE CONTROL FIX (ESSENCIAL)
+// LIVE CONTROL
 let liveActive = false;
 let liveToken = 0;
+let lastSpeak = "";
+let lastSpeakTime = 0;
+
+// estabilidade (ESSENCIAL)
+let lastColor = "";
+let stabilityCount = 0;
 
 // compare
 let stepCompare = 0;
 let sampleA = null;
 let sampleB = null;
 
-// flash
-let streamTrack = null;
-let flashOn = false;
-
-// ---------------- VOZ ----------------
+// ---------------- VOZ (ANTI-TRAVAMENTO) ----------------
 function speak(t){
+
   if(!voice) return;
+
+  const now = Date.now();
+
+  // 🔥 trava spam de áudio
+  if(t === lastSpeak && (now - lastSpeakTime < 2000)) return;
+
+  lastSpeak = t;
+  lastSpeakTime = now;
+
   speechSynthesis.cancel();
 
   const msg = new SpeechSynthesisUtterance(t);
   msg.lang = "pt-BR";
 
-  setTimeout(()=>speechSynthesis.speak(msg), 50);
+  setTimeout(()=>speechSynthesis.speak(msg), 80);
 }
 
 // ---------------- CAMERA ----------------
@@ -107,26 +120,7 @@ navigator.mediaDevices.getUserMedia({
   video:{facingMode:"environment"}
 }).then(s=>{
   video.srcObject = s;
-  streamTrack = s.getVideoTracks()[0];
 });
-
-// ---------------- FLASH ----------------
-function toggleFlash(){
-  if(!streamTrack){
-    alert("Flash não disponível");
-    return;
-  }
-
-  flashOn = !flashOn;
-
-  try {
-    streamTrack.applyConstraints({
-      advanced:[{torch: flashOn}]
-    });
-  } catch(e){
-    alert("Flash não suportado neste dispositivo");
-  }
-}
 
 // ---------------- LAB ----------------
 function rgbToLab(r,g,b){
@@ -257,31 +251,42 @@ video.addEventListener("click",(e)=>{
   }
 });
 
-// ---------------- LIVE FIX (ESTÁVEL) ----------------
+// ---------------- LIVE (CORRIGIDO + ESTÁVEL) ----------------
 function loop(token){
 
   if(!liveActive || token !== liveToken) return;
 
-  const s=capture(
-    video.videoWidth/2,
-    video.videoHeight/2
-  );
+  // 🎯 CENTRO FIXO (MIRA)
+  const x = video.videoWidth / 2;
+  const y = video.videoHeight / 2;
 
-  const name=detect(s.rgb.r,s.rgb.g,s.rgb.b);
+  const s = capture(x,y);
+  const name = detect(s.rgb.r,s.rgb.g,s.rgb.b);
+
+  // 🔥 estabilidade (evita leitura instável)
+  if(name === lastColor){
+    stabilityCount++;
+  } else {
+    stabilityCount = 0;
+    lastColor = name;
+  }
+
+  // só fala se estabilizou (ANTI-TRAVAMENTO)
+  if(stabilityCount === 5){
+    speak(name);
+    stabilityCount = 0;
+  }
 
   document.getElementById("txt").innerText="LIVE: "+name;
-
-  speak(name);
 
   requestAnimationFrame(()=>loop(token));
 }
 
-// ---------------- MODE CONTROL FIX ----------------
+// ---------------- MODE ----------------
 function setMode(m){
 
   mode=m;
 
-  // 🔥 PARA TUDO DE FORMA SEGURA
   liveActive=false;
   liveToken++;
 
@@ -291,6 +296,10 @@ function setMode(m){
 
   document.getElementById("p1").style.display="none";
   document.getElementById("p2").style.display="none";
+
+  // 🔥 MIRA LIVE
+  document.getElementById("cross").style.display =
+    (m==="live") ? "block" : "none";
 
   if(m==="live"){
     liveActive=true;
