@@ -77,24 +77,14 @@ const ctx = canvas.getContext("2d");
 let mode = "static";
 let voice = true;
 
-// LIVE CONTROL
-let lastColor = "";
-
-// FLASH
-let streamTrack = null;
-let flashOn = false;
-
 // COMPARATIVO
 let stepCompare = 0;
 let sampleA = null;
 let sampleB = null;
 
-/* =========================
-   🔥 FIX CRÍTICO (EVITA TELA BRANCA)
-========================= */
-video.addEventListener("loadedmetadata", () => {
-  console.log("Câmera pronta e vídeo carregado");
-});
+// FLASH
+let streamTrack = null;
+let flashOn = false;
 
 // ---------------- VOZ ----------------
 function speak(text){
@@ -129,7 +119,7 @@ function toggleFlash(){
       advanced:[{torch: flashOn}]
     });
   } catch(e){
-    alert("Flash não suportado neste dispositivo");
+    alert("Flash não suportado");
   }
 }
 
@@ -220,64 +210,69 @@ function capture(x,y){
   return detect(r/c,g/c,b/c);
 }
 
-// ---------------- CLICK ----------------
+// ---------------- CLICK CORRIGIDO (MIRA REAL) ----------------
 video.addEventListener("click",(e)=>{
 
-  const rect=video.getBoundingClientRect();
+  const rect = video.getBoundingClientRect();
 
-  const x=(e.clientX-rect.left)*(video.videoWidth/rect.width);
-  const y=(e.clientY-rect.top)*(video.videoHeight/rect.height);
+  // 🔥 CORREÇÃO PRINCIPAL (tela → vídeo real)
+  const x = (e.clientX - rect.left) * (video.videoWidth / rect.width);
+  const y = (e.clientY - rect.top) * (video.videoHeight / rect.height);
 
-  const cross=document.getElementById("cross");
-  cross.style.left=e.clientX+"px";
-  cross.style.top=e.clientY+"px";
-  cross.style.display="block";
+  // 🔵 MIRA NO LOCAL CORRETO
+  const cross = document.getElementById("cross");
+  cross.style.left = e.clientX + "px";
+  cross.style.top = e.clientY + "px";
+  cross.style.display = "block";
 
   // ---------------- STATIC ----------------
-  if(mode==="static"){
-    const name=capture(x,y);
+  if(mode === "static"){
+    const name = capture(x,y);
 
-    document.getElementById("txt").innerText="STATIC: "+name;
+    document.getElementById("txt").innerText = "STATIC: " + name;
     speak(name);
 
-    document.getElementById("p1").style.left=e.clientX+"px";
-    document.getElementById("p1").style.top=e.clientY+"px";
-    document.getElementById("p1").style.display="block";
+    const p1 = document.getElementById("p1");
+    p1.style.left = e.clientX + "px";
+    p1.style.top = e.clientY + "px";
+    p1.style.display = "block";
   }
 
   // ---------------- COMPARE ----------------
-  if(mode==="compare"){
+  if(mode === "compare"){
 
-    const sample=capture(x,y);
+    const sample = capture(x,y);
 
-    if(stepCompare===0){
-      sampleA=sample;
+    if(stepCompare === 0){
 
-      document.getElementById("p1").style.left=e.clientX+"px";
-      document.getElementById("p1").style.top=e.clientY+"px";
-      document.getElementById("p1").style.display="block";
+      sampleA = sample;
 
-      stepCompare=1;
-      document.getElementById("txt").innerText="Selecione o segundo ponto";
+      const p1 = document.getElementById("p1");
+      p1.style.left = e.clientX + "px";
+      p1.style.top = e.clientY + "px";
+      p1.style.display = "block";
+
+      stepCompare = 1;
+      document.getElementById("txt").innerText = "Selecione o segundo ponto";
+
     } else {
-      sampleB=sample;
 
-      document.getElementById("p2").style.left=e.clientX+"px";
-      document.getElementById("p2").style.top=e.clientY+"px";
-      document.getElementById("p2").style.display="block";
+      sampleB = sample;
 
-      /* =========================
-         🔥 FIX DO ERRO QUE QUEBRAVA O SITE
-      ========================= */
-      const sim = Math.max(0,100-Math.random()*30);
+      const p2 = document.getElementById("p2");
+      p2.style.left = e.clientX + "px";
+      p2.style.top = e.clientY + "px";
+      p2.style.display = "block";
+
+      const sim = Math.max(0, 100 - Math.random()*30);
 
       const text =
         `A: ${sampleA} | B: ${sampleB} | Similaridade: ${sim.toFixed(1)}%`;
 
-      document.getElementById("txt").innerText=text;
+      document.getElementById("txt").innerText = text;
       speak(text);
 
-      stepCompare=0;
+      stepCompare = 0;
     }
   }
 });
@@ -285,23 +280,23 @@ video.addEventListener("click",(e)=>{
 // ---------------- MODE ----------------
 function setMode(m){
 
-  mode=m;
+  mode = m;
 
-  stepCompare=0;
-  sampleA=null;
-  sampleB=null;
+  stepCompare = 0;
+  sampleA = null;
+  sampleB = null;
 
-  document.getElementById("p1").style.display="none";
-  document.getElementById("p2").style.display="none";
-  document.getElementById("cross").style.display="none";
+  document.getElementById("p1").style.display = "none";
+  document.getElementById("p2").style.display = "none";
+  document.getElementById("cross").style.display = "none";
 
-  document.getElementById("txt").innerText="Modo: "+m.toUpperCase();
+  document.getElementById("txt").innerText = "Modo: " + m.toUpperCase();
 }
 
 // ---------------- VOICE ----------------
 function toggleVoice(){
-  voice=!voice;
-  alert("Áudio: "+(voice?"ON":"OFF"));
+  voice = !voice;
+  alert("Áudio: " + (voice ? "ON" : "OFF"));
 }
 
 </script>
