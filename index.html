@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Voice Engine</title>
+<title>ColorMatch Pro – Full Engine</title>
 
 <style>
 body {
@@ -10,8 +10,6 @@ body {
   font-family:Arial;
   background:#111;
   color:#fff;
-  margin:0;
-  position:relative;
 }
 
 video {
@@ -19,10 +17,11 @@ video {
   border-radius:10px;
 }
 
-#box {
-  width:120px;
-  height:120px;
-  margin:15px auto;
+#boxA, #boxB, #colorBox {
+  width:90px;
+  height:90px;
+  margin:10px;
+  display:inline-block;
   border-radius:10px;
   border:2px solid #fff;
 }
@@ -35,57 +34,42 @@ video {
   border:2px solid #00ffcc;
 }
 
-#cross {
-  position:absolute;
-  left:50%;
-  top:50%;
-  width:22px;
-  height:22px;
-  border:2px solid #00ffcc;
-  border-radius:50%;
-  transform:translate(-50%,-50%);
-  pointer-events:none;
-  display:none;
-}
-
-#liveLabel {
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%, 30px);
-  color:#00ffcc;
-  font-weight:bold;
-  font-size:14px;
-  pointer-events:none;
-  display:none;
-  text-shadow:0 0 8px #000;
-}
-
 button {
   padding:10px;
   margin:5px;
+}
+
+#result {
+  margin-top:10px;
+  font-size:14px;
+  color:#00ffcc;
 }
 </style>
 </head>
 
 <body>
 
-<h2>ColorMatch Pro – Voice Engine</h2>
+<h2>ColorMatch Pro – Engine</h2>
 
 <button onclick="setMode('static')">Modo Estático</button>
-<button onclick="setMode('live')">Modo Movimento</button>
-<button onclick="toggleVoice()">🔊 Áudio</button>
+<button onclick="setMode('live')">Modo Live</button>
+<button onclick="setMode('compare1')">Comparar 1</button>
+<button onclick="setMode('compare2')">Comparar 2</button>
+<button onclick="runCompare()">Executar Comparação</button>
+<button onclick="toggleVoice()">🔊 Voz</button>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
 
 <img id="snapshot"/>
 
-<div id="box"></div>
-<p id="txt">Selecione um modo</p>
+<div>
+  <div id="colorBox"></div>
+  <div id="boxA"></div>
+  <div id="boxB"></div>
+</div>
 
-<div id="cross"></div>
-<div id="liveLabel"></div>
+<p id="result">Aguardando ação...</p>
 
 <script>
 
@@ -93,33 +77,17 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-const snapshot = document.getElementById("snapshot");
-const cross = document.getElementById("cross");
-const liveLabel = document.getElementById("liveLabel");
-
 let mode = "static";
-let voiceEnabled = true;
-let lastSpoken = "";
-let lastSpeakTime = 0;
+let voiceEnabled = false;
+
+let sampleA = null;
+let sampleB = null;
 
 // ---------------- VOZ ----------------
 function speak(text){
-
   if(!voiceEnabled) return;
-
-  const now = Date.now();
-
-  // anti-spam (1.5s)
-  if(text === lastSpoken && (now - lastSpeakTime < 1500)) return;
-
-  lastSpoken = text;
-  lastSpeakTime = now;
-
   const msg = new SpeechSynthesisUtterance(text);
   msg.lang = "pt-BR";
-  msg.rate = 1;
-
-  speechSynthesis.cancel();
   speechSynthesis.speak(msg);
 }
 
@@ -158,7 +126,7 @@ function rgbToLab(r,g,b){
   };
 }
 
-// ---------------- ΔE ----------------
+// ---------------- DISTÂNCIA ----------------
 function deltaE(a,b){
   return Math.sqrt(
     (a.L-b.L)**2 +
@@ -167,47 +135,29 @@ function deltaE(a,b){
   );
 }
 
-// ---------------- CORES ----------------
-const colors = [
-  {n:"Preto", lab:rgbToLab(15,15,15)},
-  {n:"Branco", lab:rgbToLab(245,245,245)},
-  {n:"Cinza", lab:rgbToLab(128,128,128)},
-
-  {n:"Vermelho", lab:rgbToLab(220,60,60)},
-  {n:"Verde", lab:rgbToLab(60,200,60)},
-  {n:"Azul", lab:rgbToLab(60,80,220)},
-
-  {n:"Amarelo", lab:rgbToLab(240,220,80)},
-  {n:"Laranja", lab:rgbToLab(240,150,80)},
-  {n:"Rosa", lab:rgbToLab(240,120,180)},
-  {n:"Roxo", lab:rgbToLab(140,70,170)},
-  {n:"Marrom", lab:rgbToLab(120,80,60)}
-];
-
-// ---------------- DETECÇÃO ----------------
-function detect(r,g,b){
-
-  const lab = rgbToLab(r,g,b);
-
-  let best = {n:"Indefinido", d:999};
-
-  for(const c of colors){
-    const d = deltaE(lab,c.lab);
-    if(d < best.d) best = {n:c.n, d};
-  }
-
-  return best.n;
+// ---------------- NOMES DE COR ----------------
+function getColorName(r,g,b){
+  if(r<30 && g<30 && b<30) return "Preto";
+  if(r>200 && g>200 && b>200) return "Branco";
+  if(r>200 && g<80 && b<80) return "Vermelho";
+  if(r<80 && g>200 && b<80) return "Verde";
+  if(r<80 && g<80 && b>200) return "Azul";
+  if(r>200 && g>200 && b<80) return "Amarelo";
+  if(r>200 && g>120 && b<80) return "Laranja";
+  if(r>150 && g<80 && b>150) return "Rosa";
+  if(r>120 && g<80 && b>120) return "Roxo";
+  return "Indefinida";
 }
 
-// ---------------- STATIC ----------------
-function captureStatic(x,y){
+// ---------------- CAPTURA ----------------
+function capture(x,y){
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
   ctx.drawImage(video,0,0);
 
-  const size = 14;
+  const size = 12;
 
   const data = ctx.getImageData(
     x-size,y-size,size*2,size*2
@@ -224,96 +174,87 @@ function captureStatic(x,y){
 
   r/=c; g/=c; b/=c;
 
-  return detect(r,g,b);
+  return {
+    rgb:{r,g,b},
+    lab: rgbToLab(r,g,b),
+    name: getColorName(r,g,b)
+  };
 }
 
-// ---------------- LIVE ----------------
-function captureLive(){
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  const x = canvas.width/2;
-  const y = canvas.height/2;
-
-  const size = 15;
-
-  ctx.drawImage(video,0,0);
-
-  const data = ctx.getImageData(
-    x-size,y-size,size*2,size*2
-  ).data;
-
-  let r=0,g=0,b=0,c=0;
-
-  for(let i=0;i<data.length;i+=4){
-    r+=data[i];
-    g+=data[i+1];
-    b+=data[i+2];
-    c++;
-  }
-
-  r/=c; g/=c; b/=c;
-
-  return detect(r,g,b);
-}
-
-// ---------------- CLICK STATIC ----------------
+// ---------------- CLICK ----------------
 video.addEventListener("click",(e)=>{
-
-  if(mode !== "static") return;
 
   const rect = video.getBoundingClientRect();
 
   const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
   const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
 
-  const name = captureStatic(x,y);
+  const sample = capture(x,y);
 
-  snapshot.style.display = "block";
+  const color = `rgb(${sample.rgb.r},${sample.rgb.g},${sample.rgb.b})`;
 
-  document.getElementById("txt").innerText =
-    `STATIC: ${name}`;
+  document.getElementById("snapshot").src = canvas.toDataURL();
+  document.getElementById("snapshot").style.display = "block";
 
-  speak(name);
+  if(mode === "static"){
+    document.getElementById("colorBox").style.background = color;
+    document.getElementById("result").innerText = sample.name;
+    speak(sample.name);
+  }
+
+  if(mode === "compare1"){
+    sampleA = sample;
+    document.getElementById("boxA").style.background = color;
+    document.getElementById("result").innerText = "Amostra 1 salva";
+    speak(sample.name);
+  }
+
+  if(mode === "compare2"){
+    sampleB = sample;
+    document.getElementById("boxB").style.background = color;
+    document.getElementById("result").innerText = "Amostra 2 salva";
+    speak(sample.name);
+  }
+
 });
 
-// ---------------- LIVE LOOP ----------------
-function loop(){
+// ---------------- COMPARAÇÃO ----------------
+function runCompare(){
 
-  if(mode !== "live") return;
+  if(!sampleA || !sampleB){
+    alert("Capture as duas amostras");
+    return;
+  }
 
-  const name = captureLive();
+  const d = deltaE(sampleA.lab, sampleB.lab);
 
-  liveLabel.innerText = name;
-  document.getElementById("txt").innerText = "LIVE MODE";
+  const similarity = Math.max(0, 100 - d * 2.5);
+  const diff = 100 - similarity;
 
-  speak(name);
+  let label = "";
 
-  requestAnimationFrame(loop);
+  if(similarity > 90) label = "Quase idênticas";
+  else if(similarity > 70) label = "Muito próximas";
+  else if(similarity > 40) label = "Diferentes";
+  else label = "Muito diferentes";
+
+  const text =
+    `Amostra 1: ${sampleA.name} | Amostra 2: ${sampleB.name} | Similaridade ${similarity.toFixed(1)}% | Diferença ${diff.toFixed(1)}%`;
+
+  document.getElementById("result").innerText = text;
+
+  speak(text);
 }
 
 // ---------------- MODE ----------------
 function setMode(m){
-
   mode = m;
-
-  if(m === "live"){
-    cross.style.display = "block";
-    liveLabel.style.display = "block";
-    loop();
-  }
-
-  if(m === "static"){
-    cross.style.display = "none";
-    liveLabel.style.display = "none";
-  }
 }
 
-// ---------------- VOICE TOGGLE ----------------
+// ---------------- VOZ TOGGLE ----------------
 function toggleVoice(){
   voiceEnabled = !voiceEnabled;
-  alert("Áudio: " + (voiceEnabled ? "ON" : "OFF"));
+  alert("Voz: " + (voiceEnabled ? "ATIVADA" : "DESATIVADA"));
 }
 
 </script>
