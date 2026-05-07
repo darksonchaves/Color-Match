@@ -5,6 +5,7 @@
 <title>ColorMatch Pro – Raw Sensor Precision</title>
 
 <style>
+
 body{
   margin:0;
   font-family:Arial;
@@ -18,15 +19,27 @@ video{
   border-radius:10px;
 }
 
-canvas{
-  width:90%;
-  border-radius:10px;
-  background:#222;
-}
-
 button{
   padding:10px;
   margin:5px;
+}
+
+#panel{
+  display:flex;
+  justify-content:space-around;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+
+.box{
+  width:45%;
+  min-width:160px;
+}
+
+canvas{
+  width:100%;
+  border-radius:10px;
+  background:#222;
 }
 
 #cross{
@@ -40,7 +53,9 @@ button{
   border-radius:50%;
   display:none;
   pointer-events:none;
+  z-index:999;
 }
+
 </style>
 </head>
 
@@ -57,21 +72,39 @@ button{
 
 <video id="video" autoplay playsinline></video>
 
-<canvas id="canvasA"></canvas>
-<canvas id="canvasB"></canvas>
-
 <div id="cross"></div>
+
+<div id="panel">
+
+  <div class="box">
+    <canvas id="canvasA"></canvas>
+    <div>Referência</div>
+  </div>
+
+  <div class="box">
+    <canvas id="canvasB"></canvas>
+    <div>Comparação</div>
+  </div>
+
+</div>
 
 <p id="txt">Iniciando...</p>
 
 <script>
 
+/* ================= ELEMENTOS ================= */
+
 const video = document.getElementById("video");
+
 const canvasA = document.getElementById("canvasA");
 const canvasB = document.getElementById("canvasB");
 
 const ctxA = canvasA.getContext("2d");
 const ctxB = canvasB.getContext("2d");
+
+const cross = document.getElementById("cross");
+
+/* ================= CONTROLES ================= */
 
 let mode = "static";
 let voice = true;
@@ -79,6 +112,9 @@ let voice = true;
 let lastSpeak = "";
 
 let compareA = null;
+let compareALab = null;
+
+let compareStep = 0;
 
 /* ================= CAMERA ================= */
 
@@ -87,7 +123,9 @@ navigator.mediaDevices.getUserMedia({
     facingMode:"environment"
   }
 }).then(stream=>{
+
   video.srcObject = stream;
+
 });
 
 /* ================= VOZ ================= */
@@ -99,9 +137,67 @@ function speak(text){
   speechSynthesis.cancel();
 
   const msg = new SpeechSynthesisUtterance(text);
+
   msg.lang = "pt-BR";
 
   speechSynthesis.speak(msg);
+}
+
+/* ================= RGB -> LAB ================= */
+
+function rgbToLab(r,g,b){
+
+  r/=255;
+  g/=255;
+  b/=255;
+
+  [r,g,b]=[r,g,b].map(v=>
+    v>0.04045
+    ? Math.pow((v+0.055)/1.055,2.4)
+    : v/12.92
+  );
+
+  let x =
+    r*0.4124 +
+    g*0.3576 +
+    b*0.1805;
+
+  let y =
+    r*0.2126 +
+    g*0.7152 +
+    b*0.0722;
+
+  let z =
+    r*0.0193 +
+    g*0.1192 +
+    b*0.9505;
+
+  x/=0.95047;
+  y/=1;
+  z/=1.08883;
+
+  [x,y,z]=[x,y,z].map(v=>
+    v>0.008856
+    ? Math.cbrt(v)
+    : (7.787*v)+(16/116)
+  );
+
+  return{
+    L:(116*y)-16,
+    a:500*(x-y),
+    b:200*(y-z)
+  };
+}
+
+/* ================= DELTA E ================= */
+
+function deltaE(a,b){
+
+  return Math.sqrt(
+    (a.L-b.L)**2 +
+    (a.a-b.a)**2 +
+    (a.b-b.b)**2
+  );
 }
 
 /* ================= CAPTURA ================= */
@@ -153,39 +249,40 @@ function rgbToHsl(r,g,b){
 
   let h,s,l;
 
-  l = (max + min) / 2;
+  l = (max+min)/2;
 
-  if(max === min){
+  if(max===min){
 
-    h = s = 0;
+    h=0;
+    s=0;
 
   }else{
 
-    const d = max - min;
+    const d = max-min;
 
-    s = l > 0.5
-      ? d / (2 - max - min)
-      : d / (max + min);
+    s = l>0.5
+      ? d/(2-max-min)
+      : d/(max+min);
 
     switch(max){
 
       case r:
-        h = (g - b) / d + (g < b ? 6 : 0);
+        h=(g-b)/d+(g<b?6:0);
       break;
 
       case g:
-        h = (b - r) / d + 2;
+        h=(b-r)/d+2;
       break;
 
       case b:
-        h = (r - g) / d + 4;
+        h=(r-g)/d+4;
       break;
     }
 
-    h /= 6;
+    h/=6;
   }
 
-  return {
+  return{
     h:h*360,
     s:s*100,
     l:l*100
@@ -202,22 +299,18 @@ function getColorName(r,g,b){
   const s = hsl.s;
   const l = hsl.l;
 
-  /* PRETO */
   if(l < 12){
     return "Preto";
   }
 
-  /* BRANCO */
   if(l > 90 && s < 15){
     return "Branco";
   }
 
-  /* CINZA */
   if(s < 12){
     return "Cinza";
   }
 
-  /* MARROM */
   if(
     h >= 15 &&
     h <= 40 &&
@@ -226,7 +319,6 @@ function getColorName(r,g,b){
     return "Marrom";
   }
 
-  /* VERMELHO */
   if(
     h <= 12 ||
     h >= 345
@@ -234,7 +326,6 @@ function getColorName(r,g,b){
     return "Vermelho";
   }
 
-  /* LARANJA */
   if(
     h > 12 &&
     h <= 40
@@ -242,7 +333,6 @@ function getColorName(r,g,b){
     return "Laranja";
   }
 
-  /* AMARELO */
   if(
     h > 40 &&
     h <= 70
@@ -250,7 +340,6 @@ function getColorName(r,g,b){
     return "Amarelo";
   }
 
-  /* VERDE */
   if(
     h > 70 &&
     h <= 165
@@ -258,7 +347,6 @@ function getColorName(r,g,b){
     return "Verde";
   }
 
-  /* AZUL */
   if(
     h > 165 &&
     h <= 255
@@ -266,7 +354,6 @@ function getColorName(r,g,b){
     return "Azul";
   }
 
-  /* ROXO */
   if(
     h > 255 &&
     h <= 315
@@ -274,7 +361,6 @@ function getColorName(r,g,b){
     return "Roxo";
   }
 
-  /* ROSA */
   if(
     h > 315 &&
     h < 345
@@ -330,8 +416,15 @@ function setMode(m){
 
   lastSpeak = "";
 
-  document.getElementById("cross").style.display =
-    (m === "move")
+  compareA = null;
+  compareALab = null;
+  compareStep = 0;
+
+  ctxA.clearRect(0,0,canvasA.width,canvasA.height);
+  ctxB.clearRect(0,0,canvasB.width,canvasB.height);
+
+  cross.style.display =
+    (m === "move" || m === "compare")
     ? "block"
     : "none";
 
@@ -363,7 +456,7 @@ video.addEventListener("click",(e)=>{
 
   const color = signalText(sig);
 
-  /* ESTÁTICO */
+  /* ================= ESTÁTICO ================= */
 
   if(mode === "static"){
 
@@ -373,27 +466,93 @@ video.addEventListener("click",(e)=>{
     speak(color);
   }
 
-  /* COMPARAÇÃO */
+  /* ================= COMPARAÇÃO ================= */
 
   if(mode === "compare"){
 
-    if(compareA === null){
+    if(compareStep === 0){
 
       compareA = sig;
 
+      compareALab = rgbToLab(
+        sig.r,
+        sig.g,
+        sig.b
+      );
+
+      canvasA.width = video.videoWidth;
+      canvasA.height = video.videoHeight;
+
+      ctxA.drawImage(video,0,0);
+
+      ctxA.beginPath();
+
+      ctxA.arc(
+        x,
+        y,
+        14,
+        0,
+        Math.PI*2
+      );
+
+      ctxA.lineWidth = 4;
+      ctxA.strokeStyle = "lime";
+
+      ctxA.stroke();
+
       document.getElementById("txt").innerText =
-        "A: " + signalText(compareA);
+        "Referência: " + color;
+
+      compareStep = 1;
 
     }else{
 
       const compareB = sig;
+
+      const compareBLab = rgbToLab(
+        compareB.r,
+        compareB.g,
+        compareB.b
+      );
+
+      canvasB.width = video.videoWidth;
+      canvasB.height = video.videoHeight;
+
+      ctxB.drawImage(video,0,0);
+
+      ctxB.beginPath();
+
+      ctxB.arc(
+        x,
+        y,
+        14,
+        0,
+        Math.PI*2
+      );
+
+      ctxB.lineWidth = 4;
+      ctxB.strokeStyle = "red";
+
+      ctxB.stroke();
+
+      const similarity =
+        Math.max(
+          0,
+          100 - deltaE(compareALab,compareBLab)
+        );
 
       const result =
         signalText(compareA)
         +
         " → "
         +
-        signalText(compareB);
+        signalText(compareB)
+        +
+        " | "
+        +
+        similarity.toFixed(1)
+        +
+        "% similar";
 
       document.getElementById("txt").innerText =
         result;
@@ -401,6 +560,9 @@ video.addEventListener("click",(e)=>{
       speak(result);
 
       compareA = null;
+      compareALab = null;
+
+      compareStep = 0;
     }
   }
 });
