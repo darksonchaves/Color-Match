@@ -10,6 +10,8 @@ body {
   font-family:Arial;
   background:#111;
   color:#fff;
+  position:relative;
+  margin:0;
 }
 
 video {
@@ -24,24 +26,41 @@ video {
   border-radius:10px;
   border:2px solid #fff;
 }
+
+/* 🔥 MIRA VISUAL */
+#crosshair {
+  position:absolute;
+  width:18px;
+  height:18px;
+  border:2px solid #00ffcc;
+  border-radius:50%;
+  transform:translate(-50%, -50%);
+  pointer-events:none;
+  display:none;
+  box-shadow:0 0 10px #00ffcc;
+}
 </style>
 </head>
 
 <body>
 
-<h2>ColorMatch Pro – Static Mode (Touch Sampling)</h2>
+<h2>ColorMatch Pro – Static Mode</h2>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
 
 <div id="box"></div>
-<p id="txt">Toque em qualquer ponto da imagem</p>
+<p id="txt">Toque na imagem</p>
+
+<!-- 🔥 MIRA -->
+<div id="crosshair"></div>
 
 <script>
 
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+const crosshair = document.getElementById("crosshair");
 
 // ---------------- CAMERA ----------------
 navigator.mediaDevices.getUserMedia({
@@ -63,7 +82,9 @@ function rgbToLab(r,g,b){
   let y=r*0.2126 + g*0.7152 + b*0.0722;
   let z=r*0.0193 + g*0.1192 + b*0.9505;
 
-  x/=0.95047; y/=1.0; z/=1.08883;
+  x/=0.95047;
+  y/=1.0;
+  z/=1.08883;
 
   [x,y,z]=[x,y,z].map(v=>{
     return v>0.008856 ? Math.cbrt(v) : (7.787*v)+(16/116);
@@ -85,7 +106,7 @@ function deltaE(a,b){
   );
 }
 
-// ---------------- BASE DE CORES ----------------
+// ---------------- CORES ----------------
 const colors = [
   {n:"Preto", lab:rgbToLab(15,15,15)},
   {n:"Branco", lab:rgbToLab(245,245,245)},
@@ -102,7 +123,7 @@ const colors = [
   {n:"Marrom", lab:rgbToLab(120,80,60)}
 ];
 
-// ---------------- CAPTURA NO PONTO TOCADO ----------------
+// ---------------- CAPTURA ----------------
 function captureAtPoint(x,y,cb){
 
   let samples = [];
@@ -201,7 +222,7 @@ function render(r,g,b){
     `${res.name} | ${res.confidence.toFixed(1)}%`;
 }
 
-// ---------------- TOQUE REAL ----------------
+// ---------------- TOQUE + MIRA ----------------
 video.addEventListener("click",(e)=>{
 
   const rect = video.getBoundingClientRect();
@@ -209,8 +230,16 @@ video.addEventListener("click",(e)=>{
   const x = (e.clientX - rect.left) * (video.videoWidth / rect.width);
   const y = (e.clientY - rect.top) * (video.videoHeight / rect.height);
 
-  captureAtPoint(x,y,(r,g,b)=>render(r,g,b));
+  // 🔥 posiciona mira
+  crosshair.style.display = "block";
+  crosshair.style.left = e.clientX + "px";
+  crosshair.style.top = e.clientY + "px";
 
+  setTimeout(()=>{
+    crosshair.style.display = "none";
+  }, 900);
+
+  captureAtPoint(x,y,(r,g,b)=>render(r,g,b));
 });
 
 </script>
