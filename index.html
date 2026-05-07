@@ -2,64 +2,82 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Unified Stable Engine</title>
+<title>ColorMatch Pro – Visual Compare Engine</title>
 
 <style>
 body {
-  text-align:center;
+  margin:0;
   font-family:Arial;
   background:#111;
   color:#fff;
-  margin:0;
+  text-align:center;
 }
 
-#wrap {
-  position:relative;
-  display:inline-block;
+h2 {
+  margin:10px;
 }
 
-video {
+#video {
   width:90%;
   border-radius:10px;
 }
 
-canvas {
-  display:none;
-}
-
-#cross {
-  position:absolute;
-  width:20px;
-  height:20px;
-  border:2px solid #00ffcc;
-  border-radius:50%;
-  transform:translate(-50%,-50%);
-  pointer-events:none;
-  display:none;
-}
-
-button {
+#controls button {
   padding:10px;
   margin:5px;
+}
+
+/* ÁREA DAS IMAGENS */
+#panel {
+  display:flex;
+  justify-content:space-around;
+  margin-top:15px;
+  flex-wrap:wrap;
+}
+
+.box {
+  width:45%;
+  min-width:160px;
+}
+
+canvas {
+  width:100%;
+  border-radius:10px;
+  background:#222;
+}
+
+.label {
+  margin-top:5px;
+  font-size:14px;
+  color:#aaa;
 }
 </style>
 </head>
 
 <body>
 
-<h2>ColorMatch Pro – Unified Engine</h2>
+<h2>ColorMatch Pro – Comparação Visual</h2>
 
-<button onclick="setMode('static')">Estático</button>
-<button onclick="setMode('compare')">Comparativo</button>
-<button onclick="toggleVoice()">🔊 Áudio</button>
+<div id="controls">
+  <button onclick="setMode('static')">Estático</button>
+  <button onclick="setMode('compare')">Comparar</button>
+</div>
 
-<div id="wrap">
-  <video id="video" autoplay playsinline></video>
+<video id="video" autoplay playsinline></video>
 
-  <canvas id="canvasA"></canvas>
-  <canvas id="canvasB"></canvas>
+<!-- PAINEL DE IMAGENS -->
+<div id="panel">
 
-  <div id="cross"></div>
+  <div class="box">
+    <canvas id="canvasA"></canvas>
+    <div class="label">Referência</div>
+  </div>
+
+  <div class="box">
+    <canvas id="canvasB"></canvas>
+    <div class="label">Comparação</div>
+  </div>
+
 </div>
 
 <p id="txt">Selecione um modo</p>
@@ -67,6 +85,7 @@ button {
 <script>
 
 const video = document.getElementById("video");
+
 const canvasA = document.getElementById("canvasA");
 const ctxA = canvasA.getContext("2d");
 
@@ -74,20 +93,10 @@ const canvasB = document.getElementById("canvasB");
 const ctxB = canvasB.getContext("2d");
 
 let mode = "static";
-let voice = true;
-
 let step = 0;
+
 let sampleA = null;
 let sampleB = null;
-
-/* ================= VOZ ================= */
-function speak(text){
-  if(!voice) return;
-  speechSynthesis.cancel();
-  const msg = new SpeechSynthesisUtterance(text);
-  msg.lang = "pt-BR";
-  speechSynthesis.speak(msg);
-}
 
 /* ================= CAMERA ================= */
 navigator.mediaDevices.getUserMedia({
@@ -96,105 +105,35 @@ navigator.mediaDevices.getUserMedia({
   video.srcObject = stream;
 });
 
-/* ================= LAB ================= */
-function rgbToLab(r,g,b){
-  r/=255; g/=255; b/=255;
+/* ================= DETECÇÃO SIMPLES ================= */
+function getColor(x,y){
 
-  [r,g,b]=[r,g,b].map(v=>
-    v>0.04045?Math.pow((v+0.055)/1.055,2.4):v/12.92
-  );
+  const c = document.createElement("canvas");
+  const ctx = c.getContext("2d");
 
-  let x=r*0.4124+g*0.3576+b*0.1805;
-  let y=r*0.2126+g*0.7152+b*0.0722;
-  let z=r*0.0193+g*0.1192+b*0.9505;
+  c.width = video.videoWidth;
+  c.height = video.videoHeight;
 
-  x/=0.95047; y/=1; z/=1.08883;
+  ctx.drawImage(video,0,0);
 
-  [x,y,z]=[x,y,z].map(v=>v>0.008856?Math.cbrt(v):(7.787*v)+(16/116));
+  const d = ctx.getImageData(x,y,1,1).data;
 
-  return {
-    L:(116*y)-16,
-    a:500*(x-y),
-    b:200*(y-z)
-  };
+  return `RGB(${d[0]},${d[1]},${d[2]})`;
 }
 
-/* ================= ΔE ================= */
-function deltaE(a,b){
-  return Math.sqrt(
-    (a.L-b.L)**2 +
-    (a.a-b.a)**2 +
-    (a.b-b.b)**2
-  );
-}
+/* ================= DESENHAR MIRA ================= */
+function drawPoint(ctx,x,y,color){
 
-/* ================= CORES ================= */
-function detect(r,g,b){
-  const lab = rgbToLab(r,g,b);
-
-  const ref = [
-    {n:"Preto",lab:rgbToLab(10,10,10)},
-    {n:"Branco",lab:rgbToLab(245,245,245)},
-    {n:"Cinza",lab:rgbToLab(128,128,128)},
-    {n:"Vermelho",lab:rgbToLab(220,60,60)},
-    {n:"Verde",lab:rgbToLab(60,200,60)},
-    {n:"Azul",lab:rgbToLab(60,80,220)}
-  ];
-
-  let best = {n:"Indef",d:999};
-
-  for(const c of ref){
-    const d = deltaE(lab,c.lab);
-    if(d < best.d) best = {n:c.n,d};
-  }
-
-  return best.n;
-}
-
-/* ================= CAPTURA ================= */
-function capture(ctx,x,y){
-
-  const w = video.videoWidth;
-  const h = video.videoHeight;
-
-  ctx.canvas.width = w;
-  ctx.canvas.height = h;
-
-  ctx.drawImage(video,0,0,w,h);
-
-  const s = 10;
-
-  const data = ctx.getImageData(
-    Math.max(0,x-s),
-    Math.max(0,y-s),
-    s*2,
-    s*2
-  ).data;
-
-  let r=0,g=0,b=0,c=0;
-
-  for(let i=0;i<data.length;i+=4){
-    r+=data[i];
-    g+=data[i+1];
-    b+=data[i+2];
-    c++;
-  }
-
-  return detect(r/c,g/c,b/c);
-}
-
-/* ================= MARCADOR NA IMAGEM ================= */
-function drawMarker(ctx,x,y,label,color){
   ctx.strokeStyle = color;
-  ctx.lineWidth = 3;
+  ctx.fillStyle = color;
 
   ctx.beginPath();
-  ctx.arc(x,y,12,0,Math.PI*2);
+  ctx.arc(x,y,10,0,Math.PI*2);
   ctx.stroke();
 
-  ctx.fillStyle = color;
-  ctx.font = "16px Arial";
-  ctx.fillText(label, x+15, y-10);
+  ctx.beginPath();
+  ctx.arc(x,y,3,0,Math.PI*2);
+  ctx.fill();
 }
 
 /* ================= CLICK ================= */
@@ -202,69 +141,70 @@ video.addEventListener("click",(e)=>{
 
   const rect = video.getBoundingClientRect();
 
-  const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
-  const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
+  const x = (e.clientX - rect.left) * (video.videoWidth / rect.width);
+  const y = (e.clientY - rect.top) * (video.videoHeight / rect.height);
 
-  const cross = document.getElementById("cross");
-  cross.style.left = e.clientX + "px";
-  cross.style.top = e.clientY + "px";
-  cross.style.display = "block";
-
-  /* ================= STATIC ================= */
-  if(mode==="static"){
-    const name = capture(ctxA,x,y);
-    document.getElementById("txt").innerText = "STATIC: "+name;
-    speak(name);
+  /* ================= ESTÁTICO ================= */
+  if(mode === "static"){
+    const color = getColor(x,y);
+    document.getElementById("txt").innerText =
+      "Cor detectada: " + color;
   }
 
-  /* ================= COMPARE ================= */
-  if(mode==="compare"){
+  /* ================= COMPARAÇÃO ================= */
+  if(mode === "compare"){
 
-    if(step===0){
+    // PRIMEIRA IMAGEM (REFERÊNCIA)
+    if(step === 0){
 
-      sampleA = capture(ctxA,x,y);
+      canvasA.width = video.videoWidth;
+      canvasA.height = video.videoHeight;
 
-      drawMarker(ctxA,x,y,sampleA,"lime");
+      ctxA.drawImage(video,0,0);
+
+      const colorA = getColor(x,y);
+      sampleA = colorA;
+
+      drawPoint(ctxA,x,y,"lime");
 
       document.getElementById("txt").innerText =
-        "Referência: "+sampleA;
+        "Referência capturada: " + colorA;
 
       step = 1;
     }
 
+    // SEGUNDA IMAGEM (COMPARAÇÃO)
     else{
 
-      sampleB = capture(ctxB,x,y);
+      canvasB.width = video.videoWidth;
+      canvasB.height = video.videoHeight;
 
-      drawMarker(ctxB,x,y,sampleB,"red");
+      ctxB.drawImage(video,0,0);
 
-      const sim = Math.max(0,100 - Math.random()*20);
+      const colorB = getColor(x,y);
+      sampleB = colorB;
 
-      const result =
-        `A:${sampleA} | B:${sampleB} | Similaridade:${sim.toFixed(1)}%`;
+      drawPoint(ctxB,x,y,"red");
 
-      document.getElementById("txt").innerText = result;
-      speak(result);
+      const text =
+        `Ref: ${sampleA} | Atual: ${sampleB}`;
+
+      document.getElementById("txt").innerText = text;
 
       step = 0;
     }
   }
 });
 
-/* ================= MODE ================= */
+/* ================= MODO ================= */
 function setMode(m){
   mode = m;
   step = 0;
   sampleA = null;
   sampleB = null;
-  document.getElementById("txt").innerText =
-    "Modo: "+m.toUpperCase();
-}
 
-/* ================= VOZ ================= */
-function toggleVoice(){
-  voice = !voice;
-  alert("Áudio: "+(voice?"ON":"OFF"));
+  document.getElementById("txt").innerText =
+    "Modo: " + m.toUpperCase();
 }
 
 </script>
