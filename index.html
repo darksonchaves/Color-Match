@@ -13,21 +13,20 @@ body {
   text-align:center;
 }
 
-h2 {
-  margin:10px;
-}
+h2 { margin:10px; }
 
 #video {
   width:90%;
   border-radius:10px;
 }
 
+/* BOTÕES */
 #controls button {
   padding:10px;
   margin:5px;
 }
 
-/* ÁREA DAS IMAGENS */
+/* PAINEL */
 #panel {
   display:flex;
   justify-content:space-around;
@@ -51,6 +50,41 @@ canvas {
   font-size:14px;
   color:#aaa;
 }
+
+/* 🎯 MIRA CENTRAL FIXA */
+#centerCross {
+  position:fixed;
+  top:50%;
+  left:50%;
+  width:30px;
+  height:30px;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  display:none;
+}
+
+#centerCross::before,
+#centerCross::after {
+  content:"";
+  position:absolute;
+  background:#00ffcc;
+}
+
+/* linha horizontal */
+#centerCross::before {
+  width:30px;
+  height:2px;
+  top:14px;
+  left:0;
+}
+
+/* linha vertical */
+#centerCross::after {
+  width:2px;
+  height:30px;
+  left:14px;
+  top:0;
+}
 </style>
 </head>
 
@@ -65,7 +99,10 @@ canvas {
 
 <video id="video" autoplay playsinline></video>
 
-<!-- PAINEL DE IMAGENS -->
+<!-- 🎯 MIRA CENTRAL -->
+<div id="centerCross"></div>
+
+<!-- PAINEL -->
 <div id="panel">
 
   <div class="box">
@@ -92,6 +129,8 @@ const ctxA = canvasA.getContext("2d");
 const canvasB = document.getElementById("canvasB");
 const ctxB = canvasB.getContext("2d");
 
+const centerCross = document.getElementById("centerCross");
+
 let mode = "static";
 let step = 0;
 
@@ -105,7 +144,7 @@ navigator.mediaDevices.getUserMedia({
   video.srcObject = stream;
 });
 
-/* ================= DETECÇÃO SIMPLES ================= */
+/* ================= COR SIMPLES ================= */
 function getColor(x,y){
 
   const c = document.createElement("canvas");
@@ -121,11 +160,10 @@ function getColor(x,y){
   return `RGB(${d[0]},${d[1]},${d[2]})`;
 }
 
-/* ================= DESENHAR MIRA ================= */
+/* ================= MIRA NO PONTO ================= */
 function drawPoint(ctx,x,y,color){
 
   ctx.strokeStyle = color;
-  ctx.fillStyle = color;
 
   ctx.beginPath();
   ctx.arc(x,y,10,0,Math.PI*2);
@@ -133,6 +171,7 @@ function drawPoint(ctx,x,y,color){
 
   ctx.beginPath();
   ctx.arc(x,y,3,0,Math.PI*2);
+  ctx.fillStyle = color;
   ctx.fill();
 }
 
@@ -144,17 +183,17 @@ video.addEventListener("click",(e)=>{
   const x = (e.clientX - rect.left) * (video.videoWidth / rect.width);
   const y = (e.clientY - rect.top) * (video.videoHeight / rect.height);
 
-  /* ================= ESTÁTICO ================= */
+  /* ================= STATIC ================= */
   if(mode === "static"){
     const color = getColor(x,y);
     document.getElementById("txt").innerText =
-      "Cor detectada: " + color;
+      "Cor: " + color;
   }
 
-  /* ================= COMPARAÇÃO ================= */
+  /* ================= COMPARE ================= */
   if(mode === "compare"){
 
-    // PRIMEIRA IMAGEM (REFERÊNCIA)
+    // PRIMEIRO PONTO
     if(step === 0){
 
       canvasA.width = video.videoWidth;
@@ -162,18 +201,17 @@ video.addEventListener("click",(e)=>{
 
       ctxA.drawImage(video,0,0);
 
-      const colorA = getColor(x,y);
-      sampleA = colorA;
+      sampleA = getColor(x,y);
 
       drawPoint(ctxA,x,y,"lime");
 
       document.getElementById("txt").innerText =
-        "Referência capturada: " + colorA;
+        "Referência: " + sampleA;
 
       step = 1;
     }
 
-    // SEGUNDA IMAGEM (COMPARAÇÃO)
+    // SEGUNDO PONTO
     else{
 
       canvasB.width = video.videoWidth;
@@ -181,15 +219,12 @@ video.addEventListener("click",(e)=>{
 
       ctxB.drawImage(video,0,0);
 
-      const colorB = getColor(x,y);
-      sampleB = colorB;
+      sampleB = getColor(x,y);
 
       drawPoint(ctxB,x,y,"red");
 
-      const text =
+      document.getElementById("txt").innerText =
         `Ref: ${sampleA} | Atual: ${sampleB}`;
-
-      document.getElementById("txt").innerText = text;
 
       step = 0;
     }
@@ -198,10 +233,14 @@ video.addEventListener("click",(e)=>{
 
 /* ================= MODO ================= */
 function setMode(m){
+
   mode = m;
   step = 0;
   sampleA = null;
   sampleB = null;
+
+  /* 🎯 ativa mira central só no compare */
+  centerCross.style.display = (m === "compare") ? "block" : "none";
 
   document.getElementById("txt").innerText =
     "Modo: " + m.toUpperCase();
