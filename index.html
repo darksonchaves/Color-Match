@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Stable Engine</title>
+<title>ColorMatch Pro – Static Touch Mode</title>
 
 <style>
 body {
@@ -29,15 +29,16 @@ video {
 
 <body>
 
-<h2>ColorMatch Pro – Stable Engine</h2>
+<h2>ColorMatch Pro – Static Mode (Touch Sampling)</h2>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
 
 <div id="box"></div>
-<p id="txt">Toque na imagem</p>
+<p id="txt">Toque em qualquer ponto da imagem</p>
 
 <script>
+
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -45,9 +46,9 @@ const ctx = canvas.getContext("2d");
 // ---------------- CAMERA ----------------
 navigator.mediaDevices.getUserMedia({
   video: { facingMode: { ideal: "environment" } }
-}).then(stream => video.srcObject = stream);
+}).then(s => video.srcObject = s);
 
-// ---------------- RGB → LAB ----------------
+// ---------------- LAB ----------------
 function rgbToLab(r,g,b){
 
   r/=255; g/=255; b/=255;
@@ -101,11 +102,11 @@ const colors = [
   {n:"Marrom", lab:rgbToLab(120,80,60)}
 ];
 
-// ---------------- CAPTURA ESTÁVEL ----------------
-function capture(x,y,cb){
+// ---------------- CAPTURA NO PONTO TOCADO ----------------
+function captureAtPoint(x,y,cb){
 
   let samples = [];
-  let frames = 6;
+  let frames = 5;
 
   function loop(){
 
@@ -114,21 +115,25 @@ function capture(x,y,cb){
 
     ctx.drawImage(video,0,0);
 
-    const size = 14;
-    const data = ctx.getImageData(x-size,y-size,size*2,size*2).data;
+    const size = 12;
+
+    const data = ctx.getImageData(
+      x-size,
+      y-size,
+      size*2,
+      size*2
+    ).data;
 
     let pixels = [];
 
     for(let i=0;i<data.length;i+=4){
       const r=data[i], g=data[i+1], b=data[i+2];
 
-      // remove pixels extremos (ruído real do sensor)
       if(r+g+b < 10 || r+g+b > 740) continue;
 
       pixels.push([r,g,b]);
     }
 
-    // ordenação para reduzir ruído
     pixels.sort((a,b)=>(a[0]+a[1]+a[2])-(b[0]+b[1]+b[2]));
 
     const cut = Math.floor(pixels.length*0.2);
@@ -196,17 +201,18 @@ function render(r,g,b){
     `${res.name} | ${res.confidence.toFixed(1)}%`;
 }
 
-// ---------------- TOQUE ----------------
+// ---------------- TOQUE REAL ----------------
 video.addEventListener("click",(e)=>{
 
   const rect = video.getBoundingClientRect();
 
-  const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
-  const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
+  const x = (e.clientX - rect.left) * (video.videoWidth / rect.width);
+  const y = (e.clientY - rect.top) * (video.videoHeight / rect.height);
 
-  capture(x,y,(r,g,b)=>render(r,g,b));
+  captureAtPoint(x,y,(r,g,b)=>render(r,g,b));
 
 });
+
 </script>
 
 </body>
