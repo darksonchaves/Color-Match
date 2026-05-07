@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Precision Select</title>
+<title>ColorMatch Pro – Audio Compare</title>
 
 <style>
 body {
@@ -18,7 +18,6 @@ video {
   border-radius:10px;
 }
 
-/* BOXES */
 #colorBox, #boxA, #boxB {
   width:90px;
   height:90px;
@@ -28,7 +27,6 @@ video {
   border:2px solid #fff;
 }
 
-/* SNAPSHOT */
 #snapshot {
   width:90%;
   margin:10px auto;
@@ -37,24 +35,22 @@ video {
   border:2px solid #00ffcc;
 }
 
-/* CROSSHAIR FIXO */
 #crosshair {
   position:absolute;
   top:50%;
   left:50%;
-  width:20px;
-  height:20px;
+  width:18px;
+  height:18px;
   transform:translate(-50%,-50%);
   border:2px solid #00ffcc;
   border-radius:50%;
   pointer-events:none;
 }
 
-/* PONTO TOCADO */
 #touchPoint {
   position:absolute;
-  width:18px;
-  height:18px;
+  width:16px;
+  height:16px;
   border-radius:50%;
   border:2px solid red;
   pointer-events:none;
@@ -76,18 +72,17 @@ button {
 
 <body>
 
-<h2>ColorMatch Pro – Precision Engine</h2>
+<h2>ColorMatch Pro – Audio Compare Engine</h2>
 
-<button onclick="setMode('static')">Modo Estático</button>
-<button onclick="setMode('compare1')">Comparar 1</button>
-<button onclick="setMode('compare2')">Comparar 2</button>
+<button onclick="setMode('static')">Estático</button>
+<button onclick="setMode('compare1')">Amostra 1</button>
+<button onclick="setMode('compare2')">Amostra 2</button>
 <button onclick="runCompare()">Comparar</button>
+<button onclick="toggleVoice()">🔊 Voz</button>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
 
-<!-- VISUAIS -->
-<div id="crosshair"></div>
 <div id="touchPoint"></div>
 
 <img id="snapshot"/>
@@ -98,7 +93,7 @@ button {
   <div id="boxB"></div>
 </div>
 
-<p id="result">Toque na tela para selecionar o ponto</p>
+<p id="result">Selecione uma cor</p>
 
 <script>
 
@@ -107,9 +102,18 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 let mode = "static";
+let voice = false;
 
 let sampleA = null;
 let sampleB = null;
+
+// ---------------- VOZ ----------------
+function speak(text){
+  if(!voice) return;
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "pt-BR";
+  speechSynthesis.speak(msg);
+}
 
 // ---------------- CAMERA ----------------
 navigator.mediaDevices.getUserMedia({
@@ -132,7 +136,7 @@ function rgbToLab(r,g,b){
   let z=r*0.0193 + g*0.1192 + b*0.9505;
 
   x/=0.95047;
-  y/=1.0;
+  y/=1;
   z/=1.08883;
 
   [x,y,z]=[x,y,z].map(v=>{
@@ -153,6 +157,20 @@ function deltaE(a,b){
     (a.a-b.a)**2 +
     (a.b-b.b)**2
   );
+}
+
+// ---------------- NOMES ----------------
+function getColorName(r,g,b){
+  if(r<30 && g<30 && b<30) return "Preto";
+  if(r>220 && g>220 && b>220) return "Branco";
+  if(r>200 && g<80 && b<80) return "Vermelho";
+  if(r<80 && g>200 && b<80) return "Verde";
+  if(r<80 && g<80 && b>200) return "Azul";
+  if(r>200 && g>200 && b<100) return "Amarelo";
+  if(r>200 && g>120 && b<80) return "Laranja";
+  if(r>150 && g<80 && b>150) return "Rosa";
+  if(r>120 && g<80 && b>120) return "Roxo";
+  return "Indefinida";
 }
 
 // ---------------- CAPTURA ----------------
@@ -182,11 +200,12 @@ function capture(x,y){
 
   return {
     rgb:{r,g,b},
-    lab: rgbToLab(r,g,b)
+    lab: rgbToLab(r,g,b),
+    name: getColorName(r,g,b)
   };
 }
 
-// ---------------- CLICK + MIRA VISUAL ----------------
+// ---------------- CLICK ----------------
 video.addEventListener("click",(e)=>{
 
   const rect = video.getBoundingClientRect();
@@ -194,7 +213,6 @@ video.addEventListener("click",(e)=>{
   const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
   const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
 
-  // 🔴 ponto visual tocado
   const point = document.getElementById("touchPoint");
   point.style.left = e.clientX + "px";
   point.style.top = e.clientY + "px";
@@ -209,19 +227,22 @@ video.addEventListener("click",(e)=>{
 
   if(mode === "static"){
     document.getElementById("colorBox").style.background = color;
-    document.getElementById("result").innerText = "Cor: " + color;
+    document.getElementById("result").innerText = sample.name;
+    speak(sample.name);
   }
 
   if(mode === "compare1"){
     sampleA = sample;
     document.getElementById("boxA").style.background = color;
-    document.getElementById("result").innerText = "Amostra 1 selecionada";
+    document.getElementById("result").innerText = "Amostra 1: " + sample.name;
+    speak(sample.name);
   }
 
   if(mode === "compare2"){
     sampleB = sample;
     document.getElementById("boxB").style.background = color;
-    document.getElementById("result").innerText = "Amostra 2 selecionada";
+    document.getElementById("result").innerText = "Amostra 2: " + sample.name;
+    speak(sample.name);
   }
 
 });
@@ -239,13 +260,23 @@ function runCompare(){
   const similarity = Math.max(0, 100 - d * 2.5);
   const diff = 100 - similarity;
 
-  document.getElementById("result").innerText =
-    `Similaridade: ${similarity.toFixed(1)}% | Diferença: ${diff.toFixed(1)}%`;
+  const text =
+    `Cor A: ${sampleA.name}. Cor B: ${sampleB.name}. Similaridade ${similarity.toFixed(1)}%. Diferença ${diff.toFixed(1)}%.`;
+
+  document.getElementById("result").innerText = text;
+
+  speak(text);
 }
 
 // ---------------- MODE ----------------
 function setMode(m){
   mode = m;
+}
+
+// ---------------- VOZ ----------------
+function toggleVoice(){
+  voice = !voice;
+  alert("Voz: " + (voice ? "ATIVADA" : "DESATIVADA"));
 }
 
 </script>
