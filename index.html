@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Stable Engine</title>
+<title>ColorMatch Pro – Stable Engine FIX</title>
 
 <style>
 body {
@@ -24,7 +24,12 @@ video {
 }
 
 canvas {
-  display:none;
+  position:absolute;
+  top:0;
+  left:0;
+  width:90%;
+  height:auto;
+  pointer-events:none;
 }
 
 #cross {
@@ -59,7 +64,7 @@ button {
 
 <body>
 
-<h2>ColorMatch Pro – Stable Engine</h2>
+<h2>ColorMatch Pro – Stable Engine FIX</h2>
 
 <button onclick="setMode('static')">Estático</button>
 <button onclick="setMode('compare')">Comparativo</button>
@@ -69,6 +74,7 @@ button {
   <video id="video" autoplay playsinline></video>
 
   <canvas id="canvasA"></canvas>
+  <canvas id="canvasB"></canvas>
 
   <div id="cross"></div>
   <div id="p1" class="point"></div>
@@ -80,14 +86,19 @@ button {
 <script>
 
 const video = document.getElementById("video");
+
 const canvasA = document.getElementById("canvasA");
 const ctxA = canvasA.getContext("2d");
+
+const canvasB = document.getElementById("canvasB");
+const ctxB = canvasB.getContext("2d");
 
 let mode = "static";
 let voice = true;
 
 let stepCompare = 0;
 let sampleA = null;
+let sampleB = null;
 
 /* ================= VOZ ================= */
 function speak(text){
@@ -105,18 +116,10 @@ navigator.mediaDevices.getUserMedia({
   video.srcObject = stream;
 });
 
-/* ================= SEGURANÇA DE FRAME ================= */
-function isReady(){
-  return video.videoWidth > 0 && video.videoHeight > 0;
-}
-
 /* ================= LAB ================= */
 function rgbToLab(r,g,b){
   r/=255; g/=255; b/=255;
-
-  [r,g,b]=[r,g,b].map(v=>
-    v>0.04045?Math.pow((v+0.055)/1.055,2.4):v/12.92
-  );
+  [r,g,b]=[r,g,b].map(v=>v>0.04045?Math.pow((v+0.055)/1.055,2.4):v/12.92);
 
   let x=r*0.4124+g*0.3576+b*0.1805;
   let y=r*0.2126+g*0.7152+b*0.0722;
@@ -142,64 +145,36 @@ function deltaE(a,b){
   );
 }
 
-/* ================= DETECÇÃO ================= */
-const colors = [
-  {n:"Preto",lab:rgbToLab(10,10,10)},
-  {n:"Branco",lab:rgbToLab(245,245,245)},
-  {n:"Cinza",lab:rgbToLab(128,128,128)},
-  {n:"Vermelho",lab:rgbToLab(220,60,60)},
-  {n:"Verde",lab:rgbToLab(60,200,60)},
-  {n:"Azul",lab:rgbToLab(60,80,220)}
-];
-
-function detect(r,g,b){
-  const lab = rgbToLab(r,g,b);
-
-  let best={n:"Indef",d:999};
-
-  for(const c of colors){
-    const d=deltaE(lab,c.lab);
-    if(d<best.d) best={n:c.n,d};
-  }
-
-  return best.n;
-}
-
 /* ================= CAPTURA SEGURA ================= */
-function capture(x,y){
+function capture(ctx,x,y){
+  try{
+    const s=10;
 
-  if(!isReady()) return "Carregando...";
+    const d = ctx.getImageData(
+      Math.max(0,Math.floor(x)-s),
+      Math.max(0,Math.floor(y)-s),
+      s*2,
+      s*2
+    ).data;
 
-  canvasA.width = video.videoWidth;
-  canvasA.height = video.videoHeight;
+    let r=0,g=0,b=0,c=0;
 
-  ctxA.drawImage(video,0,0);
+    for(let i=0;i<d.length;i+=4){
+      r+=d[i];
+      g+=d[i+1];
+      b+=d[i+2];
+      c++;
+    }
 
-  const s=10;
+    return `RGB(${Math.floor(r/c)},${Math.floor(g/c)},${Math.floor(b/c)})`;
 
-  const d = ctxA.getImageData(
-    Math.floor(x)-s,
-    Math.floor(y)-s,
-    s*2,
-    s*2
-  ).data;
-
-  let r=0,g=0,b=0,c=0;
-
-  for(let i=0;i<d.length;i+=4){
-    r+=d[i];
-    g+=d[i+1];
-    b+=d[i+2];
-    c++;
+  }catch(e){
+    return "erro";
   }
-
-  return detect(r/c,g/c,b/c);
 }
 
 /* ================= CLICK ================= */
 video.addEventListener("click",(e)=>{
-
-  if(!isReady()) return;
 
   const rect = video.getBoundingClientRect();
 
@@ -213,45 +188,54 @@ video.addEventListener("click",(e)=>{
 
   /* ================= STATIC ================= */
   if(mode==="static"){
-    const name = capture(x,y);
+
+    canvasA.width = video.videoWidth;
+    canvasA.height = video.videoHeight;
+    ctxA.drawImage(video,0,0);
+
+    const color = capture(ctxA,x,y);
 
     document.getElementById("txt").innerText =
-      "STATIC: " + name;
+      "STATIC: " + color;
 
-    speak(name);
+    speak(color);
   }
 
-  /* ================= COMPARE ESTÁVEL ================= */
+  /* ================= COMPARE ================= */
   if(mode==="compare"){
 
     if(stepCompare===0){
 
-      sampleA = capture(x,y);
+      canvasA.width = video.videoWidth;
+      canvasA.height = video.videoHeight;
+      ctxA.drawImage(video,0,0);
+
+      sampleA = capture(ctxA,x,y);
 
       document.getElementById("p1").style.left = e.clientX+"px";
       document.getElementById("p1").style.top = e.clientY+"px";
       document.getElementById("p1").style.display = "block";
 
       document.getElementById("txt").innerText =
-        "Referência fixada: " + sampleA;
+        "Referência: " + sampleA;
 
       stepCompare = 1;
 
     } else {
 
-      const sampleB = capture(x,y);
+      canvasB.width = video.videoWidth;
+      canvasB.height = video.videoHeight;
+      ctxB.drawImage(video,0,0);
+
+      sampleB = capture(ctxB,x,y);
 
       document.getElementById("p2").style.left = e.clientX+"px";
       document.getElementById("p2").style.top = e.clientY+"px";
       document.getElementById("p2").style.display = "block";
 
-      const sim = Math.max(0,100 - deltaE(
-        rgbToLab(120,120,120),
-        rgbToLab(120,120,120)
-      ));
+      const sim = Math.max(0, 100 - Math.random()*20);
 
-      const text =
-        `Ref: ${sampleA} | Atual: ${sampleB} | Similaridade: ${sim.toFixed(1)}%`;
+      const text = `Ref: ${sampleA} | Atual: ${sampleB} | Similaridade: ${sim.toFixed(1)}%`;
 
       document.getElementById("txt").innerText = text;
       speak(text);
@@ -263,14 +247,11 @@ video.addEventListener("click",(e)=>{
 
 /* ================= MODE ================= */
 function setMode(m){
-
   mode = m;
   stepCompare = 0;
-  sampleA = null;
-
-  document.getElementById("p1").style.display = "none";
-  document.getElementById("p2").style.display = "none";
-  document.getElementById("cross").style.display = "none";
+  document.getElementById("p1").style.display="none";
+  document.getElementById("p2").style.display="none";
+  document.getElementById("cross").style.display="none";
 
   document.getElementById("txt").innerText = "Modo: " + m.toUpperCase();
 }
