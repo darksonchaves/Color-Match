@@ -125,6 +125,10 @@ canvas{
   vertical-align:middle;
 }
 
+.selectedColor{
+  background:#004d40 !important;
+}
+
 #txt{
   margin-top:15px;
   font-size:18px;
@@ -149,8 +153,12 @@ Estático
 Movimento
 </button>
 
-<button onclick="setMode('compare')">
-Comparar
+<button onclick="setMode('comparePoint')">
+Comparar Ponto a Ponto
+</button>
+
+<button onclick="setMode('compareDatabase')">
+Comparar Base de Dados
 </button>
 
 <button onclick="analyzeOEM()">
@@ -201,9 +209,11 @@ oninput="searchBrand()"
 <br>
 
 <select id="modelSelect" onchange="showModelColors()">
+
 <option value="">
 Selecione o modelo
 </option>
+
 </select>
 
 <div id="resultList"></div>
@@ -245,9 +255,12 @@ let voice = true;
 let lastSpeak = "";
 
 let compareA = null;
+
 let compareALab = null;
 
 let compareStep = 0;
+
+let selectedDatabaseColor = null;
 
 /* ================= FLASH ================= */
 
@@ -262,10 +275,13 @@ let processingPaused = false;
 /* ================= CAMERA ================= */
 
 navigator.mediaDevices.getUserMedia({
+
   video:{
     facingMode:"environment"
   }
+
 })
+
 .then(stream=>{
 
   video.srcObject = stream;
@@ -274,6 +290,7 @@ navigator.mediaDevices.getUserMedia({
   stream.getVideoTracks()[0];
 
 })
+
 .catch(()=>{
 
   alert("Erro ao acessar câmera");
@@ -319,9 +336,7 @@ async function toggleFlash(){
 
     if(!capabilities.torch){
 
-      alert(
-        "Flash não suportado"
-      );
+      alert("Flash não suportado");
 
       processingPaused = false;
       flashBusy = false;
@@ -332,11 +347,13 @@ async function toggleFlash(){
     flashOn = !flashOn;
 
     await streamTrack.applyConstraints({
+
       advanced:[
         {
           torch:flashOn
         }
       ]
+
     });
 
     await new Promise(resolve=>
@@ -347,9 +364,7 @@ async function toggleFlash(){
 
     flashOn = false;
 
-    alert(
-      "Falha no flash"
-    );
+    alert("Falha no flash");
   }
 
   processingPaused = false;
@@ -368,9 +383,11 @@ function rgbToLab(r,g,b){
   b/=255;
 
   [r,g,b]=[r,g,b].map(v=>
+
     v>0.04045
     ? Math.pow((v+0.055)/1.055,2.4)
     : v/12.92
+
   );
 
   let x =
@@ -393,15 +410,19 @@ function rgbToLab(r,g,b){
   z/=1.08883;
 
   [x,y,z]=[x,y,z].map(v=>
+
     v>0.008856
     ? Math.cbrt(v)
     : (7.787*v)+(16/116)
+
   );
 
   return{
+
     L:(116*y)-16,
     a:500*(x-y),
     b:200*(y-z)
+
   };
 }
 
@@ -410,9 +431,11 @@ function rgbToLab(r,g,b){
 function deltaE(a,b){
 
   return Math.sqrt(
+
     (a.L-b.L)**2 +
     (a.a-b.a)**2 +
     (a.b-b.b)**2
+
   );
 }
 
@@ -534,9 +557,11 @@ function captureRaw(x,y){
   }
 
   return{
+
     r:Math.round(r/c),
     g:Math.round(g/c),
     b:Math.round(b/c)
+
   };
 }
 
@@ -588,6 +613,7 @@ function analyzeOEM(){
   ).toFixed(1);
 
   const text =
+
   result.match.brand
   + " | "
   + result.match.model
@@ -612,26 +638,36 @@ function analyzeOEM(){
 function searchBrand(){
 
   const brand =
+
   document.getElementById("brandSearch")
   .value
   .trim()
   .toLowerCase();
 
   const models =
+
   [...new Set(
+
     oemDatabase
+
     .filter(item=>
+
       item.brand.toLowerCase()
       .includes(brand)
+
     )
+
     .map(item=>item.model)
+
   )]
+
   .sort();
 
   const select =
   document.getElementById("modelSelect");
 
   select.innerHTML =
+
   `<option value="">
   Selecione o modelo
   </option>`;
@@ -639,6 +675,7 @@ function searchBrand(){
   models.forEach(model=>{
 
     select.innerHTML +=
+
     `<option value="${model}">
       ${model}
     </option>`;
@@ -663,17 +700,22 @@ function showModelColors(){
   resultList.innerHTML = "";
 
   const colors =
+
   oemDatabase
+
   .filter(item=>item.model===model)
+
   .sort((a,b)=>
     a.name.localeCompare(b.name)
   );
 
-  colors.forEach(item=>{
+  colors.forEach((item,index)=>{
 
     resultList.innerHTML +=
 
-    `<div class="item">
+    `<div
+    class="item"
+    onclick="selectDatabaseColor(${index},'${item.name}')">
 
       <span
       class="colorBox"
@@ -713,6 +755,83 @@ function showModelColors(){
 
 }
 
+/* ================= SELECIONA COR DATABASE ================= */
+
+function selectDatabaseColor(index,colorName){
+
+  const model =
+  document.getElementById("modelSelect")
+  .value;
+
+  const colors =
+
+  oemDatabase
+
+  .filter(item=>item.model===model)
+
+  .sort((a,b)=>
+    a.name.localeCompare(b.name)
+  );
+
+  selectedDatabaseColor =
+  colors[index];
+
+  document.getElementById("txt").innerText =
+
+  "Cor de referência selecionada: "
+  + colorName;
+
+  speak(colorName);
+}
+
+/* ================= COMPARAR DATABASE ================= */
+
+function compareWithDatabase(sig){
+
+  if(!selectedDatabaseColor){
+
+    alert(
+      "Selecione uma cor da base de dados primeiro"
+    );
+
+    return;
+  }
+
+  const targetLab =
+  rgbToLab(sig.r,sig.g,sig.b);
+
+  const similarity =
+
+  Math.max(
+    0,
+    100 -
+    deltaE(
+      targetLab,
+      selectedDatabaseColor.lab
+    )
+  )
+
+  .toFixed(1);
+
+  const result =
+
+  "BASE OEM: "
+  + selectedDatabaseColor.name
+
+  + " | NOVA AMOSTRA: "
+
+  + similarity
+  + "% similar";
+
+  document.getElementById("txt").innerText =
+  result;
+
+  speak(
+    similarity
+    + " porcento similar"
+  );
+}
+
 /* ================= MOVIMENTO ================= */
 
 function moveLoop(){
@@ -726,12 +845,14 @@ function moveLoop(){
   }
 
   const sig =
+
   captureRaw(
     video.videoWidth/2,
     video.videoHeight/2
   );
 
   document.getElementById("txt").innerText =
+
   `RGB:
   ${sig.r},
   ${sig.g},
@@ -748,13 +869,48 @@ function setMode(m){
 
   compareStep = 0;
 
+  compareA = null;
+
+  compareALab = null;
+
   cross.style.display =
-  (m === "move" || m === "compare")
+
+  (
+    m === "move" ||
+    m === "comparePoint" ||
+    m === "compareDatabase"
+  )
+
   ? "block"
   : "none";
 
-  document.getElementById("txt").innerText =
-  "Modo: " + m.toUpperCase();
+  if(m === "comparePoint"){
+
+    document.getElementById("txt")
+    .innerText =
+
+    "Modo: COMPARAR PONTO A PONTO";
+
+  }
+
+  else if(m === "compareDatabase"){
+
+    document.getElementById("txt")
+    .innerText =
+
+    "Modo: COMPARAR COM BASE DE DADOS";
+
+  }
+
+  else{
+
+    document.getElementById("txt")
+    .innerText =
+
+    "Modo: "
+    + m.toUpperCase();
+
+  }
 
   if(m === "move"){
     moveLoop();
@@ -771,11 +927,13 @@ video.addEventListener("click",(e)=>{
   video.getBoundingClientRect();
 
   const x =
+
   (e.clientX - rect.left)
   *
   (video.videoWidth / rect.width);
 
   const y =
+
   (e.clientY - rect.top)
   *
   (video.videoHeight / rect.height);
@@ -783,18 +941,23 @@ video.addEventListener("click",(e)=>{
   const sig =
   captureRaw(x,y);
 
+/* ================= ESTATICO ================= */
+
   if(mode === "static"){
 
     analyzeOEM();
   }
 
-  if(mode === "compare"){
+/* ================= COMPARAR PONTO A PONTO ================= */
+
+  if(mode === "comparePoint"){
 
     if(compareStep === 0){
 
       compareA = sig;
 
       compareALab =
+
       rgbToLab(
         sig.r,
         sig.g,
@@ -805,11 +968,19 @@ video.addEventListener("click",(e)=>{
 
       document.getElementById("txt")
       .innerText =
-      "Primeira cor capturada";
 
-    }else{
+      "Primeiro ponto capturado";
+
+      speak(
+        "Primeiro ponto capturado"
+      );
+
+    }
+
+    else{
 
       const compareBLab =
+
       rgbToLab(
         sig.r,
         sig.g,
@@ -817,6 +988,7 @@ video.addEventListener("click",(e)=>{
       );
 
       const similarity =
+
       Math.max(
         0,
         100 -
@@ -828,7 +1000,8 @@ video.addEventListener("click",(e)=>{
 
       document.getElementById("txt")
       .innerText =
-      "Similaridade: "
+
+      "Similaridade entre pontos: "
       +
       similarity.toFixed(1)
       +
@@ -841,6 +1014,13 @@ video.addEventListener("click",(e)=>{
 
       compareStep = 0;
     }
+  }
+
+/* ================= COMPARAR DATABASE ================= */
+
+  if(mode === "compareDatabase"){
+
+    compareWithDatabase(sig);
   }
 
 });
