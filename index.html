@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Human Precision Engine</title>
+<title>ColorMatch Pro – Raw Sensor Mode</title>
 
 <style>
 body {
@@ -46,7 +46,7 @@ button {
 
 <body>
 
-<h2>ColorMatch Pro – Human Precision Engine</h2>
+<h2>ColorMatch Pro – Raw Sensor Mode</h2>
 
 <button onclick="setMode('static')">Estático</button>
 <button onclick="setMode('move')">Movimento</button>
@@ -68,177 +68,141 @@ const video = document.getElementById("video");
 const ctxA = canvasA.getContext("2d");
 const ctxB = canvasB.getContext("2d");
 
-let mode="static";
-let voice=true;
+let mode = "static";
+let voice = true;
 
-let lastSpokenColor="";
-let stableColor="";
-let stabilityCount=0;
+let lastSpeak = "";
+let lastFrameData = "";
 
 /* CAMERA */
 navigator.mediaDevices.getUserMedia({
   video:{facingMode:"environment"}
 }).then(s=>{
-  video.srcObject=s;
+  video.srcObject = s;
 });
 
 /* VOZ */
 function speak(t){
   if(!voice) return;
   speechSynthesis.cancel();
-  let msg=new SpeechSynthesisUtterance(t);
-  msg.lang="pt-BR";
+  const msg = new SpeechSynthesisUtterance(t);
+  msg.lang = "pt-BR";
   speechSynthesis.speak(msg);
 }
 
-/* ================= LAB MAIS HUMANO (REFORÇADO) ================= */
-function rgbToLab(r,g,b){
+/* ================= CAPTURA SENSOR PURA ================= */
+function captureRaw(x,y){
 
-  // normalização perceptiva leve (gamma + balanço)
-  r/=255; g/=255; b/=255;
-
-  [r,g,b]=[r,g,b].map(v=>
-    v>0.04045?Math.pow((v+0.055)/1.055,2.4):v/12.92
-  );
-
-  let x=r*0.4124+g*0.3576+b*0.1805;
-  let y=r*0.2126+g*0.7152+b*0.0722;
-  let z=r*0.0193+g*0.1192+b*0.9505;
-
-  x/=0.95047; y/=1; z/=1.08883;
-
-  [x,y,z]=[x,y,z].map(v=>
-    v>0.008856?Math.cbrt(v):(7.787*v)+(16/116)
-  );
-
-  return {
-    L:(116*y)-16,
-    a:500*(x-y),
-    b:200*(y-z)
-  };
-}
-
-/* ΔE */
-function deltaE(a,b){
-  return Math.sqrt(
-    (a.L-b.L)**2 +
-    (a.a-b.a)**2 +
-    (a.b-b.b)**2
-  );
-}
-
-/* ================= MOTOR EXPANDIDO (REALISTA) ================= */
-const colors = [
-
-  {n:"Preto",lab:rgbToLab(0,0,0)},
-  {n:"Branco",lab:rgbToLab(255,255,255)},
-  {n:"Cinza",lab:rgbToLab(128,128,128)},
-
-  {n:"Vermelho",lab:rgbToLab(220,30,30)},
-  {n:"Vinho",lab:rgbToLab(120,0,40)},
-
-  {n:"Laranja",lab:rgbToLab(255,140,40)},
-  {n:"Laranja Queimado",lab:rgbToLab(200,90,30)},
-
-  {n:"Amarelo",lab:rgbToLab(255,230,80)},
-
-  {n:"Verde",lab:rgbToLab(40,200,80)},
-
-  {n:"Azul",lab:rgbToLab(40,80,220)},
-  {n:"Azul Escuro",lab:rgbToLab(20,40,120)},
-
-  {n:"Rosa",lab:rgbToLab(255,105,180)},
-  {n:"Roxo",lab:rgbToLab(130,60,200)},
-
-  {n:"Marrom",lab:rgbToLab(120,70,40)},
-];
-
-/* DETECÇÃO COM PESO HUMANO */
-function detect(r,g,b){
-
-  const lab=rgbToLab(r,g,b);
-
-  let best=null;
-  let bestD=999;
-
-  for(let c of colors){
-
-    let d=deltaE(lab,c.lab);
-
-    // reforço perceptivo (evita confusão marrom/laranja/roxo)
-    if(c.n==="Marrom") d*=0.92;
-    if(c.n==="Roxo") d*=0.95;
-    if(c.n==="Azul") d*=1.05;
-
-    if(d<bestD){
-      bestD=d;
-      best=c.n;
-    }
-  }
-
-  return best;
-}
-
-/* CAPTURA */
-function capture(x,y){
-
-  canvasA.width=video.videoWidth;
-  canvasA.height=video.videoHeight;
+  canvasA.width = video.videoWidth;
+  canvasA.height = video.videoHeight;
 
   ctxA.drawImage(video,0,0);
 
-  let s=10;
-  let d=ctxA.getImageData(x-s,y-s,s*2,s*2).data;
+  const s = 10;
+  const data = ctxA.getImageData(x-s,y-s,s*2,s*2).data;
 
   let r=0,g=0,b=0,c=0;
 
-  for(let i=0;i<d.length;i+=4){
-    r+=d[i];
-    g+=d[i+1];
-    b+=d[i+2];
+  for(let i=0;i<data.length;i+=4){
+    r += data[i];
+    g += data[i+1];
+    b += data[i+2];
     c++;
   }
 
-  return detect(r/c,g/c,b/c);
+  r = Math.round(r/c);
+  g = Math.round(g/c);
+  b = Math.round(b/c);
+
+  return {r,g,b};
 }
 
-/* MOVIMENTO ULTRA ESTÁVEL */
+/* FORMATAÇÃO SIMPLES DE SAÍDA */
+function formatSignal(sig){
+  return `R:${sig.r} G:${sig.g} B:${sig.b}`;
+}
+
+/* ================= MOVIMENTO (MIRA CENTRAL) ================= */
 function moveLoop(){
 
-  if(mode!=="move") return;
+  if(mode !== "move") return;
 
-  let c=capture(video.videoWidth/2,video.videoHeight/2);
+  const sig = captureRaw(
+    video.videoWidth/2,
+    video.videoHeight/2
+  );
 
-  if(c===stableColor){
-    stabilityCount++;
-  } else {
-    stableColor=c;
-    stabilityCount=0;
+  const text = formatSignal(sig);
+
+  document.getElementById("txt").innerText =
+    "Movimento: " + text;
+
+  if(text !== lastSpeak){
+    speak(text);
+    lastSpeak = text;
   }
-
-  if(stabilityCount>=3 && c!==lastSpokenColor){
-    speak(c);
-    lastSpokenColor=c;
-  }
-
-  document.getElementById("txt").innerText="Movimento: "+c;
 
   requestAnimationFrame(moveLoop);
 }
 
-/* MODOS */
+/* ================= MODO ================= */
 function setMode(m){
-  mode=m;
-  stabilityCount=0;
-  document.getElementById("txt").innerText="Modo: "+m;
 
-  if(m==="move") moveLoop();
+  mode = m;
+
+  document.getElementById("cross").style.display =
+    (m === "move") ? "block" : "none";
+
+  document.getElementById("txt").innerText =
+    "Modo: " + m.toUpperCase();
+
+  if(m === "move") moveLoop();
 }
+
+/* ================= CLIQUE ================= */
+video.addEventListener("click",(e)=>{
+
+  const rect = video.getBoundingClientRect();
+
+  const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
+  const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
+
+  const sig = captureRaw(x,y);
+  const text = formatSignal(sig);
+
+  if(mode === "static"){
+    document.getElementById("txt").innerText =
+      "Estático: " + text;
+
+    speak(text);
+  }
+
+  if(mode === "compare"){
+
+    if(!window.A){
+      window.A = sig;
+      document.getElementById("txt").innerText =
+        "A capturado: " + text;
+    } else {
+      window.B = sig;
+
+      const result =
+        `A(${window.A.r},${window.A.g},${window.A.b}) → ` +
+        `B(${window.B.r},${window.B.g},${window.B.b})`;
+
+      document.getElementById("txt").innerText = result;
+      speak(result);
+
+      window.A = null;
+      window.B = null;
+    }
+  }
+});
 
 /* VOZ */
 function toggleVoice(){
-  voice=!voice;
-  alert("Áudio: "+(voice?"ON":"OFF"));
+  voice = !voice;
+  alert("Áudio: " + (voice ? "ON" : "OFF"));
 }
 
 </script>
