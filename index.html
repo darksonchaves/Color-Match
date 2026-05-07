@@ -72,7 +72,6 @@ let mode = "static";
 let voice = true;
 
 let lastSpeak = "";
-let lastFrameData = "";
 
 /* CAMERA */
 navigator.mediaDevices.getUserMedia({
@@ -110,19 +109,39 @@ function captureRaw(x,y){
     c++;
   }
 
-  r = Math.round(r/c);
-  g = Math.round(g/c);
-  b = Math.round(b/c);
-
-  return {r,g,b};
+  return {
+    r: Math.round(r/c),
+    g: Math.round(g/c),
+    b: Math.round(b/c)
+  };
 }
 
-/* FORMATAÇÃO SIMPLES DE SAÍDA */
+/* ================= NOME DA COR ================= */
+function getColorName(r,g,b){
+
+  if(r < 40 && g < 40 && b < 40) return "Preto";
+  if(r > 220 && g > 220 && b > 220) return "Branco";
+
+  if(r > 200 && g < 80 && b < 80) return "Vermelho";
+  if(r > 200 && g > 120 && b < 80) return "Laranja";
+  if(r > 220 && g > 200 && b < 100) return "Amarelo";
+
+  if(g > 180 && r < 120 && b < 120) return "Verde";
+  if(b > 180 && r < 120 && g < 120) return "Azul";
+
+  if(r > 200 && g < 120 && b > 150) return "Rosa";
+  if(r > 130 && b > 150 && g < 120) return "Roxo";
+  if(r > 100 && g > 60 && b < 60) return "Marrom";
+
+  return "Indefinido";
+}
+
+/* FORMATAÇÃO */
 function formatSignal(sig){
-  return `R:${sig.r} G:${sig.g} B:${sig.b}`;
+  return getColorName(sig.r,sig.g,sig.b);
 }
 
-/* ================= MOVIMENTO (MIRA CENTRAL) ================= */
+/* ================= MOVIMENTO ================= */
 function moveLoop(){
 
   if(mode !== "move") return;
@@ -132,14 +151,14 @@ function moveLoop(){
     video.videoHeight/2
   );
 
-  const text = formatSignal(sig);
+  const color = formatSignal(sig);
 
   document.getElementById("txt").innerText =
-    "Movimento: " + text;
+    "Movimento: " + color;
 
-  if(text !== lastSpeak){
-    speak(text);
-    lastSpeak = text;
+  if(color !== lastSpeak){
+    speak(color);
+    lastSpeak = color;
   }
 
   requestAnimationFrame(moveLoop);
@@ -168,13 +187,13 @@ video.addEventListener("click",(e)=>{
   const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
 
   const sig = captureRaw(x,y);
-  const text = formatSignal(sig);
+  const color = formatSignal(sig);
 
   if(mode === "static"){
     document.getElementById("txt").innerText =
-      "Estático: " + text;
+      "Estático: " + color;
 
-    speak(text);
+    speak(color);
   }
 
   if(mode === "compare"){
@@ -182,13 +201,13 @@ video.addEventListener("click",(e)=>{
     if(!window.A){
       window.A = sig;
       document.getElementById("txt").innerText =
-        "A capturado: " + text;
+        "A: " + color;
     } else {
       window.B = sig;
 
       const result =
-        `A(${window.A.r},${window.A.g},${window.A.b}) → ` +
-        `B(${window.B.r},${window.B.g},${window.B.b})`;
+        `A(${getColorName(window.A.r,window.A.g,window.A.b)}) → ` +
+        `B(${getColorName(window.B.r,window.B.g,window.B.b)})`;
 
       document.getElementById("txt").innerText = result;
       speak(result);
