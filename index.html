@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Hybrid Vision Engine</title>
+<title>ColorMatch Pro – Precise Static Capture</title>
 
 <style>
 body {
@@ -27,7 +27,6 @@ video {
   border:2px solid #fff;
 }
 
-/* snapshot do modo estático */
 #snapshot {
   width:90%;
   margin:10px auto;
@@ -36,7 +35,6 @@ video {
   border:2px solid #00ffcc;
 }
 
-/* mira live */
 #cross {
   position:absolute;
   left:50%;
@@ -51,7 +49,6 @@ video {
   box-shadow:0 0 10px #00ffcc;
 }
 
-/* label live */
 #liveLabel {
   position:absolute;
   left:50%;
@@ -74,7 +71,7 @@ button {
 
 <body>
 
-<h2>ColorMatch Pro – Hybrid Vision</h2>
+<h2>ColorMatch Pro – Precise Engine</h2>
 
 <button onclick="setMode('static')">Modo Estático</button>
 <button onclick="setMode('live')">Modo Movimento</button>
@@ -82,7 +79,7 @@ button {
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
 
-<!-- 🔥 snapshot visual do modo estático -->
+<!-- 🔥 snapshot apenas da área selecionada -->
 <img id="snapshot"/>
 
 <div id="box"></div>
@@ -182,18 +179,19 @@ function detect(r,g,b){
   };
 }
 
-// ---------------- STATIC CAPTURE ----------------
-function captureStatic(x,y){
+// ---------------- STATIC CAPTURE (PRECISO) ----------------
+function captureStaticArea(x,y,size=14){
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
   ctx.drawImage(video,0,0);
 
-  const size = 12;
-
   const data = ctx.getImageData(
-    x-size,y-size,size*2,size*2
+    x-size,
+    y-size,
+    size*2,
+    size*2
   ).data;
 
   let r=0,g=0,b=0,c=0;
@@ -207,7 +205,7 @@ function captureStatic(x,y){
 
   r/=c; g/=c; b/=c;
 
-  return detect(r,g,b);
+  return { r,g,b, result: detect(r,g,b) };
 }
 
 // ---------------- LIVE CAPTURE ----------------
@@ -241,7 +239,7 @@ function captureLive(){
   return detect(r,g,b);
 }
 
-// ---------------- STATIC MODE CLICK ----------------
+// ---------------- CLICK STATIC ----------------
 video.addEventListener("click",(e)=>{
 
   if(mode !== "static") return;
@@ -251,22 +249,37 @@ video.addEventListener("click",(e)=>{
   const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
   const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
 
-  // 🔥 snapshot visual
+  const data = captureStaticArea(x,y);
+
+  // 🔥 SNAPSHOT SOMENTE DA ÁREA SELECIONADA
+  const size = 14;
+
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
   ctx.drawImage(video,0,0);
 
-  snapshot.src = canvas.toDataURL();
+  const crop = ctx.getImageData(
+    x-size,
+    y-size,
+    size*2,
+    size*2
+  );
+
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = size*2;
+  tempCanvas.height = size*2;
+
+  tempCanvas.getContext("2d").putImageData(crop,0,0);
+
+  snapshot.src = tempCanvas.toDataURL();
   snapshot.style.display = "block";
 
-  const res = captureStatic(x,y);
-
   document.getElementById("box").style.background =
-    `rgb(255,255,255)`;
+    `rgb(${data.r},${data.g},${data.b})`;
 
   document.getElementById("txt").innerText =
-    `STATIC: ${res.name} | ${res.confidence.toFixed(1)}%`;
+    `STATIC: ${data.result.name} | ${data.result.confidence.toFixed(1)}%`;
 });
 
 // ---------------- LIVE LOOP ----------------
