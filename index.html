@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Precision Engine v2</title>
+<title>ColorMatch Pro – Human Precision Engine</title>
 
 <style>
 body {
@@ -46,7 +46,7 @@ button {
 
 <body>
 
-<h2>ColorMatch Pro – Precision Engine v2</h2>
+<h2>ColorMatch Pro – Human Precision Engine</h2>
 
 <button onclick="setMode('static')">Estático</button>
 <button onclick="setMode('move')">Movimento</button>
@@ -71,10 +71,9 @@ const ctxB = canvasB.getContext("2d");
 let mode="static";
 let voice=true;
 
-// controle de movimento
-let lastSpokenColor = "";
-let stableColor = "";
-let stabilityCount = 0;
+let lastSpokenColor="";
+let stableColor="";
+let stabilityCount=0;
 
 /* CAMERA */
 navigator.mediaDevices.getUserMedia({
@@ -92,8 +91,10 @@ function speak(t){
   speechSynthesis.speak(msg);
 }
 
-/* LAB */
+/* ================= LAB MAIS HUMANO (REFORÇADO) ================= */
 function rgbToLab(r,g,b){
+
+  // normalização perceptiva leve (gamma + balanço)
   r/=255; g/=255; b/=255;
 
   [r,g,b]=[r,g,b].map(v=>
@@ -106,7 +107,9 @@ function rgbToLab(r,g,b){
 
   x/=0.95047; y/=1; z/=1.08883;
 
-  [x,y,z]=[x,y,z].map(v=>v>0.008856?Math.cbrt(v):(7.787*v)+(16/116));
+  [x,y,z]=[x,y,z].map(v=>
+    v>0.008856?Math.cbrt(v):(7.787*v)+(16/116)
+  );
 
   return {
     L:(116*y)-16,
@@ -118,31 +121,39 @@ function rgbToLab(r,g,b){
 /* ΔE */
 function deltaE(a,b){
   return Math.sqrt(
-    (a.L-b.L)**2+
-    (a.a-b.a)**2+
+    (a.L-b.L)**2 +
+    (a.a-b.a)**2 +
     (a.b-b.b)**2
   );
 }
 
-/* CORES MAIS PRECISAS (REFORÇADAS) */
-const colors=[
+/* ================= MOTOR EXPANDIDO (REALISTA) ================= */
+const colors = [
+
   {n:"Preto",lab:rgbToLab(0,0,0)},
   {n:"Branco",lab:rgbToLab(255,255,255)},
   {n:"Cinza",lab:rgbToLab(128,128,128)},
 
   {n:"Vermelho",lab:rgbToLab(220,30,30)},
+  {n:"Vinho",lab:rgbToLab(120,0,40)},
+
   {n:"Laranja",lab:rgbToLab(255,140,40)},
+  {n:"Laranja Queimado",lab:rgbToLab(200,90,30)},
+
   {n:"Amarelo",lab:rgbToLab(255,230,80)},
 
   {n:"Verde",lab:rgbToLab(40,200,80)},
-  {n:"Azul",lab:rgbToLab(40,80,220)},
 
-  // 🔥 reforço de distinção
+  {n:"Azul",lab:rgbToLab(40,80,220)},
+  {n:"Azul Escuro",lab:rgbToLab(20,40,120)},
+
   {n:"Rosa",lab:rgbToLab(255,105,180)},
   {n:"Roxo",lab:rgbToLab(130,60,200)},
+
+  {n:"Marrom",lab:rgbToLab(120,70,40)},
 ];
 
-/* DETECÇÃO COM TOLERÂNCIA */
+/* DETECÇÃO COM PESO HUMANO */
 function detect(r,g,b){
 
   const lab=rgbToLab(r,g,b);
@@ -151,17 +162,19 @@ function detect(r,g,b){
   let bestD=999;
 
   for(let c of colors){
+
     let d=deltaE(lab,c.lab);
 
-    // penaliza cores muito próximas (evita confusão rosa/roxo/vermelho)
+    // reforço perceptivo (evita confusão marrom/laranja/roxo)
+    if(c.n==="Marrom") d*=0.92;
+    if(c.n==="Roxo") d*=0.95;
+    if(c.n==="Azul") d*=1.05;
+
     if(d<bestD){
       bestD=d;
       best=c.n;
     }
   }
-
-  // filtro de confiança (IMPORTANTE)
-  if(bestD>35) return "Indefinido";
 
   return best;
 }
@@ -196,7 +209,6 @@ function moveLoop(){
 
   let c=capture(video.videoWidth/2,video.videoHeight/2);
 
-  // estabilidade de leitura (3 frames iguais)
   if(c===stableColor){
     stabilityCount++;
   } else {
@@ -209,8 +221,7 @@ function moveLoop(){
     lastSpokenColor=c;
   }
 
-  document.getElementById("txt").innerText=
-    "Movimento: "+c;
+  document.getElementById("txt").innerText="Movimento: "+c;
 
   requestAnimationFrame(moveLoop);
 }
@@ -219,7 +230,6 @@ function moveLoop(){
 function setMode(m){
   mode=m;
   stabilityCount=0;
-
   document.getElementById("txt").innerText="Modo: "+m;
 
   if(m==="move") moveLoop();
