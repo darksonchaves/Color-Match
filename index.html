@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Hybrid Engine</title>
+<title>ColorMatch Pro – Dual Engine</title>
 
 <style>
 body {
@@ -11,7 +11,6 @@ body {
   background:#111;
   color:#fff;
   position:relative;
-  margin:0;
 }
 
 video {
@@ -27,8 +26,7 @@ video {
   border:2px solid #fff;
 }
 
-/* mira centro (modo live) */
-#centerCross {
+#cross {
   position:absolute;
   left:50%;
   top:50%;
@@ -51,7 +49,7 @@ button {
 
 <body>
 
-<h2>ColorMatch Pro – Hybrid Mode</h2>
+<h2>ColorMatch Pro – Dual Mode Engine</h2>
 
 <button onclick="setMode('static')">Modo Estático</button>
 <button onclick="setMode('live')">Modo Movimento</button>
@@ -62,7 +60,7 @@ button {
 <div id="box"></div>
 <p id="txt">Selecione um modo</p>
 
-<div id="centerCross"></div>
+<div id="cross"></div>
 
 <script>
 
@@ -70,10 +68,9 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-const centerCross = document.getElementById("centerCross");
+const cross = document.getElementById("cross");
 
-let mode = null;
-let running = false;
+let mode = "static";
 
 // ---------------- CAMERA ----------------
 navigator.mediaDevices.getUserMedia({
@@ -154,8 +151,36 @@ function detect(r,g,b){
   };
 }
 
-// ---------------- CAPTURA CENTRAL ----------------
-function captureCenter(){
+// ---------------- CAPTURA ESTÁTICA ----------------
+function captureStatic(x,y){
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  ctx.drawImage(video,0,0);
+
+  const size = 12;
+
+  const data = ctx.getImageData(
+    x-size,y-size,size*2,size*2
+  ).data;
+
+  let r=0,g=0,b=0,c=0;
+
+  for(let i=0;i<data.length;i+=4){
+    r+=data[i];
+    g+=data[i+1];
+    b+=data[i+2];
+    c++;
+  }
+
+  r/=c; g/=c; b/=c;
+
+  return detect(r,g,b);
+}
+
+// ---------------- CAPTURA LIVE (CENTRO) ----------------
+function captureLive(){
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
@@ -195,42 +220,21 @@ video.addEventListener("click",(e)=>{
   const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
   const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
 
-  const size = 12;
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  ctx.drawImage(video,0,0);
-
-  const data = ctx.getImageData(x-size,y-size,size*2,size*2).data;
-
-  let r=0,g=0,b=0,c=0;
-
-  for(let i=0;i<data.length;i+=4){
-    r+=data[i]; g+=data[i+1]; b+=data[i+2];
-    c++;
-  }
-
-  r/=c; g/=c; b/=c;
-
-  const res = detect(r,g,b);
+  const res = captureStatic(x,y);
 
   document.getElementById("box").style.background =
-    `rgb(${r},${g},${b})`;
+    `rgb(255,255,255)`;
 
   document.getElementById("txt").innerText =
     `${res.name} | ${res.confidence.toFixed(1)}%`;
 });
 
-// ---------------- LIVE MODE ----------------
+// ---------------- LIVE LOOP ----------------
 function loop(){
 
   if(mode !== "live") return;
 
-  const res = captureCenter();
-
-  document.getElementById("box").style.background =
-    "rgb(255,255,255)";
+  const res = captureLive();
 
   document.getElementById("txt").innerText =
     `LIVE: ${res.name} | ${res.confidence.toFixed(1)}%`;
@@ -238,18 +242,16 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
-// ---------------- MODE SWITCH ----------------
+// ---------------- SWITCH MODE ----------------
 function setMode(m){
 
   mode = m;
 
   if(m === "live"){
-    centerCross.style.display = "block";
+    cross.style.display = "block";
     loop();
-  }
-
-  if(m === "static"){
-    centerCross.style.display = "none";
+  } else {
+    cross.style.display = "none";
   }
 }
 
