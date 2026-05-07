@@ -2,10 +2,10 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Raw Sensor Mode</title>
+<title>ColorMatch Pro – Raw Sensor Precision</title>
 
 <style>
-body {
+body{
   margin:0;
   font-family:Arial;
   background:#111;
@@ -13,23 +13,23 @@ body {
   text-align:center;
 }
 
-video {
+video{
   width:90%;
   border-radius:10px;
 }
 
-canvas {
+canvas{
   width:90%;
   border-radius:10px;
   background:#222;
 }
 
-button {
+button{
   padding:10px;
   margin:5px;
 }
 
-#cross {
+#cross{
   position:fixed;
   top:50%;
   left:50%;
@@ -46,12 +46,14 @@ button {
 
 <body>
 
-<h2>ColorMatch Pro – Raw Sensor Mode</h2>
+<h2>ColorMatch Pro – Raw Sensor Precision</h2>
 
 <button onclick="setMode('static')">Estático</button>
 <button onclick="setMode('move')">Movimento</button>
 <button onclick="setMode('compare')">Comparar</button>
 <button onclick="toggleVoice()">🔊 Áudio</button>
+
+<br>
 
 <video id="video" autoplay playsinline></video>
 
@@ -65,6 +67,9 @@ button {
 <script>
 
 const video = document.getElementById("video");
+const canvasA = document.getElementById("canvasA");
+const canvasB = document.getElementById("canvasB");
+
 const ctxA = canvasA.getContext("2d");
 const ctxB = canvasB.getContext("2d");
 
@@ -73,23 +78,34 @@ let voice = true;
 
 let lastSpeak = "";
 
-/* CAMERA */
+let compareA = null;
+
+/* ================= CAMERA ================= */
+
 navigator.mediaDevices.getUserMedia({
-  video:{facingMode:"environment"}
-}).then(s=>{
-  video.srcObject = s;
+  video:{
+    facingMode:"environment"
+  }
+}).then(stream=>{
+  video.srcObject = stream;
 });
 
-/* VOZ */
-function speak(t){
+/* ================= VOZ ================= */
+
+function speak(text){
+
   if(!voice) return;
+
   speechSynthesis.cancel();
-  const msg = new SpeechSynthesisUtterance(t);
+
+  const msg = new SpeechSynthesisUtterance(text);
   msg.lang = "pt-BR";
+
   speechSynthesis.speak(msg);
 }
 
-/* ================= CAPTURA SENSOR PURA ================= */
+/* ================= CAPTURA ================= */
+
 function captureRaw(x,y){
 
   canvasA.width = video.videoWidth;
@@ -97,51 +113,191 @@ function captureRaw(x,y){
 
   ctxA.drawImage(video,0,0);
 
-  const s = 10;
-  const data = ctxA.getImageData(x-s,y-s,s*2,s*2).data;
+  const s = 12;
+
+  const data = ctxA.getImageData(
+    x-s,
+    y-s,
+    s*2,
+    s*2
+  ).data;
 
   let r=0,g=0,b=0,c=0;
 
   for(let i=0;i<data.length;i+=4){
+
     r += data[i];
     g += data[i+1];
     b += data[i+2];
+
     c++;
   }
 
+  r = Math.round(r/c);
+  g = Math.round(g/c);
+  b = Math.round(b/c);
+
+  return {r,g,b};
+}
+
+/* ================= RGB -> HSL ================= */
+
+function rgbToHsl(r,g,b){
+
+  r/=255;
+  g/=255;
+  b/=255;
+
+  const max = Math.max(r,g,b);
+  const min = Math.min(r,g,b);
+
+  let h,s,l;
+
+  l = (max + min) / 2;
+
+  if(max === min){
+
+    h = s = 0;
+
+  }else{
+
+    const d = max - min;
+
+    s = l > 0.5
+      ? d / (2 - max - min)
+      : d / (max + min);
+
+    switch(max){
+
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+      break;
+
+      case g:
+        h = (b - r) / d + 2;
+      break;
+
+      case b:
+        h = (r - g) / d + 4;
+      break;
+    }
+
+    h /= 6;
+  }
+
   return {
-    r: Math.round(r/c),
-    g: Math.round(g/c),
-    b: Math.round(b/c)
+    h:h*360,
+    s:s*100,
+    l:l*100
   };
 }
 
-/* ================= NOME DA COR ================= */
+/* ================= IDENTIFICAÇÃO ================= */
+
 function getColorName(r,g,b){
 
-  if(r < 40 && g < 40 && b < 40) return "Preto";
-  if(r > 220 && g > 220 && b > 220) return "Branco";
+  const hsl = rgbToHsl(r,g,b);
 
-  if(r > 200 && g < 80 && b < 80) return "Vermelho";
-  if(r > 200 && g > 120 && b < 80) return "Laranja";
-  if(r > 220 && g > 200 && b < 100) return "Amarelo";
+  const h = hsl.h;
+  const s = hsl.s;
+  const l = hsl.l;
 
-  if(g > 180 && r < 120 && b < 120) return "Verde";
-  if(b > 180 && r < 120 && g < 120) return "Azul";
+  /* PRETO */
+  if(l < 12){
+    return "Preto";
+  }
 
-  if(r > 200 && g < 120 && b > 150) return "Rosa";
-  if(r > 130 && b > 150 && g < 120) return "Roxo";
-  if(r > 100 && g > 60 && b < 60) return "Marrom";
+  /* BRANCO */
+  if(l > 90 && s < 15){
+    return "Branco";
+  }
+
+  /* CINZA */
+  if(s < 12){
+    return "Cinza";
+  }
+
+  /* MARROM */
+  if(
+    h >= 15 &&
+    h <= 40 &&
+    l < 45
+  ){
+    return "Marrom";
+  }
+
+  /* VERMELHO */
+  if(
+    h <= 12 ||
+    h >= 345
+  ){
+    return "Vermelho";
+  }
+
+  /* LARANJA */
+  if(
+    h > 12 &&
+    h <= 40
+  ){
+    return "Laranja";
+  }
+
+  /* AMARELO */
+  if(
+    h > 40 &&
+    h <= 70
+  ){
+    return "Amarelo";
+  }
+
+  /* VERDE */
+  if(
+    h > 70 &&
+    h <= 165
+  ){
+    return "Verde";
+  }
+
+  /* AZUL */
+  if(
+    h > 165 &&
+    h <= 255
+  ){
+    return "Azul";
+  }
+
+  /* ROXO */
+  if(
+    h > 255 &&
+    h <= 315
+  ){
+    return "Roxo";
+  }
+
+  /* ROSA */
+  if(
+    h > 315 &&
+    h < 345
+  ){
+    return "Rosa";
+  }
 
   return "Indefinido";
 }
 
-/* FORMATAÇÃO */
-function formatSignal(sig){
-  return getColorName(sig.r,sig.g,sig.b);
+/* ================= TEXTO ================= */
+
+function signalText(sig){
+
+  return getColorName(
+    sig.r,
+    sig.g,
+    sig.b
+  );
 }
 
 /* ================= MOVIMENTO ================= */
+
 function moveLoop(){
 
   if(mode !== "move") return;
@@ -151,77 +307,115 @@ function moveLoop(){
     video.videoHeight/2
   );
 
-  const color = formatSignal(sig);
+  const color = signalText(sig);
 
   document.getElementById("txt").innerText =
     "Movimento: " + color;
 
   if(color !== lastSpeak){
+
     speak(color);
+
     lastSpeak = color;
   }
 
   requestAnimationFrame(moveLoop);
 }
 
-/* ================= MODO ================= */
+/* ================= MODOS ================= */
+
 function setMode(m){
 
   mode = m;
 
+  lastSpeak = "";
+
   document.getElementById("cross").style.display =
-    (m === "move") ? "block" : "none";
+    (m === "move")
+    ? "block"
+    : "none";
 
   document.getElementById("txt").innerText =
     "Modo: " + m.toUpperCase();
 
-  if(m === "move") moveLoop();
+  if(m === "move"){
+    moveLoop();
+  }
 }
 
 /* ================= CLIQUE ================= */
+
 video.addEventListener("click",(e)=>{
 
   const rect = video.getBoundingClientRect();
 
-  const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
-  const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
+  const x =
+    (e.clientX - rect.left)
+    *
+    (video.videoWidth / rect.width);
+
+  const y =
+    (e.clientY - rect.top)
+    *
+    (video.videoHeight / rect.height);
 
   const sig = captureRaw(x,y);
-  const color = formatSignal(sig);
+
+  const color = signalText(sig);
+
+  /* ESTÁTICO */
 
   if(mode === "static"){
+
     document.getElementById("txt").innerText =
       "Estático: " + color;
 
     speak(color);
   }
 
+  /* COMPARAÇÃO */
+
   if(mode === "compare"){
 
-    if(!window.A){
-      window.A = sig;
+    if(compareA === null){
+
+      compareA = sig;
+
       document.getElementById("txt").innerText =
-        "A: " + color;
-    } else {
-      window.B = sig;
+        "A: " + signalText(compareA);
+
+    }else{
+
+      const compareB = sig;
 
       const result =
-        `A(${getColorName(window.A.r,window.A.g,window.A.b)}) → ` +
-        `B(${getColorName(window.B.r,window.B.g,window.B.b)})`;
+        signalText(compareA)
+        +
+        " → "
+        +
+        signalText(compareB);
 
-      document.getElementById("txt").innerText = result;
+      document.getElementById("txt").innerText =
+        result;
+
       speak(result);
 
-      window.A = null;
-      window.B = null;
+      compareA = null;
     }
   }
 });
 
-/* VOZ */
+/* ================= ÁUDIO ================= */
+
 function toggleVoice(){
+
   voice = !voice;
-  alert("Áudio: " + (voice ? "ON" : "OFF"));
+
+  alert(
+    "Áudio: "
+    +
+    (voice ? "ON" : "OFF")
+  );
 }
 
 </script>
