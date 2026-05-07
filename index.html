@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
+
 <head>
+
+<meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>
-ColorMatch Pro – Toyota OEM Edition
+ColorMatch Pro – OEM MultiBrand Edition
 </title>
 
 <style>
@@ -17,21 +21,44 @@ body{
   text-align:center;
 }
 
+h2{
+  margin-top:15px;
+}
+
 video{
-  width:90%;
-  border-radius:10px;
+  width:92%;
+  border-radius:12px;
+  border:2px solid #333;
 }
 
 button{
   padding:10px;
   margin:5px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background:#222;
+  color:#fff;
+}
+
+button:hover{
+  background:#333;
+}
+
+input,select{
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  margin:5px;
+  width:90%;
+  max-width:420px;
 }
 
 #panel{
   display:flex;
   justify-content:space-around;
   flex-wrap:wrap;
-  margin-top:10px;
+  margin-top:15px;
 }
 
 .box{
@@ -59,13 +86,59 @@ canvas{
   z-index:999;
 }
 
+#databasePanel{
+  margin-top:20px;
+  padding:15px;
+  background:#181818;
+  border-top:2px solid #333;
+}
+
+#resultList{
+  margin-top:10px;
+  text-align:left;
+  width:90%;
+  max-width:700px;
+  margin-left:auto;
+  margin-right:auto;
+  background:#1f1f1f;
+  border-radius:10px;
+  padding:10px;
+}
+
+.item{
+  padding:10px;
+  border-bottom:1px solid #333;
+  cursor:pointer;
+}
+
+.item:hover{
+  background:#2c2c2c;
+}
+
+.colorBox{
+  width:18px;
+  height:18px;
+  display:inline-block;
+  border-radius:50%;
+  margin-right:8px;
+  border:1px solid #fff;
+  vertical-align:middle;
+}
+
+#txt{
+  margin-top:15px;
+  font-size:18px;
+  padding:10px;
+}
+
 </style>
+
 </head>
 
 <body>
 
 <h2>
-ColorMatch Pro – Toyota OEM Edition
+ColorMatch Pro – OEM MultiBrand Edition
 </h2>
 
 <button onclick="setMode('static')">
@@ -80,8 +153,8 @@ Movimento
 Comparar
 </button>
 
-<button onclick="analyzeToyota()">
-🚗 Toyota OEM
+<button onclick="analyzeOEM()">
+🎨 OEM Scan
 </button>
 
 <button onclick="toggleFlash()">
@@ -92,7 +165,7 @@ Comparar
 🔊 Áudio
 </button>
 
-<br>
+<br><br>
 
 <video id="video" autoplay playsinline></video>
 
@@ -109,6 +182,31 @@ Comparar
     <canvas id="canvasB"></canvas>
     <div>Comparação</div>
   </div>
+
+</div>
+
+<div id="databasePanel">
+
+<h3>
+Pesquisa OEM
+</h3>
+
+<input
+type="text"
+id="brandSearch"
+placeholder="Digite a montadora..."
+oninput="searchBrand()"
+>
+
+<br>
+
+<select id="modelSelect" onchange="showModelColors()">
+<option value="">
+Selecione o modelo
+</option>
+</select>
+
+<div id="resultList"></div>
 
 </div>
 
@@ -182,6 +280,22 @@ navigator.mediaDevices.getUserMedia({
 
 });
 
+/* ================= VOZ ================= */
+
+function speak(text){
+
+  if(!voice) return;
+
+  speechSynthesis.cancel();
+
+  const msg =
+  new SpeechSynthesisUtterance(text);
+
+  msg.lang = "pt-BR";
+
+  speechSynthesis.speak(msg);
+}
+
 /* ================= FLASH ================= */
 
 async function toggleFlash(){
@@ -198,9 +312,6 @@ async function toggleFlash(){
 
   processingPaused = true;
 
-  document.getElementById("txt").innerText =
-  "Ajustando flash...";
-
   try{
 
     const capabilities =
@@ -209,7 +320,7 @@ async function toggleFlash(){
     if(!capabilities.torch){
 
       alert(
-        "Flash não suportado neste dispositivo"
+        "Flash não suportado"
       );
 
       processingPaused = false;
@@ -232,43 +343,20 @@ async function toggleFlash(){
       setTimeout(resolve,700)
     );
 
-    document.getElementById("txt").innerText =
-    "Flash: "
-    +
-    (flashOn ? "ON" : "OFF");
-
   }catch(e){
 
     flashOn = false;
 
     alert(
-      "Falha ao controlar flash"
+      "Falha no flash"
     );
   }
 
   processingPaused = false;
 
   setTimeout(()=>{
-
     flashBusy = false;
-
   },500);
-}
-
-/* ================= VOZ ================= */
-
-function speak(text){
-
-  if(!voice) return;
-
-  speechSynthesis.cancel();
-
-  const msg =
-  new SpeechSynthesisUtterance(text);
-
-  msg.lang = "pt-BR";
-
-  speechSynthesis.speak(msg);
 }
 
 /* ================= RGB -> LAB ================= */
@@ -328,9 +416,9 @@ function deltaE(a,b){
   );
 }
 
-/* ================= TOYOTA DATABASE ================= */
+/* ================= DATABASE ================= */
 
-const toyotaDatabase = [
+const oemDatabase = [
 
 {
   brand:"Toyota",
@@ -338,8 +426,7 @@ const toyotaDatabase = [
   year:"2024",
   code:"040",
   name:"Super White II",
-  rgb:{r:244,g:244,b:241},
-  lab:rgbToLab(244,244,241)
+  rgb:{r:244,g:244,b:241}
 },
 
 {
@@ -348,18 +435,7 @@ const toyotaDatabase = [
   year:"2024",
   code:"1F7",
   name:"Classic Silver Metallic",
-  rgb:{r:169,g:173,b:177},
-  lab:rgbToLab(169,173,177)
-},
-
-{
-  brand:"Toyota",
-  model:"Corolla",
-  year:"2024",
-  code:"1G3",
-  name:"Magnetic Gray Metallic",
-  rgb:{r:94,g:97,b:102},
-  lab:rgbToLab(94,97,102)
+  rgb:{r:169,g:173,b:177}
 },
 
 {
@@ -368,8 +444,7 @@ const toyotaDatabase = [
   year:"2024",
   code:"218",
   name:"Midnight Black Metallic",
-  rgb:{r:27,g:27,b:27},
-  lab:rgbToLab(27,27,27)
+  rgb:{r:27,g:27,b:27}
 },
 
 {
@@ -378,18 +453,7 @@ const toyotaDatabase = [
   year:"2024",
   code:"3U5",
   name:"Emotional Red",
-  rgb:{r:126,g:31,b:36},
-  lab:rgbToLab(126,31,36)
-},
-
-{
-  brand:"Toyota",
-  model:"Corolla",
-  year:"2024",
-  code:"8X8",
-  name:"Blueprint",
-  rgb:{r:30,g:58,b:95},
-  lab:rgbToLab(30,58,95)
+  rgb:{r:126,g:31,b:36}
 },
 
 {
@@ -398,8 +462,7 @@ const toyotaDatabase = [
   year:"2024",
   code:"040",
   name:"Super White II",
-  rgb:{r:244,g:244,b:241},
-  lab:rgbToLab(244,244,241)
+  rgb:{r:244,g:244,b:241}
 },
 
 {
@@ -408,18 +471,7 @@ const toyotaDatabase = [
   year:"2024",
   code:"1G3",
   name:"Graphite Metallic",
-  rgb:{r:92,g:95,b:102},
-  lab:rgbToLab(92,95,102)
-},
-
-{
-  brand:"Toyota",
-  model:"Hilux",
-  year:"2024",
-  code:"218",
-  name:"Attitude Black",
-  rgb:{r:22,g:22,b:22},
-  lab:rgbToLab(22,22,22)
+  rgb:{r:92,g:95,b:102}
 },
 
 {
@@ -428,45 +480,22 @@ const toyotaDatabase = [
   year:"2024",
   code:"070",
   name:"White Pearl",
-  rgb:{r:247,g:247,b:244},
-  lab:rgbToLab(247,247,244)
+  rgb:{r:247,g:247,b:244}
 }
 
 ];
 
-/* ================= TOYOTA MATCH ================= */
+/* ================= PREPARA LAB ================= */
 
-function detectToyotaColor(sig){
+oemDatabase.forEach(item=>{
 
-  const targetLab = rgbToLab(
-    sig.r,
-    sig.g,
-    sig.b
+  item.lab = rgbToLab(
+    item.rgb.r,
+    item.rgb.g,
+    item.rgb.b
   );
 
-  let best = null;
-
-  let bestDelta = 999;
-
-  for(const color of toyotaDatabase){
-
-    const d = deltaE(
-      targetLab,
-      color.lab
-    );
-
-    if(d < bestDelta){
-
-      bestDelta = d;
-      best = color;
-    }
-  }
-
-  return{
-    match:best,
-    delta:bestDelta
-  };
-}
+});
 
 /* ================= CAPTURA ================= */
 
@@ -504,162 +533,45 @@ function captureRaw(x,y){
     c++;
   }
 
-  r = Math.round(r/c);
-  g = Math.round(g/c);
-  b = Math.round(b/c);
-
-  return {r,g,b};
-}
-
-/* ================= RGB -> HSL ================= */
-
-function rgbToHsl(r,g,b){
-
-  r/=255;
-  g/=255;
-  b/=255;
-
-  const max = Math.max(r,g,b);
-  const min = Math.min(r,g,b);
-
-  let h,s,l;
-
-  l = (max+min)/2;
-
-  if(max===min){
-
-    h=0;
-    s=0;
-
-  }else{
-
-    const d = max-min;
-
-    s = l>0.5
-    ? d/(2-max-min)
-    : d/(max+min);
-
-    switch(max){
-
-      case r:
-      h=(g-b)/d+(g<b?6:0);
-      break;
-
-      case g:
-      h=(b-r)/d+2;
-      break;
-
-      case b:
-      h=(r-g)/d+4;
-      break;
-    }
-
-    h/=6;
-  }
-
   return{
-    h:h*360,
-    s:s*100,
-    l:l*100
+    r:Math.round(r/c),
+    g:Math.round(g/c),
+    b:Math.round(b/c)
   };
 }
 
-/* ================= IDENTIFICAÇÃO ================= */
+/* ================= OEM MATCH ================= */
 
-function getColorName(r,g,b){
+function detectOEM(sig){
 
-  const hsl = rgbToHsl(r,g,b);
+  const targetLab =
+  rgbToLab(sig.r,sig.g,sig.b);
 
-  const h = hsl.h;
-  const s = hsl.s;
-  const l = hsl.l;
+  let best = null;
 
-  if(l < 12){
-    return "Preto";
+  let bestDelta = 999;
+
+  for(const color of oemDatabase){
+
+    const d =
+    deltaE(targetLab,color.lab);
+
+    if(d < bestDelta){
+
+      bestDelta = d;
+      best = color;
+    }
   }
 
-  if(l > 90 && s < 15){
-    return "Branco";
-  }
-
-  if(s < 12){
-    return "Cinza";
-  }
-
-  if(
-    h >= 15 &&
-    h <= 40 &&
-    l < 45
-  ){
-    return "Marrom";
-  }
-
-  if(
-    h <= 12 ||
-    h >= 345
-  ){
-    return "Vermelho";
-  }
-
-  if(
-    h > 12 &&
-    h <= 40
-  ){
-    return "Laranja";
-  }
-
-  if(
-    h > 40 &&
-    h <= 70
-  ){
-    return "Amarelo";
-  }
-
-  if(
-    h > 70 &&
-    h <= 165
-  ){
-    return "Verde";
-  }
-
-  if(
-    h > 165 &&
-    h <= 255
-  ){
-    return "Azul";
-  }
-
-  if(
-    h > 255 &&
-    h <= 315
-  ){
-    return "Roxo";
-  }
-
-  if(
-    h > 315 &&
-    h < 345
-  ){
-    return "Rosa";
-  }
-
-  return "Indefinido";
+  return{
+    match:best,
+    delta:bestDelta
+  };
 }
 
-/* ================= TEXTO ================= */
+/* ================= ANALYZER ================= */
 
-function signalText(sig){
-
-  return getColorName(
-    sig.r,
-    sig.g,
-    sig.b
-  );
-}
-
-/* ================= TOYOTA ANALYZER ================= */
-
-function analyzeToyota(){
+function analyzeOEM(){
 
   const sig = captureRaw(
     video.videoWidth/2,
@@ -667,7 +579,7 @@ function analyzeToyota(){
   );
 
   const result =
-  detectToyotaColor(sig);
+  detectOEM(sig);
 
   const similarity =
   Math.max(
@@ -676,25 +588,129 @@ function analyzeToyota(){
   ).toFixed(1);
 
   const text =
-    result.match.brand
-    + " | "
-    + result.match.model
-    + " | "
-    + result.match.year
-    + " | "
-    + result.match.code
-    + " | "
-    + result.match.name
-    + " | "
-    + similarity
-    + "%";
+  result.match.brand
+  + " | "
+  + result.match.model
+  + " | "
+  + result.match.year
+  + " | "
+  + result.match.code
+  + " | "
+  + result.match.name
+  + " | "
+  + similarity
+  + "%";
 
   document.getElementById("txt").innerText =
   text;
 
-  speak(
-    result.match.name
+  speak(result.match.name);
+}
+
+/* ================= PESQUISA ================= */
+
+function searchBrand(){
+
+  const brand =
+  document.getElementById("brandSearch")
+  .value
+  .trim()
+  .toLowerCase();
+
+  const models =
+  [...new Set(
+    oemDatabase
+    .filter(item=>
+      item.brand.toLowerCase()
+      .includes(brand)
+    )
+    .map(item=>item.model)
+  )]
+  .sort();
+
+  const select =
+  document.getElementById("modelSelect");
+
+  select.innerHTML =
+  `<option value="">
+  Selecione o modelo
+  </option>`;
+
+  models.forEach(model=>{
+
+    select.innerHTML +=
+    `<option value="${model}">
+      ${model}
+    </option>`;
+
+  });
+
+  document.getElementById("resultList")
+  .innerHTML = "";
+}
+
+/* ================= MOSTRAR CORES ================= */
+
+function showModelColors(){
+
+  const model =
+  document.getElementById("modelSelect")
+  .value;
+
+  const resultList =
+  document.getElementById("resultList");
+
+  resultList.innerHTML = "";
+
+  const colors =
+  oemDatabase
+  .filter(item=>item.model===model)
+  .sort((a,b)=>
+    a.name.localeCompare(b.name)
   );
+
+  colors.forEach(item=>{
+
+    resultList.innerHTML +=
+
+    `<div class="item">
+
+      <span
+      class="colorBox"
+      style="
+      background:rgb(
+      ${item.rgb.r},
+      ${item.rgb.g},
+      ${item.rgb.b}
+      )">
+      </span>
+
+      <strong>${item.name}</strong>
+
+      <br>
+
+      Código:
+      ${item.code}
+
+      <br>
+
+      Ano:
+      ${item.year}
+
+      <br>
+
+      Modelo:
+      ${item.model}
+
+      <br>
+
+      Montadora:
+      ${item.brand}
+
+    </div>`;
+
+  });
+
 }
 
 /* ================= MOVIMENTO ================= */
@@ -709,22 +725,17 @@ function moveLoop(){
     return;
   }
 
-  const sig = captureRaw(
+  const sig =
+  captureRaw(
     video.videoWidth/2,
     video.videoHeight/2
   );
 
-  const color = signalText(sig);
-
   document.getElementById("txt").innerText =
-  "Movimento: " + color;
-
-  if(color !== lastSpeak){
-
-    speak(color);
-
-    lastSpeak = color;
-  }
+  `RGB:
+  ${sig.r},
+  ${sig.g},
+  ${sig.b}`;
 
   requestAnimationFrame(moveLoop);
 }
@@ -735,26 +746,7 @@ function setMode(m){
 
   mode = m;
 
-  lastSpeak = "";
-
-  compareA = null;
-  compareALab = null;
-
   compareStep = 0;
-
-  ctxA.clearRect(
-    0,
-    0,
-    canvasA.width,
-    canvasA.height
-  );
-
-  ctxB.clearRect(
-    0,
-    0,
-    canvasB.width,
-    canvasB.height
-  );
 
   cross.style.display =
   (m === "move" || m === "compare")
@@ -788,16 +780,12 @@ video.addEventListener("click",(e)=>{
   *
   (video.videoHeight / rect.height);
 
-  const sig = captureRaw(x,y);
-
-  const color = signalText(sig);
+  const sig =
+  captureRaw(x,y);
 
   if(mode === "static"){
 
-    document.getElementById("txt").innerText =
-    "Estático: " + color;
-
-    speak(color);
+    analyzeOEM();
   }
 
   if(mode === "compare"){
@@ -806,100 +794,58 @@ video.addEventListener("click",(e)=>{
 
       compareA = sig;
 
-      compareALab = rgbToLab(
+      compareALab =
+      rgbToLab(
         sig.r,
         sig.g,
         sig.b
       );
 
-      canvasA.width = video.videoWidth;
-      canvasA.height = video.videoHeight;
-
-      ctxA.drawImage(video,0,0);
-
-      ctxA.beginPath();
-
-      ctxA.arc(
-        x,
-        y,
-        14,
-        0,
-        Math.PI*2
-      );
-
-      ctxA.lineWidth = 4;
-      ctxA.strokeStyle = "lime";
-
-      ctxA.stroke();
-
-      document.getElementById("txt").innerText =
-      "Referência: " + color;
-
       compareStep = 1;
+
+      document.getElementById("txt")
+      .innerText =
+      "Primeira cor capturada";
 
     }else{
 
-      const compareB = sig;
-
-      const compareBLab = rgbToLab(
-        compareB.r,
-        compareB.g,
-        compareB.b
+      const compareBLab =
+      rgbToLab(
+        sig.r,
+        sig.g,
+        sig.b
       );
-
-      canvasB.width = video.videoWidth;
-      canvasB.height = video.videoHeight;
-
-      ctxB.drawImage(video,0,0);
-
-      ctxB.beginPath();
-
-      ctxB.arc(
-        x,
-        y,
-        14,
-        0,
-        Math.PI*2
-      );
-
-      ctxB.lineWidth = 4;
-      ctxB.strokeStyle = "red";
-
-      ctxB.stroke();
 
       const similarity =
       Math.max(
         0,
-        100 - deltaE(compareALab,compareBLab)
+        100 -
+        deltaE(
+          compareALab,
+          compareBLab
+        )
       );
 
-      const result =
-      signalText(compareA)
-      +
-      " → "
-      +
-      signalText(compareB)
-      +
-      " | "
+      document.getElementById("txt")
+      .innerText =
+      "Similaridade: "
       +
       similarity.toFixed(1)
       +
-      "% similar";
+      "%";
 
-      document.getElementById("txt").innerText =
-      result;
-
-      speak(result);
-
-      compareA = null;
-      compareALab = null;
+      speak(
+        similarity.toFixed(1)
+        + " porcento similar"
+      );
 
       compareStep = 0;
     }
   }
+
 });
 
-/* ================= ÁUDIO ================= */
+/* ================= AUDIO ================= */
 
 function toggleVoice(){
 
