@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Precise Static Capture</title>
+<title>ColorMatch Pro – Voice Engine</title>
 
 <style>
 body {
@@ -10,8 +10,8 @@ body {
   font-family:Arial;
   background:#111;
   color:#fff;
-  position:relative;
   margin:0;
+  position:relative;
 }
 
 video {
@@ -46,7 +46,6 @@ video {
   transform:translate(-50%,-50%);
   pointer-events:none;
   display:none;
-  box-shadow:0 0 10px #00ffcc;
 }
 
 #liveLabel {
@@ -57,9 +56,9 @@ video {
   color:#00ffcc;
   font-weight:bold;
   font-size:14px;
-  text-shadow:0 0 8px #000;
   pointer-events:none;
   display:none;
+  text-shadow:0 0 8px #000;
 }
 
 button {
@@ -71,15 +70,15 @@ button {
 
 <body>
 
-<h2>ColorMatch Pro – Precise Engine</h2>
+<h2>ColorMatch Pro – Voice Engine</h2>
 
 <button onclick="setMode('static')">Modo Estático</button>
 <button onclick="setMode('live')">Modo Movimento</button>
+<button onclick="toggleVoice()">🔊 Áudio</button>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
 
-<!-- 🔥 snapshot apenas da área selecionada -->
 <img id="snapshot"/>
 
 <div id="box"></div>
@@ -99,6 +98,30 @@ const cross = document.getElementById("cross");
 const liveLabel = document.getElementById("liveLabel");
 
 let mode = "static";
+let voiceEnabled = true;
+let lastSpoken = "";
+let lastSpeakTime = 0;
+
+// ---------------- VOZ ----------------
+function speak(text){
+
+  if(!voiceEnabled) return;
+
+  const now = Date.now();
+
+  // anti-spam (1.5s)
+  if(text === lastSpoken && (now - lastSpeakTime < 1500)) return;
+
+  lastSpoken = text;
+  lastSpeakTime = now;
+
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "pt-BR";
+  msg.rate = 1;
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(msg);
+}
 
 // ---------------- CAMERA ----------------
 navigator.mediaDevices.getUserMedia({
@@ -173,25 +196,21 @@ function detect(r,g,b){
     if(d < best.d) best = {n:c.n, d};
   }
 
-  return {
-    name: best.n,
-    confidence: Math.max(0, 100 - best.d*2)
-  };
+  return best.n;
 }
 
-// ---------------- STATIC CAPTURE (PRECISO) ----------------
-function captureStaticArea(x,y,size=14){
+// ---------------- STATIC ----------------
+function captureStatic(x,y){
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
   ctx.drawImage(video,0,0);
 
+  const size = 14;
+
   const data = ctx.getImageData(
-    x-size,
-    y-size,
-    size*2,
-    size*2
+    x-size,y-size,size*2,size*2
   ).data;
 
   let r=0,g=0,b=0,c=0;
@@ -205,10 +224,10 @@ function captureStaticArea(x,y,size=14){
 
   r/=c; g/=c; b/=c;
 
-  return { r,g,b, result: detect(r,g,b) };
+  return detect(r,g,b);
 }
 
-// ---------------- LIVE CAPTURE ----------------
+// ---------------- LIVE ----------------
 function captureLive(){
 
   canvas.width = video.videoWidth;
@@ -249,37 +268,14 @@ video.addEventListener("click",(e)=>{
   const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
   const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
 
-  const data = captureStaticArea(x,y);
+  const name = captureStatic(x,y);
 
-  // 🔥 SNAPSHOT SOMENTE DA ÁREA SELECIONADA
-  const size = 14;
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  ctx.drawImage(video,0,0);
-
-  const crop = ctx.getImageData(
-    x-size,
-    y-size,
-    size*2,
-    size*2
-  );
-
-  const tempCanvas = document.createElement("canvas");
-  tempCanvas.width = size*2;
-  tempCanvas.height = size*2;
-
-  tempCanvas.getContext("2d").putImageData(crop,0,0);
-
-  snapshot.src = tempCanvas.toDataURL();
   snapshot.style.display = "block";
 
-  document.getElementById("box").style.background =
-    `rgb(${data.r},${data.g},${data.b})`;
-
   document.getElementById("txt").innerText =
-    `STATIC: ${data.result.name} | ${data.result.confidence.toFixed(1)}%`;
+    `STATIC: ${name}`;
+
+  speak(name);
 });
 
 // ---------------- LIVE LOOP ----------------
@@ -287,18 +283,17 @@ function loop(){
 
   if(mode !== "live") return;
 
-  const res = captureLive();
+  const name = captureLive();
 
-  liveLabel.innerText =
-    `${res.name} | ${res.confidence.toFixed(1)}%`;
+  liveLabel.innerText = name;
+  document.getElementById("txt").innerText = "LIVE MODE";
 
-  document.getElementById("txt").innerText =
-    "LIVE MODE ACTIVE";
+  speak(name);
 
   requestAnimationFrame(loop);
 }
 
-// ---------------- MODE SWITCH ----------------
+// ---------------- MODE ----------------
 function setMode(m){
 
   mode = m;
@@ -306,7 +301,6 @@ function setMode(m){
   if(m === "live"){
     cross.style.display = "block";
     liveLabel.style.display = "block";
-    snapshot.style.display = "none";
     loop();
   }
 
@@ -314,6 +308,12 @@ function setMode(m){
     cross.style.display = "none";
     liveLabel.style.display = "none";
   }
+}
+
+// ---------------- VOICE TOGGLE ----------------
+function toggleVoice(){
+  voiceEnabled = !voiceEnabled;
+  alert("Áudio: " + (voiceEnabled ? "ON" : "OFF"));
 }
 
 </script>
