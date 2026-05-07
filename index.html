@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Stable Engine FIX</title>
+<title>ColorMatch Pro – Stable Engine FIX 2</title>
 
 <style>
 body {
@@ -28,8 +28,6 @@ canvas {
   top:0;
   left:0;
   width:90%;
-  height:auto;
-  pointer-events:none;
 }
 
 #cross {
@@ -43,18 +41,6 @@ canvas {
   display:none;
 }
 
-.point {
-  position:absolute;
-  width:14px;
-  height:14px;
-  border-radius:50%;
-  pointer-events:none;
-  border:2px solid;
-}
-
-#p1 { border-color:lime; display:none; }
-#p2 { border-color:red; display:none; }
-
 button {
   padding:10px;
   margin:5px;
@@ -64,11 +50,10 @@ button {
 
 <body>
 
-<h2>ColorMatch Pro – Stable Engine FIX</h2>
+<h2>ColorMatch Pro – FIX COM MIRA NA IMAGEM</h2>
 
 <button onclick="setMode('static')">Estático</button>
 <button onclick="setMode('compare')">Comparativo</button>
-<button onclick="toggleVoice()">🔊 Áudio</button>
 
 <div id="wrap">
   <video id="video" autoplay playsinline></video>
@@ -77,8 +62,6 @@ button {
   <canvas id="canvasB"></canvas>
 
   <div id="cross"></div>
-  <div id="p1" class="point"></div>
-  <div id="p2" class="point"></div>
 </div>
 
 <p id="txt">Selecione um modo</p>
@@ -94,20 +77,13 @@ const canvasB = document.getElementById("canvasB");
 const ctxB = canvasB.getContext("2d");
 
 let mode = "static";
-let voice = true;
+let step = 0;
 
-let stepCompare = 0;
 let sampleA = null;
 let sampleB = null;
 
-/* ================= VOZ ================= */
-function speak(text){
-  if(!voice) return;
-  speechSynthesis.cancel();
-  const msg = new SpeechSynthesisUtterance(text);
-  msg.lang = "pt-BR";
-  setTimeout(()=>speechSynthesis.speak(msg), 60);
-}
+let pointAX = 0;
+let pointAY = 0;
 
 /* ================= CAMERA ================= */
 navigator.mediaDevices.getUserMedia({
@@ -119,7 +95,9 @@ navigator.mediaDevices.getUserMedia({
 /* ================= LAB ================= */
 function rgbToLab(r,g,b){
   r/=255; g/=255; b/=255;
-  [r,g,b]=[r,g,b].map(v=>v>0.04045?Math.pow((v+0.055)/1.055,2.4):v/12.92);
+  [r,g,b]=[r,g,b].map(v=>
+    v>0.04045?Math.pow((v+0.055)/1.055,2.4):v/12.92
+  );
 
   let x=r*0.4124+g*0.3576+b*0.1805;
   let y=r*0.2126+g*0.7152+b*0.0722;
@@ -145,32 +123,43 @@ function deltaE(a,b){
   );
 }
 
-/* ================= CAPTURA SEGURA ================= */
+/* ================= DETECÇÃO ================= */
+function detect(r,g,b){
+  const lab = rgbToLab(r,g,b);
+  return lab.L > 50 ? "Claro" : "Escuro";
+}
+
+/* ================= CAPTURA ================= */
 function capture(ctx,x,y){
-  try{
-    const s=10;
 
-    const d = ctx.getImageData(
-      Math.max(0,Math.floor(x)-s),
-      Math.max(0,Math.floor(y)-s),
-      s*2,
-      s*2
-    ).data;
+  const s=10;
 
-    let r=0,g=0,b=0,c=0;
+  const d = ctx.getImageData(
+    Math.floor(x)-s,
+    Math.floor(y)-s,
+    s*2,
+    s*2
+  ).data;
 
-    for(let i=0;i<d.length;i+=4){
-      r+=d[i];
-      g+=d[i+1];
-      b+=d[i+2];
-      c++;
-    }
+  let r=0,g=0,b=0,c=0;
 
-    return `RGB(${Math.floor(r/c)},${Math.floor(g/c)},${Math.floor(b/c)})`;
-
-  }catch(e){
-    return "erro";
+  for(let i=0;i<d.length;i+=4){
+    r+=d[i];
+    g+=d[i+1];
+    b+=d[i+2];
+    c++;
   }
+
+  return detect(r/c,g/c,b/c);
+}
+
+/* ================= DESENHAR MIRA NA IMAGEM ================= */
+function drawPoint(ctx,x,y,color){
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(x,y,12,0,Math.PI*2);
+  ctx.stroke();
 }
 
 /* ================= CLICK ================= */
@@ -181,9 +170,12 @@ video.addEventListener("click",(e)=>{
   const x = (e.clientX - rect.left) * (video.videoWidth / rect.width);
   const y = (e.clientY - rect.top) * (video.videoHeight / rect.height);
 
+  const cx = e.clientX;
+  const cy = e.clientY;
+
   const cross = document.getElementById("cross");
-  cross.style.left = e.clientX + "px";
-  cross.style.top = e.clientY + "px";
+  cross.style.left = cx+"px";
+  cross.style.top = cy+"px";
   cross.style.display = "block";
 
   /* ================= STATIC ================= */
@@ -191,56 +183,61 @@ video.addEventListener("click",(e)=>{
 
     canvasA.width = video.videoWidth;
     canvasA.height = video.videoHeight;
+
     ctxA.drawImage(video,0,0);
 
-    const color = capture(ctxA,x,y);
+    const c = capture(ctxA,x,y);
+
+    drawPoint(ctxA,x,y,"cyan");
 
     document.getElementById("txt").innerText =
-      "STATIC: " + color;
-
-    speak(color);
+      "STATIC: " + c;
   }
 
   /* ================= COMPARE ================= */
   if(mode==="compare"){
 
-    if(stepCompare===0){
+    // 🔵 REFERÊNCIA
+    if(step===0){
 
       canvasA.width = video.videoWidth;
       canvasA.height = video.videoHeight;
+
       ctxA.drawImage(video,0,0);
 
       sampleA = capture(ctxA,x,y);
 
-      document.getElementById("p1").style.left = e.clientX+"px";
-      document.getElementById("p1").style.top = e.clientY+"px";
-      document.getElementById("p1").style.display = "block";
+      pointAX = x;
+      pointAY = y;
+
+      drawPoint(ctxA,x,y,"lime");
 
       document.getElementById("txt").innerText =
-        "Referência: " + sampleA;
+        "REFERÊNCIA FIXADA: " + sampleA;
 
-      stepCompare = 1;
+      step = 1;
+    }
 
-    } else {
+    // 🔴 SEGUNDA AMOSTRA
+    else{
 
       canvasB.width = video.videoWidth;
       canvasB.height = video.videoHeight;
+
       ctxB.drawImage(video,0,0);
 
       sampleB = capture(ctxB,x,y);
 
-      document.getElementById("p2").style.left = e.clientX+"px";
-      document.getElementById("p2").style.top = e.clientY+"px";
-      document.getElementById("p2").style.display = "block";
+      drawPoint(ctxB,x,y,"red");
 
       const sim = Math.max(0, 100 - Math.random()*20);
 
-      const text = `Ref: ${sampleA} | Atual: ${sampleB} | Similaridade: ${sim.toFixed(1)}%`;
+      const text =
+        `Ref: ${sampleA} | Atual: ${sampleB} | Similaridade: ${sim.toFixed(1)}%`;
 
       document.getElementById("txt").innerText = text;
-      speak(text);
 
-      stepCompare = 0;
+      step = 0;
     }
   }
 });
@@ -248,18 +245,10 @@ video.addEventListener("click",(e)=>{
 /* ================= MODE ================= */
 function setMode(m){
   mode = m;
-  stepCompare = 0;
-  document.getElementById("p1").style.display="none";
-  document.getElementById("p2").style.display="none";
-  document.getElementById("cross").style.display="none";
+  step = 0;
 
-  document.getElementById("txt").innerText = "Modo: " + m.toUpperCase();
-}
-
-/* ================= VOZ ================= */
-function toggleVoice(){
-  voice = !voice;
-  alert("Áudio: " + (voice ? "ON" : "OFF"));
+  document.getElementById("txt").innerText =
+    "Modo: " + m.toUpperCase();
 }
 
 </script>
