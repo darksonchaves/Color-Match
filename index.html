@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Static Touch Mode</title>
+<title>ColorMatch Pro – Hybrid Engine</title>
 
 <style>
 body {
@@ -27,40 +27,53 @@ video {
   border:2px solid #fff;
 }
 
-/* 🔥 MIRA VISUAL */
-#crosshair {
+/* mira centro (modo live) */
+#centerCross {
   position:absolute;
-  width:18px;
-  height:18px;
+  left:50%;
+  top:50%;
+  width:20px;
+  height:20px;
   border:2px solid #00ffcc;
   border-radius:50%;
-  transform:translate(-50%, -50%);
+  transform:translate(-50%,-50%);
   pointer-events:none;
   display:none;
   box-shadow:0 0 10px #00ffcc;
+}
+
+button {
+  padding:10px;
+  margin:5px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>ColorMatch Pro – Static Mode</h2>
+<h2>ColorMatch Pro – Hybrid Mode</h2>
+
+<button onclick="setMode('static')">Modo Estático</button>
+<button onclick="setMode('live')">Modo Movimento</button>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
 
 <div id="box"></div>
-<p id="txt">Toque na imagem</p>
+<p id="txt">Selecione um modo</p>
 
-<!-- 🔥 MIRA -->
-<div id="crosshair"></div>
+<div id="centerCross"></div>
 
 <script>
 
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-const crosshair = document.getElementById("crosshair");
+
+const centerCross = document.getElementById("centerCross");
+
+let mode = null;
+let running = false;
 
 // ---------------- CAMERA ----------------
 navigator.mediaDevices.getUserMedia({
@@ -123,71 +136,6 @@ const colors = [
   {n:"Marrom", lab:rgbToLab(120,80,60)}
 ];
 
-// ---------------- CAPTURA ----------------
-function captureAtPoint(x,y,cb){
-
-  let samples = [];
-  let frames = 5;
-
-  function loop(){
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    ctx.drawImage(video,0,0);
-
-    const size = 12;
-
-    const data = ctx.getImageData(
-      x-size,
-      y-size,
-      size*2,
-      size*2
-    ).data;
-
-    let pixels = [];
-
-    for(let i=0;i<data.length;i+=4){
-      const r=data[i], g=data[i+1], b=data[i+2];
-
-      if(r+g+b < 10 || r+g+b > 740) continue;
-
-      pixels.push([r,g,b]);
-    }
-
-    pixels.sort((a,b)=>(a[0]+a[1]+a[2])-(b[0]+b[1]+b[2]));
-
-    const cut = Math.floor(pixels.length*0.2);
-    pixels = pixels.slice(cut,pixels.length-cut);
-
-    let r=0,g=0,b=0,c=0;
-
-    for(const p of pixels){
-      r+=p[0]; g+=p[1]; b+=p[2];
-      c++;
-    }
-
-    samples.push([r/c,g/c,b/c]);
-
-    frames--;
-
-    if(frames>0){
-      requestAnimationFrame(loop);
-    } else {
-
-      const rs = samples.map(s=>s[0]).sort((a,b)=>a-b);
-      const gs = samples.map(s=>s[1]).sort((a,b)=>a-b);
-      const bs = samples.map(s=>s[2]).sort((a,b)=>a-b);
-
-      const mid = Math.floor(samples.length/2);
-
-      cb(rs[mid],gs[mid],bs[mid]);
-    }
-  }
-
-  loop();
-}
-
 // ---------------- DETECÇÃO ----------------
 function detect(r,g,b){
 
@@ -196,12 +144,8 @@ function detect(r,g,b){
   let best = {n:"Indefinido", d:999};
 
   for(const c of colors){
-
     const d = deltaE(lab,c.lab);
-
-    if(d < best.d){
-      best = {n:c.n, d};
-    }
+    if(d < best.d) best = {n:c.n, d};
   }
 
   return {
@@ -210,8 +154,64 @@ function detect(r,g,b){
   };
 }
 
-// ---------------- RENDER ----------------
-function render(r,g,b){
+// ---------------- CAPTURA CENTRAL ----------------
+function captureCenter(){
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  const x = canvas.width/2;
+  const y = canvas.height/2;
+
+  const size = 15;
+
+  ctx.drawImage(video,0,0);
+
+  const data = ctx.getImageData(
+    x-size,y-size,size*2,size*2
+  ).data;
+
+  let r=0,g=0,b=0,c=0;
+
+  for(let i=0;i<data.length;i+=4){
+    r+=data[i];
+    g+=data[i+1];
+    b+=data[i+2];
+    c++;
+  }
+
+  r/=c; g/=c; b/=c;
+
+  return detect(r,g,b);
+}
+
+// ---------------- STATIC MODE ----------------
+video.addEventListener("click",(e)=>{
+
+  if(mode !== "static") return;
+
+  const rect = video.getBoundingClientRect();
+
+  const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
+  const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
+
+  const size = 12;
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  ctx.drawImage(video,0,0);
+
+  const data = ctx.getImageData(x-size,y-size,size*2,size*2).data;
+
+  let r=0,g=0,b=0,c=0;
+
+  for(let i=0;i<data.length;i+=4){
+    r+=data[i]; g+=data[i+1]; b+=data[i+2];
+    c++;
+  }
+
+  r/=c; g/=c; b/=c;
 
   const res = detect(r,g,b);
 
@@ -220,27 +220,38 @@ function render(r,g,b){
 
   document.getElementById("txt").innerText =
     `${res.name} | ${res.confidence.toFixed(1)}%`;
+});
+
+// ---------------- LIVE MODE ----------------
+function loop(){
+
+  if(mode !== "live") return;
+
+  const res = captureCenter();
+
+  document.getElementById("box").style.background =
+    "rgb(255,255,255)";
+
+  document.getElementById("txt").innerText =
+    `LIVE: ${res.name} | ${res.confidence.toFixed(1)}%`;
+
+  requestAnimationFrame(loop);
 }
 
-// ---------------- TOQUE + MIRA ----------------
-video.addEventListener("click",(e)=>{
+// ---------------- MODE SWITCH ----------------
+function setMode(m){
 
-  const rect = video.getBoundingClientRect();
+  mode = m;
 
-  const x = (e.clientX - rect.left) * (video.videoWidth / rect.width);
-  const y = (e.clientY - rect.top) * (video.videoHeight / rect.height);
+  if(m === "live"){
+    centerCross.style.display = "block";
+    loop();
+  }
 
-  // 🔥 posiciona mira
-  crosshair.style.display = "block";
-  crosshair.style.left = e.clientX + "px";
-  crosshair.style.top = e.clientY + "px";
-
-  setTimeout(()=>{
-    crosshair.style.display = "none";
-  }, 900);
-
-  captureAtPoint(x,y,(r,g,b)=>render(r,g,b));
-});
+  if(m === "static"){
+    centerCross.style.display = "none";
+  }
+}
 
 </script>
 
