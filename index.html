@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Full Engine</title>
+<title>ColorMatch Pro – Precision Select</title>
 
 <style>
 body {
@@ -10,6 +10,7 @@ body {
   font-family:Arial;
   background:#111;
   color:#fff;
+  margin:0;
 }
 
 video {
@@ -17,7 +18,8 @@ video {
   border-radius:10px;
 }
 
-#boxA, #boxB, #colorBox {
+/* BOXES */
+#colorBox, #boxA, #boxB {
   width:90px;
   height:90px;
   margin:10px;
@@ -26,12 +28,37 @@ video {
   border:2px solid #fff;
 }
 
+/* SNAPSHOT */
 #snapshot {
   width:90%;
   margin:10px auto;
   border-radius:10px;
   display:none;
   border:2px solid #00ffcc;
+}
+
+/* CROSSHAIR FIXO */
+#crosshair {
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:20px;
+  height:20px;
+  transform:translate(-50%,-50%);
+  border:2px solid #00ffcc;
+  border-radius:50%;
+  pointer-events:none;
+}
+
+/* PONTO TOCADO */
+#touchPoint {
+  position:absolute;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  border:2px solid red;
+  pointer-events:none;
+  display:none;
 }
 
 button {
@@ -49,17 +76,19 @@ button {
 
 <body>
 
-<h2>ColorMatch Pro – Engine</h2>
+<h2>ColorMatch Pro – Precision Engine</h2>
 
 <button onclick="setMode('static')">Modo Estático</button>
-<button onclick="setMode('live')">Modo Live</button>
 <button onclick="setMode('compare1')">Comparar 1</button>
 <button onclick="setMode('compare2')">Comparar 2</button>
-<button onclick="runCompare()">Executar Comparação</button>
-<button onclick="toggleVoice()">🔊 Voz</button>
+<button onclick="runCompare()">Comparar</button>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas" style="display:none;"></canvas>
+
+<!-- VISUAIS -->
+<div id="crosshair"></div>
+<div id="touchPoint"></div>
 
 <img id="snapshot"/>
 
@@ -69,7 +98,7 @@ button {
   <div id="boxB"></div>
 </div>
 
-<p id="result">Aguardando ação...</p>
+<p id="result">Toque na tela para selecionar o ponto</p>
 
 <script>
 
@@ -78,18 +107,9 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 let mode = "static";
-let voiceEnabled = false;
 
 let sampleA = null;
 let sampleB = null;
-
-// ---------------- VOZ ----------------
-function speak(text){
-  if(!voiceEnabled) return;
-  const msg = new SpeechSynthesisUtterance(text);
-  msg.lang = "pt-BR";
-  speechSynthesis.speak(msg);
-}
 
 // ---------------- CAMERA ----------------
 navigator.mediaDevices.getUserMedia({
@@ -126,27 +146,13 @@ function rgbToLab(r,g,b){
   };
 }
 
-// ---------------- DISTÂNCIA ----------------
+// ---------------- ΔE ----------------
 function deltaE(a,b){
   return Math.sqrt(
     (a.L-b.L)**2 +
     (a.a-b.a)**2 +
     (a.b-b.b)**2
   );
-}
-
-// ---------------- NOMES DE COR ----------------
-function getColorName(r,g,b){
-  if(r<30 && g<30 && b<30) return "Preto";
-  if(r>200 && g>200 && b>200) return "Branco";
-  if(r>200 && g<80 && b<80) return "Vermelho";
-  if(r<80 && g>200 && b<80) return "Verde";
-  if(r<80 && g<80 && b>200) return "Azul";
-  if(r>200 && g>200 && b<80) return "Amarelo";
-  if(r>200 && g>120 && b<80) return "Laranja";
-  if(r>150 && g<80 && b>150) return "Rosa";
-  if(r>120 && g<80 && b>120) return "Roxo";
-  return "Indefinida";
 }
 
 // ---------------- CAPTURA ----------------
@@ -176,18 +182,23 @@ function capture(x,y){
 
   return {
     rgb:{r,g,b},
-    lab: rgbToLab(r,g,b),
-    name: getColorName(r,g,b)
+    lab: rgbToLab(r,g,b)
   };
 }
 
-// ---------------- CLICK ----------------
+// ---------------- CLICK + MIRA VISUAL ----------------
 video.addEventListener("click",(e)=>{
 
   const rect = video.getBoundingClientRect();
 
   const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
   const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
+
+  // 🔴 ponto visual tocado
+  const point = document.getElementById("touchPoint");
+  point.style.left = e.clientX + "px";
+  point.style.top = e.clientY + "px";
+  point.style.display = "block";
 
   const sample = capture(x,y);
 
@@ -198,22 +209,19 @@ video.addEventListener("click",(e)=>{
 
   if(mode === "static"){
     document.getElementById("colorBox").style.background = color;
-    document.getElementById("result").innerText = sample.name;
-    speak(sample.name);
+    document.getElementById("result").innerText = "Cor: " + color;
   }
 
   if(mode === "compare1"){
     sampleA = sample;
     document.getElementById("boxA").style.background = color;
-    document.getElementById("result").innerText = "Amostra 1 salva";
-    speak(sample.name);
+    document.getElementById("result").innerText = "Amostra 1 selecionada";
   }
 
   if(mode === "compare2"){
     sampleB = sample;
     document.getElementById("boxB").style.background = color;
-    document.getElementById("result").innerText = "Amostra 2 salva";
-    speak(sample.name);
+    document.getElementById("result").innerText = "Amostra 2 selecionada";
   }
 
 });
@@ -222,7 +230,7 @@ video.addEventListener("click",(e)=>{
 function runCompare(){
 
   if(!sampleA || !sampleB){
-    alert("Capture as duas amostras");
+    alert("Selecione as duas amostras");
     return;
   }
 
@@ -231,30 +239,13 @@ function runCompare(){
   const similarity = Math.max(0, 100 - d * 2.5);
   const diff = 100 - similarity;
 
-  let label = "";
-
-  if(similarity > 90) label = "Quase idênticas";
-  else if(similarity > 70) label = "Muito próximas";
-  else if(similarity > 40) label = "Diferentes";
-  else label = "Muito diferentes";
-
-  const text =
-    `Amostra 1: ${sampleA.name} | Amostra 2: ${sampleB.name} | Similaridade ${similarity.toFixed(1)}% | Diferença ${diff.toFixed(1)}%`;
-
-  document.getElementById("result").innerText = text;
-
-  speak(text);
+  document.getElementById("result").innerText =
+    `Similaridade: ${similarity.toFixed(1)}% | Diferença: ${diff.toFixed(1)}%`;
 }
 
 // ---------------- MODE ----------------
 function setMode(m){
   mode = m;
-}
-
-// ---------------- VOZ TOGGLE ----------------
-function toggleVoice(){
-  voiceEnabled = !voiceEnabled;
-  alert("Voz: " + (voiceEnabled ? "ATIVADA" : "DESATIVADA"));
 }
 
 </script>
