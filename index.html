@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Phase 3 Complete</title>
+<title>ColorMatch Pro – Phase 3 Enhanced</title>
 
 <style>
 body {
@@ -19,12 +19,7 @@ video {
   border-radius:10px;
 }
 
-#snapshot {
-  width:90%;
-  display:none;
-  border-radius:10px;
-  border:2px solid #00ffcc;
-}
+canvas { display:none; }
 
 #cross {
   position:absolute;
@@ -54,6 +49,10 @@ button {
   padding:10px;
   margin:5px;
 }
+
+#txt {
+  margin-top:10px;
+}
 </style>
 </head>
 
@@ -64,7 +63,8 @@ button {
 <button onclick="setMode('static')">Estático</button>
 <button onclick="setMode('live')">Live</button>
 <button onclick="setMode('compare')">Comparativo</button>
-<button onclick="toggleVoice()">🔊 Áudio</button>
+<button onclick="toggleFlash()">⚡ Flash</button>
+<button onclick="toggleVoice()">🔊 Voz</button>
 
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas"></canvas>
@@ -73,8 +73,6 @@ button {
 
 <div id="p1" class="point"></div>
 <div id="p2" class="point"></div>
-
-<img id="snapshot"/>
 
 <p id="txt">Selecione um modo</p>
 
@@ -89,10 +87,44 @@ const cross = document.getElementById("cross");
 let mode = "static";
 let voice = true;
 
-// comparativo
 let stepCompare = 0;
 let sampleA = null;
 let sampleB = null;
+
+let track = null;
+let flashOn = false;
+
+// ---------------- CAMERA ----------------
+navigator.mediaDevices.getUserMedia({
+  video: { facingMode: { ideal: "environment" } }
+}).then(stream=>{
+  video.srcObject = stream;
+  track = stream.getVideoTracks()[0];
+});
+
+// ---------------- FLASH ----------------
+async function toggleFlash(){
+
+  if(!track){
+    alert("Câmera não iniciada");
+    return;
+  }
+
+  const caps = track.getCapabilities();
+
+  if(!caps.torch){
+    alert("Flash não suportado neste dispositivo");
+    return;
+  }
+
+  flashOn = !flashOn;
+
+  await track.applyConstraints({
+    advanced:[{ torch: flashOn }]
+  });
+
+  alert("Flash: " + (flashOn ? "ON" : "OFF"));
+}
 
 // ---------------- VOZ ----------------
 function speak(t){
@@ -103,24 +135,28 @@ function speak(t){
   speechSynthesis.speak(msg);
 }
 
-// ---------------- CAMERA ----------------
-navigator.mediaDevices.getUserMedia({
-  video:{facingMode:"environment"}
-}).then(s=>video.srcObject=s);
-
 // ---------------- LAB ----------------
 function rgbToLab(r,g,b){
+
   r/=255; g/=255; b/=255;
-  [r,g,b]=[r,g,b].map(v=>v>0.04045?
-    Math.pow((v+0.055)/1.055,2.4):v/12.92);
+
+  [r,g,b]=[r,g,b].map(v=>
+    v>0.04045
+      ?Math.pow((v+0.055)/1.055,2.4)
+      :v/12.92
+  );
 
   let x=r*0.4124+g*0.3576+b*0.1805;
   let y=r*0.2126+g*0.7152+b*0.0722;
   let z=r*0.0193+g*0.1192+b*0.9505;
 
-  x/=0.95047; y/=1; z/=1.08883;
+  x/=0.95047;
+  y/=1;
+  z/=1.08883;
 
-  [x,y,z]=[x,y,z].map(v=>v>0.008856?Math.cbrt(v):(7.787*v)+(16/116));
+  [x,y,z]=[x,y,z].map(v=>
+    v>0.008856?Math.cbrt(v):(7.787*v)+(16/116)
+  );
 
   return {
     L:(116*y)-16,
@@ -149,12 +185,11 @@ const colors = [
   {n:"Amarelo",lab:rgbToLab(240,220,80)},
   {n:"Laranja",lab:rgbToLab(240,150,80)},
   {n:"Rosa",lab:rgbToLab(240,120,180)},
-  {n:"Roxo",lab:rgbToLab(140,70,170)},
-  {n:"Marrom",lab:rgbToLab(120,80,60)}
+  {n:"Roxo",lab:rgbToLab(140,70,170)}
 ];
 
 function detect(r,g,b){
-  const lab = rgbToLab(r,g,b);
+  const lab=rgbToLab(r,g,b);
 
   let best={n:"Indef",d:999};
 
@@ -187,10 +222,7 @@ function capture(x,y){
     c++;
   }
 
-  return {
-    rgb:{r:r/c,g:g/c,b:b/c},
-    lab:rgbToLab(r/c,g/c,b/c)
-  };
+  return {r:r/c,g:g/c,b:b/c};
 }
 
 // ---------------- CLICK ----------------
@@ -203,96 +235,76 @@ video.addEventListener("click",(e)=>{
 
   cross.style.left=e.clientX+"px";
   cross.style.top=e.clientY+"px";
+  cross.style.display="block";
 
+  const s=capture(x,y);
+  const name=detect(s.r,s.g,s.b);
+
+  // ---------------- STATIC ----------------
   if(mode==="static"){
-    const s=capture(x,y);
-    const name=detect(s.rgb.r,s.rgb.g,s.rgb.b);
+
+    document.getElementById("p1").style.left=e.clientX+"px";
+    document.getElementById("p1").style.top=e.clientY+"px";
+    document.getElementById("p1").style.display="block";
 
     document.getElementById("txt").innerText="STATIC: "+name;
     speak(name);
   }
 
+  // ---------------- COMPARE ----------------
   if(mode==="compare"){
 
-    const s=capture(x,y);
-
     if(stepCompare===0){
+
       sampleA=s;
       document.getElementById("p1").style.left=e.clientX+"px";
       document.getElementById("p1").style.top=e.clientY+"px";
       document.getElementById("p1").style.display="block";
+
       stepCompare=1;
       document.getElementById("txt").innerText="Selecione o segundo ponto";
     }
     else{
-      sampleB=s;
 
+      sampleB=s;
       document.getElementById("p2").style.left=e.clientX+"px";
       document.getElementById("p2").style.top=e.clientY+"px";
       document.getElementById("p2").style.display="block";
 
-      compare();
+      const d=deltaE(
+        rgbToLab(sampleA.r,sampleA.g,sampleA.b),
+        rgbToLab(sampleB.r,sampleB.g,sampleB.b)
+      );
+
+      const sim=Math.max(0,100-d*2.5);
+
+      const text=`Similaridade: ${sim.toFixed(1)}%`;
+
+      document.getElementById("txt").innerText=text;
+      speak(text);
+
+      stepCompare=0;
     }
   }
 });
-
-// ---------------- COMPARAÇÃO ----------------
-function compare(){
-
-  const d=deltaE(sampleA.lab,sampleB.lab);
-
-  const sim=Math.max(0,100-d*2.5);
-
-  const nameA=detect(sampleA.rgb.r,sampleA.rgb.g,sampleA.rgb.b);
-  const nameB=detect(sampleB.rgb.r,sampleB.rgb.g,sampleB.rgb.b);
-
-  const text=
-  `A:${nameA} | B:${nameB} | Similaridade:${sim.toFixed(1)}%`;
-
-  document.getElementById("txt").innerText=text;
-
-  speak(text);
-
-  stepCompare=0;
-}
-
-// ---------------- LIVE ----------------
-function loop(){
-  if(mode!=="live") return;
-
-  const s=capture(
-    video.videoWidth/2,
-    video.videoHeight/2
-  );
-
-  const name=detect(s.rgb.r,s.rgb.g,s.rgb.b);
-
-  document.getElementById("txt").innerText="LIVE: "+name;
-
-  speak(name);
-
-  requestAnimationFrame(loop);
-}
 
 // ---------------- MODE ----------------
 function setMode(m){
 
   mode=m;
-
   stepCompare=0;
-  sampleA=null;
-  sampleB=null;
 
   document.getElementById("p1").style.display="none";
   document.getElementById("p2").style.display="none";
-
-  if(m==="live") loop();
+  cross.style.display="none";
 }
 
 // ---------------- VOICE ----------------
+let voiceEnabled=true;
 function toggleVoice(){
-  voice=!voice;
-  alert("Áudio: "+(voice?"ON":"OFF"));
+  voiceEnabled=!voiceEnabled;
+  voice=voiceEnabled;
+  alert("Voz: "+(voice?"ON":"OFF"));
 }
 
 </script>
