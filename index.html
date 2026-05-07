@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Full Stable Engine</title>
+<title>ColorMatch Pro – Stable Live Fix</title>
 
 <style>
 body {
@@ -52,7 +52,7 @@ button {
 
 <body>
 
-<h2>ColorMatch Pro – Full Engine</h2>
+<h2>ColorMatch Pro – Stable Engine FIX</h2>
 
 <button onclick="setMode('static')">Estático</button>
 <button onclick="setMode('live')">Live</button>
@@ -75,14 +75,14 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-const cross = document.getElementById("cross");
-
 let mode = "static";
 let voice = true;
 
-let liveRunning = false;
+// 🔥 LIVE CONTROL FIX (ESSENCIAL)
+let liveActive = false;
+let liveToken = 0;
 
-// comparativo
+// compare
 let stepCompare = 0;
 let sampleA = null;
 let sampleB = null;
@@ -112,7 +112,6 @@ navigator.mediaDevices.getUserMedia({
 
 // ---------------- FLASH ----------------
 function toggleFlash(){
-
   if(!streamTrack){
     alert("Flash não disponível");
     return;
@@ -131,7 +130,6 @@ function toggleFlash(){
 
 // ---------------- LAB ----------------
 function rgbToLab(r,g,b){
-
   r/=255; g/=255; b/=255;
 
   [r,g,b]=[r,g,b].map(v=>
@@ -179,7 +177,6 @@ const colors = [
 
 // ---------------- DETECÇÃO ----------------
 function detect(r,g,b){
-
   const lab = rgbToLab(r,g,b);
 
   let best={n:"Indef",d:999};
@@ -223,10 +220,6 @@ video.addEventListener("click",(e)=>{
   const x=(e.clientX-rect.left)*(video.videoWidth/rect.width);
   const y=(e.clientY-rect.top)*(video.videoHeight/rect.height);
 
-  cross.style.display="block";
-  cross.style.left=e.clientX+"px";
-  cross.style.top=e.clientY+"px";
-
   if(mode==="static"){
     const s=capture(x,y);
     const name=detect(s.rgb.r,s.rgb.g,s.rgb.b);
@@ -255,9 +248,7 @@ video.addEventListener("click",(e)=>{
       const d=deltaE(sampleA.lab,sampleB.lab);
       const sim=Math.max(0,100-d*2.5);
 
-      const text=
-        "Similaridade: "+sim.toFixed(1)+"%";
-
+      const text="Similaridade: "+sim.toFixed(1)+"%";
       document.getElementById("txt").innerText=text;
       speak(text);
 
@@ -266,10 +257,10 @@ video.addEventListener("click",(e)=>{
   }
 });
 
-// ---------------- LIVE ----------------
-function loop(){
+// ---------------- LIVE FIX (ESTÁVEL) ----------------
+function loop(token){
 
-  if(!liveRunning) return;
+  if(!liveActive || token !== liveToken) return;
 
   const s=capture(
     video.videoWidth/2,
@@ -282,15 +273,18 @@ function loop(){
 
   speak(name);
 
-  requestAnimationFrame(loop);
+  requestAnimationFrame(()=>loop(token));
 }
 
-// ---------------- MODE CONTROL ----------------
+// ---------------- MODE CONTROL FIX ----------------
 function setMode(m){
 
   mode=m;
 
-  liveRunning=false;
+  // 🔥 PARA TUDO DE FORMA SEGURA
+  liveActive=false;
+  liveToken++;
+
   stepCompare=0;
   sampleA=null;
   sampleB=null;
@@ -299,8 +293,9 @@ function setMode(m){
   document.getElementById("p2").style.display="none";
 
   if(m==="live"){
-    liveRunning=true;
-    loop();
+    liveActive=true;
+    liveToken++;
+    loop(liveToken);
   }
 
   document.getElementById("txt").innerText="Modo: "+m.toUpperCase();
