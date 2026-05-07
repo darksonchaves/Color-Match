@@ -11,6 +11,7 @@ body {
   background:#111;
   color:#fff;
   position:relative;
+  margin:0;
 }
 
 video {
@@ -26,12 +27,18 @@ video {
   border:2px solid #fff;
 }
 
+button {
+  padding:10px;
+  margin:5px;
+}
+
+/* 🔵 mira central */
 #cross {
   position:absolute;
   left:50%;
   top:50%;
-  width:20px;
-  height:20px;
+  width:22px;
+  height:22px;
   border:2px solid #00ffcc;
   border-radius:50%;
   transform:translate(-50%,-50%);
@@ -40,9 +47,18 @@ video {
   box-shadow:0 0 10px #00ffcc;
 }
 
-button {
-  padding:10px;
-  margin:5px;
+/* 🟢 label do modo live */
+#liveLabel {
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%, 30px);
+  color:#00ffcc;
+  font-weight:bold;
+  font-size:14px;
+  text-shadow:0 0 8px #000;
+  pointer-events:none;
+  display:none;
 }
 </style>
 </head>
@@ -61,6 +77,7 @@ button {
 <p id="txt">Selecione um modo</p>
 
 <div id="cross"></div>
+<div id="liveLabel"></div>
 
 <script>
 
@@ -69,6 +86,7 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 const cross = document.getElementById("cross");
+const liveLabel = document.getElementById("liveLabel");
 
 let mode = "static";
 
@@ -116,7 +134,7 @@ function deltaE(a,b){
   );
 }
 
-// ---------------- CORES ----------------
+// ---------------- BASE DE CORES ----------------
 const colors = [
   {n:"Preto", lab:rgbToLab(15,15,15)},
   {n:"Branco", lab:rgbToLab(245,245,245)},
@@ -151,7 +169,7 @@ function detect(r,g,b){
   };
 }
 
-// ---------------- CAPTURA ESTÁTICA ----------------
+// ---------------- STATIC MODE ----------------
 function captureStatic(x,y){
 
   canvas.width = video.videoWidth;
@@ -179,7 +197,7 @@ function captureStatic(x,y){
   return detect(r,g,b);
 }
 
-// ---------------- CAPTURA LIVE (CENTRO) ----------------
+// ---------------- LIVE MODE ----------------
 function captureLive(){
 
   canvas.width = video.videoWidth;
@@ -210,7 +228,7 @@ function captureLive(){
   return detect(r,g,b);
 }
 
-// ---------------- STATIC MODE ----------------
+// ---------------- CLICK STATIC ----------------
 video.addEventListener("click",(e)=>{
 
   if(mode !== "static") return;
@@ -229,7 +247,7 @@ video.addEventListener("click",(e)=>{
     `${res.name} | ${res.confidence.toFixed(1)}%`;
 });
 
-// ---------------- LIVE LOOP ----------------
+// ---------------- LOOP LIVE ----------------
 function loop(){
 
   if(mode !== "live") return;
@@ -237,7 +255,10 @@ function loop(){
   const res = captureLive();
 
   document.getElementById("txt").innerText =
-    `LIVE: ${res.name} | ${res.confidence.toFixed(1)}%`;
+    `LIVE MODE`;
+
+  liveLabel.innerText =
+    `${res.name} | ${res.confidence.toFixed(1)}%`;
 
   requestAnimationFrame(loop);
 }
@@ -249,9 +270,11 @@ function setMode(m){
 
   if(m === "live"){
     cross.style.display = "block";
+    liveLabel.style.display = "block";
     loop();
   } else {
     cross.style.display = "none";
+    liveLabel.style.display = "none";
   }
 }
 
