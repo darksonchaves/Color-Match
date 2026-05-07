@@ -2,7 +2,10 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Raw Sensor Precision</title>
+
+<title>
+ColorMatch Pro – Toyota OEM Edition
+</title>
 
 <style>
 
@@ -61,11 +64,25 @@ canvas{
 
 <body>
 
-<h2>ColorMatch Pro – Raw Sensor Precision</h2>
+<h2>
+ColorMatch Pro – Toyota OEM Edition
+</h2>
 
-<button onclick="setMode('static')">Estático</button>
-<button onclick="setMode('move')">Movimento</button>
-<button onclick="setMode('compare')">Comparar</button>
+<button onclick="setMode('static')">
+Estático
+</button>
+
+<button onclick="setMode('move')">
+Movimento
+</button>
+
+<button onclick="setMode('compare')">
+Comparar
+</button>
+
+<button onclick="analyzeToyota()">
+🚗 Toyota OEM
+</button>
 
 <button onclick="toggleFlash()">
 ⚡ Flash
@@ -95,21 +112,31 @@ canvas{
 
 </div>
 
-<p id="txt">Inicializando...</p>
+<p id="txt">
+Inicializando...
+</p>
 
 <script>
 
 /* ================= ELEMENTOS ================= */
 
-const video = document.getElementById("video");
+const video =
+document.getElementById("video");
 
-const canvasA = document.getElementById("canvasA");
-const canvasB = document.getElementById("canvasB");
+const canvasA =
+document.getElementById("canvasA");
 
-const ctxA = canvasA.getContext("2d");
-const ctxB = canvasB.getContext("2d");
+const canvasB =
+document.getElementById("canvasB");
 
-const cross = document.getElementById("cross");
+const ctxA =
+canvasA.getContext("2d");
+
+const ctxB =
+canvasB.getContext("2d");
+
+const cross =
+document.getElementById("cross");
 
 /* ================= CONTROLE ================= */
 
@@ -146,7 +173,7 @@ navigator.mediaDevices.getUserMedia({
   video.srcObject = stream;
 
   streamTrack =
-    stream.getVideoTracks()[0];
+  stream.getVideoTracks()[0];
 
 })
 .catch(()=>{
@@ -155,7 +182,7 @@ navigator.mediaDevices.getUserMedia({
 
 });
 
-/* ================= FLASH ESTÁVEL ================= */
+/* ================= FLASH ================= */
 
 async function toggleFlash(){
 
@@ -172,12 +199,12 @@ async function toggleFlash(){
   processingPaused = true;
 
   document.getElementById("txt").innerText =
-    "Ajustando flash...";
+  "Ajustando flash...";
 
   try{
 
     const capabilities =
-      streamTrack.getCapabilities();
+    streamTrack.getCapabilities();
 
     if(!capabilities.torch){
 
@@ -201,16 +228,14 @@ async function toggleFlash(){
       ]
     });
 
-    /* AGUARDA ESTABILIZAR */
-
     await new Promise(resolve=>
       setTimeout(resolve,700)
     );
 
     document.getElementById("txt").innerText =
-      "Flash: "
-      +
-      (flashOn ? "ON" : "OFF");
+    "Flash: "
+    +
+    (flashOn ? "ON" : "OFF");
 
   }catch(e){
 
@@ -239,7 +264,7 @@ function speak(text){
   speechSynthesis.cancel();
 
   const msg =
-    new SpeechSynthesisUtterance(text);
+  new SpeechSynthesisUtterance(text);
 
   msg.lang = "pt-BR";
 
@@ -261,19 +286,19 @@ function rgbToLab(r,g,b){
   );
 
   let x =
-    r*0.4124 +
-    g*0.3576 +
-    b*0.1805;
+  r*0.4124 +
+  g*0.3576 +
+  b*0.1805;
 
   let y =
-    r*0.2126 +
-    g*0.7152 +
-    b*0.0722;
+  r*0.2126 +
+  g*0.7152 +
+  b*0.0722;
 
   let z =
-    r*0.0193 +
-    g*0.1192 +
-    b*0.9505;
+  r*0.0193 +
+  g*0.1192 +
+  b*0.9505;
 
   x/=0.95047;
   y/=1;
@@ -301,6 +326,146 @@ function deltaE(a,b){
     (a.a-b.a)**2 +
     (a.b-b.b)**2
   );
+}
+
+/* ================= TOYOTA DATABASE ================= */
+
+const toyotaDatabase = [
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"040",
+  name:"Super White II",
+  rgb:{r:244,g:244,b:241},
+  lab:rgbToLab(244,244,241)
+},
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"1F7",
+  name:"Classic Silver Metallic",
+  rgb:{r:169,g:173,b:177},
+  lab:rgbToLab(169,173,177)
+},
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"1G3",
+  name:"Magnetic Gray Metallic",
+  rgb:{r:94,g:97,b:102},
+  lab:rgbToLab(94,97,102)
+},
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"218",
+  name:"Midnight Black Metallic",
+  rgb:{r:27,g:27,b:27},
+  lab:rgbToLab(27,27,27)
+},
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"3U5",
+  name:"Emotional Red",
+  rgb:{r:126,g:31,b:36},
+  lab:rgbToLab(126,31,36)
+},
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"8X8",
+  name:"Blueprint",
+  rgb:{r:30,g:58,b:95},
+  lab:rgbToLab(30,58,95)
+},
+
+{
+  brand:"Toyota",
+  model:"Hilux",
+  year:"2024",
+  code:"040",
+  name:"Super White II",
+  rgb:{r:244,g:244,b:241},
+  lab:rgbToLab(244,244,241)
+},
+
+{
+  brand:"Toyota",
+  model:"Hilux",
+  year:"2024",
+  code:"1G3",
+  name:"Graphite Metallic",
+  rgb:{r:92,g:95,b:102},
+  lab:rgbToLab(92,95,102)
+},
+
+{
+  brand:"Toyota",
+  model:"Hilux",
+  year:"2024",
+  code:"218",
+  name:"Attitude Black",
+  rgb:{r:22,g:22,b:22},
+  lab:rgbToLab(22,22,22)
+},
+
+{
+  brand:"Toyota",
+  model:"SW4",
+  year:"2024",
+  code:"070",
+  name:"White Pearl",
+  rgb:{r:247,g:247,b:244},
+  lab:rgbToLab(247,247,244)
+}
+
+];
+
+/* ================= TOYOTA MATCH ================= */
+
+function detectToyotaColor(sig){
+
+  const targetLab = rgbToLab(
+    sig.r,
+    sig.g,
+    sig.b
+  );
+
+  let best = null;
+
+  let bestDelta = 999;
+
+  for(const color of toyotaDatabase){
+
+    const d = deltaE(
+      targetLab,
+      color.lab
+    );
+
+    if(d < bestDelta){
+
+      bestDelta = d;
+      best = color;
+    }
+  }
+
+  return{
+    match:best,
+    delta:bestDelta
+  };
 }
 
 /* ================= CAPTURA ================= */
@@ -371,21 +536,21 @@ function rgbToHsl(r,g,b){
     const d = max-min;
 
     s = l>0.5
-      ? d/(2-max-min)
-      : d/(max+min);
+    ? d/(2-max-min)
+    : d/(max+min);
 
     switch(max){
 
       case r:
-        h=(g-b)/d+(g<b?6:0);
+      h=(g-b)/d+(g<b?6:0);
       break;
 
       case g:
-        h=(b-r)/d+2;
+      h=(b-r)/d+2;
       break;
 
       case b:
-        h=(r-g)/d+4;
+      h=(r-g)/d+4;
       break;
     }
 
@@ -492,6 +657,46 @@ function signalText(sig){
   );
 }
 
+/* ================= TOYOTA ANALYZER ================= */
+
+function analyzeToyota(){
+
+  const sig = captureRaw(
+    video.videoWidth/2,
+    video.videoHeight/2
+  );
+
+  const result =
+  detectToyotaColor(sig);
+
+  const similarity =
+  Math.max(
+    0,
+    100 - result.delta
+  ).toFixed(1);
+
+  const text =
+    result.match.brand
+    + " | "
+    + result.match.model
+    + " | "
+    + result.match.year
+    + " | "
+    + result.match.code
+    + " | "
+    + result.match.name
+    + " | "
+    + similarity
+    + "%";
+
+  document.getElementById("txt").innerText =
+  text;
+
+  speak(
+    result.match.name
+  );
+}
+
 /* ================= MOVIMENTO ================= */
 
 function moveLoop(){
@@ -512,7 +717,7 @@ function moveLoop(){
   const color = signalText(sig);
 
   document.getElementById("txt").innerText =
-    "Movimento: " + color;
+  "Movimento: " + color;
 
   if(color !== lastSpeak){
 
@@ -552,12 +757,12 @@ function setMode(m){
   );
 
   cross.style.display =
-    (m === "move" || m === "compare")
-    ? "block"
-    : "none";
+  (m === "move" || m === "compare")
+  ? "block"
+  : "none";
 
   document.getElementById("txt").innerText =
-    "Modo: " + m.toUpperCase();
+  "Modo: " + m.toUpperCase();
 
   if(m === "move"){
     moveLoop();
@@ -571,33 +776,29 @@ video.addEventListener("click",(e)=>{
   if(processingPaused) return;
 
   const rect =
-    video.getBoundingClientRect();
+  video.getBoundingClientRect();
 
   const x =
-    (e.clientX - rect.left)
-    *
-    (video.videoWidth / rect.width);
+  (e.clientX - rect.left)
+  *
+  (video.videoWidth / rect.width);
 
   const y =
-    (e.clientY - rect.top)
-    *
-    (video.videoHeight / rect.height);
+  (e.clientY - rect.top)
+  *
+  (video.videoHeight / rect.height);
 
   const sig = captureRaw(x,y);
 
   const color = signalText(sig);
 
-  /* ================= ESTÁTICO ================= */
-
   if(mode === "static"){
 
     document.getElementById("txt").innerText =
-      "Estático: " + color;
+    "Estático: " + color;
 
     speak(color);
   }
-
-  /* ================= COMPARAÇÃO ================= */
 
   if(mode === "compare"){
 
@@ -632,7 +833,7 @@ video.addEventListener("click",(e)=>{
       ctxA.stroke();
 
       document.getElementById("txt").innerText =
-        "Referência: " + color;
+      "Referência: " + color;
 
       compareStep = 1;
 
@@ -667,26 +868,26 @@ video.addEventListener("click",(e)=>{
       ctxB.stroke();
 
       const similarity =
-        Math.max(
-          0,
-          100 - deltaE(compareALab,compareBLab)
-        );
+      Math.max(
+        0,
+        100 - deltaE(compareALab,compareBLab)
+      );
 
       const result =
-        signalText(compareA)
-        +
-        " → "
-        +
-        signalText(compareB)
-        +
-        " | "
-        +
-        similarity.toFixed(1)
-        +
-        "% similar";
+      signalText(compareA)
+      +
+      " → "
+      +
+      signalText(compareB)
+      +
+      " | "
+      +
+      similarity.toFixed(1)
+      +
+      "% similar";
 
       document.getElementById("txt").innerText =
-        result;
+      result;
 
       speak(result);
 
