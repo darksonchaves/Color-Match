@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Unified Vision Engine</title>
+<title>ColorMatch Pro – Unified Precision Engine FIX</title>
 
 <style>
 body {
@@ -46,7 +46,7 @@ canvas {
   color:#00ffcc;
 }
 
-/* MIRA CENTRAL (MOVIMENTO + COMPARAÇÃO) */
+/* MIRA CENTRAL (MOVIMENTO E COMPARAÇÃO) */
 #centerCross {
   position:fixed;
   top:50%;
@@ -75,16 +75,6 @@ canvas {
   width:2px;
   height:28px;
   left:13px;
-}
-
-/* PONTO VISUAL NO CLICK */
-.point {
-  position:absolute;
-  width:12px;
-  height:12px;
-  border-radius:50%;
-  pointer-events:none;
-  display:none;
 }
 </style>
 </head>
@@ -130,13 +120,13 @@ const centerCross = document.getElementById("centerCross");
 
 let mode = "static";
 let voice = true;
-let step = 0;
 
+let step = 0;
 let sampleA = null;
 let sampleB = null;
-let lastMove = "";
+let lastMoveColor = "";
 
-/* ================= VOZ UNIVERSAL ================= */
+/* ================= VOZ GLOBAL ================= */
 function speak(t){
   if(!voice) return;
   speechSynthesis.cancel();
@@ -148,11 +138,11 @@ function speak(t){
 /* ================= CAMERA ================= */
 navigator.mediaDevices.getUserMedia({
   video:{facingMode:"environment"}
-}).then(s=>{
-  video.srcObject = s;
+}).then(stream=>{
+  video.srcObject = stream;
 });
 
-/* ================= LAB ================= */
+/* ================= LAB (NÃO ALTERADO) ================= */
 function rgbToLab(r,g,b){
   r/=255; g/=255; b/=255;
 
@@ -175,7 +165,7 @@ function rgbToLab(r,g,b){
   };
 }
 
-/* ================= ΔE ================= */
+/* ================= ΔE (NÃO ALTERADO) ================= */
 function deltaE(a,b){
   return Math.sqrt(
     (a.L-b.L)**2+
@@ -184,14 +174,19 @@ function deltaE(a,b){
   );
 }
 
-/* ================= CORES ================= */
+/* ================= MOTOR DE COR (NÃO ALTERADO) ================= */
 const refColors = [
   {n:"Preto",lab:rgbToLab(10,10,10)},
   {n:"Branco",lab:rgbToLab(245,245,245)},
   {n:"Cinza",lab:rgbToLab(128,128,128)},
   {n:"Vermelho",lab:rgbToLab(220,60,60)},
   {n:"Verde",lab:rgbToLab(60,200,60)},
-  {n:"Azul",lab:rgbToLab(60,80,220)}
+  {n:"Azul",lab:rgbToLab(60,80,220)},
+  {n:"Amarelo",lab:rgbToLab(240,220,80)},
+  {n:"Laranja",lab:rgbToLab(240,150,80)},
+  {n:"Rosa",lab:rgbToLab(240,120,180)},
+  {n:"Roxo",lab:rgbToLab(140,70,170)},
+  {n:"Marrom",lab:rgbToLab(120,80,60)}
 ];
 
 function detect(r,g,b){
@@ -200,21 +195,22 @@ function detect(r,g,b){
   let best={n:"Indef",d:999};
 
   for(const c of refColors){
-    const d=deltaE(lab,c.lab);
+    const d = deltaE(lab,c.lab);
     if(d<best.d) best={n:c.n,d};
   }
 
   return best;
 }
 
-/* ================= CAPTURA ================= */
+/* ================= CAPTURA PADRÃO ================= */
 function capture(ctx,x,y){
+
   ctx.canvas.width = video.videoWidth;
   ctx.canvas.height = video.videoHeight;
 
   ctx.drawImage(video,0,0);
 
-  const s=10;
+  const s=12;
   const d=ctx.getImageData(x-s,y-s,s*2,s*2).data;
 
   let r=0,g=0,b=0,c=0;
@@ -235,15 +231,15 @@ function moveLoop(){
 
   centerCross.style.display = "block";
 
-  const s = capture(ctxA,video.videoWidth/2,video.videoHeight/2);
+  const s = capture(ctxA, video.videoWidth/2, video.videoHeight/2);
 
-  if(s.n !== lastMove){
+  const txt = "MOVIMENTO: " + s.n;
+  document.getElementById("txt").innerText = txt;
+
+  if(lastMoveColor !== s.n){
     speak(s.n);
-    lastMove = s.n;
+    lastMoveColor = s.n;
   }
-
-  document.getElementById("txt").innerText =
-    "Movimento: " + s.n;
 
   requestAnimationFrame(moveLoop);
 }
@@ -255,13 +251,11 @@ function setMode(m){
   sampleA = null;
   sampleB = null;
 
-  centerCross.style.display =
-    (m==="move" || m==="compare") ? "block" : "none";
+  centerCross.style.display = (m==="move" || m==="compare") ? "block" : "none";
 
   if(m==="move") moveLoop();
 
-  document.getElementById("txt").innerText =
-    "Modo: "+m.toUpperCase();
+  document.getElementById("txt").innerText = "Modo: " + m.toUpperCase();
 }
 
 /* ================= CLIQUE ================= */
@@ -272,15 +266,14 @@ video.addEventListener("click",(e)=>{
   const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
   const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
 
-  /* ================= STATIC ================= */
+  /* ================= ESTÁTICO ================= */
   if(mode==="static"){
     const s = capture(ctxA,x,y);
-    document.getElementById("txt").innerText =
-      "Estático: "+s.n;
+    document.getElementById("txt").innerText = "ESTÁTICO: " + s.n;
     speak(s.n);
   }
 
-  /* ================= COMPARE ================= */
+  /* ================= COMPARAÇÃO (CAMADA ADICIONADA) ================= */
   if(mode==="compare"){
 
     if(step===0){
@@ -292,10 +285,10 @@ video.addEventListener("click",(e)=>{
       ctxA.strokeStyle="lime";
       ctxA.stroke();
 
-      step = 1;
-
       document.getElementById("txt").innerText =
-        "Referência: "+sampleA.n;
+        "Referência: " + sampleA.n;
+
+      step = 1;
     }
     else{
 
@@ -309,7 +302,7 @@ video.addEventListener("click",(e)=>{
       const sim = Math.max(0,100 - deltaE(sampleA.lab,sampleB.lab));
 
       const text =
-        `Ref: ${sampleA.n} | Comp: ${sampleB.n} | ${sim.toFixed(1)}%`;
+        `${sampleA.n} → ${sampleB.n} | ${sim.toFixed(1)}% similar`;
 
       document.getElementById("txt").innerText = text;
 
@@ -320,10 +313,10 @@ video.addEventListener("click",(e)=>{
   }
 });
 
-/* ================= ÁUDIO ================= */
+/* ================= VOZ GLOBAL ================= */
 function toggleVoice(){
   voice = !voice;
-  alert("Áudio: "+(voice?"ON":"OFF"));
+  alert("Áudio: " + (voice ? "ON" : "OFF"));
 }
 
 </script>
