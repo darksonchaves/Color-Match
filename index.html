@@ -66,7 +66,14 @@ canvas{
 <button onclick="setMode('static')">Estático</button>
 <button onclick="setMode('move')">Movimento</button>
 <button onclick="setMode('compare')">Comparar</button>
-<button onclick="toggleVoice()">🔊 Áudio</button>
+
+<button onclick="toggleFlash()">
+⚡ Flash
+</button>
+
+<button onclick="toggleVoice()">
+🔊 Áudio
+</button>
 
 <br>
 
@@ -116,6 +123,11 @@ let compareALab = null;
 
 let compareStep = 0;
 
+/* ================= FLASH ================= */
+
+let streamTrack = null;
+let flashOn = false;
+
 /* ================= CAMERA ================= */
 
 navigator.mediaDevices.getUserMedia({
@@ -126,7 +138,48 @@ navigator.mediaDevices.getUserMedia({
 
   video.srcObject = stream;
 
+  streamTrack = stream.getVideoTracks()[0];
+
 });
+
+/* ================= FLASH ================= */
+
+async function toggleFlash(){
+
+  if(!streamTrack){
+
+    alert("Flash não disponível");
+
+    return;
+  }
+
+  flashOn = !flashOn;
+
+  try{
+
+    await streamTrack.applyConstraints({
+      advanced:[
+        {
+          torch:flashOn
+        }
+      ]
+    });
+
+    alert(
+      "Flash: "
+      +
+      (flashOn ? "ON" : "OFF")
+    );
+
+  }catch(e){
+
+    flashOn = !flashOn;
+
+    alert(
+      "Flash não suportado neste dispositivo"
+    );
+  }
+}
 
 /* ================= VOZ ================= */
 
