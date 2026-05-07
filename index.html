@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Fixed Engine</title>
+<title>ColorMatch Pro – Voice Engine</title>
 
 <style>
 body {
@@ -11,6 +11,7 @@ body {
   background:#111;
   color:#fff;
   margin:0;
+  position:relative;
 }
 
 video {
@@ -18,67 +19,73 @@ video {
   border-radius:10px;
 }
 
-canvas { display:none; }
+#box {
+  width:120px;
+  height:120px;
+  margin:15px auto;
+  border-radius:10px;
+  border:2px solid #fff;
+}
+
+#snapshot {
+  width:90%;
+  margin:10px auto;
+  border-radius:10px;
+  display:none;
+  border:2px solid #00ffcc;
+}
+
+#cross {
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:22px;
+  height:22px;
+  border:2px solid #00ffcc;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  display:none;
+}
+
+#liveLabel {
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%, 30px);
+  color:#00ffcc;
+  font-weight:bold;
+  font-size:14px;
+  pointer-events:none;
+  display:none;
+  text-shadow:0 0 8px #000;
+}
 
 button {
   padding:10px;
   margin:5px;
-}
-
-/* SNAPSHOTS VISUAIS */
-.snap {
-  width:90px;
-  height:90px;
-  border-radius:10px;
-  border:2px solid #fff;
-  display:inline-block;
-  margin:5px;
-  background:#222;
-}
-
-/* PONTOS FIXOS */
-.point {
-  position:absolute;
-  width:14px;
-  height:14px;
-  border-radius:50%;
-  pointer-events:none;
-}
-
-#pointA { border:2px solid lime; display:none; }
-#pointB { border:2px solid red; display:none; }
-
-#result {
-  margin-top:10px;
-  color:#00ffcc;
 }
 </style>
 </head>
 
 <body>
 
-<h2>ColorMatch Pro – Fixed + Flash</h2>
+<h2>ColorMatch Pro – Voice Engine</h2>
 
-<button onclick="setMode('static')">Estático</button>
-<button onclick="setMode('compare1')">Amostra 1</button>
-<button onclick="setMode('compare2')">Amostra 2</button>
-<button onclick="runCompare()">Comparar</button>
-<button onclick="toggleFlash()">⚡ Flash</button>
+<button onclick="setMode('static')">Modo Estático</button>
+<button onclick="setMode('live')">Modo Movimento</button>
+<button onclick="toggleVoice()">🔊 Áudio</button>
 
 <video id="video" autoplay playsinline></video>
-<canvas id="canvas"></canvas>
+<canvas id="canvas" style="display:none;"></canvas>
 
-<div id="pointA" class="point"></div>
-<div id="pointB" class="point"></div>
+<img id="snapshot"/>
 
-<br>
+<div id="box"></div>
+<p id="txt">Selecione um modo</p>
 
-<div>
-  <div id="snapA" class="snap"></div>
-  <div id="snapB" class="snap"></div>
-</div>
-
-<p id="result">Selecione o modo</p>
+<div id="cross"></div>
+<div id="liveLabel"></div>
 
 <script>
 
@@ -86,44 +93,40 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-let stream = null;
-let track = null;
-let flash = false;
+const snapshot = document.getElementById("snapshot");
+const cross = document.getElementById("cross");
+const liveLabel = document.getElementById("liveLabel");
 
 let mode = "static";
+let voiceEnabled = true;
+let lastSpoken = "";
+let lastSpeakTime = 0;
 
-let sampleA = null;
-let sampleB = null;
+// ---------------- VOZ ----------------
+function speak(text){
+
+  if(!voiceEnabled) return;
+
+  const now = Date.now();
+
+  // anti-spam (1.5s)
+  if(text === lastSpoken && (now - lastSpeakTime < 1500)) return;
+
+  lastSpoken = text;
+  lastSpeakTime = now;
+
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "pt-BR";
+  msg.rate = 1;
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(msg);
+}
 
 // ---------------- CAMERA ----------------
 navigator.mediaDevices.getUserMedia({
   video: { facingMode: { ideal: "environment" } }
-}).then(s => {
-  stream = s;
-  video.srcObject = stream;
-  track = stream.getVideoTracks()[0];
-});
-
-// ---------------- FLASH ----------------
-async function toggleFlash(){
-
-  if(!track) return;
-
-  const caps = track.getCapabilities();
-
-  if(!caps.torch){
-    alert("Flash não suportado");
-    return;
-  }
-
-  flash = !flash;
-
-  await track.applyConstraints({
-    advanced: [{ torch: flash }]
-  });
-
-  alert("Flash: " + (flash ? "ON" : "OFF"));
-}
+}).then(s => video.srcObject = s);
 
 // ---------------- LAB ----------------
 function rgbToLab(r,g,b){
@@ -141,7 +144,7 @@ function rgbToLab(r,g,b){
   let z=r*0.0193 + g*0.1192 + b*0.9505;
 
   x/=0.95047;
-  y/=1;
+  y/=1.0;
   z/=1.08883;
 
   [x,y,z]=[x,y,z].map(v=>{
@@ -164,15 +167,47 @@ function deltaE(a,b){
   );
 }
 
-// ---------------- CAPTURA REAL ----------------
-function captureAt(x,y){
+// ---------------- CORES ----------------
+const colors = [
+  {n:"Preto", lab:rgbToLab(15,15,15)},
+  {n:"Branco", lab:rgbToLab(245,245,245)},
+  {n:"Cinza", lab:rgbToLab(128,128,128)},
+
+  {n:"Vermelho", lab:rgbToLab(220,60,60)},
+  {n:"Verde", lab:rgbToLab(60,200,60)},
+  {n:"Azul", lab:rgbToLab(60,80,220)},
+
+  {n:"Amarelo", lab:rgbToLab(240,220,80)},
+  {n:"Laranja", lab:rgbToLab(240,150,80)},
+  {n:"Rosa", lab:rgbToLab(240,120,180)},
+  {n:"Roxo", lab:rgbToLab(140,70,170)},
+  {n:"Marrom", lab:rgbToLab(120,80,60)}
+];
+
+// ---------------- DETECÇÃO ----------------
+function detect(r,g,b){
+
+  const lab = rgbToLab(r,g,b);
+
+  let best = {n:"Indefinido", d:999};
+
+  for(const c of colors){
+    const d = deltaE(lab,c.lab);
+    if(d < best.d) best = {n:c.n, d};
+  }
+
+  return best.n;
+}
+
+// ---------------- STATIC ----------------
+function captureStatic(x,y){
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
   ctx.drawImage(video,0,0);
 
-  const size = 20;
+  const size = 14;
 
   const data = ctx.getImageData(
     x-size,y-size,size*2,size*2
@@ -187,65 +222,75 @@ function captureAt(x,y){
     c++;
   }
 
-  return {
-    rgb:{r:r/c,g:g/c,b:b/c},
-    lab: rgbToLab(r/c,g/c,b/c)
-  };
+  r/=c; g/=c; b/=c;
+
+  return detect(r,g,b);
 }
 
-// ---------------- CLICK ----------------
+// ---------------- LIVE ----------------
+function captureLive(){
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  const x = canvas.width/2;
+  const y = canvas.height/2;
+
+  const size = 15;
+
+  ctx.drawImage(video,0,0);
+
+  const data = ctx.getImageData(
+    x-size,y-size,size*2,size*2
+  ).data;
+
+  let r=0,g=0,b=0,c=0;
+
+  for(let i=0;i<data.length;i+=4){
+    r+=data[i];
+    g+=data[i+1];
+    b+=data[i+2];
+    c++;
+  }
+
+  r/=c; g/=c; b/=c;
+
+  return detect(r,g,b);
+}
+
+// ---------------- CLICK STATIC ----------------
 video.addEventListener("click",(e)=>{
+
+  if(mode !== "static") return;
 
   const rect = video.getBoundingClientRect();
 
   const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
   const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
 
-  const sample = captureAt(x,y);
+  const name = captureStatic(x,y);
 
-  const color = `rgb(${sample.rgb.r},${sample.rgb.g},${sample.rgb.b})`;
+  snapshot.style.display = "block";
 
-  // ponto visual persistente
-  const px = document.createElement("div");
+  document.getElementById("txt").innerText =
+    `STATIC: ${name}`;
 
-  if(mode === "compare1"){
-
-    sampleA = sample;
-    document.getElementById("snapA").style.background = color;
-
-    const p = document.getElementById("pointA");
-    p.style.left = e.clientX + "px";
-    p.style.top = e.clientY + "px";
-    p.style.display = "block";
-  }
-
-  if(mode === "compare2"){
-
-    sampleB = sample;
-    document.getElementById("snapB").style.background = color;
-
-    const p = document.getElementById("pointB");
-    p.style.left = e.clientX + "px";
-    p.style.top = e.clientY + "px";
-    p.style.display = "block";
-  }
-
+  speak(name);
 });
 
-// ---------------- COMPARAÇÃO ----------------
-function runCompare(){
+// ---------------- LIVE LOOP ----------------
+function loop(){
 
-  if(!sampleA || !sampleB){
-    alert("Selecione as duas amostras");
-    return;
-  }
+  if(mode !== "live") return;
 
-  const d = deltaE(sampleA.lab, sampleB.lab);
+  const name = captureLive();
 
-  const sim = Math.max(0, 100 - d*2.5);
+  liveLabel.innerText = name;
+  document.getElementById("txt").innerText = "LIVE MODE";
 
-  document.getElementById("result").innerText =
-    `Similaridade: ${sim.toFixed(1)}%`;
+  speak(name);
+
+  requestAnimationFrame(loop);
 }
 
 // ---------------- MODE ----------------
@@ -253,16 +298,22 @@ function setMode(m){
 
   mode = m;
 
-  sampleA = null;
-  sampleB = null;
+  if(m === "live"){
+    cross.style.display = "block";
+    liveLabel.style.display = "block";
+    loop();
+  }
 
-  document.getElementById("pointA").style.display = "none";
-  document.getElementById("pointB").style.display = "none";
+  if(m === "static"){
+    cross.style.display = "none";
+    liveLabel.style.display = "none";
+  }
+}
 
-  document.getElementById("snapA").style.background = "#222";
-  document.getElementById("snapB").style.background = "#222";
-
-  document.getElementById("result").innerText = "Modo: " + m;
+// ---------------- VOICE TOGGLE ----------------
+function toggleVoice(){
+  voiceEnabled = !voiceEnabled;
+  alert("Áudio: " + (voiceEnabled ? "ON" : "OFF"));
 }
 
 </script>
