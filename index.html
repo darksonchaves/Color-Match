@@ -18,16 +18,18 @@ video {
   border-radius:10px;
 }
 
+/* BOTÕES */
 button {
   padding:10px;
   margin:5px;
 }
 
+/* LAYOUT DAS IMAGENS */
 #panel {
   display:flex;
   justify-content:space-around;
-  margin-top:15px;
   flex-wrap:wrap;
+  margin-top:10px;
 }
 
 .box {
@@ -46,22 +48,22 @@ canvas {
   color:#aaa;
 }
 
-#result {
-  margin-top:15px;
+/* RESULTADO */
+#txt {
+  margin-top:10px;
   color:#00ffcc;
-  font-size:16px;
 }
 
-/* MIRA CENTRAL */
+/* MIRA CENTRAL (MOVIMENTO) */
 #centerCross {
   position:fixed;
   top:50%;
   left:50%;
-  width:30px;
-  height:30px;
+  width:28px;
+  height:28px;
   transform:translate(-50%,-50%);
-  display:none;
   pointer-events:none;
+  display:none;
 }
 
 #centerCross::before,
@@ -72,16 +74,28 @@ canvas {
 }
 
 #centerCross::before {
-  width:30px;
+  width:28px;
   height:2px;
-  top:14px;
+  top:13px;
 }
 
 #centerCross::after {
   width:2px;
-  height:30px;
-  left:14px;
+  height:28px;
+  left:13px;
 }
+
+/* PONTOS */
+.point {
+  position:absolute;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  border:2px solid;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+
 </style>
 </head>
 
@@ -90,6 +104,7 @@ canvas {
 <h2>ColorMatch Pro – Unified Engine</h2>
 
 <button onclick="setMode('static')">Estático</button>
+<button onclick="setMode('move')">Movimento</button>
 <button onclick="setMode('compare')">Comparar</button>
 <button onclick="toggleVoice()">🔊 Áudio</button>
 
@@ -100,7 +115,6 @@ canvas {
 <div id="centerCross"></div>
 
 <div id="panel">
-
   <div class="box">
     <canvas id="canvasA"></canvas>
     <div class="label">Referência</div>
@@ -110,28 +124,28 @@ canvas {
     <canvas id="canvasB"></canvas>
     <div class="label">Comparação</div>
   </div>
-
 </div>
 
-<div id="result">Selecione um modo</div>
+<p id="txt">Selecione um modo</p>
 
 <script>
 
 const video = document.getElementById("video");
 const canvasA = document.getElementById("canvasA");
 const canvasB = document.getElementById("canvasB");
-
 const ctxA = canvasA.getContext("2d");
 const ctxB = canvasB.getContext("2d");
 
 const centerCross = document.getElementById("centerCross");
 
 let mode = "static";
-let step = 0;
 let voice = true;
 
+let step = 0;
 let sampleA = null;
 let sampleB = null;
+
+let lastColor = "";
 
 /* ================= CAMERA ================= */
 navigator.mediaDevices.getUserMedia({
@@ -181,7 +195,7 @@ function deltaE(a,b){
   );
 }
 
-/* ================= COR ================= */
+/* ================= DETECÇÃO ================= */
 function detectColor(r,g,b){
   const lab = rgbToLab(r,g,b);
 
@@ -197,7 +211,7 @@ function detectColor(r,g,b){
   let best={n:"Indef",d:999};
 
   for(const c of ref){
-    const d=deltaE(lab,c.lab);
+    const d = deltaE(lab,c.lab);
     if(d<best.d) best={n:c.n,d};
   }
 
@@ -214,14 +228,14 @@ function capture(ctx,x,y){
 
   const s=10;
 
-  const data = ctx.getImageData(x-s,y-s,s*2,s*2).data;
+  const d = ctx.getImageData(x-s,y-s,s*2,s*2).data;
 
   let r=0,g=0,b=0,c=0;
 
-  for(let i=0;i<data.length;i+=4){
-    r+=data[i];
-    g+=data[i+1];
-    b+=data[i+2];
+  for(let i=0;i<d.length;i+=4){
+    r+=d[i];
+    g+=d[i+1];
+    b+=d[i+2];
     c++;
   }
 
@@ -231,71 +245,111 @@ function capture(ctx,x,y){
   };
 }
 
-/* ================= MODO ================= */
+/* ================= MODE ================= */
 function setMode(m){
+
   mode = m;
   step = 0;
   sampleA = null;
   sampleB = null;
 
-  centerCross.style.display = (m==="compare") ? "block" : "none";
+  centerCross.style.display = (m==="move") ? "block" : "none";
 
-  document.getElementById("result").innerText =
+  document.getElementById("txt").innerText =
     "Modo: "+m.toUpperCase();
 }
 
 /* ================= CLICK ================= */
 video.addEventListener("click",(e)=>{
 
-  if(mode!=="compare") return;
-
   const rect = video.getBoundingClientRect();
 
   const x = (e.clientX-rect.left)*(video.videoWidth/rect.width);
   const y = (e.clientY-rect.top)*(video.videoHeight/rect.height);
 
-  if(step===0){
+  /* ================= ESTÁTICO ================= */
+  if(mode==="static"){
 
-    sampleA = capture(ctxA,x,y);
+    const s = capture(ctxA,x,y);
 
-    ctxA.strokeStyle="lime";
-    ctxA.beginPath();
-    ctxA.arc(x,y,10,0,Math.PI*2);
-    ctxA.stroke();
+    document.getElementById("txt").innerText =
+      "Estático: "+s.color;
 
-    document.getElementById("result").innerText =
-      "Referência: "+sampleA.color;
-
-    step=1;
+    speak(s.color);
   }
 
-  else{
+  /* ================= COMPARAÇÃO ================= */
+  if(mode==="compare"){
 
-    sampleB = capture(ctxB,x,y);
+    if(step===0){
 
-    ctxB.strokeStyle="red";
-    ctxB.beginPath();
-    ctxB.arc(x,y,10,0,Math.PI*2);
-    ctxB.stroke();
+      sampleA = capture(ctxA,x,y);
 
-    const sim = Math.max(0,100 - deltaE(sampleA.lab,sampleB.lab));
+      ctxA.beginPath();
+      ctxA.arc(x,y,10,0,Math.PI*2);
+      ctxA.strokeStyle="lime";
+      ctxA.stroke();
 
-    const text =
-      `${sampleA.color} → ${sampleB.color} | ${sim.toFixed(1)}%`;
+      document.getElementById("txt").innerText =
+        "Referência: "+sampleA.color;
 
-    document.getElementById("result").innerText = text;
+      step = 1;
+    }
 
-    speak(text);
+    else{
 
-    step=0;
+      sampleB = capture(ctxB,x,y);
+
+      ctxB.beginPath();
+      ctxB.arc(x,y,10,0,Math.PI*2);
+      ctxB.strokeStyle="red";
+      ctxB.stroke();
+
+      const sim = Math.max(0,100 - deltaE(sampleA.lab,sampleB.lab));
+
+      const text =
+        `${sampleA.color} → ${sampleB.color} | ${sim.toFixed(1)}%`;
+
+      document.getElementById("txt").innerText = text;
+
+      speak(text);
+
+      step = 0;
+    }
   }
 });
+
+/* ================= MOVIMENTO ================= */
+function moveLoop(){
+
+  if(mode!=="move") return;
+
+  const x = video.videoWidth/2;
+  const y = video.videoHeight/2;
+
+  const s = capture(ctxA,x,y);
+
+  if(s.color !== lastColor){
+    speak(s.color);
+    lastColor = s.color;
+  }
+
+  document.getElementById("txt").innerText =
+    "Movimento: "+s.color;
+
+  requestAnimationFrame(moveLoop);
+}
 
 /* ================= VOZ ================= */
 function toggleVoice(){
   voice = !voice;
   alert("Áudio: "+(voice?"ON":"OFF"));
 }
+
+/* AUTO LOOP */
+setInterval(()=>{
+  if(mode==="move") moveLoop();
+},300);
 
 </script>
 
