@@ -95,7 +95,7 @@ canvas{
 
 </div>
 
-<p id="txt">Iniciando...</p>
+<p id="txt">Inicializando...</p>
 
 <script>
 
@@ -111,9 +111,10 @@ const ctxB = canvasB.getContext("2d");
 
 const cross = document.getElementById("cross");
 
-/* ================= CONTROLES ================= */
+/* ================= CONTROLE ================= */
 
 let mode = "static";
+
 let voice = true;
 
 let lastSpeak = "";
@@ -126,7 +127,12 @@ let compareStep = 0;
 /* ================= FLASH ================= */
 
 let streamTrack = null;
+
 let flashOn = false;
+
+let flashBusy = false;
+
+let processingPaused = false;
 
 /* ================= CAMERA ================= */
 
@@ -134,28 +140,58 @@ navigator.mediaDevices.getUserMedia({
   video:{
     facingMode:"environment"
   }
-}).then(stream=>{
+})
+.then(stream=>{
 
   video.srcObject = stream;
 
-  streamTrack = stream.getVideoTracks()[0];
+  streamTrack =
+    stream.getVideoTracks()[0];
+
+})
+.catch(()=>{
+
+  alert("Erro ao acessar câmera");
 
 });
 
-/* ================= FLASH ================= */
+/* ================= FLASH ESTÁVEL ================= */
 
 async function toggleFlash(){
 
+  if(flashBusy) return;
+
   if(!streamTrack){
 
-    alert("Flash não disponível");
-
+    alert("Câmera não iniciada");
     return;
   }
 
-  flashOn = !flashOn;
+  flashBusy = true;
+
+  processingPaused = true;
+
+  document.getElementById("txt").innerText =
+    "Ajustando flash...";
 
   try{
+
+    const capabilities =
+      streamTrack.getCapabilities();
+
+    if(!capabilities.torch){
+
+      alert(
+        "Flash não suportado neste dispositivo"
+      );
+
+      processingPaused = false;
+      flashBusy = false;
+
+      return;
+    }
+
+    flashOn = !flashOn;
 
     await streamTrack.applyConstraints({
       advanced:[
@@ -165,20 +201,33 @@ async function toggleFlash(){
       ]
     });
 
-    alert(
+    /* AGUARDA ESTABILIZAR */
+
+    await new Promise(resolve=>
+      setTimeout(resolve,700)
+    );
+
+    document.getElementById("txt").innerText =
       "Flash: "
       +
-      (flashOn ? "ON" : "OFF")
-    );
+      (flashOn ? "ON" : "OFF");
 
   }catch(e){
 
-    flashOn = !flashOn;
+    flashOn = false;
 
     alert(
-      "Flash não suportado neste dispositivo"
+      "Falha ao controlar flash"
     );
   }
+
+  processingPaused = false;
+
+  setTimeout(()=>{
+
+    flashBusy = false;
+
+  },500);
 }
 
 /* ================= VOZ ================= */
@@ -189,7 +238,8 @@ function speak(text){
 
   speechSynthesis.cancel();
 
-  const msg = new SpeechSynthesisUtterance(text);
+  const msg =
+    new SpeechSynthesisUtterance(text);
 
   msg.lang = "pt-BR";
 
@@ -256,6 +306,13 @@ function deltaE(a,b){
 /* ================= CAPTURA ================= */
 
 function captureRaw(x,y){
+
+  if(
+    !video.videoWidth ||
+    processingPaused
+  ){
+    return {r:0,g:0,b:0};
+  }
 
   canvasA.width = video.videoWidth;
   canvasA.height = video.videoHeight;
@@ -441,6 +498,12 @@ function moveLoop(){
 
   if(mode !== "move") return;
 
+  if(processingPaused){
+
+    requestAnimationFrame(moveLoop);
+    return;
+  }
+
   const sig = captureRaw(
     video.videoWidth/2,
     video.videoHeight/2
@@ -471,10 +534,22 @@ function setMode(m){
 
   compareA = null;
   compareALab = null;
+
   compareStep = 0;
 
-  ctxA.clearRect(0,0,canvasA.width,canvasA.height);
-  ctxB.clearRect(0,0,canvasB.width,canvasB.height);
+  ctxA.clearRect(
+    0,
+    0,
+    canvasA.width,
+    canvasA.height
+  );
+
+  ctxB.clearRect(
+    0,
+    0,
+    canvasB.width,
+    canvasB.height
+  );
 
   cross.style.display =
     (m === "move" || m === "compare")
@@ -493,7 +568,10 @@ function setMode(m){
 
 video.addEventListener("click",(e)=>{
 
-  const rect = video.getBoundingClientRect();
+  if(processingPaused) return;
+
+  const rect =
+    video.getBoundingClientRect();
 
   const x =
     (e.clientX - rect.left)
