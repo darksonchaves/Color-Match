@@ -4,7 +4,11 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+>
 
 <title>
 ColorMatch Pro – OEM MultiBrand Edition
@@ -12,132 +16,147 @@ ColorMatch Pro – OEM MultiBrand Edition
 
 <style>
 
-*{
-  box-sizing:border-box;
-}
-
 body{
   margin:0;
-  background:#0f0f0f;
+  font-family:Arial;
+  background:#111;
   color:#fff;
-  font-family:Arial,sans-serif;
   text-align:center;
-  padding-bottom:40px;
 }
 
-h1{
-  margin-top:25px;
-  padding:0 15px;
-  font-size:42px;
-  line-height:1.1;
+h2{
+  margin-top:15px;
+  padding:0 10px;
 }
 
-.controls{
-  margin-top:25px;
+video{
+  width:92%;
+  border-radius:12px;
+  border:2px solid #333;
+  background:#000;
+  object-fit:cover;
 }
 
 button{
-  padding:14px 18px;
-  margin:6px;
+  padding:10px;
+  margin:5px;
   border:none;
-  border-radius:14px;
-  background:#232323;
-  color:#fff;
-  font-size:18px;
+  border-radius:8px;
   cursor:pointer;
+  background:#222;
+  color:#fff;
+  font-size:15px;
 }
 
-button:active{
-  transform:scale(0.98);
+button:hover{
+  background:#333;
 }
 
 button.active{
   background:#004d40;
 }
 
-#cameraWrap{
-  width:92%;
-  max-width:900px;
-  margin:30px auto 0 auto;
-  border-radius:22px;
-  overflow:hidden;
-  border:2px solid #2b2b2b;
-  background:#000;
-  position:relative;
-  aspect-ratio:16/9;
-}
-
-video{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  background:#000;
-}
-
-#crosshair{
-  position:absolute;
-  top:50%;
-  left:50%;
-  width:34px;
-  height:34px;
-  margin-left:-17px;
-  margin-top:-17px;
-  border:2px solid #00ffd0;
-  border-radius:50%;
-  pointer-events:none;
-  z-index:5;
-}
-
-#status{
-  margin-top:22px;
-  font-size:22px;
-  min-height:30px;
-}
-
-.good{
-  color:#00ff9d;
-}
-
-.warn{
-  color:#ffd54f;
-}
-
-.bad{
-  color:#ff7070;
+input,select{
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  margin:5px;
+  width:90%;
+  max-width:420px;
 }
 
 #panel{
-  width:92%;
-  max-width:900px;
-  margin:30px auto 0 auto;
   display:flex;
-  gap:20px;
-  justify-content:center;
+  justify-content:space-around;
+  flex-wrap:wrap;
+  margin-top:15px;
 }
 
-.previewBox{
-  flex:1;
+.box{
+  width:45%;
+  min-width:160px;
 }
 
 canvas{
   width:100%;
-  aspect-ratio:1/1;
-  border-radius:18px;
-  background:#1c1c1c;
+  border-radius:10px;
+  background:#222;
 }
 
-.label{
+#cross{
+  position:fixed;
+  top:50%;
+  left:50%;
+  width:26px;
+  height:26px;
+  transform:translate(-50%,-50%);
+  border:2px solid #00ffcc;
+  border-radius:50%;
+  display:none;
+  pointer-events:none;
+  z-index:999;
+}
+
+#databasePanel{
+  margin-top:20px;
+  padding:15px;
+  background:#181818;
+  border-top:2px solid #333;
+}
+
+#resultList{
   margin-top:10px;
-  font-size:20px;
+  text-align:left;
+  width:90%;
+  max-width:700px;
+  margin-left:auto;
+  margin-right:auto;
+  background:#1f1f1f;
+  border-radius:10px;
+  padding:10px;
 }
 
-#result{
-  width:92%;
-  max-width:900px;
-  margin:30px auto 0 auto;
-  font-size:26px;
-  line-height:1.4;
-  min-height:70px;
+.item{
+  padding:10px;
+  border-bottom:1px solid #333;
+  cursor:pointer;
+}
+
+.item:hover{
+  background:#2c2c2c;
+}
+
+.colorBox{
+  width:18px;
+  height:18px;
+  display:inline-block;
+  border-radius:50%;
+  margin-right:8px;
+  border:1px solid #fff;
+  vertical-align:middle;
+}
+
+.selectedColor{
+  background:#004d40 !important;
+}
+
+#txt{
+  margin-top:15px;
+  font-size:18px;
+  padding:10px;
+  line-height:1.5;
+}
+
+.good{
+  color:#00ff99;
+}
+
+.bad{
+  color:#ff6666;
+}
+
+.warn{
+  color:#ffcc00;
 }
 
 </style>
@@ -146,135 +165,154 @@ canvas{
 
 <body>
 
-<h1>
+<h2>
 ColorMatch Pro – OEM MultiBrand Edition
-</h1>
+</h2>
 
-<div class="controls">
-
-<button id="btnCamera">
-Iniciar Câmera
+<button onclick="setMode('static')">
+Estático
 </button>
 
-<button id="btnUniversal">
-Universal
+<button onclick="setMode('move')">
+Movimento
 </button>
 
-<button id="btnUniversalLive">
+<button onclick="setMode('universal')">
+Universal Sólido
+</button>
+
+<button onclick="setMode('universalMove')">
 Universal Live
 </button>
 
-<button id="btnVoice">
-Áudio
+<button onclick="setMode('comparePoint')">
+Comparar Ponto a Ponto
 </button>
 
-</div>
+<button onclick="setMode('compareDatabase')">
+Comparar Base de Dados
+</button>
 
-<div id="cameraWrap">
+<button onclick="analyzeOEM()">
+🎨 OEM Scan
+</button>
+
+<button onclick="toggleFlash()">
+⚡ Flash
+</button>
+
+<button onclick="toggleVoice()">
+🔊 Áudio
+</button>
+
+<br><br>
 
 <video
 id="video"
+autoplay
 playsinline
-webkit-playsinline
 muted
-autoplay>
+webkit-playsinline>
 </video>
 
-<div id="crosshair"></div>
-
-</div>
-
-<div id="status">
-Sistema aguardando inicialização...
-</div>
+<div id="cross"></div>
 
 <div id="panel">
 
-<div class="previewBox">
+  <div class="box">
+    <canvas id="canvasA"></canvas>
+    <div>Referência</div>
+  </div>
 
-<canvas id="canvasCapture"></canvas>
-
-<div class="label">
-Captura
-</div>
-
-</div>
-
-<div class="previewBox">
-
-<canvas id="canvasColor"></canvas>
-
-<div class="label">
-Cor Detectada
-</div>
+  <div class="box">
+    <canvas id="canvasB"></canvas>
+    <div>Comparação</div>
+  </div>
 
 </div>
 
+<div id="databasePanel">
+
+<h3>
+Pesquisa OEM
+</h3>
+
+<input
+type="text"
+id="brandSearch"
+placeholder="Digite a montadora..."
+oninput="searchBrand()"
+>
+
+<br>
+
+<select id="modelSelect" onchange="showModelColors()">
+
+<option value="">
+Selecione o modelo
+</option>
+
+</select>
+
+<div id="resultList"></div>
+
 </div>
 
-<div id="result">
-Aguardando inicialização da câmera...
-</div>
+<p id="txt">
+Inicializando câmera...
+</p>
 
 <script>
 
-/* =========================================================
-   ELEMENTOS
-========================================================= */
+/* ================= ELEMENTOS ================= */
 
 const video =
 document.getElementById("video");
 
-const statusEl =
-document.getElementById("status");
+const canvasA =
+document.getElementById("canvasA");
 
-const resultEl =
-document.getElementById("result");
+const canvasB =
+document.getElementById("canvasB");
 
-const canvasCapture =
-document.getElementById("canvasCapture");
-
-const canvasColor =
-document.getElementById("canvasColor");
-
-const ctxCapture =
-canvasCapture.getContext(
+const ctxA =
+canvasA.getContext(
   "2d",
   {willReadFrequently:true}
 );
 
-const ctxColor =
-canvasColor.getContext(
+const ctxB =
+canvasB.getContext(
   "2d",
   {willReadFrequently:true}
 );
 
-const btnCamera =
-document.getElementById("btnCamera");
+const cross =
+document.getElementById("cross");
 
-const btnUniversal =
-document.getElementById("btnUniversal");
+const txt =
+document.getElementById("txt");
 
-const btnUniversalLive =
-document.getElementById("btnUniversalLive");
+/* ================= CONTROLE ================= */
 
-/* =========================================================
-   CONTROLE
-========================================================= */
+let mode = "static";
 
-let stream = null;
+let voice = true;
 
-let started = false;
+let compareA = null;
+let compareALab = null;
+let compareStep = 0;
 
-let liveMode = false;
+let selectedDatabaseColor = null;
 
-let voiceEnabled = true;
+let streamTrack = null;
 
-let animationId = null;
+let flashOn = false;
+let flashBusy = false;
 
-/* =========================================================
-   UNIVERSAL COLORS
-========================================================= */
+let processingPaused = false;
+
+/* ================= UNIVERSAL ================= */
 
 const universalColors = [
 
@@ -335,19 +373,162 @@ const universalColors = [
 
 ];
 
-/* =========================================================
-   RGB -> LAB
-========================================================= */
+/* ================= CAMERA ================= */
+
+async function startCamera(){
+
+  try{
+
+    txt.innerHTML =
+    "<span class='warn'>Inicializando câmera...</span>";
+
+    const stream =
+
+    await navigator.mediaDevices.getUserMedia({
+
+      video:{
+        facingMode:{
+          ideal:"environment"
+        },
+        width:{
+          ideal:1280
+        },
+        height:{
+          ideal:720
+        }
+      },
+
+      audio:false
+
+    });
+
+    video.srcObject = stream;
+
+    streamTrack =
+    stream.getVideoTracks()[0];
+
+    await video.play();
+
+    txt.innerHTML =
+    "<span class='good'>Câmera iniciada com sucesso</span>";
+
+  }
+
+  catch(e){
+
+    console.log(e);
+
+    txt.innerHTML =
+
+    "<span class='bad'>Falha ao acessar câmera</span>";
+
+    alert(
+      "Permita acesso à câmera no Safari/Chrome e recarregue a página."
+    );
+
+  }
+
+}
+
+window.addEventListener(
+
+  "load",
+
+  ()=>{
+
+    startCamera();
+
+  }
+
+);
+
+/* ================= VOZ ================= */
+
+function speak(text){
+
+  if(!voice) return;
+
+  if(!window.speechSynthesis) return;
+
+  speechSynthesis.cancel();
+
+  const msg =
+  new SpeechSynthesisUtterance(text);
+
+  msg.lang = "pt-BR";
+
+  speechSynthesis.speak(msg);
+
+}
+
+/* ================= FLASH ================= */
+
+async function toggleFlash(){
+
+  if(flashBusy) return;
+
+  if(!streamTrack){
+
+    alert("Câmera não iniciada");
+    return;
+  }
+
+  flashBusy = true;
+
+  try{
+
+    const capabilities =
+    streamTrack.getCapabilities();
+
+    if(!capabilities.torch){
+
+      alert("Flash não suportado");
+
+      flashBusy = false;
+      return;
+    }
+
+    flashOn = !flashOn;
+
+    await streamTrack.applyConstraints({
+
+      advanced:[
+        {
+          torch:flashOn
+        }
+      ]
+
+    });
+
+  }
+
+  catch(e){
+
+    flashOn = false;
+
+    alert("Falha no flash");
+
+  }
+
+  setTimeout(()=>{
+
+    flashBusy = false;
+
+  },500);
+
+}
+
+/* ================= RGB -> LAB ================= */
 
 function rgbToLab(r,g,b){
 
-  r /= 255;
-  g /= 255;
-  b /= 255;
+  r/=255;
+  g/=255;
+  b/=255;
 
-  [r,g,b] = [r,g,b].map(v =>
+  [r,g,b]=[r,g,b].map(v=>
 
-    v > 0.04045
+    v>0.04045
     ? Math.pow((v+0.055)/1.055,2.4)
     : v/12.92
 
@@ -368,13 +549,13 @@ function rgbToLab(r,g,b){
   g*0.1192 +
   b*0.9505;
 
-  x /= 0.95047;
-  y /= 1;
-  z /= 1.08883;
+  x/=0.95047;
+  y/=1;
+  z/=1.08883;
 
-  [x,y,z] = [x,y,z].map(v =>
+  [x,y,z]=[x,y,z].map(v=>
 
-    v > 0.008856
+    v>0.008856
     ? Math.cbrt(v)
     : (7.787*v)+(16/116)
 
@@ -390,9 +571,7 @@ function rgbToLab(r,g,b){
 
 }
 
-/* =========================================================
-   DELTA E
-========================================================= */
+/* ================= DELTA E ================= */
 
 function deltaE(a,b){
 
@@ -406,234 +585,262 @@ function deltaE(a,b){
 
 }
 
-/* =========================================================
-   PREPARA LAB
-========================================================= */
+/* ================= DATABASE ================= */
 
-universalColors.forEach(color=>{
+const oemDatabase = [
 
-  color.lab = rgbToLab(
-    color.rgb.r,
-    color.rgb.g,
-    color.rgb.b
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"040",
+  name:"Super White II",
+  rgb:{r:244,g:244,b:241}
+},
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"1F7",
+  name:"Classic Silver Metallic",
+  rgb:{r:169,g:173,b:177}
+},
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"218",
+  name:"Midnight Black Metallic",
+  rgb:{r:27,g:27,b:27}
+},
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"3U5",
+  name:"Emotional Red",
+  rgb:{r:126,g:31,b:36}
+}
+
+];
+
+/* ================= PREPARA LAB ================= */
+
+oemDatabase.forEach(item=>{
+
+  item.lab = rgbToLab(
+    item.rgb.r,
+    item.rgb.g,
+    item.rgb.b
   );
 
 });
 
-/* =========================================================
-   SPEAK
-========================================================= */
+universalColors.forEach(item=>{
 
-function speak(text){
+  item.lab = rgbToLab(
+    item.rgb.r,
+    item.rgb.g,
+    item.rgb.b
+  );
 
-  if(!voiceEnabled) return;
+});
 
-  if(!window.speechSynthesis) return;
+/* ================= CAPTURA ================= */
 
-  speechSynthesis.cancel();
-
-  const msg =
-  new SpeechSynthesisUtterance(text);
-
-  msg.lang = "pt-BR";
-
-  speechSynthesis.speak(msg);
-
-}
-
-/* =========================================================
-   START CAMERA
-========================================================= */
-
-async function startCamera(){
-
-  try{
-
-    statusEl.innerHTML =
-    "<span class='warn'>Inicializando câmera...</span>";
-
-    if(stream){
-
-      stream.getTracks().forEach(track=>{
-
-        track.stop();
-
-      });
-
-    }
-
-    stream = await navigator.mediaDevices.getUserMedia({
-
-      video:{
-        facingMode:{
-          ideal:"environment"
-        }
-      },
-
-      audio:false
-
-    });
-
-    video.srcObject = stream;
-
-    await video.play();
-
-    await new Promise(resolve=>{
-
-      if(video.readyState >= 2){
-
-        resolve();
-
-      }
-
-      else{
-
-        video.onloadeddata = ()=>{
-
-          resolve();
-
-        };
-
-      }
-
-    });
-
-    started = true;
-
-    statusEl.innerHTML =
-    "<span class='good'>Câmera iniciada com sucesso</span>";
-
-    resultEl.innerHTML =
-    "Sistema pronto para leitura.";
-
-  }
-
-  catch(err){
-
-    console.log(err);
-
-    statusEl.innerHTML =
-    "<span class='bad'>Falha ao iniciar câmera</span>";
-
-    resultEl.innerHTML =
-
-    "Safari/iPhone bloqueou a câmera ou permissão negada.";
-
-  }
-
-}
-
-/* =========================================================
-   CAPTURE CENTER
-========================================================= */
-
-function captureCenter(){
+function captureRaw(x,y){
 
   if(
-    !started ||
     !video.videoWidth ||
     !video.videoHeight
   ){
-    return null;
+
+    return{
+      r:0,
+      g:0,
+      b:0,
+      variance:999
+    };
+
   }
 
-  const w =
+  canvasA.width =
   video.videoWidth;
 
-  const h =
+  canvasA.height =
   video.videoHeight;
 
-  canvasCapture.width = w;
-  canvasCapture.height = h;
-
-  ctxCapture.drawImage(
+  ctxA.drawImage(
     video,
     0,
     0,
-    w,
-    h
+    video.videoWidth,
+    video.videoHeight
   );
 
-  const centerX =
-  Math.floor(w/2);
+  const samples = [];
 
-  const centerY =
-  Math.floor(h/2);
+  const area = 14;
 
-  const size = 24;
+  for(let sy=-area; sy<=area; sy+=2){
 
-  let r=0,g=0,b=0,count=0;
+    for(let sx=-area; sx<=area; sx+=2){
 
-  for(let y=-size;y<=size;y+=3){
+      const px = Math.floor(x + sx);
+      const py = Math.floor(y + sy);
 
-    for(let x=-size;x<=size;x+=3){
-
-      const px = centerX + x;
-      const py = centerY + y;
+      if(
+        px < 0 ||
+        py < 0 ||
+        px >= video.videoWidth ||
+        py >= video.videoHeight
+      ){
+        continue;
+      }
 
       const data =
-      ctxCapture.getImageData(
+      ctxA.getImageData(
         px,
         py,
         1,
         1
       ).data;
 
-      r += data[0];
-      g += data[1];
-      b += data[2];
+      samples.push({
 
-      count++;
+        r:data[0],
+        g:data[1],
+        b:data[2]
+
+      });
 
     }
 
   }
 
-  r = Math.round(r/count);
-  g = Math.round(g/count);
-  b = Math.round(b/count);
+  let r=0,g=0,b=0;
 
-  return {r,g,b};
+  samples.forEach(s=>{
+
+    r += s.r;
+    g += s.g;
+    b += s.b;
+
+  });
+
+  r = Math.round(r/samples.length);
+  g = Math.round(g/samples.length);
+  b = Math.round(b/samples.length);
+
+  let variance = 0;
+
+  samples.forEach(s=>{
+
+    variance +=
+
+    Math.abs(s.r-r) +
+    Math.abs(s.g-g) +
+    Math.abs(s.b-b);
+
+  });
+
+  variance =
+  variance / samples.length;
+
+  drawPreview(r,g,b);
+
+  return{
+    r,
+    g,
+    b,
+    variance
+  };
 
 }
 
-/* =========================================================
-   DRAW COLOR
-========================================================= */
+/* ================= PREVIEW ================= */
 
-function drawColor(rgb){
+function drawPreview(r,g,b){
 
-  canvasColor.width = 300;
-  canvasColor.height = 300;
+  canvasA.width = 200;
+  canvasA.height = 200;
 
-  ctxColor.fillStyle =
+  ctxA.fillStyle =
+  rgb(${r},${g},${b});
 
-  rgb(${rgb.r},${rgb.g},${rgb.b});
+  ctxA.fillRect(0,0,200,200);
 
-  ctxColor.fillRect(
-    0,
-    0,
-    300,
-    300
-  );
+  canvasB.width = 200;
+  canvasB.height = 200;
+
+  ctxB.fillStyle =
+  rgb(${r},${g},${b});
+
+  ctxB.fillRect(0,0,200,200);
 
 }
 
-/* =========================================================
-   UNIVERSAL DETECT
-========================================================= */
+/* ================= OEM MATCH ================= */
 
-function detectUniversal(rgb){
+function detectOEM(sig){
 
   const targetLab =
   rgbToLab(
-    rgb.r,
-    rgb.g,
-    rgb.b
+    sig.r,
+    sig.g,
+    sig.b
   );
 
   let best = null;
+  let bestDelta = 999;
 
+  for(const color of oemDatabase){
+
+    const d =
+    deltaE(
+      targetLab,
+      color.lab
+    );
+
+    if(d < bestDelta){
+
+      bestDelta = d;
+      best = color;
+
+    }
+
+  }
+
+  return{
+    match:best,
+    delta:bestDelta
+  };
+
+}
+
+/* ================= UNIVERSAL MATCH ================= */
+
+function detectUniversal(sig){
+
+  if(sig.variance > 15){
+
+    return{
+      blocked:true
+    };
+
+  }
+
+  const targetLab =
+  rgbToLab(
+    sig.r,
+    sig.g,
+    sig.b
+  );
+
+  let best = null;
   let bestDelta = 999;
 
   for(const color of universalColors){
@@ -654,29 +861,25 @@ function detectUniversal(rgb){
   }
 
   return{
-
+    blocked:false,
     match:best,
     delta:bestDelta
-
   };
 
 }
 
-/* =========================================================
-   ANALYZE
-========================================================= */
+/* ================= ANALYZER OEM ================= */
 
-function analyze(){
+function analyzeOEM(){
 
-  const rgb =
-  captureCenter();
-
-  if(!rgb) return;
-
-  drawColor(rgb);
+  const sig =
+  captureRaw(
+    video.videoWidth/2,
+    video.videoHeight/2
+  );
 
   const result =
-  detectUniversal(rgb);
+  detectOEM(sig);
 
   const similarity =
 
@@ -685,156 +888,368 @@ function analyze(){
     100 - result.delta
   ).toFixed(1);
 
-  resultEl.innerHTML =
+  txt.innerText =
+
+  result.match.name
+  + " | "
+  + similarity
+  + "%";
+
+  speak(result.match.name);
+
+}
+
+/* ================= ANALYZER UNIVERSAL ================= */
+
+function analyzeUniversal(){
+
+  const sig =
+  captureRaw(
+    video.videoWidth/2,
+    video.videoHeight/2
+  );
+
+  const result =
+  detectUniversal(sig);
+
+  if(result.blocked){
+
+    txt.innerHTML =
+
+    "<span class='warn'>Aproxime de uma cor sólida uniforme</span>";
+
+    return;
+  }
+
+  const similarity =
+
+  Math.max(
+    0,
+    100 - result.delta
+  ).toFixed(1);
+
+  txt.innerHTML =
 
   "<span class='good'>"
-  +
-  result.match.name
-  +
-  "</span>"
-  +
-  "<br>"
-  +
-  similarity
-  +
-  "% de similaridade";
+  + result.match.name
+  + " | "
+  + similarity
+  + "%"
+  + "</span>";
 
-  return result.match.name;
+  speak(result.match.name);
 
 }
 
-/* =========================================================
-   LIVE LOOP
-========================================================= */
+/* ================= UNIVERSAL LIVE ================= */
 
-function startLive(){
+function universalLoop(){
 
-  if(animationId){
+  if(mode !== "universalMove") return;
 
-    cancelAnimationFrame(animationId);
+  analyzeUniversal();
 
-  }
-
-  function loop(){
-
-    if(liveMode){
-
-      analyze();
-
-      animationId =
-      requestAnimationFrame(loop);
-
-    }
-
-  }
-
-  loop();
+  requestAnimationFrame(universalLoop);
 
 }
 
-/* =========================================================
-   BUTTONS
-========================================================= */
+/* ================= MOVIMENTO ================= */
 
-btnCamera.addEventListener(
+function moveLoop(){
 
-  "click",
+  if(mode !== "move") return;
 
-  async ()=>{
+  const sig =
 
-    await startCamera();
+  captureRaw(
+    video.videoWidth/2,
+    video.videoHeight/2
+  );
 
+  txt.innerText =
+
+  `RGB:
+  ${sig.r},
+  ${sig.g},
+  ${sig.b}`;
+
+  requestAnimationFrame(moveLoop);
+
+}
+
+/* ================= MODOS ================= */
+
+function setMode(m){
+
+  mode = m;
+
+  compareStep = 0;
+
+  compareA = null;
+
+  compareALab = null;
+
+  cross.style.display =
+
+  (
+    m === "move" ||
+    m === "comparePoint" ||
+    m === "compareDatabase" ||
+    m === "universalMove"
+  )
+
+  ? "block"
+  : "none";
+
+  txt.innerText =
+  "Modo: " + m;
+
+  if(m === "move"){
+    moveLoop();
   }
 
-);
-
-btnUniversal.addEventListener(
-
-  "click",
-
-  ()=>{
-
-    liveMode = false;
-
-    const color =
-    analyze();
-
-    if(color){
-
-      speak(color);
-
-    }
-
+  if(m === "universalMove"){
+    universalLoop();
   }
 
-);
+  if(m === "universal"){
+    analyzeUniversal();
+  }
 
-btnUniversalLive.addEventListener(
+}
 
-  "click",
+/* ================= CLIQUE ================= */
 
-  ()=>{
+video.addEventListener("click",(e)=>{
 
-    if(!started){
+  if(
+    !video.videoWidth ||
+    !video.videoHeight
+  ){
+    return;
+  }
 
-      resultEl.innerHTML =
-      "Inicie a câmera primeiro.";
+  const rect =
+  video.getBoundingClientRect();
 
-      return;
-    }
+  const x =
 
-    liveMode = !liveMode;
+  (e.clientX - rect.left)
+  *
+  (video.videoWidth / rect.width);
 
-    btnUniversalLive.classList.toggle(
-      "active",
-      liveMode
-    );
+  const y =
 
-    if(liveMode){
+  (e.clientY - rect.top)
+  *
+  (video.videoHeight / rect.height);
 
-      startLive();
+  const sig =
+  captureRaw(x,y);
+
+/* ================= ESTATICO ================= */
+
+  if(mode === "static"){
+
+    analyzeOEM();
+  }
+
+/* ================= UNIVERSAL ================= */
+
+  if(mode === "universal"){
+
+    analyzeUniversal();
+  }
+
+/* ================= COMPARAR PONTO ================= */
+
+  if(mode === "comparePoint"){
+
+    if(compareStep === 0){
+
+      compareA = sig;
+
+      compareALab =
+
+      rgbToLab(
+        sig.r,
+        sig.g,
+        sig.b
+      );
+
+      compareStep = 1;
+
+      txt.innerText =
+      "Primeiro ponto capturado";
+
+      speak(
+        "Primeiro ponto capturado"
+      );
 
     }
 
     else{
 
-      cancelAnimationFrame(animationId);
+      const compareBLab =
 
-    }
+      rgbToLab(
+        sig.r,
+        sig.g,
+        sig.b
+      );
 
-  }
+      const similarity =
 
-);
+      Math.max(
+        0,
+        100 -
+        deltaE(
+          compareALab,
+          compareBLab
+        )
+      );
 
-/* =========================================================
-   TOGGLE VOICE
-========================================================= */
+      txt.innerText =
 
-document
-.getElementById("btnVoice")
-.addEventListener(
-
-  "click",
-
-  ()=>{
-
-    voiceEnabled = !voiceEnabled;
-
-    alert(
-
-      "Áudio "
+      "Similaridade: "
       +
-      (
-        voiceEnabled
-        ? "ativado"
-        : "desativado"
-      )
+      similarity.toFixed(1)
+      +
+      "%";
 
-    );
+      speak(
+        similarity.toFixed(1)
+        + " porcento similar"
+      );
 
+      compareStep = 0;
+    }
   }
 
-);
+});
+
+/* ================= AUDIO ================= */
+
+function toggleVoice(){
+
+  voice = !voice;
+
+  alert(
+    "Áudio: "
+    +
+    (voice ? "ON" : "OFF")
+  );
+}
+
+/* ================= PESQUISA ================= */
+
+function searchBrand(){
+
+  const brand =
+
+  document.getElementById("brandSearch")
+  .value
+  .trim()
+  .toLowerCase();
+
+  const models =
+
+  [...new Set(
+
+    oemDatabase
+
+    .filter(item=>
+
+      item.brand.toLowerCase()
+      .includes(brand)
+
+    )
+
+    .map(item=>item.model)
+
+  )]
+
+  .sort();
+
+  const select =
+  document.getElementById("modelSelect");
+
+  select.innerHTML =
+
+  `<option value="">
+  Selecione o modelo
+  </option>`;
+
+  models.forEach(model=>{
+
+    select.innerHTML +=
+
+    `<option value="${model}">
+      ${model}
+    </option>`;
+
+  });
+
+  document.getElementById("resultList")
+  .innerHTML = "";
+}
+
+/* ================= MOSTRAR CORES ================= */
+
+function showModelColors(){
+
+  const model =
+  document.getElementById("modelSelect")
+  .value;
+
+  const resultList =
+  document.getElementById("resultList");
+
+  resultList.innerHTML = "";
+
+  const colors =
+
+  oemDatabase
+
+  .filter(item=>item.model===model)
+
+  .sort((a,b)=>
+    a.name.localeCompare(b.name)
+  );
+
+  colors.forEach((item,index)=>{
+
+    resultList.innerHTML +=
+
+    `<div class="item">
+
+      <span
+      class="colorBox"
+      style="
+      background:rgb(
+      ${item.rgb.r},
+      ${item.rgb.g},
+      ${item.rgb.b}
+      )">
+      </span>
+
+      <strong>${item.name}</strong>
+
+      <br>
+
+      Código:
+      ${item.code}
+
+      <br>
+
+      Ano:
+      ${item.year}
+
+    </div>`;
+
+  });
+
+}
 
 </script>
 
