@@ -1,17 +1,10 @@
-<!-- ========================================================= -->
-<!-- COLORMATCH PRO – OEM MULTIBRAND EDITION -->
-<!-- NOVO MOTOR UNIVERSAL PROFISSIONAL -->
-<!-- REFINO PROFISSIONAL • UNIVERSAL SOLID ENGINE V2 -->
-<!-- ========================================================= -->
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
 
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#0b0b0b" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>
 ColorMatch Pro – OEM MultiBrand Edition
@@ -19,317 +12,150 @@ ColorMatch Pro – OEM MultiBrand Edition
 
 <style>
 
-:root{
-  --bg:#0f0f0f;
-  --panel:#181818;
-  --panel2:#202020;
-  --line:#2d2d2d;
-  --green:#00d49a;
-  --green2:#00ffcc;
-  --yellow:#ffcc00;
-  --red:#ff5f5f;
-  --white:#ffffff;
-}
-
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  -webkit-tap-highlight-color:transparent;
-}
-
 body{
-  background:var(--bg);
+  margin:0;
+  font-family:Arial;
+  background:#111;
   color:#fff;
-  font-family:Arial,sans-serif;
   text-align:center;
-  overflow-x:hidden;
 }
 
-header{
-  padding:20px 10px 10px;
-}
-
-h1{
-  font-size:28px;
-  letter-spacing:1px;
-}
-
-.sub{
-  margin-top:8px;
-  color:#aaa;
-  font-size:14px;
-}
-
-#controls{
-  width:95%;
-  margin:auto;
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:8px;
-  margin-top:18px;
-}
-
-button{
-  background:#1f1f1f;
-  border:1px solid #333;
-  color:#fff;
-  padding:12px 16px;
-  border-radius:12px;
-  cursor:pointer;
-  font-size:14px;
-  transition:0.2s;
-  min-width:140px;
-}
-
-button:hover{
-  background:#2b2b2b;
-}
-
-button.active{
-  background:linear-gradient(135deg,#00695c,#00b894);
-  border-color:#00ffcc;
-}
-
-#videoContainer{
-  position:relative;
-  width:94%;
-  max-width:980px;
-  margin:18px auto;
-  border-radius:18px;
-  overflow:hidden;
-  border:2px solid #333;
-  background:#000;
-  box-shadow:0 0 25px rgba(0,0,0,0.5);
+h2{
+  margin-top:15px;
 }
 
 video{
-  width:100%;
-  display:block;
-  object-fit:cover;
-}
-
-#cross{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  width:42px;
-  height:42px;
-  border:3px solid #00ffcc;
-  border-radius:50%;
-  display:none;
-  pointer-events:none;
-  box-shadow:
-  0 0 10px #00ffcc,
-  0 0 25px #00ffcc;
-}
-
-#solidIndicator{
-  position:absolute;
-  bottom:15px;
-  left:50%;
-  transform:translateX(-50%);
-  background:rgba(0,0,0,0.7);
-  border:1px solid #00ffcc;
-  padding:10px 18px;
-  border-radius:999px;
-  font-size:14px;
-  display:none;
-  z-index:20;
-}
-
-#hud{
-  position:absolute;
-  top:12px;
-  left:12px;
-  right:12px;
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  z-index:10;
-}
-
-.hudBox{
-  background:rgba(0,0,0,0.55);
-  backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,0.08);
-  padding:10px 14px;
+  width:92%;
   border-radius:12px;
-  font-size:13px;
+  border:2px solid #333;
+  background:#000;
+}
+
+button{
+  padding:10px;
+  margin:5px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background:#222;
+  color:#fff;
+}
+
+button:hover{
+  background:#333;
+}
+
+button.active{
+  background:#004d40;
+}
+
+input,select{
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  margin:5px;
+  width:90%;
+  max-width:420px;
 }
 
 #panel{
-  width:95%;
-  max-width:1000px;
-  margin:18px auto;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:15px;
+  display:flex;
+  justify-content:space-around;
+  flex-wrap:wrap;
+  margin-top:15px;
 }
 
-.card{
-  background:var(--panel);
-  border:1px solid var(--line);
-  border-radius:18px;
-  padding:14px;
-}
-
-.card h3{
-  margin-bottom:12px;
+.box{
+  width:45%;
+  min-width:160px;
 }
 
 canvas{
   width:100%;
-  border-radius:12px;
-  border:2px solid #333;
+  border-radius:10px;
   background:#222;
 }
 
-.infoGrid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-  margin-top:12px;
+#cross{
+  position:fixed;
+  top:50%;
+  left:50%;
+  width:26px;
+  height:26px;
+  transform:translate(-50%,-50%);
+  border:2px solid #00ffcc;
+  border-radius:50%;
+  display:none;
+  pointer-events:none;
+  z-index:999;
 }
 
-.infoBox{
-  background:#1d1d1d;
-  border:1px solid #333;
-  border-radius:12px;
-  padding:12px;
-}
-
-.infoTitle{
-  color:#999;
-  font-size:13px;
-}
-
-.infoValue{
-  margin-top:6px;
-  font-size:18px;
-  font-weight:bold;
+#solidStatus{
+  margin-top:10px;
+  font-size:15px;
+  color:#00ffcc;
 }
 
 #databasePanel{
-  width:95%;
-  max-width:1000px;
-  margin:25px auto;
-  background:var(--panel);
-  border:1px solid var(--line);
-  border-radius:20px;
-  padding:20px;
-}
-
-input,select{
-  width:92%;
-  max-width:450px;
-  padding:14px;
-  border:none;
-  border-radius:12px;
-  background:#222;
-  color:#fff;
-  margin:8px;
-  font-size:15px;
+  margin-top:20px;
+  padding:15px;
+  background:#181818;
+  border-top:2px solid #333;
 }
 
 #resultList{
-  margin-top:20px;
-  display:grid;
-  gap:10px;
+  margin-top:10px;
+  text-align:left;
+  width:90%;
+  max-width:700px;
+  margin-left:auto;
+  margin-right:auto;
+  background:#1f1f1f;
+  border-radius:10px;
+  padding:10px;
 }
 
 .item{
-  background:#1f1f1f;
-  border:1px solid #333;
-  border-radius:14px;
-  padding:14px;
-  text-align:left;
+  padding:10px;
+  border-bottom:1px solid #333;
   cursor:pointer;
-  transition:0.2s;
 }
 
 .item:hover{
-  transform:scale(1.01);
-  border-color:#555;
-}
-
-.item.selected{
-  background:#003d34;
-  border-color:#00ffcc;
+  background:#2c2c2c;
 }
 
 .colorBox{
-  width:20px;
-  height:20px;
-  border-radius:50%;
+  width:18px;
+  height:18px;
   display:inline-block;
-  vertical-align:middle;
+  border-radius:50%;
   margin-right:8px;
   border:1px solid #fff;
+  vertical-align:middle;
+}
+
+.selectedColor{
+  background:#004d40 !important;
 }
 
 #txt{
-  width:95%;
-  max-width:1000px;
-  margin:20px auto 40px;
-  background:#161616;
-  border:1px solid #333;
-  border-radius:16px;
-  padding:18px;
+  margin-top:15px;
   font-size:18px;
+  padding:10px;
   line-height:1.5;
 }
 
-.statusGood{
+.good{
   color:#00ff99;
 }
 
-.statusMedium{
-  color:#ffcc00;
-}
-
-.statusBad{
+.bad{
   color:#ff6666;
 }
 
-#liveBar{
-  width:100%;
-  height:8px;
-  background:#222;
-  border-radius:999px;
-  overflow:hidden;
-  margin-top:12px;
-}
-
-#liveFill{
-  width:0%;
-  height:100%;
-  background:linear-gradient(90deg,#00ff99,#00ffcc);
-  transition:0.2s;
-}
-
-footer{
-  padding:20px;
-  color:#666;
-  font-size:13px;
-}
-
-@media(max-width:780px){
-
-  #panel{
-    grid-template-columns:1fr;
-  }
-
-  .infoGrid{
-    grid-template-columns:1fr;
-  }
-
-  button{
-    width:100%;
-  }
-
+.warn{
+  color:#ffcc00;
 }
 
 </style>
@@ -338,24 +164,16 @@ footer{
 
 <body>
 
-<header>
-
-<h1>ColorMatch Pro</h1>
-
-<div class="sub">
-OEM MultiBrand Edition • Universal Solid Engine V2
-</div>
-
-</header>
-
-<div id="controls">
+<h2>
+ColorMatch Pro – OEM MultiBrand Edition
+</h2>
 
 <button id="btnStatic" onclick="setMode('static')">
-OEM Estático
+Estático
 </button>
 
 <button id="btnMove" onclick="setMode('move')">
-OEM Movimento
+Movimento
 </button>
 
 <button id="btnUniversal" onclick="setMode('universal')">
@@ -367,11 +185,11 @@ Universal Live
 </button>
 
 <button id="btnCompare" onclick="setMode('comparePoint')">
-Comparar Pontos
+Comparar Ponto a Ponto
 </button>
 
 <button id="btnDatabase" onclick="setMode('compareDatabase')">
-Comparar OEM
+Comparar Base de Dados
 </button>
 
 <button onclick="analyzeOEM()">
@@ -386,27 +204,7 @@ Comparar OEM
 🔊 Áudio
 </button>
 
-</div>
-
-<div id="videoContainer">
-
-<div id="hud">
-
-<div class="hudBox">
-Modo:
-<span id="modeText">
-OEM ESTÁTICO
-</span>
-</div>
-
-<div class="hudBox">
-Precisão:
-<span id="precisionText">
-0%
-</span>
-</div>
-
-</div>
+<br><br>
 
 <video
 id="video"
@@ -417,160 +215,186 @@ muted>
 
 <div id="cross"></div>
 
-<div id="solidIndicator">
-ANALISANDO SUPERFÍCIE
-</div>
-
+<div id="solidStatus">
+Sistema inicializando...
 </div>
 
 <div id="panel">
 
-<div class="card">
+  <div class="box">
+    <canvas id="canvasA"></canvas>
+    <div>Referência</div>
+  </div>
 
-<h3>Referência</h3>
-
-<canvas id="canvasA"></canvas>
-
-<div class="infoGrid">
-
-<div class="infoBox">
-<div class="infoTitle">RGB</div>
-<div class="infoValue" id="rgbValue">
-0,0,0
-</div>
-</div>
-
-<div class="infoBox">
-<div class="infoTitle">HEX</div>
-<div class="infoValue" id="hexValue">
-#000000
-</div>
-</div>
+  <div class="box">
+    <canvas id="canvasB"></canvas>
+    <div>Comparação</div>
+  </div>
 
 </div>
 
-</div>
+<div id="databasePanel">
 
-<div class="card">
+<h3>
+Pesquisa OEM
+</h3>
 
-<h3>Comparação</h3>
+<input
+type="text"
+id="brandSearch"
+placeholder="Digite a montadora..."
+oninput="searchBrand()"
+>
 
-<canvas id="canvasB"></canvas>
+<br>
 
-<div class="infoGrid">
+<select id="modelSelect" onchange="showModelColors()">
 
-<div class="infoBox">
-<div class="infoTitle">Cor Detectada</div>
-<div class="infoValue" id="colorName">
----
-</div>
-</div>
+<option value="">
+Selecione o modelo
+</option>
 
-<div class="infoBox">
-<div class="infoTitle">Similaridade</div>
-<div class="infoValue" id="similarityValue">
-0%
-</div>
-</div>
+</select>
 
-</div>
-
-<div id="liveBar">
-<div id="liveFill"></div>
-</div>
+<div id="resultList"></div>
 
 </div>
 
-</div>
-
-<div id="txt">
+<p id="txt">
 Inicializando câmera...
-</div>
-
-<footer>
-ColorMatch Pro • Professional OEM Color Identification System
-</footer>
+</p>
 
 <script>
 
-/* ===================================================== */
-/* ELEMENTOS */
-/* ===================================================== */
+/* ================= ELEMENTOS ================= */
 
-const video = document.getElementById("video");
+const video =
+document.getElementById("video");
 
-const canvasA = document.getElementById("canvasA");
-const canvasB = document.getElementById("canvasB");
+const canvasA =
+document.getElementById("canvasA");
 
-const ctxA = canvasA.getContext("2d",{willReadFrequently:true});
-const ctxB = canvasB.getContext("2d",{willReadFrequently:true});
+const canvasB =
+document.getElementById("canvasB");
 
-const txt = document.getElementById("txt");
+const ctxA =
+canvasA.getContext(
+  "2d",
+  {willReadFrequently:true}
+);
 
-const cross = document.getElementById("cross");
+const ctxB =
+canvasB.getContext(
+  "2d",
+  {willReadFrequently:true}
+);
 
-const rgbValue = document.getElementById("rgbValue");
-const hexValue = document.getElementById("hexValue");
-const colorName = document.getElementById("colorName");
-const similarityValue = document.getElementById("similarityValue");
-const precisionText = document.getElementById("precisionText");
-const liveFill = document.getElementById("liveFill");
-const modeText = document.getElementById("modeText");
-const solidIndicator = document.getElementById("solidIndicator");
+const cross =
+document.getElementById("cross");
 
-/* ===================================================== */
-/* CONTROLE */
-/* ===================================================== */
+const txt =
+document.getElementById("txt");
+
+const solidStatus =
+document.getElementById("solidStatus");
+
+/* ================= CONTROLE ================= */
 
 let mode = "static";
 
 let voice = true;
 
+let lastSpeak = "";
+
+let compareA = null;
+
+let compareALab = null;
+
+let compareStep = 0;
+
+let selectedDatabaseColor = null;
+
+/* ================= FLASH ================= */
+
 let streamTrack = null;
+
 let flashOn = false;
+
+let flashBusy = false;
 
 let processingPaused = false;
 
-let lastSpokenColor = "";
-let speechLocked = false;
-
-const MIN_SIMILARITY_TO_SPEAK = 72;
-
-/* ===================================================== */
-/* UNIVERSAL COLORS */
-/* ===================================================== */
+/* ================= CORES UNIVERSAIS ================= */
 
 const universalColors = [
 
-{name:"Branco",rgb:{r:255,g:255,b:255}},
-{name:"Preto",rgb:{r:0,g:0,b:0}},
-{name:"Cinza",rgb:{r:128,g:128,b:128}},
-{name:"Vermelho",rgb:{r:255,g:0,b:0}},
-{name:"Azul",rgb:{r:0,g:0,b:255}},
-{name:"Verde",rgb:{r:0,g:255,b:0}},
-{name:"Amarelo",rgb:{r:255,g:255,b:0}},
-{name:"Laranja",rgb:{r:255,g:140,b:0}},
-{name:"Roxo",rgb:{r:128,g:0,b:128}},
-{name:"Marrom",rgb:{r:101,g:67,b:33}},
-{name:"Bege",rgb:{r:210,g:180,b:140}}
+{
+  name:"Branco",
+  rgb:{r:255,g:255,b:255}
+},
+
+{
+  name:"Preto",
+  rgb:{r:0,g:0,b:0}
+},
+
+{
+  name:"Cinza",
+  rgb:{r:128,g:128,b:128}
+},
+
+{
+  name:"Vermelho",
+  rgb:{r:255,g:0,b:0}
+},
+
+{
+  name:"Azul",
+  rgb:{r:0,g:0,b:255}
+},
+
+{
+  name:"Verde",
+  rgb:{r:0,g:255,b:0}
+},
+
+{
+  name:"Amarelo",
+  rgb:{r:255,g:255,b:0}
+},
+
+{
+  name:"Laranja",
+  rgb:{r:255,g:140,b:0}
+},
+
+{
+  name:"Roxo",
+  rgb:{r:128,g:0,b:128}
+},
+
+{
+  name:"Marrom",
+  rgb:{r:101,g:67,b:33}
+}
 
 ];
 
-/* ===================================================== */
-/* CAMERA */
-/* ===================================================== */
+/* ================= CAMERA ================= */
 
 async function startCamera(){
 
   try{
 
     const stream =
-    await navigator.mediaDevices.getUserMedia({
+
+    await navigator.mediaDevices
+    .getUserMedia({
 
       video:{
-        facingMode:{ideal:"environment"},
-        width:{ideal:1920},
-        height:{ideal:1080}
+        facingMode:{
+          ideal:"environment"
+        }
       },
 
       audio:false
@@ -581,15 +405,28 @@ async function startCamera(){
 
     await video.play();
 
-    streamTrack = stream.getVideoTracks()[0];
+    streamTrack =
+    stream.getVideoTracks()[0];
 
     txt.innerHTML =
-    "<span class='statusGood'>Câmera iniciada</span>";
+    "<span class='good'>Câmera iniciada com sucesso</span>";
 
-  }catch(e){
+    solidStatus.innerHTML =
+    "Sistema pronto";
+
+  }
+
+  catch(e){
 
     txt.innerHTML =
-    "<span class='statusBad'>Falha na câmera</span>";
+    "<span class='bad'>Falha ao acessar câmera</span>";
+
+    solidStatus.innerHTML =
+    "Erro na câmera";
+
+    alert(
+      "Erro ao acessar câmera"
+    );
 
   }
 
@@ -597,19 +434,13 @@ async function startCamera(){
 
 startCamera();
 
-/* ===================================================== */
-/* AUDIO */
-/* ===================================================== */
+/* ================= VOZ ================= */
 
 function speak(text){
 
   if(!voice) return;
 
   if(!window.speechSynthesis) return;
-
-  if(speechLocked) return;
-
-  speechLocked = true;
 
   speechSynthesis.cancel();
 
@@ -618,54 +449,76 @@ function speak(text){
 
   msg.lang = "pt-BR";
 
-  msg.onend = ()=>{
-
-    setTimeout(()=>{
-
-      speechLocked = false;
-
-    },250);
-
-  };
-
   speechSynthesis.speak(msg);
-
 }
 
-function smartSpeakColor(color,similarity){
+/* ================= FLASH ================= */
 
-  similarity = parseFloat(similarity);
+async function toggleFlash(){
 
-  if(similarity < MIN_SIMILARITY_TO_SPEAK){
+  if(flashBusy) return;
+
+  if(!streamTrack){
+
+    alert("Câmera não iniciada");
     return;
   }
 
-  if(color !== lastSpokenColor){
+  flashBusy = true;
 
-    lastSpokenColor = color;
+  processingPaused = true;
 
-    speak(color);
+  try{
+
+    const capabilities =
+    streamTrack.getCapabilities();
+
+    if(!capabilities.torch){
+
+      alert("Flash não suportado");
+
+      processingPaused = false;
+      flashBusy = false;
+
+      return;
+    }
+
+    flashOn = !flashOn;
+
+    await streamTrack.applyConstraints({
+
+      advanced:[
+        {
+          torch:flashOn
+        }
+      ]
+
+    });
+
+    await new Promise(resolve=>
+      setTimeout(resolve,700)
+    );
 
   }
 
+  catch(e){
+
+    flashOn = false;
+
+    alert("Falha no flash");
+  }
+
+  processingPaused = false;
+
+  setTimeout(()=>{
+
+    flashBusy = false;
+
+  },500);
+
 }
 
-/* ===================================================== */
-/* RGB */
-/* ===================================================== */
-
-function rgbToHex(r,g,b){
-
-  return "#" + [r,g,b]
-  .map(v=>v.toString(16).padStart(2,"0"))
-  .join("")
-  .toUpperCase();
-
-}
-
-/* ===================================================== */
-/* LAB */
-/* ===================================================== */
+/* ================= RGB -> LAB ================= */
 
 function rgbToLab(r,g,b){
 
@@ -675,7 +528,7 @@ function rgbToLab(r,g,b){
 
   [r,g,b]=[r,g,b].map(v=>
 
-    v > 0.04045
+    v>0.04045
     ? Math.pow((v+0.055)/1.055,2.4)
     : v/12.92
 
@@ -702,7 +555,7 @@ function rgbToLab(r,g,b){
 
   [x,y,z]=[x,y,z].map(v=>
 
-    v > 0.008856
+    v>0.008856
     ? Math.cbrt(v)
     : (7.787*v)+(16/116)
 
@@ -715,8 +568,9 @@ function rgbToLab(r,g,b){
     b:200*(y-z)
 
   };
-
 }
+
+/* ================= DELTA E ================= */
 
 function deltaE(a,b){
 
@@ -727,12 +581,61 @@ function deltaE(a,b){
     (a.b-b.b)**2
 
   );
-
 }
 
-/* ===================================================== */
-/* PREPARA LAB */
-/* ===================================================== */
+/* ================= DATABASE ================= */
+
+const oemDatabase = [
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"040",
+  name:"Super White II",
+  rgb:{r:244,g:244,b:241}
+},
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"1F7",
+  name:"Classic Silver Metallic",
+  rgb:{r:169,g:173,b:177}
+},
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"218",
+  name:"Midnight Black Metallic",
+  rgb:{r:27,g:27,b:27}
+},
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"3U5",
+  name:"Emotional Red",
+  rgb:{r:126,g:31,b:36}
+}
+
+];
+
+/* ================= PREPARA LAB ================= */
+
+oemDatabase.forEach(item=>{
+
+  item.lab = rgbToLab(
+    item.rgb.r,
+    item.rgb.g,
+    item.rgb.b
+  );
+
+});
 
 universalColors.forEach(item=>{
 
@@ -744,89 +647,51 @@ universalColors.forEach(item=>{
 
 });
 
-/* ===================================================== */
-/* NOVO MOTOR SOLID ENGINE */
-/* ===================================================== */
-
-function analyzeSurfaceQuality(samples){
-
-  let variance = 0;
-
-  const avgR =
-  samples.reduce((a,b)=>a+b.r,0)/samples.length;
-
-  const avgG =
-  samples.reduce((a,b)=>a+b.g,0)/samples.length;
-
-  const avgB =
-  samples.reduce((a,b)=>a+b.b,0)/samples.length;
-
-  for(const s of samples){
-
-    variance +=
-
-    Math.abs(s.r - avgR) +
-    Math.abs(s.g - avgG) +
-    Math.abs(s.b - avgB);
-
-  }
-
-  variance /= samples.length;
-
-  const max =
-  Math.max(avgR,avgG,avgB);
-
-  const min =
-  Math.min(avgR,avgG,avgB);
-
-  const chroma =
-  max - min;
-
-  return{
-
-    variance,
-    chroma,
-
-    isSolid:
-
-      variance < 18 &&
-      chroma > 18
-
-  };
-
-}
-
-/* ===================================================== */
-/* CAPTURA PROFISSIONAL */
-/* ===================================================== */
+/* ================= CAPTURA ================= */
 
 function captureRaw(x,y){
 
-  if(!video.videoWidth || processingPaused){
+  if(
+    !video.videoWidth ||
+    processingPaused
+  ){
 
     return{
       r:0,
       g:0,
-      b:0
+      b:0,
+      variance:999
     };
 
   }
 
-  canvasA.width = video.videoWidth;
-  canvasA.height = video.videoHeight;
+  canvasA.width =
+  video.videoWidth;
+
+  canvasA.height =
+  video.videoHeight;
 
   ctxA.drawImage(video,0,0);
 
   const samples = [];
 
-  const area = 20;
+  const area = 16;
 
-  for(let sy=-area; sy<=area; sy+=8){
+  for(let sy=-area; sy<=area; sy+=4){
 
-    for(let sx=-area; sx<=area; sx+=8){
+    for(let sx=-area; sx<=area; sx+=4){
 
       const px = x + sx;
       const py = y + sy;
+
+      if(
+        px < 0 ||
+        py < 0 ||
+        px >= video.videoWidth ||
+        py >= video.videoHeight
+      ){
+        continue;
+      }
 
       const data = ctxA.getImageData(
         px,
@@ -861,23 +726,33 @@ function captureRaw(x,y){
   g = Math.round(g/samples.length);
   b = Math.round(b/samples.length);
 
+  let variance = 0;
+
+  samples.forEach(s=>{
+
+    variance +=
+
+    Math.abs(s.r-r) +
+    Math.abs(s.g-g) +
+    Math.abs(s.b-b);
+
+  });
+
+  variance =
+  variance / samples.length;
+
   drawPreview(r,g,b);
 
-  const surface =
-  analyzeSurfaceQuality(samples);
-
   return{
-
-    r,g,b,
-    surface
-
+    r,
+    g,
+    b,
+    variance
   };
 
 }
 
-/* ===================================================== */
-/* PREVIEW */
-/* ===================================================== */
+/* ================= PREVIEW ================= */
 
 function drawPreview(r,g,b){
 
@@ -887,7 +762,12 @@ function drawPreview(r,g,b){
   ctxA.fillStyle =
   rgb(${r},${g},${b});
 
-  ctxA.fillRect(0,0,200,200);
+  ctxA.fillRect(
+    0,
+    0,
+    200,
+    200
+  );
 
   canvasB.width = 200;
   canvasB.height = 200;
@@ -895,40 +775,37 @@ function drawPreview(r,g,b){
   ctxB.fillStyle =
   rgb(${r},${g},${b});
 
-  ctxB.fillRect(0,0,200,200);
-
-  rgbValue.innerHTML =
-  ${r}, ${g}, ${b};
-
-  hexValue.innerHTML =
-  rgbToHex(r,g,b);
+  ctxB.fillRect(
+    0,
+    0,
+    200,
+    200
+  );
 
 }
 
-/* ===================================================== */
-/* UNIVERSAL DETECT */
-/* ===================================================== */
+/* ================= OEM MATCH ================= */
 
-function detectUniversal(sig){
-
-  if(!sig.surface.isSolid){
-
-    return{
-      blocked:true
-    };
-
-  }
+function detectOEM(sig){
 
   const targetLab =
-  rgbToLab(sig.r,sig.g,sig.b);
+  rgbToLab(
+    sig.r,
+    sig.g,
+    sig.b
+  );
 
   let best = null;
+
   let bestDelta = 999;
 
-  for(const color of universalColors){
+  for(const color of oemDatabase){
 
     const d =
-    deltaE(targetLab,color.lab);
+    deltaE(
+      targetLab,
+      color.lab
+    );
 
     if(d < bestDelta){
 
@@ -940,130 +817,109 @@ function detectUniversal(sig){
   }
 
   return{
-
-    blocked:false,
     match:best,
     delta:bestDelta
-
   };
 
 }
 
-/* ===================================================== */
-/* UI */
-/* ===================================================== */
+/* ================= UNIVERSAL MATCH ================= */
 
-function updateUI(name,similarity){
+function detectUniversal(sig){
 
-  colorName.innerHTML = name;
+  if(sig.variance > 18){
 
-  similarityValue.innerHTML =
-  similarity + "%";
+    return{
+      blocked:true
+    };
 
-  precisionText.innerHTML =
-  similarity + "%";
+  }
 
-  liveFill.style.width =
-  similarity + "%";
+  const targetLab =
+  rgbToLab(
+    sig.r,
+    sig.g,
+    sig.b
+  );
+
+  let best = null;
+
+  let bestDelta = 999;
+
+  for(const color of universalColors){
+
+    const d =
+    deltaE(
+      targetLab,
+      color.lab
+    );
+
+    if(d < bestDelta){
+
+      bestDelta = d;
+      best = color;
+
+    }
+
+  }
+
+  return{
+    blocked:false,
+    match:best,
+    delta:bestDelta
+  };
 
 }
 
-/* ===================================================== */
-/* UNIVERSAL ANALYZE */
-/* ===================================================== */
+/* ================= ANALYZER OEM ================= */
 
-function analyzeUniversal(){
+function analyzeOEM(){
 
-  const sig = captureRaw(
-
+  const sig =
+  captureRaw(
     video.videoWidth/2,
     video.videoHeight/2
-
   );
 
-  if(sig.surface.isSolid){
-
-    solidIndicator.style.display = "block";
-    solidIndicator.innerHTML =
-    "SUPERFÍCIE SÓLIDA";
-    solidIndicator.style.borderColor =
-    "#00ff99";
-
-  }else{
-
-    solidIndicator.style.display = "block";
-    solidIndicator.innerHTML =
-    "EFEITO / METÁLICO DETECTADO";
-    solidIndicator.style.borderColor =
-    "#ff5555";
-
-  }
-
   const result =
-  detectUniversal(sig);
+  detectOEM(sig);
 
-  if(result.blocked){
+  const similarity =
 
-    txt.innerHTML = `
-    <span class='statusBad'>
-    Superfície rejeitada pelo
-    Universal Solid Engine
-    <br><br>
-    Motivo:
-    efeito metálico,
-    brilho irregular ou reflexo
-    </span>`;
-
-    return;
-
-  }
-
-  const similarity = Math.max(
+  Math.max(
     0,
     100 - result.delta
   ).toFixed(1);
 
-  updateUI(
-    result.match.name,
-    similarity
-  );
+  const text =
 
-  txt.innerHTML = `
-  <span class='statusGood'>
+  result.match.brand
+  + " | "
+  + result.match.model
+  + " | "
+  + result.match.year
+  + " | "
+  + result.match.code
+  + " | "
+  + result.match.name
+  + " | "
+  + similarity
+  + "%";
 
-  COR SÓLIDA DETECTADA
+  txt.innerText = text;
 
-  <br><br>
-
-  ${result.match.name}
-
-  <br>
-
-  Similaridade:
-  ${similarity}%
-
-  </span>`;
-
-  smartSpeakColor(
-    result.match.name,
-    similarity
-  );
+  speak(result.match.name);
 
 }
 
-/* ===================================================== */
-/* LOOP LIVE */
-/* ===================================================== */
+/* ================= ANALYZER UNIVERSAL ================= */
 
-function universalMoveLoop(){
+function analyzeUniversal(){
 
-  if(mode !== "universalMove") return;
-
-  const sig = captureRaw(
-
+  const sig =
+  captureRaw(
     video.videoWidth/2,
     video.videoHeight/2
-
   );
 
   const result =
@@ -1071,62 +927,62 @@ function universalMoveLoop(){
 
   if(result.blocked){
 
-    solidIndicator.style.display = "block";
+    txt.innerHTML =
 
-    solidIndicator.innerHTML =
-    "SUPERFÍCIE NÃO SÓLIDA";
+    "<span class='warn'>Superfície rejeitada pelo modo universal</span>";
 
-    solidIndicator.style.borderColor =
-    "#ff4444";
+    solidStatus.innerHTML =
+    "Material metálico/reflexivo detectado";
 
-    txt.innerHTML = `
-    <span class='statusBad'>
-    Universal Solid Engine
-    bloqueou superfície metálica
-    </span>`;
+    return;
+  }
+
+  const similarity =
+
+  Math.max(
+    0,
+    100 - result.delta
+  ).toFixed(1);
+
+  txt.innerHTML =
+
+  "<span class='good'>"
+  +
+  result.match.name
+  +
+  " | Similaridade: "
+  +
+  similarity
+  +
+  "%"
+  +
+  "</span>";
+
+  solidStatus.innerHTML =
+  "Superfície sólida aprovada";
+
+  speak(result.match.name);
+
+}
+
+/* ================= LOOP UNIVERSAL ================= */
+
+function universalMoveLoop(){
+
+  if(mode !== "universalMove"){
+    return;
+  }
+
+  if(processingPaused){
 
     requestAnimationFrame(
       universalMoveLoop
     );
 
     return;
-
   }
 
-  solidIndicator.style.display = "block";
-
-  solidIndicator.innerHTML =
-  "SUPERFÍCIE SÓLIDA";
-
-  solidIndicator.style.borderColor =
-  "#00ff99";
-
-  const similarity = Math.max(
-    0,
-    100 - result.delta
-  ).toFixed(1);
-
-  updateUI(
-    result.match.name,
-    similarity
-  );
-
-  txt.innerHTML = `
-  <span class='statusGood'>
-
-  ${result.match.name}
-
-  <br>
-
-  Similaridade:
-  ${similarity}%
-
-  </span>`;
-
-  smartSpeakColor(
-    result.match.name,
-    similarity
-  );
+  analyzeUniversal();
 
   requestAnimationFrame(
     universalMoveLoop
@@ -1134,13 +990,222 @@ function universalMoveLoop(){
 
 }
 
-/* ===================================================== */
-/* MODOS */
-/* ===================================================== */
+/* ================= PESQUISA ================= */
+
+function searchBrand(){
+
+  const brand =
+
+  document.getElementById("brandSearch")
+  .value
+  .trim()
+  .toLowerCase();
+
+  const models =
+
+  [...new Set(
+
+    oemDatabase
+
+    .filter(item=>
+
+      item.brand.toLowerCase()
+      .includes(brand)
+
+    )
+
+    .map(item=>item.model)
+
+  )]
+
+  .sort();
+
+  const select =
+  document.getElementById("modelSelect");
+
+  select.innerHTML =
+
+  `<option value="">
+  Selecione o modelo
+  </option>`;
+
+  models.forEach(model=>{
+
+    select.innerHTML +=
+
+    `<option value="${model}">
+      ${model}
+    </option>`;
+
+  });
+
+}
+
+/* ================= MOSTRAR CORES ================= */
+
+function showModelColors(){
+
+  const model =
+  document.getElementById("modelSelect")
+  .value;
+
+  const resultList =
+  document.getElementById("resultList");
+
+  resultList.innerHTML = "";
+
+  const colors =
+
+  oemDatabase
+
+  .filter(item=>item.model===model);
+
+  colors.forEach((item,index)=>{
+
+    resultList.innerHTML +=
+
+    `<div
+    class="item"
+    onclick="selectDatabaseColor(${index},'${item.name}')">
+
+      <span
+      class="colorBox"
+      style="
+      background:rgb(
+      ${item.rgb.r},
+      ${item.rgb.g},
+      ${item.rgb.b}
+      )">
+      </span>
+
+      <strong>${item.name}</strong>
+
+      <br>
+
+      Código:
+      ${item.code}
+
+    </div>`;
+
+  });
+
+}
+
+/* ================= SELECT DATABASE ================= */
+
+function selectDatabaseColor(index,colorName){
+
+  const model =
+  document.getElementById("modelSelect")
+  .value;
+
+  const colors =
+
+  oemDatabase
+
+  .filter(item=>item.model===model);
+
+  selectedDatabaseColor =
+  colors[index];
+
+  txt.innerText =
+
+  "Cor selecionada: "
+  + colorName;
+
+  speak(colorName);
+
+}
+
+/* ================= COMPARAR DATABASE ================= */
+
+function compareWithDatabase(sig){
+
+  if(!selectedDatabaseColor){
+
+    alert(
+      "Selecione uma cor da base primeiro"
+    );
+
+    return;
+  }
+
+  const targetLab =
+  rgbToLab(
+    sig.r,
+    sig.g,
+    sig.b
+  );
+
+  const similarity =
+
+  Math.max(
+    0,
+    100 -
+    deltaE(
+      targetLab,
+      selectedDatabaseColor.lab
+    )
+  )
+
+  .toFixed(1);
+
+  txt.innerText =
+
+  "Similaridade: "
+  + similarity
+  + "%";
+
+  speak(
+    similarity
+    + " porcento similar"
+  );
+
+}
+
+/* ================= LOOP MOVIMENTO ================= */
+
+function moveLoop(){
+
+  if(mode !== "move"){
+    return;
+  }
+
+  if(processingPaused){
+
+    requestAnimationFrame(
+      moveLoop
+    );
+
+    return;
+  }
+
+  const sig =
+
+  captureRaw(
+    video.videoWidth/2,
+    video.videoHeight/2
+  );
+
+  txt.innerText =
+
+  `RGB:
+  ${sig.r},
+  ${sig.g},
+  ${sig.b}`;
+
+  requestAnimationFrame(
+    moveLoop
+  );
+
+}
+
+/* ================= MODOS ================= */
 
 function clearButtons(){
 
-  document.querySelectorAll("button")
+  document
+  .querySelectorAll("button")
   .forEach(btn=>{
 
     btn.classList.remove("active");
@@ -1153,52 +1218,101 @@ function setMode(m){
 
   mode = m;
 
-  lastSpokenColor = "";
-  speechLocked = false;
+  compareStep = 0;
+
+  compareA = null;
+
+  compareALab = null;
 
   clearButtons();
 
-  if(m === "universal"){
+  if(m==="static"){
+    btnStatic.classList.add("active");
+  }
+
+  if(m==="move"){
+    btnMove.classList.add("active");
+  }
+
+  if(m==="universal"){
     btnUniversal.classList.add("active");
-    modeText.innerHTML =
-    "UNIVERSAL SÓLIDO";
   }
 
-  if(m === "universalMove"){
+  if(m==="universalMove"){
     btnUniversalMove.classList.add("active");
-    modeText.innerHTML =
-    "UNIVERSAL LIVE";
   }
 
-  cross.style.display = (
+  if(m==="comparePoint"){
+    btnCompare.classList.add("active");
+  }
 
+  if(m==="compareDatabase"){
+    btnDatabase.classList.add("active");
+  }
+
+  cross.style.display =
+
+  (
+    m === "move" ||
+    m === "comparePoint" ||
+    m === "compareDatabase" ||
     m === "universalMove"
-
   )
 
   ? "block"
   : "none";
 
-  txt.innerHTML = `
-  <span class='statusGood'>
-  Modo ${m.toUpperCase()} ativado
-  </span>`;
+  txt.innerHTML =
+
+  "<span class='good'>Modo "
+  +
+  m.toUpperCase()
+  +
+  " ativado</span>";
+
+  if(m === "move"){
+    moveLoop();
+  }
 
   if(m === "universalMove"){
-
     universalMoveLoop();
-
   }
 
 }
 
-setMode("universal");
+/* ================= CLIQUE ================= */
 
-/* ===================================================== */
-/* CLICK */
-/* ===================================================== */
+video.addEventListener("click",(e)=>{
 
-video.addEventListener("click",()=>{
+  if(processingPaused) return;
+
+  const rect =
+  video.getBoundingClientRect();
+
+  const x =
+
+  (e.clientX - rect.left)
+  *
+  (video.videoWidth / rect.width);
+
+  const y =
+
+  (e.clientY - rect.top)
+  *
+  (video.videoHeight / rect.height);
+
+  const sig =
+  captureRaw(x,y);
+
+/* ================= ESTATICO ================= */
+
+  if(mode === "static"){
+
+    analyzeOEM();
+
+  }
+
+/* ================= UNIVERSAL ================= */
 
   if(mode === "universal"){
 
@@ -1206,65 +1320,102 @@ video.addEventListener("click",()=>{
 
   }
 
-});
+/* ================= COMPARAR PONTO ================= */
 
-/* ===================================================== */
-/* FLASH */
-/* ===================================================== */
+  if(mode === "comparePoint"){
 
-async function toggleFlash(){
+    if(compareStep === 0){
 
-  if(!streamTrack) return;
+      compareA = sig;
 
-  try{
+      compareALab =
 
-    const capabilities =
-    streamTrack.getCapabilities();
+      rgbToLab(
+        sig.r,
+        sig.g,
+        sig.b
+      );
 
-    if(!capabilities.torch){
+      compareStep = 1;
 
-      alert("Flash não suportado");
-      return;
+      txt.innerText =
+      "Primeiro ponto capturado";
+
+      speak(
+        "Primeiro ponto capturado"
+      );
 
     }
 
-    flashOn = !flashOn;
+    else{
 
-    await streamTrack.applyConstraints({
+      const compareBLab =
 
-      advanced:[{torch:flashOn}]
+      rgbToLab(
+        sig.r,
+        sig.g,
+        sig.b
+      );
 
-    });
+      const similarity =
 
-  }catch(e){
+      Math.max(
+        0,
+        100 -
+        deltaE(
+          compareALab,
+          compareBLab
+        )
+      );
 
-    console.error(e);
+      txt.innerText =
+
+      "Similaridade entre pontos: "
+      +
+      similarity.toFixed(1)
+      +
+      "%";
+
+      speak(
+        similarity.toFixed(1)
+        + " porcento similar"
+      );
+
+      compareStep = 0;
+
+    }
 
   }
 
-}
+/* ================= DATABASE ================= */
 
-/* ===================================================== */
-/* AUDIO */
-/* ===================================================== */
+  if(mode === "compareDatabase"){
+
+    compareWithDatabase(sig);
+
+  }
+
+});
+
+/* ================= AUDIO ================= */
 
 function toggleVoice(){
 
   voice = !voice;
 
-  if(!voice){
+  alert(
 
-    speechSynthesis.cancel();
+    "Áudio: "
+    +
+    (voice ? "ON" : "OFF")
 
-  }
-
-  txt.innerHTML = voice
-
-  ? "<span class='statusGood'>Áudio ativado</span>"
-
-  : "<span class='statusBad'>Áudio desativado</span>";
+  );
 
 }
+
+/* ================= INICIAL ================= */
+
+setMode("universal");
 
 </script>
 
