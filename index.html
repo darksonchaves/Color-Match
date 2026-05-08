@@ -293,8 +293,15 @@ oninput="searchBrand()"
 const video = document.getElementById("video");
 const canvasA = document.getElementById("canvasA");
 const canvasB = document.getElementById("canvasB");
-const ctxA = canvasA.getContext("2d", { willReadFrequently:true });
-const ctxB = canvasB.getContext("2d", { willReadFrequently:true });
+
+const ctxA = canvasA.getContext("2d", {
+  willReadFrequently:true
+});
+
+const ctxB = canvasB.getContext("2d", {
+  willReadFrequently:true
+});
+
 const cross = document.getElementById("cross");
 const txt = document.getElementById("txt");
 
@@ -307,6 +314,14 @@ let streamTrack = null;
 let flashOn = false;
 let flashBusy = false;
 let processingPaused = false;
+
+/* ================= NOVO CONTROLE AUDIO MOVIMENTO ================= */
+
+let lastSpokenColor = "";
+let lastSpeakTime = 0;
+let movementVoiceEnabled = true;
+
+/* ================= DATABASE ================= */
 
 const oemDatabase = [
 
@@ -348,6 +363,8 @@ rgb:{r:126,g:31,b:36}
 
 ];
 
+/* ================= CAMERA ================= */
+
 async function startCamera(){
 
   try{
@@ -371,19 +388,27 @@ async function startCamera(){
 
     streamTrack = stream.getVideoTracks()[0];
 
-    txt.innerHTML = "<span class='statusGood'>Câmera iniciada com sucesso</span>";
+    txt.innerHTML = `
+    <span class='statusGood'>
+    Câmera iniciada com sucesso
+    </span>`;
 
   }catch(e){
 
     console.error(e);
 
-    txt.innerHTML = "<span class='statusBad'>Erro ao acessar câmera</span>";
+    txt.innerHTML = `
+    <span class='statusBad'>
+    Erro ao acessar câmera
+    </span>`;
 
     alert("Permita acesso à câmera para continuar");
   }
 }
 
 startCamera();
+
+/* ================= VOZ ================= */
 
 function speak(text){
 
@@ -399,6 +424,8 @@ function speak(text){
 
   speechSynthesis.speak(msg);
 }
+
+/* ================= FLASH ================= */
 
 async function toggleFlash(){
 
@@ -452,6 +479,8 @@ async function toggleFlash(){
   },500);
 }
 
+/* ================= RGB -> LAB ================= */
+
 function rgbToLab(r,g,b){
 
   r/=255;
@@ -485,6 +514,8 @@ function rgbToLab(r,g,b){
   };
 }
 
+/* ================= DELTA E ================= */
+
 function deltaE(a,b){
 
   return Math.sqrt(
@@ -493,6 +524,8 @@ function deltaE(a,b){
     (a.b-b.b)**2
   );
 }
+
+/* ================= PREPARA LAB ================= */
 
 oemDatabase.forEach(item => {
 
@@ -503,6 +536,8 @@ oemDatabase.forEach(item => {
   );
 
 });
+
+/* ================= CAPTURA ================= */
 
 function captureRaw(x,y){
 
@@ -544,6 +579,8 @@ function captureRaw(x,y){
   return { r,g,b };
 }
 
+/* ================= PREVIEW ================= */
+
 function drawPreview(r,g,b){
 
   canvasA.width = 160;
@@ -565,6 +602,8 @@ function drawPreview(r,g,b){
   ctxB.fillStyle = `rgb(${r},${g},${b})`;
   ctxB.fillRect(0,0,160,160);
 }
+
+/* ================= OEM MATCH ================= */
 
 function detectOEM(sig){
 
@@ -588,6 +627,8 @@ function detectOEM(sig){
     delta:bestDelta
   };
 }
+
+/* ================= ANALYZER ================= */
 
 function analyzeOEM(){
 
@@ -615,15 +656,22 @@ function analyzeOEM(){
   txt.innerHTML = `
   <span class='statusGood'>
   ${result.match.brand}
-  | ${result.match.model}
-  | ${result.match.year}
-  | ${result.match.code}
-  | ${result.match.name}
-  | ${similarity}%
+  |
+  ${result.match.model}
+  |
+  ${result.match.year}
+  |
+  ${result.match.code}
+  |
+  ${result.match.name}
+  |
+  ${similarity}%
   </span>`;
 
   speak(result.match.name);
 }
+
+/* ================= PESQUISA ================= */
 
 function searchBrand(){
 
@@ -661,6 +709,8 @@ function searchBrand(){
 
   document.getElementById("resultList").innerHTML = "";
 }
+
+/* ================= MOSTRAR CORES ================= */
 
 function showModelColors(){
 
@@ -707,9 +757,10 @@ function showModelColors(){
       Montadora: ${item.brand}
 
     </div>`;
-
   });
 }
+
+/* ================= SELECIONA COR ================= */
 
 function selectDatabaseColor(index,colorName){
 
@@ -739,6 +790,8 @@ function selectDatabaseColor(index,colorName){
 
   speak(colorName);
 }
+
+/* ================= COMPARAR DATABASE ================= */
 
 function compareWithDatabase(sig){
 
@@ -777,6 +830,8 @@ function compareWithDatabase(sig){
   speak(`${similarity} porcento similar`);
 }
 
+/* ================= MOVIMENTO COM AUDIO ================= */
+
 function moveLoop(){
 
   if(mode !== "move") return;
@@ -791,14 +846,50 @@ function moveLoop(){
     video.videoHeight/2
   );
 
-  txt.innerHTML = `
-  RGB:
-  ${sig.r},
-  ${sig.g},
-  ${sig.b}`;
+  const result = detectOEM(sig);
+
+  if(result.match){
+
+    const similarity = Math.max(
+      0,
+      100 - result.delta
+    ).toFixed(1);
+
+    txt.innerHTML = `
+    <span class='statusGood'>
+    ${result.match.name}
+    <br>
+    Similaridade:
+    ${similarity}%
+    <br>
+    RGB:
+    ${sig.r}, ${sig.g}, ${sig.b}
+    </span>`;
+
+    /* ================= AUDIO CONTINUO ================= */
+
+    const now = Date.now();
+
+    if(
+      movementVoiceEnabled &&
+      similarity >= 75 &&
+      (
+        result.match.name !== lastSpokenColor ||
+        now - lastSpeakTime > 2500
+      )
+    ){
+
+      lastSpokenColor = result.match.name;
+      lastSpeakTime = now;
+
+      speak(result.match.name);
+    }
+  }
 
   requestAnimationFrame(moveLoop);
 }
+
+/* ================= MODOS ================= */
 
 function clearButtons(){
 
@@ -846,11 +937,17 @@ function setMode(m){
   </span>`;
 
   if(m === "move"){
+
+    lastSpokenColor = "";
+    lastSpeakTime = 0;
+
     moveLoop();
   }
 }
 
 setMode("static");
+
+/* ================= CLIQUE VIDEO ================= */
 
 video.addEventListener("click",(e)=>{
 
@@ -926,6 +1023,8 @@ video.addEventListener("click",(e)=>{
 
 });
 
+/* ================= AUDIO ================= */
+
 function toggleVoice(){
 
   voice = !voice;
@@ -939,5 +1038,3 @@ function toggleVoice(){
 
 </body>
 </html>
-```
-
