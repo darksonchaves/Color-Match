@@ -4,9 +4,12 @@
 <head>
 
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>ColorMatch Pro – OEM MultiBrand Edition</title>
+<title>
+ColorMatch Pro – OEM MultiBrand Edition
+</title>
 
 <style>
 
@@ -18,7 +21,9 @@ body{
   text-align:center;
 }
 
-h2{ margin-top:15px; }
+h2{
+  margin-top:15px;
+}
 
 video{
   width:92%;
@@ -36,7 +41,9 @@ button{
   color:#fff;
 }
 
-button:hover{ background:#333; }
+button:hover{
+  background:#333;
+}
 
 input,select{
   padding:10px;
@@ -104,7 +111,9 @@ canvas{
   cursor:pointer;
 }
 
-.item:hover{ background:#2c2c2c; }
+.item:hover{
+  background:#2c2c2c;
+}
 
 .colorBox{
   width:18px;
@@ -132,15 +141,37 @@ canvas{
 
 <body>
 
-<h2>ColorMatch Pro – OEM MultiBrand Edition</h2>
+<h2>
+ColorMatch Pro – OEM MultiBrand Edition
+</h2>
 
-<button onclick="setMode('static')">Estático</button>
-<button onclick="setMode('move')">Movimento</button>
-<button onclick="setMode('comparePoint')">Comparar Ponto a Ponto</button>
-<button onclick="setMode('compareDatabase')">Comparar Base de Dados</button>
-<button onclick="analyzeOEM()">🎨 OEM Scan</button>
-<button onclick="toggleFlash()">⚡ Flash</button>
-<button onclick="toggleVoice()">🔊 Áudio</button>
+<button onclick="setMode('static')">
+Estático
+</button>
+
+<button onclick="setMode('move')">
+Movimento
+</button>
+
+<button onclick="setMode('comparePoint')">
+Comparar Ponto a Ponto
+</button>
+
+<button onclick="setMode('compareDatabase')">
+Comparar Base de Dados
+</button>
+
+<button onclick="analyzeOEM()">
+🎨 OEM Scan
+</button>
+
+<button onclick="toggleFlash()">
+⚡ Flash
+</button>
+
+<button onclick="toggleVoice()">
+🔊 Áudio
+</button>
 
 <br><br>
 
@@ -164,15 +195,24 @@ canvas{
 
 <div id="databasePanel">
 
-<h3>Pesquisa OEM</h3>
+<h3>
+Pesquisa OEM
+</h3>
 
-<input type="text" id="brandSearch" placeholder="Digite a montadora..." oninput="searchBrand()">
+<input
+type="text"
+id="brandSearch"
+placeholder="Digite a montadora..."
+oninput="searchBrand()"
+>
 
 <br>
 
 <select id="modelSelect" onchange="showModelColors()">
 
-<option value="">Selecione o modelo</option>
+<option value="">
+Selecione o modelo
+</option>
 
 </select>
 
@@ -180,129 +220,314 @@ canvas{
 
 </div>
 
-<p id="txt">Inicializando...</p>
+<p id="txt">
+Inicializando...
+</p>
 
 <script>
 
 /* ================= ELEMENTOS ================= */
 
-const video = document.getElementById("video");
-const canvasA = document.getElementById("canvasA");
-const canvasB = document.getElementById("canvasB");
-const ctxA = canvasA.getContext("2d");
-const ctxB = canvasB.getContext("2d");
-const cross = document.getElementById("cross");
+const video =
+document.getElementById("video");
+
+const canvasA =
+document.getElementById("canvasA");
+
+const canvasB =
+document.getElementById("canvasB");
+
+const ctxA =
+canvasA.getContext("2d");
+
+const ctxB =
+canvasB.getContext("2d");
+
+const cross =
+document.getElementById("cross");
 
 /* ================= CONTROLE ================= */
 
 let mode = "static";
+
 let voice = true;
+
 let lastSpeak = "";
+
 let compareA = null;
+
 let compareALab = null;
+
 let compareStep = 0;
+
 let selectedDatabaseColor = null;
 
 /* ================= FLASH ================= */
 
 let streamTrack = null;
+
 let flashOn = false;
+
 let flashBusy = false;
+
 let processingPaused = false;
+
+/* ================= CAMERA ================= */
+
 navigator.mediaDevices.getUserMedia({
-  video:{ facingMode:"environment" }
+
+  video:{
+    facingMode:"environment"
+  }
+
 })
+
 .then(stream=>{
+
   video.srcObject = stream;
-  streamTrack = stream.getVideoTracks()[0];
+
+  streamTrack =
+  stream.getVideoTracks()[0];
+
 })
-.catch(()=> alert("Erro ao acessar câmera"));
+
+.catch(()=>{
+
+  alert("Erro ao acessar câmera");
+
+});
+
+/* ================= VOZ ================= */
 
 function speak(text){
+
   if(!voice) return;
+
   speechSynthesis.cancel();
-  const msg = new SpeechSynthesisUtterance(text);
+
+  const msg =
+  new SpeechSynthesisUtterance(text);
+
   msg.lang = "pt-BR";
+
   speechSynthesis.speak(msg);
 }
+
+/* ================= FLASH ================= */
 
 async function toggleFlash(){
 
   if(flashBusy) return;
+
   if(!streamTrack){
+
     alert("Câmera não iniciada");
     return;
   }
 
   flashBusy = true;
+
   processingPaused = true;
 
   try{
 
-    const capabilities = streamTrack.getCapabilities();
+    const capabilities =
+    streamTrack.getCapabilities();
 
     if(!capabilities.torch){
+
       alert("Flash não suportado");
+
       processingPaused = false;
       flashBusy = false;
+
       return;
     }
 
     flashOn = !flashOn;
 
     await streamTrack.applyConstraints({
-      advanced:[{ torch:flashOn }]
+
+      advanced:[
+        {
+          torch:flashOn
+        }
+      ]
+
     });
 
-    await new Promise(r=>setTimeout(r,700));
+    await new Promise(resolve=>
+      setTimeout(resolve,700)
+    );
 
   }catch(e){
+
     flashOn = false;
+
     alert("Falha no flash");
   }
 
   processingPaused = false;
 
-  setTimeout(()=>flashBusy=false,500);
+  setTimeout(()=>{
+    flashBusy = false;
+  },500);
 }
 
 /* ================= RGB -> LAB ================= */
 
 function rgbToLab(r,g,b){
 
-  r/=255; g/=255; b/=255;
+  r/=255;
+  g/=255;
+  b/=255;
 
   [r,g,b]=[r,g,b].map(v=>
-    v>0.04045 ? Math.pow((v+0.055)/1.055,2.4) : v/12.92
+
+    v>0.04045
+    ? Math.pow((v+0.055)/1.055,2.4)
+    : v/12.92
+
   );
 
-  let x=r*0.4124+g*0.3576+b*0.1805;
-  let y=r*0.2126+g*0.7152+b*0.0722;
-  let z=r*0.0193+g*0.1192+b*0.9505;
+  let x =
+  r*0.4124 +
+  g*0.3576 +
+  b*0.1805;
 
-  x/=0.95047; y/=1; z/=1.08883;
+  let y =
+  r*0.2126 +
+  g*0.7152 +
+  b*0.0722;
+
+  let z =
+  r*0.0193 +
+  g*0.1192 +
+  b*0.9505;
+
+  x/=0.95047;
+  y/=1;
+  z/=1.08883;
 
   [x,y,z]=[x,y,z].map(v=>
-    v>0.008856 ? Math.cbrt(v) : (7.787*v)+(16/116)
+
+    v>0.008856
+    ? Math.cbrt(v)
+    : (7.787*v)+(16/116)
+
   );
 
   return{
+
     L:(116*y)-16,
     a:500*(x-y),
     b:200*(y-z)
+
   };
 }
 
 /* ================= DELTA E ================= */
 
 function deltaE(a,b){
-  return Math.sqrt((a.L-b.L)*2+(a.a-b.a)2+(a.b-b.b)*2);
+
+  return Math.sqrt(
+
+    (a.L-b.L)**2 +
+    (a.a-b.a)**2 +
+    (a.b-b.b)**2
+
+  );
 }
-/* ================= 🔥 CAPTURA UNIVERSAL MELHORADA ================= */
+
+/* ================= DATABASE ================= */
+
+const oemDatabase = [
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"040",
+  name:"Super White II",
+  rgb:{r:244,g:244,b:241}
+},
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"1F7",
+  name:"Classic Silver Metallic",
+  rgb:{r:169,g:173,b:177}
+},
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"218",
+  name:"Midnight Black Metallic",
+  rgb:{r:27,g:27,b:27}
+},
+
+{
+  brand:"Toyota",
+  model:"Corolla",
+  year:"2024",
+  code:"3U5",
+  name:"Emotional Red",
+  rgb:{r:126,g:31,b:36}
+},
+
+{
+  brand:"Toyota",
+  model:"Hilux",
+  year:"2024",
+  code:"040",
+  name:"Super White II",
+  rgb:{r:244,g:244,b:241}
+},
+
+{
+  brand:"Toyota",
+  model:"Hilux",
+  year:"2024",
+  code:"1G3",
+  name:"Graphite Metallic",
+  rgb:{r:92,g:95,b:102}
+},
+
+{
+  brand:"Toyota",
+  model:"SW4",
+  year:"2024",
+  code:"070",
+  name:"White Pearl",
+  rgb:{r:247,g:247,b:244}
+}
+
+];
+
+/* ================= PREPARA LAB ================= */
+
+oemDatabase.forEach(item=>{
+
+  item.lab = rgbToLab(
+    item.rgb.r,
+    item.rgb.g,
+    item.rgb.b
+  );
+
+});
+
+/* ================= CAPTURA ================= */
 
 function captureRaw(x,y){
 
-  if(!video.videoWidth || processingPaused){
+  if(
+    !video.videoWidth ||
+    processingPaused
+  ){
     return {r:0,g:0,b:0};
   }
 
@@ -311,69 +536,65 @@ function captureRaw(x,y){
 
   ctxA.drawImage(video,0,0);
 
-  const radius = 6;
-  const step = 3;
+  const s = 12;
+
+  const data = ctxA.getImageData(
+    x-s,
+    y-s,
+    s*2,
+    s*2
+  ).data;
 
   let r=0,g=0,b=0,c=0;
 
-  for(let dx=-radius; dx<=radius; dx+=step){
-    for(let dy=-radius; dy<=radius; dy+=step){
+  for(let i=0;i<data.length;i+=4){
 
-      const px = Math.max(0, Math.min(video.videoWidth-1, x+dx));
-      const py = Math.max(0, Math.min(video.videoHeight-1, y+dy));
+    r += data[i];
+    g += data[i+1];
+    b += data[i+2];
 
-      const data = ctxA.getImageData(px,py,1,1).data;
+    c++;
+  }
 
-      r+=data[0];
-      g+=data[1];
-      b+=data[2];
-      c++;
+  return{
+
+    r:Math.round(r/c),
+    g:Math.round(g/c),
+    b:Math.round(b/c)
+
+  };
+}
+
+/* ================= OEM MATCH ================= */
+
+function detectOEM(sig){
+
+  const targetLab =
+  rgbToLab(sig.r,sig.g,sig.b);
+
+  let best = null;
+
+  let bestDelta = 999;
+
+  for(const color of oemDatabase){
+
+    const d =
+    deltaE(targetLab,color.lab);
+
+    if(d < bestDelta){
+
+      bestDelta = d;
+      best = color;
     }
   }
 
   return{
-    r:Math.round(r/c),
-    g:Math.round(g/c),
-    b:Math.round(b/c)
+    match:best,
+    delta:bestDelta
   };
 }
 
-/* ================= OEM DATABASE ================= */
-
-const oemDatabase = [
-
-{brand:"Toyota",model:"Corolla",year:"2024",code:"040",name:"Super White II",rgb:{r:244,g:244,b:241}},
-{brand:"Toyota",model:"Corolla",year:"2024",code:"1F7",name:"Classic Silver Metallic",rgb:{r:169,g:173,b:177}},
-{brand:"Toyota",model:"Corolla",year:"2024",code:"218",name:"Midnight Black Metallic",rgb:{r:27,g:27,b:27}},
-{brand:"Toyota",model:"Corolla",year:"2024",code:"3U5",name:"Emotional Red",rgb:{r:126,g:31,b:36}}
-
-];
-
-oemDatabase.forEach(i=>{
-  i.lab = rgbToLab(i.rgb.r,i.rgb.g,i.rgb.b);
-});
-
-/* ================= DETECT ================= */
-
-function detectOEM(sig){
-
-  const lab = rgbToLab(sig.r,sig.g,sig.b);
-
-  let best=null;
-  let bestDelta=999;
-
-  for(const c of oemDatabase){
-    const d = deltaE(lab,c.lab);
-    if(d<bestDelta){
-      bestDelta=d;
-      best=c;
-    }
-  }
-
-  return{match:best,delta:bestDelta};
-}
-
-/* ================= ANALYZE ================= */
+/* ================= ANALYZER ================= */
 
 function analyzeOEM(){
 
@@ -382,30 +603,318 @@ function analyzeOEM(){
     video.videoHeight/2
   );
 
-  const result = detectOEM(sig);
+  const result =
+  detectOEM(sig);
 
-  const sim = Math.max(0,100-result.delta).toFixed(1);
+  const similarity =
+  Math.max(
+    0,
+    100 - result.delta
+  ).toFixed(1);
+
+  const text =
+
+  result.match.brand
+  + " | "
+  + result.match.model
+  + " | "
+  + result.match.year
+  + " | "
+  + result.match.code
+  + " | "
+  + result.match.name
+  + " | "
+  + similarity
+  + "%";
 
   document.getElementById("txt").innerText =
-  result.match.brand+" | "+
-  result.match.model+" | "+
-  result.match.year+" | "+
-  result.match.code+" | "+
-  result.match.name+" | "+
-  sim+"%";
+  text;
 
   speak(result.match.name);
 }
+
+/* ================= PESQUISA ================= */
+
+function searchBrand(){
+
+  const brand =
+
+  document.getElementById("brandSearch")
+  .value
+  .trim()
+  .toLowerCase();
+
+  const models =
+
+  [...new Set(
+
+    oemDatabase
+
+    .filter(item=>
+
+      item.brand.toLowerCase()
+      .includes(brand)
+
+    )
+
+    .map(item=>item.model)
+
+  )]
+
+  .sort();
+
+  const select =
+  document.getElementById("modelSelect");
+
+  select.innerHTML =
+
+  `<option value="">
+  Selecione o modelo
+  </option>`;
+
+  models.forEach(model=>{
+
+    select.innerHTML +=
+
+    `<option value="${model}">
+      ${model}
+    </option>`;
+
+  });
+
+  document.getElementById("resultList")
+  .innerHTML = "";
+}
+
+/* ================= MOSTRAR CORES ================= */
+
+function showModelColors(){
+
+  const model =
+  document.getElementById("modelSelect")
+  .value;
+
+  const resultList =
+  document.getElementById("resultList");
+
+  resultList.innerHTML = "";
+
+  const colors =
+
+  oemDatabase
+
+  .filter(item=>item.model===model)
+
+  .sort((a,b)=>
+    a.name.localeCompare(b.name)
+  );
+
+  colors.forEach((item,index)=>{
+
+    resultList.innerHTML +=
+
+    `<div
+    class="item"
+    onclick="selectDatabaseColor(${index},'${item.name}')">
+
+      <span
+      class="colorBox"
+      style="
+      background:rgb(
+      ${item.rgb.r},
+      ${item.rgb.g},
+      ${item.rgb.b}
+      )">
+      </span>
+
+      <strong>${item.name}</strong>
+
+      <br>
+
+      Código:
+      ${item.code}
+
+      <br>
+
+      Ano:
+      ${item.year}
+
+      <br>
+
+      Modelo:
+      ${item.model}
+
+      <br>
+
+      Montadora:
+      ${item.brand}
+
+    </div>`;
+
+  });
+
+}
+
+/* ================= SELECIONA COR DATABASE ================= */
+
+function selectDatabaseColor(index,colorName){
+
+  const model =
+  document.getElementById("modelSelect")
+  .value;
+
+  const colors =
+
+  oemDatabase
+
+  .filter(item=>item.model===model)
+
+  .sort((a,b)=>
+    a.name.localeCompare(b.name)
+  );
+
+  selectedDatabaseColor =
+  colors[index];
+
+  document.getElementById("txt").innerText =
+
+  "Cor de referência selecionada: "
+  + colorName;
+
+  speak(colorName);
+}
+
+/* ================= COMPARAR DATABASE ================= */
+
+function compareWithDatabase(sig){
+
+  if(!selectedDatabaseColor){
+
+    alert(
+      "Selecione uma cor da base de dados primeiro"
+    );
+
+    return;
+  }
+
+  const targetLab =
+  rgbToLab(sig.r,sig.g,sig.b);
+
+  const similarity =
+
+  Math.max(
+    0,
+    100 -
+    deltaE(
+      targetLab,
+      selectedDatabaseColor.lab
+    )
+  )
+
+  .toFixed(1);
+
+  const result =
+
+  "BASE OEM: "
+  + selectedDatabaseColor.name
+
+  + " | NOVA AMOSTRA: "
+
+  + similarity
+  + "% similar";
+
+  document.getElementById("txt").innerText =
+  result;
+
+  speak(
+    similarity
+    + " porcento similar"
+  );
+}
+
+/* ================= MOVIMENTO ================= */
+
+function moveLoop(){
+
+  if(mode !== "move") return;
+
+  if(processingPaused){
+
+    requestAnimationFrame(moveLoop);
+    return;
+  }
+
+  const sig =
+
+  captureRaw(
+    video.videoWidth/2,
+    video.videoHeight/2
+  );
+
+  document.getElementById("txt").innerText =
+
+  `RGB:
+  ${sig.r},
+  ${sig.g},
+  ${sig.b}`;
+
+  requestAnimationFrame(moveLoop);
+}
+
 /* ================= MODOS ================= */
 
 function setMode(m){
 
-  mode=m;
-  compareStep=0;
+  mode = m;
 
-  document.getElementById("txt").innerText =
-  "Modo: "+m;
+  compareStep = 0;
 
+  compareA = null;
+
+  compareALab = null;
+
+  cross.style.display =
+
+  (
+    m === "move" ||
+    m === "comparePoint" ||
+    m === "compareDatabase"
+  )
+
+  ? "block"
+  : "none";
+
+  if(m === "comparePoint"){
+
+    document.getElementById("txt")
+    .innerText =
+
+    "Modo: COMPARAR PONTO A PONTO";
+
+  }
+
+  else if(m === "compareDatabase"){
+
+    document.getElementById("txt")
+    .innerText =
+
+    "Modo: COMPARAR COM BASE DE DADOS";
+
+  }
+
+  else{
+
+    document.getElementById("txt")
+    .innerText =
+
+    "Modo: "
+    + m.toUpperCase();
+
+  }
+
+  if(m === "move"){
+    moveLoop();
+  }
 }
 
 /* ================= CLIQUE ================= */
@@ -414,101 +923,119 @@ video.addEventListener("click",(e)=>{
 
   if(processingPaused) return;
 
-  const rect = video.getBoundingClientRect();
+  const rect =
+  video.getBoundingClientRect();
 
-  const x=(e.clientX-rect.left)*(video.videoWidth/rect.width);
-  const y=(e.clientY-rect.top)*(video.videoHeight/rect.height);
+  const x =
 
-  const sig = captureRaw(x,y);
+  (e.clientX - rect.left)
+  *
+  (video.videoWidth / rect.width);
 
-  if(mode==="static"){
+  const y =
+
+  (e.clientY - rect.top)
+  *
+  (video.videoHeight / rect.height);
+
+  const sig =
+  captureRaw(x,y);
+
+/* ================= ESTATICO ================= */
+
+  if(mode === "static"){
+
     analyzeOEM();
   }
 
-  if(mode==="compareDatabase"){
+/* ================= COMPARAR PONTO A PONTO ================= */
 
-    if(!selectedDatabaseColor){
-      alert("Selecione uma cor primeiro");
-      return;
+  if(mode === "comparePoint"){
+
+    if(compareStep === 0){
+
+      compareA = sig;
+
+      compareALab =
+
+      rgbToLab(
+        sig.r,
+        sig.g,
+        sig.b
+      );
+
+      compareStep = 1;
+
+      document.getElementById("txt")
+      .innerText =
+
+      "Primeiro ponto capturado";
+
+      speak(
+        "Primeiro ponto capturado"
+      );
+
     }
 
-    const lab = rgbToLab(sig.r,sig.g,sig.b);
+    else{
 
-    const sim = Math.max(0,100-deltaE(lab,selectedDatabaseColor.lab)).toFixed(1);
+      const compareBLab =
 
-    document.getElementById("txt").innerText =
-    selectedDatabaseColor.name+" | "+sim+"%";
+      rgbToLab(
+        sig.r,
+        sig.g,
+        sig.b
+      );
 
-    speak(sim+" por cento similar");
+      const similarity =
+
+      Math.max(
+        0,
+        100 -
+        deltaE(
+          compareALab,
+          compareBLab
+        )
+      );
+
+      document.getElementById("txt")
+      .innerText =
+
+      "Similaridade entre pontos: "
+      +
+      similarity.toFixed(1)
+      +
+      "%";
+
+      speak(
+        similarity.toFixed(1)
+        + " porcento similar"
+      );
+
+      compareStep = 0;
+    }
+  }
+
+/* ================= COMPARAR DATABASE ================= */
+
+  if(mode === "compareDatabase"){
+
+    compareWithDatabase(sig);
   }
 
 });
 
-/* ================= PESQUISA ================= */
-
-function searchBrand(){
-
-  const brand = document.getElementById("brandSearch").value.toLowerCase();
-
-  const models = [...new Set(
-    oemDatabase.filter(i=>i.brand.toLowerCase().includes(brand)).map(i=>i.model)
-  )];
-
-  const select = document.getElementById("modelSelect");
-
-  select.innerHTML = <option value="">Selecione o modelo</option>;
-
-  models.forEach(m=>{
-    select.innerHTML += <option value="${m}">${m}</option>;
-  });
-
-  document.getElementById("resultList").innerHTML="";
-}
-
-/* ================= MODELOS ================= */
-
-function showModelColors(){
-
-  const model = document.getElementById("modelSelect").value;
-
-  const list = document.getElementById("resultList");
-
-  list.innerHTML="";
-
-  oemDatabase
-  .filter(i=>i.model===model)
-  .forEach((item,i)=>{
-
-    list.innerHTML += `
-    <div class="item" onclick="selectDatabaseColor(${i})">
-      <span class="colorBox" style="background:rgb(${item.rgb.r},${item.rgb.g},${item.rgb.b})"></span>
-      <strong>${item.name}</strong>
-    </div>`;
-  });
-
-}
-
-/* ================= SELEÇÃO ================= */
-
-function selectDatabaseColor(i){
-
-  const model = document.getElementById("modelSelect").value;
-
-  const list = oemDatabase.filter(i=>i.model===model);
-
-  selectedDatabaseColor = list[i];
-
-  document.getElementById("txt").innerText =
-  "Selecionado: "+selectedDatabaseColor.name;
-
-  speak(selectedDatabaseColor.name);
-}
-
-/* ================= ÁUDIO ================= */
+/* ================= AUDIO ================= */
 
 function toggleVoice(){
-  voice=!voice;
-  alert("Áudio: "+(voice?"ON":"OFF"));
+
+  voice = !voice;
+
+  alert(
+    "Áudio: "
+    +
+    (voice ? "ON" : "OFF")
+  );
 }
 
 </script>
