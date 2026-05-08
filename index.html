@@ -525,8 +525,12 @@ let flashOn = false;
 let processingPaused = false;
 let flashBusy = false;
 
+/* ========= CONTROLE PROFISSIONAL DE ÁUDIO ========= */
+
 let lastSpokenColor = "";
-let lastSpeakTime = 0;
+let speechLocked = false;
+
+const MIN_SIMILARITY_TO_SPEAK = 75;
 
 /* ================= OEM DATABASE ================= */
 
@@ -677,7 +681,7 @@ async function startCamera(){
 
 startCamera();
 
-/* ================= AUDIO ================= */
+/* ================= ÁUDIO PROFISSIONAL ================= */
 
 function speak(text){
 
@@ -685,13 +689,49 @@ function speak(text){
 
   if(!window.speechSynthesis) return;
 
+  if(speechLocked) return;
+
+  speechLocked = true;
+
   speechSynthesis.cancel();
 
   const msg = new SpeechSynthesisUtterance(text);
 
   msg.lang = "pt-BR";
 
+  msg.rate = 1;
+  msg.pitch = 1;
+  msg.volume = 1;
+
+  msg.onend = ()=>{
+
+    setTimeout(()=>{
+      speechLocked = false;
+    },300);
+
+  };
+
   speechSynthesis.speak(msg);
+
+}
+
+/* ========= ÁUDIO INTELIGENTE ========= */
+
+function smartSpeakColor(colorName, similarity){
+
+  similarity = parseFloat(similarity);
+
+  if(similarity < MIN_SIMILARITY_TO_SPEAK){
+    return;
+  }
+
+  if(colorName !== lastSpokenColor){
+
+    lastSpokenColor = colorName;
+
+    speak(colorName);
+
+  }
 
 }
 
@@ -999,7 +1039,10 @@ function analyzeOEM(){
   ${similarity}%
   </span>`;
 
-  speak(result.match.name);
+  smartSpeakColor(
+    result.match.name,
+    similarity
+  );
 
 }
 
@@ -1033,7 +1076,10 @@ function analyzeUniversal(){
   ${similarity}%
   </span>`;
 
-  speak(result.match.name);
+  smartSpeakColor(
+    result.match.name,
+    similarity
+  );
 
 }
 
@@ -1075,22 +1121,10 @@ function moveLoop(){
   ${similarity}%
   </span>`;
 
-  const now = Date.now();
-
-  if(
-    similarity >= 75 &&
-    (
-      result.match.name !== lastSpokenColor ||
-      now - lastSpeakTime > 2500
-    )
-  ){
-
-    lastSpokenColor = result.match.name;
-    lastSpeakTime = now;
-
-    speak(result.match.name);
-
-  }
+  smartSpeakColor(
+    result.match.name,
+    similarity
+  );
 
   requestAnimationFrame(moveLoop);
 
@@ -1133,6 +1167,13 @@ function universalMoveLoop(){
   Similaridade:
   ${similarity}%
   </span>`;
+
+  /* ========= NOVA IMPLEMENTAÇÃO ========= */
+
+  smartSpeakColor(
+    result.match.name,
+    similarity
+  );
 
   requestAnimationFrame(universalMoveLoop);
 
@@ -1288,8 +1329,6 @@ function compareWithDatabase(sig){
   ${similarity}%
   </span>`;
 
-  speak(`${similarity} porcento similar`);
-
 }
 
 /* ================= MODES ================= */
@@ -1310,7 +1349,7 @@ function setMode(m){
   compareALab = null;
 
   lastSpokenColor = "";
-  lastSpeakTime = 0;
+  speechLocked = false;
 
   clearButtons();
 
@@ -1460,6 +1499,10 @@ video.addEventListener("click",(e)=>{
 function toggleVoice(){
 
   voice = !voice;
+
+  if(!voice){
+    speechSynthesis.cancel();
+  }
 
   txt.innerHTML = voice
   ? "<span class='statusGood'>Áudio ativado</span>"
