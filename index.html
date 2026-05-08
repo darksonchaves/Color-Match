@@ -212,11 +212,19 @@ canvas{
 <div id="controls">
 
 <button id="btnStatic" onclick="setMode('static')">
-Estático
+Estático OEM
 </button>
 
 <button id="btnMove" onclick="setMode('move')">
-Movimento
+Movimento OEM
+</button>
+
+<button id="btnUniversal" onclick="setMode('universal')">
+Cores Universais
+</button>
+
+<button id="btnUniversalMove" onclick="setMode('universalMove')">
+Movimento Universal
 </button>
 
 <button id="btnCompare" onclick="setMode('comparePoint')">
@@ -315,13 +323,10 @@ let flashOn = false;
 let flashBusy = false;
 let processingPaused = false;
 
-/* ================= NOVO CONTROLE AUDIO MOVIMENTO ================= */
-
 let lastSpokenColor = "";
 let lastSpeakTime = 0;
-let movementVoiceEnabled = true;
 
-/* ================= DATABASE ================= */
+/* ================= DATABASE OEM ================= */
 
 const oemDatabase = [
 
@@ -363,15 +368,72 @@ rgb:{r:126,g:31,b:36}
 
 ];
 
+/* ================= DATABASE UNIVERSAL ================= */
+
+const universalColors = [
+
+{
+name:"Branco",
+rgb:{r:255,g:255,b:255}
+},
+
+{
+name:"Preto",
+rgb:{r:0,g:0,b:0}
+},
+
+{
+name:"Cinza",
+rgb:{r:128,g:128,b:128}
+},
+
+{
+name:"Prata",
+rgb:{r:192,g:192,b:192}
+},
+
+{
+name:"Vermelho",
+rgb:{r:255,g:0,b:0}
+},
+
+{
+name:"Azul",
+rgb:{r:0,g:0,b:255}
+},
+
+{
+name:"Verde",
+rgb:{r:0,g:255,b:0}
+},
+
+{
+name:"Amarelo",
+rgb:{r:255,g:255,b:0}
+},
+
+{
+name:"Laranja",
+rgb:{r:255,g:165,b:0}
+},
+
+{
+name:"Roxo",
+rgb:{r:128,g:0,b:128}
+},
+
+{
+name:"Marrom",
+rgb:{r:101,g:67,b:33}
+}
+
+];
+
 /* ================= CAMERA ================= */
 
 async function startCamera(){
 
   try{
-
-    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-      throw new Error("Camera API indisponível");
-    }
 
     const stream = await navigator.mediaDevices.getUserMedia({
       video:{
@@ -402,13 +464,13 @@ async function startCamera(){
     Erro ao acessar câmera
     </span>`;
 
-    alert("Permita acesso à câmera para continuar");
+    alert("Permita acesso à câmera");
   }
 }
 
 startCamera();
 
-/* ================= VOZ ================= */
+/* ================= AUDIO ================= */
 
 function speak(text){
 
@@ -445,7 +507,7 @@ async function toggleFlash(){
 
     if(!capabilities.torch){
 
-      alert("Flash não suportado neste aparelho");
+      alert("Flash não suportado");
 
       processingPaused = false;
       flashBusy = false;
@@ -467,9 +529,7 @@ async function toggleFlash(){
 
     console.error(e);
 
-    flashOn = false;
-
-    alert("Falha ao controlar o flash");
+    alert("Falha ao controlar flash");
   }
 
   processingPaused = false;
@@ -479,7 +539,7 @@ async function toggleFlash(){
   },500);
 }
 
-/* ================= RGB -> LAB ================= */
+/* ================= RGB TO LAB ================= */
 
 function rgbToLab(r,g,b){
 
@@ -514,7 +574,7 @@ function rgbToLab(r,g,b){
   };
 }
 
-/* ================= DELTA E ================= */
+/* ================= DELTA ================= */
 
 function deltaE(a,b){
 
@@ -528,6 +588,16 @@ function deltaE(a,b){
 /* ================= PREPARA LAB ================= */
 
 oemDatabase.forEach(item => {
+
+  item.lab = rgbToLab(
+    item.rgb.r,
+    item.rgb.g,
+    item.rgb.b
+  );
+
+});
+
+universalColors.forEach(item => {
 
   item.lab = rgbToLab(
     item.rgb.r,
@@ -603,7 +673,7 @@ function drawPreview(r,g,b){
   ctxB.fillRect(0,0,160,160);
 }
 
-/* ================= OEM MATCH ================= */
+/* ================= OEM DETECT ================= */
 
 function detectOEM(sig){
 
@@ -628,14 +698,34 @@ function detectOEM(sig){
   };
 }
 
-/* ================= ANALYZER ================= */
+/* ================= UNIVERSAL DETECT ================= */
+
+function detectUniversal(sig){
+
+  const targetLab = rgbToLab(sig.r,sig.g,sig.b);
+
+  let best = null;
+  let bestDelta = 999;
+
+  for(const color of universalColors){
+
+    const d = deltaE(targetLab,color.lab);
+
+    if(d < bestDelta){
+      bestDelta = d;
+      best = color;
+    }
+  }
+
+  return {
+    match:best,
+    delta:bestDelta
+  };
+}
+
+/* ================= OEM ANALYZE ================= */
 
 function analyzeOEM(){
-
-  if(!video.videoWidth){
-    alert("A câmera ainda não carregou");
-    return;
-  }
 
   const sig = captureRaw(
     video.videoWidth/2,
@@ -643,10 +733,6 @@ function analyzeOEM(){
   );
 
   const result = detectOEM(sig);
-
-  if(!result.match){
-    return;
-  }
 
   const similarity = Math.max(
     0,
@@ -659,16 +745,147 @@ function analyzeOEM(){
   |
   ${result.match.model}
   |
-  ${result.match.year}
-  |
-  ${result.match.code}
-  |
   ${result.match.name}
   |
   ${similarity}%
   </span>`;
 
   speak(result.match.name);
+}
+
+/* ================= UNIVERSAL ANALYZE ================= */
+
+function analyzeUniversal(){
+
+  const sig = captureRaw(
+    video.videoWidth/2,
+    video.videoHeight/2
+  );
+
+  const result = detectUniversal(sig);
+
+  const similarity = Math.max(
+    0,
+    100 - result.delta
+  ).toFixed(1);
+
+  txt.innerHTML = `
+  <span class='statusGood'>
+  Cor Detectada:
+  ${result.match.name}
+  <br>
+  Similaridade:
+  ${similarity}%
+  <br>
+  RGB:
+  ${sig.r}, ${sig.g}, ${sig.b}
+  </span>`;
+
+  speak(result.match.name);
+}
+
+/* ================= MOVIMENTO OEM ================= */
+
+function moveLoop(){
+
+  if(mode !== "move") return;
+
+  if(processingPaused){
+    requestAnimationFrame(moveLoop);
+    return;
+  }
+
+  const sig = captureRaw(
+    video.videoWidth/2,
+    video.videoHeight/2
+  );
+
+  const result = detectOEM(sig);
+
+  const similarity = Math.max(
+    0,
+    100 - result.delta
+  ).toFixed(1);
+
+  txt.innerHTML = `
+  <span class='statusGood'>
+  ${result.match.name}
+  <br>
+  Similaridade:
+  ${similarity}%
+  </span>`;
+
+  const now = Date.now();
+
+  if(
+    similarity >= 75 &&
+    (
+      result.match.name !== lastSpokenColor ||
+      now - lastSpeakTime > 2500
+    )
+  ){
+
+    lastSpokenColor = result.match.name;
+    lastSpeakTime = now;
+
+    speak(result.match.name);
+  }
+
+  requestAnimationFrame(moveLoop);
+}
+
+/* ================= MOVIMENTO UNIVERSAL ================= */
+
+function universalMoveLoop(){
+
+  if(mode !== "universalMove") return;
+
+  if(processingPaused){
+    requestAnimationFrame(universalMoveLoop);
+    return;
+  }
+
+  const sig = captureRaw(
+    video.videoWidth/2,
+    video.videoHeight/2
+  );
+
+  const result = detectUniversal(sig);
+
+  const similarity = Math.max(
+    0,
+    100 - result.delta
+  ).toFixed(1);
+
+  txt.innerHTML = `
+  <span class='statusGood'>
+  Cor:
+  ${result.match.name}
+  <br>
+  Similaridade:
+  ${similarity}%
+  <br>
+  RGB:
+  ${sig.r}, ${sig.g}, ${sig.b}
+  </span>`;
+
+  const now = Date.now();
+
+  if(
+    similarity >= 75 &&
+    (
+      result.match.name !== lastSpokenColor ||
+      now - lastSpeakTime > 2500
+    )
+  ){
+
+    lastSpokenColor = result.match.name;
+    lastSpeakTime = now;
+
+    speak(result.match.name);
+  }
+
+  requestAnimationFrame(universalMoveLoop);
 }
 
 /* ================= PESQUISA ================= */
@@ -704,13 +921,12 @@ function searchBrand(){
     <option value="${model}">
       ${model}
     </option>`;
-
   });
 
   document.getElementById("resultList").innerHTML = "";
 }
 
-/* ================= MOSTRAR CORES ================= */
+/* ================= MOSTRA CORES ================= */
 
 function showModelColors(){
 
@@ -721,8 +937,7 @@ function showModelColors(){
   resultList.innerHTML = "";
 
   const colors = oemDatabase
-  .filter(item => item.model === model)
-  .sort((a,b)=> a.name.localeCompare(b.name));
+  .filter(item => item.model === model);
 
   colors.forEach((item,index)=>{
 
@@ -748,14 +963,6 @@ function showModelColors(){
 
       Ano: ${item.year}
 
-      <br>
-
-      Modelo: ${item.model}
-
-      <br>
-
-      Montadora: ${item.brand}
-
     </div>`;
   });
 }
@@ -777,8 +984,7 @@ function selectDatabaseColor(index,colorName){
   const model = document.getElementById("modelSelect").value;
 
   const colors = oemDatabase
-  .filter(item=>item.model===model)
-  .sort((a,b)=>a.name.localeCompare(b.name));
+  .filter(item=>item.model===model);
 
   selectedDatabaseColor = colors[index];
 
@@ -791,7 +997,7 @@ function selectDatabaseColor(index,colorName){
   speak(colorName);
 }
 
-/* ================= COMPARAR DATABASE ================= */
+/* ================= COMPARAR OEM ================= */
 
 function compareWithDatabase(sig){
 
@@ -809,17 +1015,8 @@ function compareWithDatabase(sig){
     100 - deltaE(targetLab,selectedDatabaseColor.lab)
   ).toFixed(1);
 
-  let statusClass = "statusBad";
-
-  if(similarity >= 90){
-    statusClass = "statusGood";
-  }
-  else if(similarity >= 70){
-    statusClass = "statusMedium";
-  }
-
   txt.innerHTML = `
-  <span class='${statusClass}'>
+  <span class='statusGood'>
   BASE OEM:
   ${selectedDatabaseColor.name}
   <br>
@@ -828,65 +1025,6 @@ function compareWithDatabase(sig){
   </span>`;
 
   speak(`${similarity} porcento similar`);
-}
-
-/* ================= MOVIMENTO COM AUDIO ================= */
-
-function moveLoop(){
-
-  if(mode !== "move") return;
-
-  if(processingPaused){
-    requestAnimationFrame(moveLoop);
-    return;
-  }
-
-  const sig = captureRaw(
-    video.videoWidth/2,
-    video.videoHeight/2
-  );
-
-  const result = detectOEM(sig);
-
-  if(result.match){
-
-    const similarity = Math.max(
-      0,
-      100 - result.delta
-    ).toFixed(1);
-
-    txt.innerHTML = `
-    <span class='statusGood'>
-    ${result.match.name}
-    <br>
-    Similaridade:
-    ${similarity}%
-    <br>
-    RGB:
-    ${sig.r}, ${sig.g}, ${sig.b}
-    </span>`;
-
-    /* ================= AUDIO CONTINUO ================= */
-
-    const now = Date.now();
-
-    if(
-      movementVoiceEnabled &&
-      similarity >= 75 &&
-      (
-        result.match.name !== lastSpokenColor ||
-        now - lastSpeakTime > 2500
-      )
-    ){
-
-      lastSpokenColor = result.match.name;
-      lastSpeakTime = now;
-
-      speak(result.match.name);
-    }
-  }
-
-  requestAnimationFrame(moveLoop);
 }
 
 /* ================= MODOS ================= */
@@ -905,26 +1043,38 @@ function setMode(m){
   compareStep = 0;
   compareALab = null;
 
+  lastSpokenColor = "";
+  lastSpeakTime = 0;
+
   clearButtons();
 
   if(m === "static"){
-    document.getElementById("btnStatic").classList.add("active");
+    btnStatic.classList.add("active");
   }
 
   if(m === "move"){
-    document.getElementById("btnMove").classList.add("active");
+    btnMove.classList.add("active");
+  }
+
+  if(m === "universal"){
+    btnUniversal.classList.add("active");
+  }
+
+  if(m === "universalMove"){
+    btnUniversalMove.classList.add("active");
   }
 
   if(m === "comparePoint"){
-    document.getElementById("btnCompare").classList.add("active");
+    btnCompare.classList.add("active");
   }
 
   if(m === "compareDatabase"){
-    document.getElementById("btnDatabase").classList.add("active");
+    btnDatabase.classList.add("active");
   }
 
   cross.style.display = (
     m === "move" ||
+    m === "universalMove" ||
     m === "comparePoint" ||
     m === "compareDatabase"
   )
@@ -937,17 +1087,17 @@ function setMode(m){
   </span>`;
 
   if(m === "move"){
-
-    lastSpokenColor = "";
-    lastSpeakTime = 0;
-
     moveLoop();
+  }
+
+  if(m === "universalMove"){
+    universalMoveLoop();
   }
 }
 
 setMode("static");
 
-/* ================= CLIQUE VIDEO ================= */
+/* ================= CLICK VIDEO ================= */
 
 video.addEventListener("click",(e)=>{
 
@@ -969,6 +1119,10 @@ video.addEventListener("click",(e)=>{
 
   if(mode === "static"){
     analyzeOEM();
+  }
+
+  if(mode === "universal"){
+    analyzeUniversal();
   }
 
   if(mode === "comparePoint"){
@@ -996,17 +1150,8 @@ video.addEventListener("click",(e)=>{
         100 - deltaE(compareALab,compareBLab)
       ).toFixed(1);
 
-      let statusClass = "statusBad";
-
-      if(similarity >= 90){
-        statusClass = "statusGood";
-      }
-      else if(similarity >= 70){
-        statusClass = "statusMedium";
-      }
-
       txt.innerHTML = `
-      <span class='${statusClass}'>
+      <span class='statusGood'>
       Similaridade:
       ${similarity}%
       </span>`;
@@ -1023,7 +1168,7 @@ video.addEventListener("click",(e)=>{
 
 });
 
-/* ================= AUDIO ================= */
+/* ================= TOGGLE AUDIO ================= */
 
 function toggleVoice(){
 
