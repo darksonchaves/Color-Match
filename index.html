@@ -34,7 +34,7 @@ video{
 }
 
 button{
-  padding:10px;
+  padding:12px;
   margin:5px;
   border:none;
   border-radius:8px;
@@ -44,8 +44,31 @@ button{
   font-size:15px;
 }
 
+button:hover{
+  background:#333;
+}
+
 button.active{
   background:#004d40;
+}
+
+#txt{
+  margin-top:15px;
+  font-size:18px;
+  padding:10px;
+  line-height:1.5;
+}
+
+.good{
+  color:#00ff99;
+}
+
+.bad{
+  color:#ff6666;
+}
+
+.warn{
+  color:#ffcc00;
 }
 
 #cross{
@@ -62,22 +85,11 @@ button.active{
   z-index:999;
 }
 
-#txt{
-  margin-top:15px;
-  font-size:18px;
-  padding:10px;
-}
-
-.good{
-  color:#00ff99;
-}
-
-.warn{
-  color:#ffcc00;
-}
-
-.bad{
-  color:#ff6666;
+#panel{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-top:20px;
 }
 
 canvas{
@@ -88,10 +100,8 @@ canvas{
   margin:10px;
 }
 
-#panel{
-  display:flex;
-  justify-content:center;
-  flex-wrap:wrap;
+.previewLabel{
+  margin-top:5px;
 }
 
 </style>
@@ -103,6 +113,10 @@ canvas{
 <h2>
 ColorMatch Pro – OEM MultiBrand Edition
 </h2>
+
+<button id="btnCamera">
+Iniciar Câmera
+</button>
 
 <button id="btnUniversal"
 onclick="setMode('universal')">
@@ -122,23 +136,33 @@ Universal Live
 
 <video
 id="video"
-autoplay
 playsinline
-muted
-webkit-playsinline>
+webkit-playsinline
+muted>
 </video>
 
 <div id="cross"></div>
 
 <div id="panel">
 
+<div>
 <canvas id="canvasA"></canvas>
+<div class="previewLabel">
+Captura
+</div>
+</div>
+
+<div>
 <canvas id="canvasB"></canvas>
+<div class="previewLabel">
+Cor Detectada
+</div>
+</div>
 
 </div>
 
 <p id="txt">
-Inicializando câmera...
+Aguardando inicialização da câmera...
 </p>
 
 <script>
@@ -172,17 +196,28 @@ document.getElementById("txt");
 const cross =
 document.getElementById("cross");
 
+const btnCamera =
+document.getElementById("btnCamera");
+
+const btnUniversal =
+document.getElementById("btnUniversal");
+
+const btnUniversalMove =
+document.getElementById("btnUniversalMove");
+
 /* ================= CONTROLE ================= */
 
-let mode = "universal";
-
 let voice = true;
+
+let mode = "universal";
 
 let streamTrack = null;
 
 let loopRunning = false;
 
-/* ================= CORES ================= */
+let cameraStarted = false;
+
+/* ================= CORES UNIVERSAIS ================= */
 
 const universalColors = [
 
@@ -237,88 +272,6 @@ rgb:{r:128,g:128,b:128}
 }
 
 ];
-
-/* ================= CAMERA ================= */
-
-async function startCamera(){
-
-try{
-
-const stream =
-
-await navigator.mediaDevices.getUserMedia({
-
-video:{
-
-facingMode:{
-ideal:"environment"
-},
-
-width:{
-ideal:1280
-},
-
-height:{
-ideal:720
-}
-
-},
-
-audio:false
-
-});
-
-video.srcObject = stream;
-
-streamTrack =
-stream.getVideoTracks()[0];
-
-await video.play();
-
-/* DEFINE CANVAS UMA ÚNICA VEZ */
-
-canvasA.width = 160;
-canvasA.height = 160;
-
-canvasB.width = 160;
-canvasB.height = 160;
-
-txt.innerHTML =
-"<span class='good'>Câmera iniciada</span>";
-
-}
-
-catch(e){
-
-txt.innerHTML =
-"<span class='bad'>Erro ao acessar câmera</span>";
-
-alert(
-"Permita acesso à câmera e recarregue a página."
-);
-
-}
-
-}
-
-startCamera();
-
-/* ================= VOZ ================= */
-
-function speak(text){
-
-if(!voice) return;
-
-speechSynthesis.cancel();
-
-const msg =
-new SpeechSynthesisUtterance(text);
-
-msg.lang = "pt-BR";
-
-speechSynthesis.speak(msg);
-
-}
 
 /* ================= RGB -> LAB ================= */
 
@@ -398,13 +351,87 @@ c.rgb.b
 
 });
 
+/* ================= CAMERA ================= */
+
+async function startCamera(){
+
+try{
+
+txt.innerHTML =
+"<span class='warn'>Iniciando câmera...</span>";
+
+const stream =
+
+await navigator.mediaDevices.getUserMedia({
+
+video:{
+facingMode:{
+ideal:"environment"
+},
+width:{
+ideal:1280
+},
+height:{
+ideal:720
+}
+},
+
+audio:false
+
+});
+
+video.srcObject = stream;
+
+streamTrack =
+stream.getVideoTracks()[0];
+
+await video.play();
+
+cameraStarted = true;
+
+canvasA.width = 160;
+canvasA.height = 160;
+
+canvasB.width = 160;
+canvasB.height = 160;
+
+txt.innerHTML =
+"<span class='good'>Câmera iniciada com sucesso</span>";
+
+btnCamera.innerText =
+"Câmera Ativa";
+
+btnCamera.disabled = true;
+
+}
+
+catch(e){
+
+console.log(e);
+
+txt.innerHTML =
+"<span class='bad'>Falha ao acessar câmera</span>";
+
+alert(
+"Permita o acesso da câmera no navegador e recarregue a página."
+);
+
+}
+
+}
+
+btnCamera.addEventListener(
+"click",
+startCamera
+);
+
 /* ================= CAPTURA ================= */
 
 function captureRaw(){
 
 if(
-!video.videoWidth ||
-!video.videoHeight
+!cameraStarted ||
+!video.videoWidth
 ){
 
 return null;
@@ -505,7 +532,7 @@ ctxB.fillRect(
 
 }
 
-/* ================= ANALYZE ================= */
+/* ================= ANALISADOR ================= */
 
 function analyzeUniversal(){
 
@@ -559,25 +586,31 @@ return;
 
 analyzeUniversal();
 
+setTimeout(()=>{
+
 requestAnimationFrame(
 universalLoop
 );
+
+},80);
 
 }
 
 /* ================= MODOS ================= */
 
+function clearButtons(){
+
+btnUniversal.classList.remove("active");
+
+btnUniversalMove.classList.remove("active");
+
+}
+
 function setMode(m){
 
 mode = m;
 
-document
-.querySelectorAll("button")
-.forEach(btn=>{
-
-btn.classList.remove("active");
-
-});
+clearButtons();
 
 if(m==="universal"){
 
@@ -586,7 +619,7 @@ btnUniversal.classList.add("active");
 cross.style.display = "none";
 
 txt.innerHTML =
-"<span class='good'>Modo Universal</span>";
+"<span class='good'>Modo Universal ativado</span>";
 
 }
 
@@ -597,11 +630,12 @@ btnUniversalMove.classList.add("active");
 cross.style.display = "block";
 
 txt.innerHTML =
-"<span class='good'>Modo Universal Live</span>";
+"<span class='good'>Modo Universal Live ativado</span>";
 
 if(!loopRunning){
 
 loopRunning = true;
+
 universalLoop();
 
 }
@@ -625,7 +659,7 @@ analyzeUniversal();
 }
 );
 
-/* ================= AUDIO ================= */
+/* ================= ÁUDIO ================= */
 
 function toggleVoice(){
 
