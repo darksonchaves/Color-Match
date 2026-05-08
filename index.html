@@ -1,7 +1,7 @@
 <!-- ========================================================= -->
 <!-- COLORMATCH PRO – OEM MULTIBRAND EDITION -->
 <!-- NOVO MOTOR UNIVERSAL PROFISSIONAL -->
-<!-- REFINO PROFISSIONAL • UNIVERSAL SOLID ENGINE -->
+<!-- REFINO PROFISSIONAL • UNIVERSAL SOLID ENGINE V2 -->
 <!-- ========================================================= -->
 
 <!DOCTYPE html>
@@ -124,6 +124,20 @@ video{
   box-shadow:
   0 0 10px #00ffcc,
   0 0 25px #00ffcc;
+}
+
+#solidIndicator{
+  position:absolute;
+  bottom:15px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,0.7);
+  border:1px solid #00ffcc;
+  padding:10px 18px;
+  border-radius:999px;
+  font-size:14px;
+  display:none;
+  z-index:20;
 }
 
 #hud{
@@ -329,7 +343,7 @@ footer{
 <h1>ColorMatch Pro</h1>
 
 <div class="sub">
-OEM MultiBrand Edition • Universal Solid Engine
+OEM MultiBrand Edition • Universal Solid Engine V2
 </div>
 
 </header>
@@ -403,6 +417,10 @@ muted>
 
 <div id="cross"></div>
 
+<div id="solidIndicator">
+ANALISANDO SUPERFÍCIE
+</div>
+
 </div>
 
 <div id="panel">
@@ -465,31 +483,6 @@ muted>
 
 </div>
 
-<div id="databasePanel">
-
-<h2>Pesquisa OEM</h2>
-
-<input
-type="text"
-id="brandSearch"
-placeholder="Digite a montadora..."
-oninput="searchBrand()"
->
-
-<br>
-
-<select id="modelSelect" onchange="showModelColors()">
-
-<option value="">
-Selecione o modelo
-</option>
-
-</select>
-
-<div id="resultList"></div>
-
-</div>
-
 <div id="txt">
 Inicializando câmera...
 </div>
@@ -523,6 +516,7 @@ const similarityValue = document.getElementById("similarityValue");
 const precisionText = document.getElementById("precisionText");
 const liveFill = document.getElementById("liveFill");
 const modeText = document.getElementById("modeText");
+const solidIndicator = document.getElementById("solidIndicator");
 
 /* ===================================================== */
 /* CONTROLE */
@@ -532,19 +526,10 @@ let mode = "static";
 
 let voice = true;
 
-let compareStep = 0;
-let compareALab = null;
-
-let selectedDatabaseColor = null;
-
 let streamTrack = null;
 let flashOn = false;
-let flashBusy = false;
-let processingPaused = false;
 
-/* ===================================================== */
-/* CONTROLE DE AUDIO PROFISSIONAL */
-/* ===================================================== */
+let processingPaused = false;
 
 let lastSpokenColor = "";
 let speechLocked = false;
@@ -552,110 +537,22 @@ let speechLocked = false;
 const MIN_SIMILARITY_TO_SPEAK = 72;
 
 /* ===================================================== */
-/* OEM DATABASE */
-/* ===================================================== */
-
-const oemDatabase = [
-
-{
-brand:"Toyota",
-model:"Corolla",
-year:"2024",
-code:"040",
-name:"Super White II",
-rgb:{r:244,g:244,b:241}
-},
-
-{
-brand:"Toyota",
-model:"Corolla",
-year:"2024",
-code:"1F7",
-name:"Classic Silver Metallic",
-rgb:{r:169,g:173,b:177}
-},
-
-{
-brand:"Toyota",
-model:"Corolla",
-year:"2024",
-code:"218",
-name:"Midnight Black Metallic",
-rgb:{r:27,g:27,b:27}
-},
-
-{
-brand:"Toyota",
-model:"Corolla",
-year:"2024",
-code:"3U5",
-name:"Emotional Red",
-rgb:{r:126,g:31,b:36}
-}
-
-];
-
-/* ===================================================== */
-/* UNIVERSAL SOLID COLORS */
-/* SOMENTE CORES LISAS */
+/* UNIVERSAL COLORS */
 /* ===================================================== */
 
 const universalColors = [
 
-{
-name:"Branco",
-rgb:{r:255,g:255,b:255}
-},
-
-{
-name:"Preto",
-rgb:{r:0,g:0,b:0}
-},
-
-{
-name:"Cinza",
-rgb:{r:128,g:128,b:128}
-},
-
-{
-name:"Vermelho",
-rgb:{r:255,g:0,b:0}
-},
-
-{
-name:"Azul",
-rgb:{r:0,g:0,b:255}
-},
-
-{
-name:"Verde",
-rgb:{r:0,g:255,b:0}
-},
-
-{
-name:"Amarelo",
-rgb:{r:255,g:255,b:0}
-},
-
-{
-name:"Laranja",
-rgb:{r:255,g:140,b:0}
-},
-
-{
-name:"Roxo",
-rgb:{r:128,g:0,b:128}
-},
-
-{
-name:"Marrom",
-rgb:{r:101,g:67,b:33}
-},
-
-{
-name:"Bege",
-rgb:{r:210,g:180,b:140}
-}
+{name:"Branco",rgb:{r:255,g:255,b:255}},
+{name:"Preto",rgb:{r:0,g:0,b:0}},
+{name:"Cinza",rgb:{r:128,g:128,b:128}},
+{name:"Vermelho",rgb:{r:255,g:0,b:0}},
+{name:"Azul",rgb:{r:0,g:0,b:255}},
+{name:"Verde",rgb:{r:0,g:255,b:0}},
+{name:"Amarelo",rgb:{r:255,g:255,b:0}},
+{name:"Laranja",rgb:{r:255,g:140,b:0}},
+{name:"Roxo",rgb:{r:128,g:0,b:128}},
+{name:"Marrom",rgb:{r:101,g:67,b:33}},
+{name:"Bege",rgb:{r:210,g:180,b:140}}
 
 ];
 
@@ -667,7 +564,8 @@ async function startCamera(){
 
   try{
 
-    const stream = await navigator.mediaDevices.getUserMedia({
+    const stream =
+    await navigator.mediaDevices.getUserMedia({
 
       video:{
         facingMode:{ideal:"environment"},
@@ -686,14 +584,12 @@ async function startCamera(){
     streamTrack = stream.getVideoTracks()[0];
 
     txt.innerHTML =
-    "<span class='statusGood'>Câmera iniciada com sucesso</span>";
+    "<span class='statusGood'>Câmera iniciada</span>";
 
   }catch(e){
 
-    console.error(e);
-
     txt.innerHTML =
-    "<span class='statusBad'>Falha ao acessar câmera</span>";
+    "<span class='statusBad'>Falha na câmera</span>";
 
   }
 
@@ -722,10 +618,6 @@ function speak(text){
 
   msg.lang = "pt-BR";
 
-  msg.rate = 1;
-  msg.pitch = 1;
-  msg.volume = 1;
-
   msg.onend = ()=>{
 
     setTimeout(()=>{
@@ -739,10 +631,6 @@ function speak(text){
   speechSynthesis.speak(msg);
 
 }
-
-/* ===================================================== */
-/* AUDIO INTELIGENTE */
-/* ===================================================== */
 
 function smartSpeakColor(color,similarity){
 
@@ -763,62 +651,7 @@ function smartSpeakColor(color,similarity){
 }
 
 /* ===================================================== */
-/* FLASH */
-/* ===================================================== */
-
-async function toggleFlash(){
-
-  if(flashBusy) return;
-
-  if(!streamTrack){
-    return;
-  }
-
-  flashBusy = true;
-
-  processingPaused = true;
-
-  try{
-
-    const capabilities =
-    streamTrack.getCapabilities();
-
-    if(!capabilities.torch){
-
-      alert("Flash não suportado");
-
-      processingPaused = false;
-      flashBusy = false;
-
-      return;
-    }
-
-    flashOn = !flashOn;
-
-    await streamTrack.applyConstraints({
-
-      advanced:[{torch:flashOn}]
-
-    });
-
-  }catch(e){
-
-    console.error(e);
-
-  }
-
-  processingPaused = false;
-
-  setTimeout(()=>{
-
-    flashBusy = false;
-
-  },500);
-
-}
-
-/* ===================================================== */
-/* RGB TO HEX */
+/* RGB */
 /* ===================================================== */
 
 function rgbToHex(r,g,b){
@@ -831,7 +664,7 @@ function rgbToHex(r,g,b){
 }
 
 /* ===================================================== */
-/* RGB TO LAB */
+/* LAB */
 /* ===================================================== */
 
 function rgbToLab(r,g,b){
@@ -885,10 +718,6 @@ function rgbToLab(r,g,b){
 
 }
 
-/* ===================================================== */
-/* DELTA E */
-/* ===================================================== */
-
 function deltaE(a,b){
 
   return Math.sqrt(
@@ -905,16 +734,6 @@ function deltaE(a,b){
 /* PREPARA LAB */
 /* ===================================================== */
 
-oemDatabase.forEach(item=>{
-
-  item.lab = rgbToLab(
-    item.rgb.r,
-    item.rgb.g,
-    item.rgb.b
-  );
-
-});
-
 universalColors.forEach(item=>{
 
   item.lab = rgbToLab(
@@ -926,33 +745,59 @@ universalColors.forEach(item=>{
 });
 
 /* ===================================================== */
-/* FILTRO UNIVERSAL PROFISSIONAL */
-/* IGNORA METALICOS / EFEITOS */
+/* NOVO MOTOR SOLID ENGINE */
 /* ===================================================== */
 
-function isSolidColor(sig){
+function analyzeSurfaceQuality(samples){
 
-  const max =
-  Math.max(sig.r,sig.g,sig.b);
+  let variance = 0;
 
-  const min =
-  Math.min(sig.r,sig.g,sig.b);
+  const avgR =
+  samples.reduce((a,b)=>a+b.r,0)/samples.length;
 
-  const variation =
-  max - min;
+  const avgG =
+  samples.reduce((a,b)=>a+b.g,0)/samples.length;
 
-  /* cores muito neutras/metálicas */
+  const avgB =
+  samples.reduce((a,b)=>a+b.b,0)/samples.length;
 
-  if(variation < 12){
-    return false;
+  for(const s of samples){
+
+    variance +=
+
+    Math.abs(s.r - avgR) +
+    Math.abs(s.g - avgG) +
+    Math.abs(s.b - avgB);
+
   }
 
-  return true;
+  variance /= samples.length;
+
+  const max =
+  Math.max(avgR,avgG,avgB);
+
+  const min =
+  Math.min(avgR,avgG,avgB);
+
+  const chroma =
+  max - min;
+
+  return{
+
+    variance,
+    chroma,
+
+    isSolid:
+
+      variance < 18 &&
+      chroma > 18
+
+  };
 
 }
 
 /* ===================================================== */
-/* CAPTURA */
+/* CAPTURA PROFISSIONAL */
 /* ===================================================== */
 
 function captureRaw(x,y){
@@ -972,36 +817,61 @@ function captureRaw(x,y){
 
   ctxA.drawImage(video,0,0);
 
-  const s = 12;
+  const samples = [];
 
-  const data = ctxA.getImageData(
+  const area = 20;
 
-    x-s,
-    y-s,
-    s*2,
-    s*2
+  for(let sy=-area; sy<=area; sy+=8){
 
-  ).data;
+    for(let sx=-area; sx<=area; sx+=8){
 
-  let r=0,g=0,b=0,c=0;
+      const px = x + sx;
+      const py = y + sy;
 
-  for(let i=0;i<data.length;i+=4){
+      const data = ctxA.getImageData(
+        px,
+        py,
+        1,
+        1
+      ).data;
 
-    r += data[i];
-    g += data[i+1];
-    b += data[i+2];
+      samples.push({
 
-    c++;
+        r:data[0],
+        g:data[1],
+        b:data[2]
+
+      });
+
+    }
 
   }
 
-  r = Math.round(r/c);
-  g = Math.round(g/c);
-  b = Math.round(b/c);
+  let r=0,g=0,b=0;
+
+  samples.forEach(s=>{
+
+    r += s.r;
+    g += s.g;
+    b += s.b;
+
+  });
+
+  r = Math.round(r/samples.length);
+  g = Math.round(g/samples.length);
+  b = Math.round(b/samples.length);
 
   drawPreview(r,g,b);
 
-  return {r,g,b};
+  const surface =
+  analyzeSurfaceQuality(samples);
+
+  return{
+
+    r,g,b,
+    surface
+
+  };
 
 }
 
@@ -1015,7 +885,7 @@ function drawPreview(r,g,b){
   canvasA.height = 200;
 
   ctxA.fillStyle =
-  `rgb(${r},${g},${b})`;
+  rgb(${r},${g},${b});
 
   ctxA.fillRect(0,0,200,200);
 
@@ -1023,48 +893,15 @@ function drawPreview(r,g,b){
   canvasB.height = 200;
 
   ctxB.fillStyle =
-  `rgb(${r},${g},${b})`;
+  rgb(${r},${g},${b});
 
   ctxB.fillRect(0,0,200,200);
 
   rgbValue.innerHTML =
-  `${r}, ${g}, ${b}`;
+  ${r}, ${g}, ${b};
 
   hexValue.innerHTML =
   rgbToHex(r,g,b);
-
-}
-
-/* ===================================================== */
-/* OEM DETECT */
-/* ===================================================== */
-
-function detectOEM(sig){
-
-  const targetLab =
-  rgbToLab(sig.r,sig.g,sig.b);
-
-  let best = null;
-  let bestDelta = 999;
-
-  for(const color of oemDatabase){
-
-    const d =
-    deltaE(targetLab,color.lab);
-
-    if(d < bestDelta){
-
-      bestDelta = d;
-      best = color;
-
-    }
-
-  }
-
-  return{
-    match:best,
-    delta:bestDelta
-  };
 
 }
 
@@ -1074,7 +911,7 @@ function detectOEM(sig){
 
 function detectUniversal(sig){
 
-  if(!isSolidColor(sig)){
+  if(!sig.surface.isSolid){
 
     return{
       blocked:true
@@ -1103,15 +940,17 @@ function detectUniversal(sig){
   }
 
   return{
+
     blocked:false,
     match:best,
     delta:bestDelta
+
   };
 
 }
 
 /* ===================================================== */
-/* UPDATE UI */
+/* UI */
 /* ===================================================== */
 
 function updateUI(name,similarity){
@@ -1130,53 +969,6 @@ function updateUI(name,similarity){
 }
 
 /* ===================================================== */
-/* OEM ANALYZE */
-/* ===================================================== */
-
-function analyzeOEM(){
-
-  const sig = captureRaw(
-
-    video.videoWidth/2,
-    video.videoHeight/2
-
-  );
-
-  const result =
-  detectOEM(sig);
-
-  const similarity = Math.max(
-    0,
-    100 - result.delta
-  ).toFixed(1);
-
-  updateUI(
-    result.match.name,
-    similarity
-  );
-
-  txt.innerHTML = `
-
-  <span class='statusGood'>
-
-  ${result.match.brand}
-  |
-  ${result.match.model}
-  |
-  ${result.match.name}
-  |
-  ${similarity}%
-
-  </span>`;
-
-  smartSpeakColor(
-    result.match.name,
-    similarity
-  );
-
-}
-
-/* ===================================================== */
 /* UNIVERSAL ANALYZE */
 /* ===================================================== */
 
@@ -1189,6 +981,24 @@ function analyzeUniversal(){
 
   );
 
+  if(sig.surface.isSolid){
+
+    solidIndicator.style.display = "block";
+    solidIndicator.innerHTML =
+    "SUPERFÍCIE SÓLIDA";
+    solidIndicator.style.borderColor =
+    "#00ff99";
+
+  }else{
+
+    solidIndicator.style.display = "block";
+    solidIndicator.innerHTML =
+    "EFEITO / METÁLICO DETECTADO";
+    solidIndicator.style.borderColor =
+    "#ff5555";
+
+  }
+
   const result =
   detectUniversal(sig);
 
@@ -1196,12 +1006,16 @@ function analyzeUniversal(){
 
     txt.innerHTML = `
     <span class='statusBad'>
-    Cor com efeito detectada
-    <br>
-    Universal aceita somente cores lisas
+    Superfície rejeitada pelo
+    Universal Solid Engine
+    <br><br>
+    Motivo:
+    efeito metálico,
+    brilho irregular ou reflexo
     </span>`;
 
     return;
+
   }
 
   const similarity = Math.max(
@@ -1216,11 +1030,18 @@ function analyzeUniversal(){
 
   txt.innerHTML = `
   <span class='statusGood'>
-  Cor sólida:
+
+  COR SÓLIDA DETECTADA
+
+  <br><br>
+
   ${result.match.name}
+
   <br>
+
   Similaridade:
   ${similarity}%
+
   </span>`;
 
   smartSpeakColor(
@@ -1231,74 +1052,13 @@ function analyzeUniversal(){
 }
 
 /* ===================================================== */
-/* OEM MOVIMENTO */
-/* ===================================================== */
-
-function moveLoop(){
-
-  if(mode !== "move") return;
-
-  if(processingPaused){
-
-    requestAnimationFrame(moveLoop);
-    return;
-
-  }
-
-  const sig = captureRaw(
-
-    video.videoWidth/2,
-    video.videoHeight/2
-
-  );
-
-  const result =
-  detectOEM(sig);
-
-  const similarity = Math.max(
-    0,
-    100 - result.delta
-  ).toFixed(1);
-
-  updateUI(
-    result.match.name,
-    similarity
-  );
-
-  txt.innerHTML = `
-  <span class='statusGood'>
-  ${result.match.name}
-  <br>
-  Similaridade:
-  ${similarity}%
-  </span>`;
-
-  /* AUDIO AGORA FUNCIONA NO MOVIMENTO */
-
-  smartSpeakColor(
-    result.match.name,
-    similarity
-  );
-
-  requestAnimationFrame(moveLoop);
-
-}
-
-/* ===================================================== */
-/* UNIVERSAL MOVIMENTO */
+/* LOOP LIVE */
 /* ===================================================== */
 
 function universalMoveLoop(){
 
   if(mode !== "universalMove") return;
 
-  if(processingPaused){
-
-    requestAnimationFrame(universalMoveLoop);
-    return;
-
-  }
-
   const sig = captureRaw(
 
     video.videoWidth/2,
@@ -1311,14 +1071,35 @@ function universalMoveLoop(){
 
   if(result.blocked){
 
+    solidIndicator.style.display = "block";
+
+    solidIndicator.innerHTML =
+    "SUPERFÍCIE NÃO SÓLIDA";
+
+    solidIndicator.style.borderColor =
+    "#ff4444";
+
     txt.innerHTML = `
     <span class='statusBad'>
-    Superfície metálica / efeito detectado
+    Universal Solid Engine
+    bloqueou superfície metálica
     </span>`;
 
-    requestAnimationFrame(universalMoveLoop);
+    requestAnimationFrame(
+      universalMoveLoop
+    );
+
     return;
+
   }
+
+  solidIndicator.style.display = "block";
+
+  solidIndicator.innerHTML =
+  "SUPERFÍCIE SÓLIDA";
+
+  solidIndicator.style.borderColor =
+  "#00ff99";
 
   const similarity = Math.max(
     0,
@@ -1332,218 +1113,24 @@ function universalMoveLoop(){
 
   txt.innerHTML = `
   <span class='statusGood'>
+
   ${result.match.name}
+
   <br>
+
   Similaridade:
   ${similarity}%
-  </span>`;
 
-  /* AUDIO PROFISSIONAL */
+  </span>`;
 
   smartSpeakColor(
     result.match.name,
     similarity
   );
 
-  requestAnimationFrame(universalMoveLoop);
-
-}
-
-/* ===================================================== */
-/* SEARCH */
-/* ===================================================== */
-
-function searchBrand(){
-
-  const brand =
-
-  document
-  .getElementById("brandSearch")
-  .value
-  .trim()
-  .toLowerCase();
-
-  const models = [...new Set(
-
-    oemDatabase
-
-    .filter(item=>
-
-      item.brand
-      .toLowerCase()
-      .includes(brand)
-
-    )
-
-    .map(item=>item.model)
-
-  )].sort();
-
-  const select =
-  document.getElementById("modelSelect");
-
-  select.innerHTML =
-  `<option value="">
-  Selecione o modelo
-  </option>`;
-
-  models.forEach(model=>{
-
-    select.innerHTML += `
-    <option value="${model}">
-    ${model}
-    </option>`;
-
-  });
-
-}
-
-/* ===================================================== */
-/* SHOW COLORS */
-/* ===================================================== */
-
-function showModelColors(){
-
-  const model =
-  document.getElementById("modelSelect").value;
-
-  const resultList =
-  document.getElementById("resultList");
-
-  resultList.innerHTML = "";
-
-  const colors =
-  oemDatabase.filter(item=>
-
-    item.model === model
-
+  requestAnimationFrame(
+    universalMoveLoop
   );
-
-  colors.forEach((item,index)=>{
-
-    resultList.innerHTML += `
-
-    <div
-    class="item"
-    id="color_${index}"
-    onclick="selectDatabaseColor(${index},'${item.name}')">
-
-      <span
-      class="colorBox"
-      style="
-      background:
-      rgb(
-      ${item.rgb.r},
-      ${item.rgb.g},
-      ${item.rgb.b}
-      )">
-      </span>
-
-      <strong>${item.name}</strong>
-
-      <br>
-
-      Código:
-      ${item.code}
-
-      <br>
-
-      Ano:
-      ${item.year}
-
-    </div>
-
-    `;
-
-  });
-
-}
-
-/* ===================================================== */
-/* SELECT DATABASE */
-/* ===================================================== */
-
-function selectDatabaseColor(index,colorName){
-
-  document.querySelectorAll(".item")
-  .forEach(el=>{
-
-    el.classList.remove("selected");
-
-  });
-
-  const selected =
-  document.getElementById(`color_${index}`);
-
-  if(selected){
-    selected.classList.add("selected");
-  }
-
-  const model =
-  document.getElementById("modelSelect").value;
-
-  const colors =
-  oemDatabase.filter(item=>
-
-    item.model === model
-
-  );
-
-  selectedDatabaseColor =
-  colors[index];
-
-  txt.innerHTML = `
-  <span class='statusMedium'>
-  Cor OEM selecionada:
-  ${colorName}
-  </span>`;
-
-  speak(colorName);
-
-}
-
-/* ===================================================== */
-/* COMPARE OEM */
-/* ===================================================== */
-
-function compareWithDatabase(sig){
-
-  if(!selectedDatabaseColor){
-
-    alert("Selecione uma cor OEM");
-    return;
-
-  }
-
-  const targetLab =
-  rgbToLab(sig.r,sig.g,sig.b);
-
-  const similarity = Math.max(
-
-    0,
-
-    100 -
-
-    deltaE(
-      targetLab,
-      selectedDatabaseColor.lab
-    )
-
-  ).toFixed(1);
-
-  updateUI(
-    selectedDatabaseColor.name,
-    similarity
-  );
-
-  txt.innerHTML = `
-  <span class='statusGood'>
-  BASE OEM:
-  ${selectedDatabaseColor.name}
-  <br>
-  Similaridade:
-  ${similarity}%
-  </span>`;
 
 }
 
@@ -1566,50 +1153,26 @@ function setMode(m){
 
   mode = m;
 
-  compareStep = 0;
-  compareALab = null;
-
   lastSpokenColor = "";
   speechLocked = false;
 
   clearButtons();
 
-  if(m === "static"){
-    btnStatic.classList.add("active");
-    modeText.innerHTML = "OEM ESTÁTICO";
-  }
-
-  if(m === "move"){
-    btnMove.classList.add("active");
-    modeText.innerHTML = "OEM MOVIMENTO";
-  }
-
   if(m === "universal"){
     btnUniversal.classList.add("active");
-    modeText.innerHTML = "UNIVERSAL SÓLIDO";
+    modeText.innerHTML =
+    "UNIVERSAL SÓLIDO";
   }
 
   if(m === "universalMove"){
     btnUniversalMove.classList.add("active");
-    modeText.innerHTML = "UNIVERSAL LIVE";
-  }
-
-  if(m === "comparePoint"){
-    btnCompare.classList.add("active");
-    modeText.innerHTML = "COMPARAR PONTOS";
-  }
-
-  if(m === "compareDatabase"){
-    btnDatabase.classList.add("active");
-    modeText.innerHTML = "COMPARAR OEM";
+    modeText.innerHTML =
+    "UNIVERSAL LIVE";
   }
 
   cross.style.display = (
 
-    m === "move" ||
-    m === "universalMove" ||
-    m === "comparePoint" ||
-    m === "compareDatabase"
+    m === "universalMove"
 
   )
 
@@ -1621,120 +1184,65 @@ function setMode(m){
   Modo ${m.toUpperCase()} ativado
   </span>`;
 
-  if(m === "move"){
-    moveLoop();
-  }
-
   if(m === "universalMove"){
+
     universalMoveLoop();
+
   }
 
 }
 
-setMode("static");
+setMode("universal");
 
 /* ===================================================== */
 /* CLICK */
 /* ===================================================== */
 
-video.addEventListener("click",(e)=>{
-
-  if(processingPaused) return;
-
-  const rect =
-  video.getBoundingClientRect();
-
-  const x =
-
-  (e.clientX - rect.left)
-
-  *
-
-  (video.videoWidth / rect.width);
-
-  const y =
-
-  (e.clientY - rect.top)
-
-  *
-
-  (video.videoHeight / rect.height);
-
-  const sig = captureRaw(x,y);
-
-  if(mode === "static"){
-    analyzeOEM();
-  }
+video.addEventListener("click",()=>{
 
   if(mode === "universal"){
+
     analyzeUniversal();
-  }
 
-  if(mode === "comparePoint"){
-
-    if(compareStep === 0){
-
-      compareALab = rgbToLab(
-        sig.r,
-        sig.g,
-        sig.b
-      );
-
-      compareStep = 1;
-
-      txt.innerHTML = `
-      <span class='statusMedium'>
-      Primeiro ponto capturado
-      </span>`;
-
-      speak("Primeiro ponto capturado");
-
-    }
-
-    else{
-
-      const compareBLab = rgbToLab(
-        sig.r,
-        sig.g,
-        sig.b
-      );
-
-      const similarity = Math.max(
-        0,
-        100 -
-        deltaE(
-          compareALab,
-          compareBLab
-        )
-      ).toFixed(1);
-
-      updateUI(
-        "Comparação",
-        similarity
-      );
-
-      txt.innerHTML = `
-      <span class='statusGood'>
-      Similaridade:
-      ${similarity}%
-      </span>`;
-
-      speak(
-        similarity +
-        " porcento similar"
-      );
-
-      compareStep = 0;
-
-    }
-
-  }
-
-  if(mode === "compareDatabase"){
-    compareWithDatabase(sig);
   }
 
 });
+
+/* ===================================================== */
+/* FLASH */
+/* ===================================================== */
+
+async function toggleFlash(){
+
+  if(!streamTrack) return;
+
+  try{
+
+    const capabilities =
+    streamTrack.getCapabilities();
+
+    if(!capabilities.torch){
+
+      alert("Flash não suportado");
+      return;
+
+    }
+
+    flashOn = !flashOn;
+
+    await streamTrack.applyConstraints({
+
+      advanced:[{torch:flashOn}]
+
+    });
+
+  }catch(e){
+
+    console.error(e);
+
+  }
+
+}
 
 /* ===================================================== */
 /* AUDIO */
