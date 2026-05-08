@@ -1,32 +1,56 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
 
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#111111" />
+<meta name="theme-color" content="#0b0b0b" />
 
 <title>ColorMatch Pro – OEM MultiBrand Edition</title>
 
 <style>
 
+:root{
+  --bg:#0f0f0f;
+  --panel:#181818;
+  --panel2:#202020;
+  --line:#2d2d2d;
+  --green:#00d49a;
+  --green2:#00ffcc;
+  --yellow:#ffcc00;
+  --red:#ff5f5f;
+  --white:#ffffff;
+}
+
 *{
+  margin:0;
+  padding:0;
   box-sizing:border-box;
   -webkit-tap-highlight-color:transparent;
 }
 
 body{
-  margin:0;
-  padding:0;
+  background:var(--bg);
+  color:var(--white);
   font-family:Arial,sans-serif;
-  background:#111;
-  color:#fff;
   text-align:center;
+  overflow-x:hidden;
 }
 
-h2{
-  margin-top:15px;
-  font-size:24px;
+header{
+  padding:20px 10px 10px;
+}
+
+h1{
+  font-size:28px;
+  letter-spacing:1px;
+}
+
+.sub{
+  margin-top:8px;
+  color:#aaa;
+  font-size:14px;
 }
 
 #controls{
@@ -35,52 +59,46 @@ h2{
   display:flex;
   flex-wrap:wrap;
   justify-content:center;
+  gap:8px;
+  margin-top:18px;
 }
 
 button{
-  padding:12px;
-  margin:5px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  background:#222;
+  background:#1f1f1f;
+  border:1px solid #333;
   color:#fff;
-  font-size:15px;
+  padding:12px 16px;
+  border-radius:12px;
+  cursor:pointer;
+  font-size:14px;
   transition:0.2s;
+  min-width:130px;
 }
 
 button:hover{
-  background:#333;
+  background:#2a2a2a;
 }
 
 button.active{
-  background:#00695c;
-}
-
-input,select{
-  padding:12px;
-  border-radius:10px;
-  border:none;
-  margin:5px;
-  width:90%;
-  max-width:420px;
-  background:#222;
-  color:#fff;
+  background:linear-gradient(135deg,#00695c,#00b894);
+  border-color:#00ffcc;
 }
 
 #videoContainer{
   position:relative;
-  width:92%;
-  margin:auto;
+  width:94%;
+  max-width:980px;
+  margin:18px auto;
+  border-radius:18px;
   overflow:hidden;
-  border-radius:14px;
+  border:2px solid #333;
+  background:#000;
+  box-shadow:0 0 25px rgba(0,0,0,0.5);
 }
 
 video{
   width:100%;
-  border-radius:14px;
-  border:2px solid #333;
-  background:#000;
+  display:block;
   object-fit:cover;
 }
 
@@ -88,92 +106,161 @@ video{
   position:absolute;
   top:50%;
   left:50%;
-  width:34px;
-  height:34px;
   transform:translate(-50%,-50%);
-  border:2px solid #00ffcc;
+  width:42px;
+  height:42px;
+  border:3px solid var(--green2);
   border-radius:50%;
   display:none;
   pointer-events:none;
-  z-index:999;
-  box-shadow:0 0 15px #00ffcc;
+  box-shadow:
+  0 0 10px var(--green2),
+  0 0 25px var(--green2);
+}
+
+#hud{
+  position:absolute;
+  top:12px;
+  left:12px;
+  right:12px;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  z-index:20;
+}
+
+.hudBox{
+  background:rgba(0,0,0,0.55);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.08);
+  padding:10px 14px;
+  border-radius:12px;
+  font-size:13px;
 }
 
 #panel{
-  display:flex;
-  justify-content:center;
-  align-items:flex-start;
-  flex-wrap:wrap;
-  margin-top:18px;
-  gap:12px;
+  width:95%;
+  max-width:1000px;
+  margin:18px auto;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:15px;
 }
 
-.box{
-  width:44%;
-  min-width:180px;
+.card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:14px;
+}
+
+.card h3{
+  margin-bottom:12px;
 }
 
 canvas{
   width:100%;
   border-radius:12px;
-  background:#222;
   border:2px solid #333;
+  background:#222;
+}
+
+.infoGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:12px;
+}
+
+.infoBox{
+  background:#1d1d1d;
+  border:1px solid #333;
+  border-radius:12px;
+  padding:12px;
+}
+
+.infoTitle{
+  color:#999;
+  font-size:13px;
+}
+
+.infoValue{
+  margin-top:6px;
+  font-size:18px;
+  font-weight:bold;
 }
 
 #databasePanel{
-  margin-top:25px;
-  padding:18px;
-  background:#181818;
-  border-top:2px solid #333;
+  width:95%;
+  max-width:1000px;
+  margin:25px auto;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:20px;
+}
+
+#databasePanel h2{
+  margin-bottom:15px;
+}
+
+input,select{
+  width:92%;
+  max-width:450px;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#222;
+  color:#fff;
+  margin:8px;
+  font-size:15px;
 }
 
 #resultList{
-  margin-top:12px;
-  text-align:left;
-  width:92%;
-  max-width:760px;
-  margin-left:auto;
-  margin-right:auto;
-  background:#1f1f1f;
-  border-radius:12px;
-  padding:10px;
+  margin-top:20px;
+  display:grid;
+  gap:10px;
 }
 
 .item{
-  padding:12px;
-  border-bottom:1px solid #333;
+  background:#1f1f1f;
+  border:1px solid #333;
+  border-radius:14px;
+  padding:14px;
+  text-align:left;
   cursor:pointer;
-  border-radius:8px;
   transition:0.2s;
 }
 
 .item:hover{
-  background:#2b2b2b;
+  transform:scale(1.01);
+  border-color:#555;
 }
 
 .item.selected{
-  background:#004d40;
+  background:#003d34;
+  border-color:#00ffcc;
 }
 
 .colorBox{
-  width:18px;
-  height:18px;
-  display:inline-block;
+  width:20px;
+  height:20px;
   border-radius:50%;
+  display:inline-block;
+  vertical-align:middle;
   margin-right:8px;
   border:1px solid #fff;
-  vertical-align:middle;
 }
 
 #txt{
-  margin:18px auto;
-  font-size:18px;
-  padding:14px;
-  width:92%;
-  max-width:850px;
-  background:#1b1b1b;
-  border-radius:12px;
+  width:95%;
+  max-width:1000px;
+  margin:20px auto 40px;
+  background:#161616;
   border:1px solid #333;
+  border-radius:16px;
+  padding:18px;
+  font-size:18px;
   line-height:1.5;
 }
 
@@ -189,14 +276,44 @@ canvas{
   color:#ff6666;
 }
 
-@media(max-width:700px){
+#liveBar{
+  width:100%;
+  height:8px;
+  background:#222;
+  border-radius:999px;
+  overflow:hidden;
+  margin-top:12px;
+}
 
-  .box{
-    width:92%;
+#liveFill{
+  width:0%;
+  height:100%;
+  background:linear-gradient(90deg,#00ff99,#00ffcc);
+  transition:0.2s;
+}
+
+footer{
+  padding:20px;
+  color:#666;
+  font-size:13px;
+}
+
+@media(max-width:780px){
+
+  h1{
+    font-size:22px;
   }
 
-  h2{
-    font-size:20px;
+  #panel{
+    grid-template-columns:1fr;
+  }
+
+  .infoGrid{
+    grid-template-columns:1fr;
+  }
+
+  button{
+    width:100%;
   }
 
 }
@@ -207,24 +324,32 @@ canvas{
 
 <body>
 
-<h2>ColorMatch Pro – OEM MultiBrand Edition</h2>
+<header>
+
+<h1>ColorMatch Pro</h1>
+
+<div class="sub">
+OEM MultiBrand Edition • Professional Color Scanner
+</div>
+
+</header>
 
 <div id="controls">
 
 <button id="btnStatic" onclick="setMode('static')">
-Estático OEM
+OEM Estático
 </button>
 
 <button id="btnMove" onclick="setMode('move')">
-Movimento OEM
+OEM Movimento
 </button>
 
 <button id="btnUniversal" onclick="setMode('universal')">
-Cores Universais
+Universal
 </button>
 
 <button id="btnUniversalMove" onclick="setMode('universalMove')">
-Movimento Universal
+Universal Live
 </button>
 
 <button id="btnCompare" onclick="setMode('comparePoint')">
@@ -249,11 +374,28 @@ Comparar OEM
 
 </div>
 
-<br>
-
 <div id="videoContainer">
 
-<video id="video" autoplay playsinline muted></video>
+<div id="hud">
+
+<div class="hudBox">
+Modo:
+<span id="modeText">OEM ESTÁTICO</span>
+</div>
+
+<div class="hudBox">
+Precisão:
+<span id="precisionText">0%</span>
+</div>
+
+</div>
+
+<video
+id="video"
+autoplay
+playsinline
+muted
+></video>
 
 <div id="cross"></div>
 
@@ -261,21 +403,67 @@ Comparar OEM
 
 <div id="panel">
 
-<div class="box">
+<div class="card">
+
+<h3>Referência</h3>
+
 <canvas id="canvasA"></canvas>
-<div>Referência</div>
+
+<div class="infoGrid">
+
+<div class="infoBox">
+<div class="infoTitle">RGB</div>
+<div class="infoValue" id="rgbValue">
+0,0,0
+</div>
 </div>
 
-<div class="box">
+<div class="infoBox">
+<div class="infoTitle">HEX</div>
+<div class="infoValue" id="hexValue">
+#000000
+</div>
+</div>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h3>Comparação</h3>
+
 <canvas id="canvasB"></canvas>
-<div>Comparação</div>
+
+<div class="infoGrid">
+
+<div class="infoBox">
+<div class="infoTitle">Cor Detectada</div>
+<div class="infoValue" id="colorName">
+---
+</div>
+</div>
+
+<div class="infoBox">
+<div class="infoTitle">Similaridade</div>
+<div class="infoValue" id="similarityValue">
+0%
+</div>
+</div>
+
+</div>
+
+<div id="liveBar">
+<div id="liveFill"></div>
+</div>
+
 </div>
 
 </div>
 
 <div id="databasePanel">
 
-<h3>Pesquisa OEM</h3>
+<h2>Pesquisa OEM</h2>
 
 <input
 type="text"
@@ -287,14 +475,22 @@ oninput="searchBrand()"
 <br>
 
 <select id="modelSelect" onchange="showModelColors()">
-<option value="">Selecione o modelo</option>
+<option value="">
+Selecione o modelo
+</option>
 </select>
 
 <div id="resultList"></div>
 
 </div>
 
-<p id="txt">Inicializando câmera...</p>
+<div id="txt">
+Inicializando câmera...
+</div>
+
+<footer>
+ColorMatch Pro • Professional OEM Color Identification System
+</footer>
 
 <script>
 
@@ -302,31 +498,37 @@ const video = document.getElementById("video");
 const canvasA = document.getElementById("canvasA");
 const canvasB = document.getElementById("canvasB");
 
-const ctxA = canvasA.getContext("2d", {
-  willReadFrequently:true
-});
+const ctxA = canvasA.getContext("2d",{willReadFrequently:true});
+const ctxB = canvasB.getContext("2d",{willReadFrequently:true});
 
-const ctxB = canvasB.getContext("2d", {
-  willReadFrequently:true
-});
-
-const cross = document.getElementById("cross");
 const txt = document.getElementById("txt");
+const cross = document.getElementById("cross");
+
+const rgbValue = document.getElementById("rgbValue");
+const hexValue = document.getElementById("hexValue");
+const colorName = document.getElementById("colorName");
+const similarityValue = document.getElementById("similarityValue");
+const precisionText = document.getElementById("precisionText");
+const liveFill = document.getElementById("liveFill");
+const modeText = document.getElementById("modeText");
 
 let mode = "static";
 let voice = true;
+
 let compareStep = 0;
 let compareALab = null;
+
 let selectedDatabaseColor = null;
+
 let streamTrack = null;
 let flashOn = false;
-let flashBusy = false;
 let processingPaused = false;
+let flashBusy = false;
 
 let lastSpokenColor = "";
 let lastSpeakTime = 0;
 
-/* ================= DATABASE OEM ================= */
+/* ================= OEM DATABASE ================= */
 
 const oemDatabase = [
 
@@ -368,7 +570,7 @@ rgb:{r:126,g:31,b:36}
 
 ];
 
-/* ================= DATABASE UNIVERSAL ================= */
+/* ================= UNIVERSAL ================= */
 
 const universalColors = [
 
@@ -436,12 +638,15 @@ async function startCamera(){
   try{
 
     const stream = await navigator.mediaDevices.getUserMedia({
+
       video:{
-        facingMode:{ ideal:"environment" },
-        width:{ ideal:1920 },
-        height:{ ideal:1080 }
+        facingMode:{ideal:"environment"},
+        width:{ideal:1920},
+        height:{ideal:1080}
       },
+
       audio:false
+
     });
 
     video.srcObject = stream;
@@ -461,11 +666,13 @@ async function startCamera(){
 
     txt.innerHTML = `
     <span class='statusBad'>
-    Erro ao acessar câmera
+    Falha ao acessar câmera
     </span>`;
 
     alert("Permita acesso à câmera");
+
   }
+
 }
 
 startCamera();
@@ -485,6 +692,7 @@ function speak(text){
   msg.lang = "pt-BR";
 
   speechSynthesis.speak(msg);
+
 }
 
 /* ================= FLASH ================= */
@@ -518,7 +726,7 @@ async function toggleFlash(){
     flashOn = !flashOn;
 
     await streamTrack.applyConstraints({
-      advanced:[{ torch:flashOn }]
+      advanced:[{torch:flashOn}]
     });
 
     txt.innerHTML = flashOn
@@ -537,6 +745,18 @@ async function toggleFlash(){
   setTimeout(()=>{
     flashBusy = false;
   },500);
+
+}
+
+/* ================= RGB TO HEX ================= */
+
+function rgbToHex(r,g,b){
+
+  return "#" + [r,g,b]
+  .map(v=>v.toString(16).padStart(2,"0"))
+  .join("")
+  .toUpperCase();
+
 }
 
 /* ================= RGB TO LAB ================= */
@@ -572,6 +792,7 @@ function rgbToLab(r,g,b){
     a:500*(x-y),
     b:200*(y-z)
   };
+
 }
 
 /* ================= DELTA ================= */
@@ -583,21 +804,12 @@ function deltaE(a,b){
     (a.a-b.a)**2 +
     (a.b-b.b)**2
   );
+
 }
 
-/* ================= PREPARA LAB ================= */
+/* ================= PREPARE LAB ================= */
 
-oemDatabase.forEach(item => {
-
-  item.lab = rgbToLab(
-    item.rgb.r,
-    item.rgb.g,
-    item.rgb.b
-  );
-
-});
-
-universalColors.forEach(item => {
+oemDatabase.forEach(item=>{
 
   item.lab = rgbToLab(
     item.rgb.r,
@@ -607,7 +819,17 @@ universalColors.forEach(item => {
 
 });
 
-/* ================= CAPTURA ================= */
+universalColors.forEach(item=>{
+
+  item.lab = rgbToLab(
+    item.rgb.r,
+    item.rgb.g,
+    item.rgb.b
+  );
+
+});
+
+/* ================= CAPTURE ================= */
 
 function captureRaw(x,y){
 
@@ -638,6 +860,7 @@ function captureRaw(x,y){
     b += data[i+2];
 
     c++;
+
   }
 
   r = Math.round(r/c);
@@ -646,31 +869,30 @@ function captureRaw(x,y){
 
   drawPreview(r,g,b);
 
-  return { r,g,b };
+  return {r,g,b};
+
 }
 
 /* ================= PREVIEW ================= */
 
 function drawPreview(r,g,b){
 
-  canvasA.width = 160;
-  canvasA.height = 160;
+  canvasA.width = 200;
+  canvasA.height = 200;
 
   ctxA.fillStyle = `rgb(${r},${g},${b})`;
-  ctxA.fillRect(0,0,160,160);
+  ctxA.fillRect(0,0,200,200);
 
-  ctxA.fillStyle = "#ffffff";
-  ctxA.font = "16px Arial";
-
-  ctxA.fillText(`R:${r}`,10,30);
-  ctxA.fillText(`G:${g}`,10,55);
-  ctxA.fillText(`B:${b}`,10,80);
-
-  canvasB.width = 160;
-  canvasB.height = 160;
+  canvasB.width = 200;
+  canvasB.height = 200;
 
   ctxB.fillStyle = `rgb(${r},${g},${b})`;
-  ctxB.fillRect(0,0,160,160);
+  ctxB.fillRect(0,0,200,200);
+
+  rgbValue.innerHTML = `${r}, ${g}, ${b}`;
+
+  hexValue.innerHTML = rgbToHex(r,g,b);
+
 }
 
 /* ================= OEM DETECT ================= */
@@ -687,15 +909,19 @@ function detectOEM(sig){
     const d = deltaE(targetLab,color.lab);
 
     if(d < bestDelta){
+
       bestDelta = d;
       best = color;
+
     }
+
   }
 
   return {
     match:best,
     delta:bestDelta
   };
+
 }
 
 /* ================= UNIVERSAL DETECT ================= */
@@ -712,15 +938,33 @@ function detectUniversal(sig){
     const d = deltaE(targetLab,color.lab);
 
     if(d < bestDelta){
+
       bestDelta = d;
       best = color;
+
     }
+
   }
 
   return {
     match:best,
     delta:bestDelta
   };
+
+}
+
+/* ================= UI UPDATE ================= */
+
+function updateUI(name,similarity){
+
+  colorName.innerHTML = name;
+
+  similarityValue.innerHTML = similarity + "%";
+
+  precisionText.innerHTML = similarity + "%";
+
+  liveFill.style.width = similarity + "%";
+
 }
 
 /* ================= OEM ANALYZE ================= */
@@ -739,6 +983,11 @@ function analyzeOEM(){
     100 - result.delta
   ).toFixed(1);
 
+  updateUI(
+    result.match.name,
+    similarity
+  );
+
   txt.innerHTML = `
   <span class='statusGood'>
   ${result.match.brand}
@@ -751,6 +1000,7 @@ function analyzeOEM(){
   </span>`;
 
   speak(result.match.name);
+
 }
 
 /* ================= UNIVERSAL ANALYZE ================= */
@@ -769,30 +1019,35 @@ function analyzeUniversal(){
     100 - result.delta
   ).toFixed(1);
 
+  updateUI(
+    result.match.name,
+    similarity
+  );
+
   txt.innerHTML = `
   <span class='statusGood'>
-  Cor Detectada:
+  Cor:
   ${result.match.name}
   <br>
   Similaridade:
   ${similarity}%
-  <br>
-  RGB:
-  ${sig.r}, ${sig.g}, ${sig.b}
   </span>`;
 
   speak(result.match.name);
+
 }
 
-/* ================= MOVIMENTO OEM ================= */
+/* ================= OEM LIVE ================= */
 
 function moveLoop(){
 
   if(mode !== "move") return;
 
   if(processingPaused){
+
     requestAnimationFrame(moveLoop);
     return;
+
   }
 
   const sig = captureRaw(
@@ -807,6 +1062,11 @@ function moveLoop(){
     100 - result.delta
   ).toFixed(1);
 
+  updateUI(
+    result.match.name,
+    similarity
+  );
+
   txt.innerHTML = `
   <span class='statusGood'>
   ${result.match.name}
@@ -829,20 +1089,24 @@ function moveLoop(){
     lastSpeakTime = now;
 
     speak(result.match.name);
+
   }
 
   requestAnimationFrame(moveLoop);
+
 }
 
-/* ================= MOVIMENTO UNIVERSAL ================= */
+/* ================= UNIVERSAL LIVE ================= */
 
 function universalMoveLoop(){
 
   if(mode !== "universalMove") return;
 
   if(processingPaused){
+
     requestAnimationFrame(universalMoveLoop);
     return;
+
   }
 
   const sig = captureRaw(
@@ -857,38 +1121,24 @@ function universalMoveLoop(){
     100 - result.delta
   ).toFixed(1);
 
+  updateUI(
+    result.match.name,
+    similarity
+  );
+
   txt.innerHTML = `
   <span class='statusGood'>
-  Cor:
   ${result.match.name}
   <br>
   Similaridade:
   ${similarity}%
-  <br>
-  RGB:
-  ${sig.r}, ${sig.g}, ${sig.b}
   </span>`;
 
-  const now = Date.now();
-
-  if(
-    similarity >= 75 &&
-    (
-      result.match.name !== lastSpokenColor ||
-      now - lastSpeakTime > 2500
-    )
-  ){
-
-    lastSpokenColor = result.match.name;
-    lastSpeakTime = now;
-
-    speak(result.match.name);
-  }
-
   requestAnimationFrame(universalMoveLoop);
+
 }
 
-/* ================= PESQUISA ================= */
+/* ================= SEARCH ================= */
 
 function searchBrand(){
 
@@ -915,18 +1165,20 @@ function searchBrand(){
   Selecione o modelo
   </option>`;
 
-  models.forEach(model => {
+  models.forEach(model=>{
 
     select.innerHTML += `
     <option value="${model}">
-      ${model}
+    ${model}
     </option>`;
+
   });
 
   document.getElementById("resultList").innerHTML = "";
+
 }
 
-/* ================= MOSTRA CORES ================= */
+/* ================= SHOW COLORS ================= */
 
 function showModelColors(){
 
@@ -946,7 +1198,7 @@ function showModelColors(){
     <div
     class="item"
     id="color_${index}"
-    onclick="selectDatabaseColor(${index}, '${item.name}')">
+    onclick="selectDatabaseColor(${index},'${item.name}')">
 
       <span
       class="colorBox"
@@ -963,22 +1215,25 @@ function showModelColors(){
 
       Ano: ${item.year}
 
-    </div>`;
+    </div>
+    `;
+
   });
+
 }
 
-/* ================= SELECIONA COR ================= */
+/* ================= SELECT COLOR ================= */
 
 function selectDatabaseColor(index,colorName){
 
-  document.querySelectorAll('.item').forEach(el=>{
-    el.classList.remove('selected');
+  document.querySelectorAll(".item").forEach(el=>{
+    el.classList.remove("selected");
   });
 
   const selected = document.getElementById(`color_${index}`);
 
   if(selected){
-    selected.classList.add('selected');
+    selected.classList.add("selected");
   }
 
   const model = document.getElementById("modelSelect").value;
@@ -995,25 +1250,34 @@ function selectDatabaseColor(index,colorName){
   </span>`;
 
   speak(colorName);
+
 }
 
-/* ================= COMPARAR OEM ================= */
+/* ================= COMPARE OEM ================= */
 
 function compareWithDatabase(sig){
 
   if(!selectedDatabaseColor){
 
     alert("Selecione uma cor OEM primeiro");
-
     return;
+
   }
 
   const targetLab = rgbToLab(sig.r,sig.g,sig.b);
 
   const similarity = Math.max(
     0,
-    100 - deltaE(targetLab,selectedDatabaseColor.lab)
+    100 - deltaE(
+      targetLab,
+      selectedDatabaseColor.lab
+    )
   ).toFixed(1);
+
+  updateUI(
+    selectedDatabaseColor.name,
+    similarity
+  );
 
   txt.innerHTML = `
   <span class='statusGood'>
@@ -1025,15 +1289,17 @@ function compareWithDatabase(sig){
   </span>`;
 
   speak(`${similarity} porcento similar`);
+
 }
 
-/* ================= MODOS ================= */
+/* ================= MODES ================= */
 
 function clearButtons(){
 
   document.querySelectorAll("button").forEach(btn=>{
     btn.classList.remove("active");
   });
+
 }
 
 function setMode(m){
@@ -1050,26 +1316,32 @@ function setMode(m){
 
   if(m === "static"){
     btnStatic.classList.add("active");
+    modeText.innerHTML = "OEM ESTÁTICO";
   }
 
   if(m === "move"){
     btnMove.classList.add("active");
+    modeText.innerHTML = "OEM LIVE";
   }
 
   if(m === "universal"){
     btnUniversal.classList.add("active");
+    modeText.innerHTML = "UNIVERSAL";
   }
 
   if(m === "universalMove"){
     btnUniversalMove.classList.add("active");
+    modeText.innerHTML = "UNIVERSAL LIVE";
   }
 
   if(m === "comparePoint"){
     btnCompare.classList.add("active");
+    modeText.innerHTML = "COMPARAR PONTOS";
   }
 
   if(m === "compareDatabase"){
     btnDatabase.classList.add("active");
+    modeText.innerHTML = "COMPARAR OEM";
   }
 
   cross.style.display = (
@@ -1093,11 +1365,12 @@ function setMode(m){
   if(m === "universalMove"){
     universalMoveLoop();
   }
+
 }
 
 setMode("static");
 
-/* ================= CLICK VIDEO ================= */
+/* ================= VIDEO CLICK ================= */
 
 video.addEventListener("click",(e)=>{
 
@@ -1129,7 +1402,11 @@ video.addEventListener("click",(e)=>{
 
     if(compareStep === 0){
 
-      compareALab = rgbToLab(sig.r,sig.g,sig.b);
+      compareALab = rgbToLab(
+        sig.r,
+        sig.g,
+        sig.b
+      );
 
       compareStep = 1;
 
@@ -1139,16 +1416,24 @@ video.addEventListener("click",(e)=>{
       </span>`;
 
       speak("Primeiro ponto capturado");
-    }
 
-    else{
+    }else{
 
-      const compareBLab = rgbToLab(sig.r,sig.g,sig.b);
+      const compareBLab = rgbToLab(
+        sig.r,
+        sig.g,
+        sig.b
+      );
 
       const similarity = Math.max(
         0,
         100 - deltaE(compareALab,compareBLab)
       ).toFixed(1);
+
+      updateUI(
+        "Comparação",
+        similarity
+      );
 
       txt.innerHTML = `
       <span class='statusGood'>
@@ -1159,7 +1444,9 @@ video.addEventListener("click",(e)=>{
       speak(`${similarity} porcento similar`);
 
       compareStep = 0;
+
     }
+
   }
 
   if(mode === "compareDatabase"){
@@ -1168,7 +1455,7 @@ video.addEventListener("click",(e)=>{
 
 });
 
-/* ================= TOGGLE AUDIO ================= */
+/* ================= AUDIO ================= */
 
 function toggleVoice(){
 
@@ -1177,6 +1464,7 @@ function toggleVoice(){
   txt.innerHTML = voice
   ? "<span class='statusGood'>Áudio ativado</span>"
   : "<span class='statusBad'>Áudio desativado</span>";
+
 }
 
 </script>
