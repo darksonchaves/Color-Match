@@ -2,8 +2,9 @@
 <html lang="pt-BR">
 <head>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#111111" />
 
 <title>ColorMatch Pro – OEM MultiBrand Edition</title>
 
@@ -11,12 +12,13 @@
 
 *{
   box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
 }
 
 body{
   margin:0;
   padding:0;
-  font-family:Arial, sans-serif;
+  font-family:Arial,sans-serif;
   background:#111;
   color:#fff;
   text-align:center;
@@ -30,6 +32,9 @@ h2{
 #controls{
   width:95%;
   margin:auto;
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
 }
 
 button{
@@ -67,6 +72,8 @@ input,select{
   position:relative;
   width:92%;
   margin:auto;
+  overflow:hidden;
+  border-radius:14px;
 }
 
 video{
@@ -74,21 +81,22 @@ video{
   border-radius:14px;
   border:2px solid #333;
   background:#000;
+  object-fit:cover;
 }
 
 #cross{
   position:absolute;
   top:50%;
   left:50%;
-  width:28px;
-  height:28px;
+  width:34px;
+  height:34px;
   transform:translate(-50%,-50%);
   border:2px solid #00ffcc;
   border-radius:50%;
   display:none;
   pointer-events:none;
   z-index:999;
-  box-shadow:0 0 12px #00ffcc;
+  box-shadow:0 0 15px #00ffcc;
 }
 
 #panel{
@@ -166,6 +174,7 @@ canvas{
   background:#1b1b1b;
   border-radius:12px;
   border:1px solid #333;
+  line-height:1.5;
 }
 
 .statusGood{
@@ -178,6 +187,18 @@ canvas{
 
 .statusBad{
   color:#ff6666;
+}
+
+@media(max-width:700px){
+
+  .box{
+    width:92%;
+  }
+
+  h2{
+    font-size:20px;
+  }
+
 }
 
 </style>
@@ -224,7 +245,7 @@ Comparar OEM
 
 <div id="videoContainer">
 
-<video id="video" autoplay playsinline></video>
+<video id="video" autoplay playsinline muted></video>
 
 <div id="cross"></div>
 
@@ -269,8 +290,6 @@ oninput="searchBrand()"
 
 <script>
 
-/* ================= ELEMENTOS ================= */
-
 const video = document.getElementById("video");
 const canvasA = document.getElementById("canvasA");
 const canvasB = document.getElementById("canvasB");
@@ -278,8 +297,6 @@ const ctxA = canvasA.getContext("2d", { willReadFrequently:true });
 const ctxB = canvasB.getContext("2d", { willReadFrequently:true });
 const cross = document.getElementById("cross");
 const txt = document.getElementById("txt");
-
-/* ================= CONTROLE ================= */
 
 let mode = "static";
 let voice = true;
@@ -290,8 +307,6 @@ let streamTrack = null;
 let flashOn = false;
 let flashBusy = false;
 let processingPaused = false;
-
-/* ================= DATABASE ================= */
 
 const oemDatabase = [
 
@@ -329,42 +344,17 @@ year:"2024",
 code:"3U5",
 name:"Emotional Red",
 rgb:{r:126,g:31,b:36}
-},
-
-{
-brand:"Toyota",
-model:"Hilux",
-year:"2024",
-code:"040",
-name:"Super White II",
-rgb:{r:244,g:244,b:241}
-},
-
-{
-brand:"Toyota",
-model:"Hilux",
-year:"2024",
-code:"1G3",
-name:"Graphite Metallic",
-rgb:{r:92,g:95,b:102}
-},
-
-{
-brand:"Toyota",
-model:"SW4",
-year:"2024",
-code:"070",
-name:"White Pearl",
-rgb:{r:247,g:247,b:244}
 }
 
 ];
 
-/* ================= CAMERA ================= */
-
 async function startCamera(){
 
   try{
+
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      throw new Error("Camera API indisponível");
+    }
 
     const stream = await navigator.mediaDevices.getUserMedia({
       video:{
@@ -377,6 +367,8 @@ async function startCamera(){
 
     video.srcObject = stream;
 
+    await video.play();
+
     streamTrack = stream.getVideoTracks()[0];
 
     txt.innerHTML = "<span class='statusGood'>Câmera iniciada com sucesso</span>";
@@ -387,17 +379,17 @@ async function startCamera(){
 
     txt.innerHTML = "<span class='statusBad'>Erro ao acessar câmera</span>";
 
-    alert("Erro ao acessar câmera");
+    alert("Permita acesso à câmera para continuar");
   }
 }
 
 startCamera();
 
-/* ================= VOZ ================= */
-
 function speak(text){
 
   if(!voice) return;
+
+  if(!window.speechSynthesis) return;
 
   speechSynthesis.cancel();
 
@@ -407,8 +399,6 @@ function speak(text){
 
   speechSynthesis.speak(msg);
 }
-
-/* ================= FLASH ================= */
 
 async function toggleFlash(){
 
@@ -452,7 +442,7 @@ async function toggleFlash(){
 
     flashOn = false;
 
-    alert("Falha no flash");
+    alert("Falha ao controlar o flash");
   }
 
   processingPaused = false;
@@ -461,8 +451,6 @@ async function toggleFlash(){
     flashBusy = false;
   },500);
 }
-
-/* ================= RGB -> LAB ================= */
 
 function rgbToLab(r,g,b){
 
@@ -497,8 +485,6 @@ function rgbToLab(r,g,b){
   };
 }
 
-/* ================= DELTA E ================= */
-
 function deltaE(a,b){
 
   return Math.sqrt(
@@ -507,8 +493,6 @@ function deltaE(a,b){
     (a.b-b.b)**2
   );
 }
-
-/* ================= PREPARA LAB ================= */
 
 oemDatabase.forEach(item => {
 
@@ -519,8 +503,6 @@ oemDatabase.forEach(item => {
   );
 
 });
-
-/* ================= CAPTURA ================= */
 
 function captureRaw(x,y){
 
@@ -562,8 +544,6 @@ function captureRaw(x,y){
   return { r,g,b };
 }
 
-/* ================= PREVIEW ================= */
-
 function drawPreview(r,g,b){
 
   canvasA.width = 160;
@@ -574,6 +554,7 @@ function drawPreview(r,g,b){
 
   ctxA.fillStyle = "#ffffff";
   ctxA.font = "16px Arial";
+
   ctxA.fillText(`R:${r}`,10,30);
   ctxA.fillText(`G:${g}`,10,55);
   ctxA.fillText(`B:${b}`,10,80);
@@ -584,8 +565,6 @@ function drawPreview(r,g,b){
   ctxB.fillStyle = `rgb(${r},${g},${b})`;
   ctxB.fillRect(0,0,160,160);
 }
-
-/* ================= OEM MATCH ================= */
 
 function detectOEM(sig){
 
@@ -610,9 +589,12 @@ function detectOEM(sig){
   };
 }
 
-/* ================= ANALYZER ================= */
-
 function analyzeOEM(){
+
+  if(!video.videoWidth){
+    alert("A câmera ainda não carregou");
+    return;
+  }
 
   const sig = captureRaw(
     video.videoWidth/2,
@@ -620,6 +602,10 @@ function analyzeOEM(){
   );
 
   const result = detectOEM(sig);
+
+  if(!result.match){
+    return;
+  }
 
   const similarity = Math.max(
     0,
@@ -638,8 +624,6 @@ function analyzeOEM(){
 
   speak(result.match.name);
 }
-
-/* ================= PESQUISA ================= */
 
 function searchBrand(){
 
@@ -677,8 +661,6 @@ function searchBrand(){
 
   document.getElementById("resultList").innerHTML = "";
 }
-
-/* ================= MOSTRAR CORES ================= */
 
 function showModelColors(){
 
@@ -729,8 +711,6 @@ function showModelColors(){
   });
 }
 
-/* ================= SELECIONA COR ================= */
-
 function selectDatabaseColor(index,colorName){
 
   document.querySelectorAll('.item').forEach(el=>{
@@ -759,8 +739,6 @@ function selectDatabaseColor(index,colorName){
 
   speak(colorName);
 }
-
-/* ================= COMPARAR DATABASE ================= */
 
 function compareWithDatabase(sig){
 
@@ -799,8 +777,6 @@ function compareWithDatabase(sig){
   speak(`${similarity} porcento similar`);
 }
 
-/* ================= MOVIMENTO ================= */
-
 function moveLoop(){
 
   if(mode !== "move") return;
@@ -823,8 +799,6 @@ function moveLoop(){
 
   requestAnimationFrame(moveLoop);
 }
-
-/* ================= MODOS ================= */
 
 function clearButtons(){
 
@@ -866,29 +840,10 @@ function setMode(m){
   ? "block"
   : "none";
 
-  if(m === "comparePoint"){
-
-    txt.innerHTML = `
-    <span class='statusMedium'>
-    Modo comparação ponto a ponto ativado
-    </span>`;
-  }
-
-  else if(m === "compareDatabase"){
-
-    txt.innerHTML = `
-    <span class='statusMedium'>
-    Modo comparação OEM ativado
-    </span>`;
-  }
-
-  else{
-
-    txt.innerHTML = `
-    <span class='statusGood'>
-    Modo ${m.toUpperCase()} ativado
-    </span>`;
-  }
+  txt.innerHTML = `
+  <span class='statusGood'>
+  Modo ${m.toUpperCase()} ativado
+  </span>`;
 
   if(m === "move"){
     moveLoop();
@@ -896,8 +851,6 @@ function setMode(m){
 }
 
 setMode("static");
-
-/* ================= CLIQUE VIDEO ================= */
 
 video.addEventListener("click",(e)=>{
 
@@ -917,13 +870,9 @@ video.addEventListener("click",(e)=>{
 
   const sig = captureRaw(x,y);
 
-  /* ================= ESTATICO ================= */
-
   if(mode === "static"){
     analyzeOEM();
   }
-
-  /* ================= COMPARAR PONTO ================= */
 
   if(mode === "comparePoint"){
 
@@ -971,15 +920,11 @@ video.addEventListener("click",(e)=>{
     }
   }
 
-  /* ================= DATABASE ================= */
-
   if(mode === "compareDatabase"){
     compareWithDatabase(sig);
   }
 
 });
-
-/* ================= AUDIO ================= */
 
 function toggleVoice(){
 
@@ -994,3 +939,5 @@ function toggleVoice(){
 
 </body>
 </html>
+```
+
