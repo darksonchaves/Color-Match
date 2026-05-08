@@ -44,38 +44,16 @@ button{
   font-size:15px;
 }
 
-button:hover{
-  background:#333;
-}
-
 button.active{
   background:#004d40;
-}
-
-#panel{
-  display:flex;
-  justify-content:space-around;
-  flex-wrap:wrap;
-  margin-top:15px;
-}
-
-.box{
-  width:45%;
-  min-width:160px;
-}
-
-canvas{
-  width:100%;
-  border-radius:10px;
-  background:#222;
 }
 
 #cross{
   position:fixed;
   top:50%;
   left:50%;
-  width:28px;
-  height:28px;
+  width:26px;
+  height:26px;
   transform:translate(-50%,-50%);
   border:2px solid #00ffcc;
   border-radius:50%;
@@ -84,29 +62,36 @@ canvas{
   z-index:999;
 }
 
-#solidStatus{
-  margin-top:12px;
-  font-size:15px;
-  color:#00ffcc;
-}
-
 #txt{
   margin-top:15px;
   font-size:18px;
   padding:10px;
-  line-height:1.5;
 }
 
 .good{
   color:#00ff99;
 }
 
+.warn{
+  color:#ffcc00;
+}
+
 .bad{
   color:#ff6666;
 }
 
-.warn{
-  color:#ffcc00;
+canvas{
+  width:160px;
+  height:160px;
+  border-radius:10px;
+  background:#222;
+  margin:10px;
+}
+
+#panel{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
 }
 
 </style>
@@ -119,28 +104,18 @@ canvas{
 ColorMatch Pro – OEM MultiBrand Edition
 </h2>
 
-<button id="btnStatic" onclick="setMode('static')">
-Estático
+<button id="btnUniversal"
+onclick="setMode('universal')">
+Universal
 </button>
 
-<button id="btnMove" onclick="setMode('move')">
-Movimento
-</button>
-
-<button id="btnUniversal" onclick="setMode('universal')">
-Universal Sólido
-</button>
-
-<button id="btnUniversalMove" onclick="setMode('universalMove')">
+<button id="btnUniversalMove"
+onclick="setMode('universalMove')">
 Universal Live
 </button>
 
-<button onclick="toggleFlash()">
-⚡ Flash
-</button>
-
 <button onclick="toggleVoice()">
-🔊 Áudio
+Áudio
 </button>
 
 <br><br>
@@ -155,21 +130,10 @@ webkit-playsinline>
 
 <div id="cross"></div>
 
-<div id="solidStatus">
-Inicializando sistema...
-</div>
-
 <div id="panel">
 
-  <div class="box">
-    <canvas id="canvasA"></canvas>
-    <div>Leitura</div>
-  </div>
-
-  <div class="box">
-    <canvas id="canvasB"></canvas>
-    <div>Resultado</div>
-  </div>
+<canvas id="canvasA"></canvas>
+<canvas id="canvasB"></canvas>
 
 </div>
 
@@ -179,9 +143,7 @@ Inicializando câmera...
 
 <script>
 
-/* ================================================= */
-/* ELEMENTOS */
-/* ================================================= */
+/* ================= ELEMENTOS ================= */
 
 const video =
 document.getElementById("video");
@@ -194,28 +156,23 @@ document.getElementById("canvasB");
 
 const ctxA =
 canvasA.getContext(
-  "2d",
-  {willReadFrequently:true}
+"2d",
+{willReadFrequently:true}
 );
 
 const ctxB =
 canvasB.getContext(
-  "2d",
-  {willReadFrequently:true}
+"2d",
+{willReadFrequently:true}
 );
 
 const txt =
 document.getElementById("txt");
 
-const solidStatus =
-document.getElementById("solidStatus");
-
 const cross =
 document.getElementById("cross");
 
-/* ================================================= */
-/* CONTROLE */
-/* ================================================= */
+/* ================= CONTROLE ================= */
 
 let mode = "universal";
 
@@ -223,701 +180,466 @@ let voice = true;
 
 let streamTrack = null;
 
-let flashOn = false;
+let loopRunning = false;
 
-let universalLoopRunning = false;
-
-/* ================================================= */
-/* CORES UNIVERSAIS */
-/* ================================================= */
+/* ================= CORES ================= */
 
 const universalColors = [
 
 {
-  name:"BRANCO",
-  rgb:{r:255,g:255,b:255}
+name:"Vermelho",
+rgb:{r:255,g:0,b:0}
 },
 
 {
-  name:"PRETO",
-  rgb:{r:0,g:0,b:0}
+name:"Rosa",
+rgb:{r:255,g:105,b:180}
 },
 
 {
-  name:"CINZA",
-  rgb:{r:128,g:128,b:128}
+name:"Azul",
+rgb:{r:0,g:0,b:255}
 },
 
 {
-  name:"VERMELHO",
-  rgb:{r:255,g:0,b:0}
+name:"Verde",
+rgb:{r:0,g:255,b:0}
 },
 
 {
-  name:"ROSA",
-  rgb:{r:255,g:105,b:180}
+name:"Amarelo",
+rgb:{r:255,g:255,b:0}
 },
 
 {
-  name:"AZUL",
-  rgb:{r:0,g:0,b:255}
+name:"Laranja",
+rgb:{r:255,g:140,b:0}
 },
 
 {
-  name:"VERDE",
-  rgb:{r:0,g:255,b:0}
+name:"Roxo",
+rgb:{r:128,g:0,b:128}
 },
 
 {
-  name:"AMARELO",
-  rgb:{r:255,g:255,b:0}
+name:"Branco",
+rgb:{r:255,g:255,b:255}
 },
 
 {
-  name:"LARANJA",
-  rgb:{r:255,g:140,b:0}
+name:"Preto",
+rgb:{r:0,g:0,b:0}
 },
 
 {
-  name:"ROXO",
-  rgb:{r:128,g:0,b:128}
-},
-
-{
-  name:"MARROM",
-  rgb:{r:101,g:67,b:33}
+name:"Cinza",
+rgb:{r:128,g:128,b:128}
 }
 
 ];
 
-/* ================================================= */
-/* CAMERA */
-/* ================================================= */
+/* ================= CAMERA ================= */
 
 async function startCamera(){
 
-  try{
+try{
 
-    solidStatus.innerHTML =
-    "Solicitando câmera...";
+const stream =
 
-    const stream =
+await navigator.mediaDevices.getUserMedia({
 
-    await navigator.mediaDevices
-    .getUserMedia({
+video:{
 
-      video:{
-        facingMode:{
-          ideal:"environment"
-        },
+facingMode:{
+ideal:"environment"
+},
 
-        width:{
-          ideal:1280
-        },
+width:{
+ideal:1280
+},
 
-        height:{
-          ideal:720
-        }
-      },
-
-      audio:false
-
-    });
-
-    video.srcObject = stream;
-
-    streamTrack =
-    stream.getVideoTracks()[0];
-
-    await video.play();
-
-    solidStatus.innerHTML =
-    "Sistema pronto";
-
-    txt.innerHTML =
-    "<span class='good'>Câmera iniciada com sucesso</span>";
-
-  }
-
-  catch(e){
-
-    console.log(e);
-
-    solidStatus.innerHTML =
-    "Falha na câmera";
-
-    txt.innerHTML =
-    "<span class='bad'>Falha ao acessar câmera</span>";
-
-  }
-
+height:{
+ideal:720
 }
 
-window.addEventListener(
-  "load",
-  startCamera
-);
+},
 
-/* ================================================= */
-/* VOZ */
-/* ================================================= */
-
-function speak(text){
-
-  if(!voice) return;
-
-  if(!window.speechSynthesis) return;
-
-  speechSynthesis.cancel();
-
-  const msg =
-  new SpeechSynthesisUtterance(text);
-
-  msg.lang = "pt-BR";
-
-  speechSynthesis.speak(msg);
-
-}
-
-/* ================================================= */
-/* FLASH */
-/* ================================================= */
-
-async function toggleFlash(){
-
-  if(!streamTrack){
-
-    alert("Câmera não iniciada");
-    return;
-  }
-
-  try{
-
-    const capabilities =
-    streamTrack.getCapabilities();
-
-    if(!capabilities.torch){
-
-      alert("Flash não suportado");
-      return;
-    }
-
-    flashOn = !flashOn;
-
-    await streamTrack.applyConstraints({
-
-      advanced:[
-        {
-          torch:flashOn
-        }
-      ]
-
-    });
-
-  }
-
-  catch(e){
-
-    flashOn = false;
-
-    alert("Falha no flash");
-
-  }
-
-}
-
-/* ================================================= */
-/* RGB -> LAB */
-/* ================================================= */
-
-function rgbToLab(r,g,b){
-
-  r/=255;
-  g/=255;
-  b/=255;
-
-  [r,g,b]=[r,g,b].map(v=>
-
-    v>0.04045
-    ? Math.pow((v+0.055)/1.055,2.4)
-    : v/12.92
-
-  );
-
-  let x =
-  r*0.4124 +
-  g*0.3576 +
-  b*0.1805;
-
-  let y =
-  r*0.2126 +
-  g*0.7152 +
-  b*0.0722;
-
-  let z =
-  r*0.0193 +
-  g*0.1192 +
-  b*0.9505;
-
-  x/=0.95047;
-  y/=1;
-  z/=1.08883;
-
-  [x,y,z]=[x,y,z].map(v=>
-
-    v>0.008856
-    ? Math.cbrt(v)
-    : (7.787*v)+(16/116)
-
-  );
-
-  return{
-
-    L:(116*y)-16,
-    a:500*(x-y),
-    b:200*(y-z)
-
-  };
-
-}
-
-function deltaE(a,b){
-
-  return Math.sqrt(
-
-    (a.L-b.L)**2 +
-    (a.a-b.a)**2 +
-    (a.b-b.b)**2
-
-  );
-
-}
-
-/* ================================================= */
-/* PREPARA LAB */
-/* ================================================= */
-
-universalColors.forEach(item=>{
-
-  item.lab = rgbToLab(
-    item.rgb.r,
-    item.rgb.g,
-    item.rgb.b
-  );
+audio:false
 
 });
 
-/* ================================================= */
-/* CAPTURA */
-/* ================================================= */
+video.srcObject = stream;
+
+streamTrack =
+stream.getVideoTracks()[0];
+
+await video.play();
+
+/* DEFINE CANVAS UMA ÚNICA VEZ */
+
+canvasA.width = 160;
+canvasA.height = 160;
+
+canvasB.width = 160;
+canvasB.height = 160;
+
+txt.innerHTML =
+"<span class='good'>Câmera iniciada</span>";
+
+}
+
+catch(e){
+
+txt.innerHTML =
+"<span class='bad'>Erro ao acessar câmera</span>";
+
+alert(
+"Permita acesso à câmera e recarregue a página."
+);
+
+}
+
+}
+
+startCamera();
+
+/* ================= VOZ ================= */
+
+function speak(text){
+
+if(!voice) return;
+
+speechSynthesis.cancel();
+
+const msg =
+new SpeechSynthesisUtterance(text);
+
+msg.lang = "pt-BR";
+
+speechSynthesis.speak(msg);
+
+}
+
+/* ================= RGB -> LAB ================= */
+
+function rgbToLab(r,g,b){
+
+r/=255;
+g/=255;
+b/=255;
+
+[r,g,b]=[r,g,b].map(v=>
+
+v>0.04045
+? Math.pow((v+0.055)/1.055,2.4)
+: v/12.92
+
+);
+
+let x =
+r*0.4124 +
+g*0.3576 +
+b*0.1805;
+
+let y =
+r*0.2126 +
+g*0.7152 +
+b*0.0722;
+
+let z =
+r*0.0193 +
+g*0.1192 +
+b*0.9505;
+
+x/=0.95047;
+z/=1.08883;
+
+[x,y,z]=[x,y,z].map(v=>
+
+v>0.008856
+? Math.cbrt(v)
+: (7.787*v)+(16/116)
+
+);
+
+return{
+
+L:(116*y)-16,
+a:500*(x-y),
+b:200*(y-z)
+
+};
+
+}
+
+/* ================= DELTA ================= */
+
+function deltaE(a,b){
+
+return Math.sqrt(
+
+(a.L-b.L)**2 +
+(a.a-b.a)**2 +
+(a.b-b.b)**2
+
+);
+
+}
+
+/* ================= PREPARA LAB ================= */
+
+universalColors.forEach(c=>{
+
+c.lab = rgbToLab(
+c.rgb.r,
+c.rgb.g,
+c.rgb.b
+);
+
+});
+
+/* ================= CAPTURA ================= */
 
 function captureRaw(){
 
-  if(
-    !video.videoWidth ||
-    !video.videoHeight
-  ){
+if(
+!video.videoWidth ||
+!video.videoHeight
+){
 
-    return null;
-
-  }
-
-  canvasA.width =
-  video.videoWidth;
-
-  canvasA.height =
-  video.videoHeight;
-
-  ctxA.drawImage(
-    video,
-    0,
-    0,
-    video.videoWidth,
-    video.videoHeight
-  );
-
-  const centerX =
-  Math.floor(video.videoWidth/2);
-
-  const centerY =
-  Math.floor(video.videoHeight/2);
-
-  const samples = [];
-
-  const area = 18;
-
-  for(let sy=-area; sy<=area; sy+=3){
-
-    for(let sx=-area; sx<=area; sx+=3){
-
-      const px = centerX + sx;
-      const py = centerY + sy;
-
-      if(
-        px < 0 ||
-        py < 0 ||
-        px >= video.videoWidth ||
-        py >= video.videoHeight
-      ){
-        continue;
-      }
-
-      const data =
-      ctxA.getImageData(
-        px,
-        py,
-        1,
-        1
-      ).data;
-
-      samples.push({
-
-        r:data[0],
-        g:data[1],
-        b:data[2]
-
-      });
-
-    }
-
-  }
-
-  if(samples.length === 0){
-    return null;
-  }
-
-  let r=0,g=0,b=0;
-
-  samples.forEach(s=>{
-
-    r += s.r;
-    g += s.g;
-    b += s.b;
-
-  });
-
-  r = Math.round(r/samples.length);
-  g = Math.round(g/samples.length);
-  b = Math.round(b/samples.length);
-
-  let variance = 0;
-
-  samples.forEach(s=>{
-
-    variance +=
-
-    Math.abs(s.r-r) +
-    Math.abs(s.g-g) +
-    Math.abs(s.b-b);
-
-  });
-
-  variance =
-  variance / samples.length;
-
-  return{
-    r,
-    g,
-    b,
-    variance
-  };
+return null;
 
 }
 
-/* ================================================= */
-/* PREVIEW */
-/* ================================================= */
+ctxA.drawImage(
+video,
+0,
+0,
+160,
+160
+);
 
-function drawPreview(r,g,b){
+const data =
+ctxA.getImageData(
+72,
+72,
+16,
+16
+).data;
 
-  canvasA.width = 200;
-  canvasA.height = 200;
+let r=0,g=0,b=0;
 
-  ctxA.fillStyle =
-  rgb(${r},${g},${b});
+for(let i=0;i<data.length;i+=4){
 
-  ctxA.fillRect(
-    0,
-    0,
-    200,
-    200
-  );
-
-  canvasB.width = 200;
-  canvasB.height = 200;
-
-  ctxB.fillStyle =
-  rgb(${r},${g},${b});
-
-  ctxB.fillRect(
-    0,
-    0,
-    200,
-    200
-  );
+r += data[i];
+g += data[i+1];
+b += data[i+2];
 
 }
 
-/* ================================================= */
-/* MOTOR UNIVERSAL */
-/* ================================================= */
+const total =
+data.length / 4;
+
+r = Math.round(r/total);
+g = Math.round(g/total);
+b = Math.round(b/total);
+
+return {r,g,b};
+
+}
+
+/* ================= UNIVERSAL ================= */
 
 function detectUniversal(sig){
 
-  if(sig.variance > 22){
+const targetLab =
+rgbToLab(
+sig.r,
+sig.g,
+sig.b
+);
 
-    return{
-      blocked:true
-    };
+let best = null;
 
-  }
+let bestDelta = 999;
 
-  const targetLab =
-  rgbToLab(
-    sig.r,
-    sig.g,
-    sig.b
-  );
+for(const color of universalColors){
 
-  let best = null;
+const d =
+deltaE(
+targetLab,
+color.lab
+);
 
-  let bestDelta = 999;
+if(d < bestDelta){
 
-  for(const color of universalColors){
-
-    const d =
-    deltaE(
-      targetLab,
-      color.lab
-    );
-
-    if(d < bestDelta){
-
-      bestDelta = d;
-      best = color;
-
-    }
-
-  }
-
-  /* ========================================= */
-  /* DIFERENCIAÇÃO ROSA x VERMELHO */
-  /* ========================================= */
-
-  const hueBias =
-  sig.b > 90 &&
-  sig.r > 140 &&
-  sig.g < 180;
-
-  if(
-    best.name === "VERMELHO" &&
-    hueBias
-  ){
-
-    best =
-    universalColors.find(
-      c=>c.name==="ROSA"
-    );
-
-  }
-
-  return{
-
-    blocked:false,
-    match:best,
-    delta:bestDelta
-
-  };
+bestDelta = d;
+best = color;
 
 }
 
-/* ================================================= */
-/* ANALISADOR */
-/* ================================================= */
+}
+
+return{
+
+match:best,
+delta:bestDelta
+
+};
+
+}
+
+/* ================= PREVIEW ================= */
+
+function drawPreview(r,g,b){
+
+ctxB.fillStyle =
+rgb(${r},${g},${b});
+
+ctxB.fillRect(
+0,
+0,
+160,
+160
+);
+
+}
+
+/* ================= ANALYZE ================= */
 
 function analyzeUniversal(){
 
-  const sig = captureRaw();
+const sig =
+captureRaw();
 
-  if(!sig){
-    return;
-  }
+if(!sig) return;
 
-  drawPreview(
-    sig.r,
-    sig.g,
-    sig.b
-  );
+drawPreview(
+sig.r,
+sig.g,
+sig.b
+);
 
-  const result =
-  detectUniversal(sig);
+const result =
+detectUniversal(sig);
 
-  if(result.blocked){
+const similarity =
 
-    txt.innerHTML =
+Math.max(
+0,
+100 - result.delta
+).toFixed(1);
 
-    "<span class='warn'>SUPERFÍCIE INSTÁVEL OU REFLEXIVA</span>";
+txt.innerHTML =
 
-    solidStatus.innerHTML =
-    "Aguardando superfície sólida";
-
-    return;
-  }
-
-  const similarity =
-
-  Math.max(
-    0,
-    100 - result.delta
-  ).toFixed(1);
-
-  txt.innerHTML =
-
-  "<span class='good'>"
-  +
-  result.match.name
-  +
-  "<br>"
-  +
-  similarity
-  +
-  "%"
-  +
-  "</span>";
-
-  solidStatus.innerHTML =
-  "Leitura sólida aprovada";
+"<span class='good'>"
++
+result.match.name
++
+" | "
++
+similarity
++
+"%"
++
+"</span>";
 
 }
 
-/* ================================================= */
-/* LOOP UNIVERSAL */
-/* ================================================= */
+/* ================= LOOP ================= */
 
-function universalMoveLoop(){
+function universalLoop(){
 
-  if(mode !== "universalMove"){
+if(mode !== "universalMove"){
 
-    universalLoopRunning = false;
-    return;
-
-  }
-
-  analyzeUniversal();
-
-  requestAnimationFrame(
-    universalMoveLoop
-  );
+loopRunning = false;
+return;
 
 }
 
-/* ================================================= */
-/* MODOS */
-/* ================================================= */
+analyzeUniversal();
 
-function clearButtons(){
-
-  document
-  .querySelectorAll("button")
-  .forEach(btn=>{
-
-    btn.classList.remove("active");
-
-  });
+requestAnimationFrame(
+universalLoop
+);
 
 }
+
+/* ================= MODOS ================= */
 
 function setMode(m){
 
-  mode = m;
+mode = m;
 
-  clearButtons();
+document
+.querySelectorAll("button")
+.forEach(btn=>{
 
-  if(m==="static"){
-    btnStatic.classList.add("active");
-  }
+btn.classList.remove("active");
 
-  if(m==="move"){
-    btnMove.classList.add("active");
-  }
+});
 
-  if(m==="universal"){
-    btnUniversal.classList.add("active");
-  }
+if(m==="universal"){
 
-  if(m==="universalMove"){
-    btnUniversalMove.classList.add("active");
-  }
+btnUniversal.classList.add("active");
 
-  cross.style.display =
+cross.style.display = "none";
 
-  (
-    m==="move" ||
-    m==="universalMove"
-  )
-
-  ? "block"
-  : "none";
-
-  txt.innerHTML =
-
-  "<span class='good'>Modo "
-  +
-  m.toUpperCase()
-  +
-  " ativado</span>";
-
-  if(
-    m==="universalMove" &&
-    !universalLoopRunning
-  ){
-
-    universalLoopRunning = true;
-
-    universalMoveLoop();
-
-  }
+txt.innerHTML =
+"<span class='good'>Modo Universal</span>";
 
 }
 
-/* ================================================= */
-/* CLIQUE */
-/* ================================================= */
+if(m==="universalMove"){
+
+btnUniversalMove.classList.add("active");
+
+cross.style.display = "block";
+
+txt.innerHTML =
+"<span class='good'>Modo Universal Live</span>";
+
+if(!loopRunning){
+
+loopRunning = true;
+universalLoop();
+
+}
+
+}
+
+}
+
+/* ================= CLIQUE ================= */
 
 video.addEventListener(
-  "click",
-  ()=>{
+"click",
+()=>{
 
-    if(mode==="universal"){
+if(mode==="universal"){
 
-      analyzeUniversal();
+analyzeUniversal();
 
-    }
+}
 
-  }
+}
 );
 
-/* ================================================= */
-/* AUDIO */
-/* ================================================= */
+/* ================= AUDIO ================= */
 
 function toggleVoice(){
 
-  voice = !voice;
+voice = !voice;
 
-  alert(
-
-    "Áudio: "
-    +
-    (voice ? "ON" : "OFF")
-
-  );
+alert(
+"Áudio: "
++
+(voice ? "ON" : "OFF")
+);
 
 }
 
-/* ================================================= */
-/* INICIAL */
-/* ================================================= */
+/* ================= INICIAL ================= */
 
 setMode("universal");
 
