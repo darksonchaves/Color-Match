@@ -22,10 +22,13 @@ body{
 
 h2{
   margin-top:15px;
+  font-size:28px;
 }
 
 video{
   width:92%;
+  max-width:900px;
+  min-height:260px;
   border-radius:12px;
   border:2px solid #333;
   object-fit:cover;
@@ -33,13 +36,14 @@ video{
 }
 
 button{
-  padding:10px;
+  padding:10px 14px;
   margin:5px;
   border:none;
   border-radius:8px;
   cursor:pointer;
   background:#222;
   color:#fff;
+  font-size:15px;
 }
 
 button:hover{
@@ -73,6 +77,7 @@ input,select{
 
 canvas{
   width:100%;
+  height:140px;
   border-radius:10px;
   background:#222;
 }
@@ -134,6 +139,7 @@ canvas{
   margin-top:15px;
   font-size:18px;
   padding:10px;
+  min-height:40px;
 }
 
 #universalPanel{
@@ -141,6 +147,12 @@ canvas{
   padding:10px;
   background:#181818;
   border-top:2px solid #333;
+}
+
+#cameraStatus{
+  margin-top:10px;
+  color:#00ffcc;
+  font-size:15px;
 }
 
 </style>
@@ -199,7 +211,16 @@ Reconhecimento puro baseado na leitura real da câmera
 
 </div>
 
-<video id="video" autoplay playsinline muted></video>
+<video
+id="video"
+autoplay
+playsinline
+muted
+></video>
+
+<div id="cameraStatus">
+Aguardando câmera...
+</div>
 
 <div id="cross"></div>
 
@@ -252,25 +273,35 @@ Inicializando câmera...
 
 /* ================= ELEMENTOS ================= */
 
-const video = document.getElementById("video");
+const video =
+document.getElementById("video");
 
-const canvasA = document.getElementById("canvasA");
+const canvasA =
+document.getElementById("canvasA");
 
-const canvasB = document.getElementById("canvasB");
+const canvasB =
+document.getElementById("canvasB");
 
-const ctxA = canvasA.getContext(
+const ctxA =
+canvasA.getContext(
 "2d",
 {willReadFrequently:true}
 );
 
-const ctxB = canvasB.getContext(
+const ctxB =
+canvasB.getContext(
 "2d",
 {willReadFrequently:true}
 );
 
-const cross = document.getElementById("cross");
+const cross =
+document.getElementById("cross");
 
-const txt = document.getElementById("txt");
+const txt =
+document.getElementById("txt");
+
+const cameraStatus =
+document.getElementById("cameraStatus");
 
 /* ================= CONTROLE ================= */
 
@@ -320,13 +351,22 @@ async function startCamera(){
 
   try{
 
+    if(
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ){
+      throw new Error("getUserMedia não suportado");
+    }
+
     const stream =
     await navigator.mediaDevices.getUserMedia({
 
       video:{
         facingMode:{
           ideal:"environment"
-        }
+        },
+        width:{ideal:1280},
+        height:{ideal:720}
       },
 
       audio:false
@@ -338,24 +378,36 @@ async function startCamera(){
     streamTrack =
     stream.getVideoTracks()[0];
 
-    video.onloadedmetadata = ()=>{
+    await video.play();
 
-      video.play();
+    cameraStatus.innerText =
+    "Câmera ativa";
 
-      txt.innerText =
-      "Câmera iniciada com sucesso";
-    };
+    txt.innerText =
+    "Câmera iniciada com sucesso";
 
   }catch(e){
+
+    console.error(e);
+
+    cameraStatus.innerText =
+    "Falha ao iniciar câmera";
 
     txt.innerText =
     "Erro ao acessar câmera";
 
-    alert("Erro ao acessar câmera");
+    alert(
+      "Permita acesso à câmera no navegador"
+    );
   }
 }
 
-startCamera();
+window.addEventListener(
+"load",
+()=>{
+  startCamera();
+}
+);
 
 /* ================= VOZ ================= */
 
@@ -369,13 +421,7 @@ function speak(text){
     return;
   }
 
-  if(isSpeaking){
-    return;
-  }
-
   currentSpokenColor = text;
-
-  isSpeaking = true;
 
   speechSynthesis.cancel();
 
@@ -384,11 +430,13 @@ function speak(text){
 
   msg.lang = "pt-BR";
 
-  msg.rate = 1.05;
+  msg.rate = 1.0;
 
   msg.pitch = 1;
 
   msg.volume = 1;
+
+  isSpeaking = true;
 
   msg.onend = ()=>{
 
@@ -411,9 +459,9 @@ function toggleVoice(){
 
   speechSynthesis.cancel();
 
-  isSpeaking = false;
-
   currentSpokenColor = "";
+
+  isSpeaking = false;
 
   alert(
     "Áudio: " +
@@ -430,33 +478,35 @@ function toggleUniversalMode(){
   const btn =
   document.getElementById("universalBtn");
 
-  currentSpokenColor = "";
-
   stableFrames = 0;
 
   detectedColor = "";
 
+  currentSpokenColor = "";
+
   if(universalMode){
 
-    btn.innerText = "Universal ON";
+    btn.innerText =
+    "Universal ON";
 
-    btn.classList.add("activeMode");
+    btn.classList.add(
+      "activeMode"
+    );
 
     txt.innerText =
     "Modo universal ativado";
 
-    speak("Modo universal ativado");
-
   }else{
 
-    btn.innerText = "Universal OFF";
+    btn.innerText =
+    "Universal OFF";
 
-    btn.classList.remove("activeMode");
+    btn.classList.remove(
+      "activeMode"
+    );
 
     txt.innerText =
     "Modo universal desativado";
-
-    speak("Modo universal desativado");
   }
 }
 
@@ -483,7 +533,9 @@ async function toggleFlash(){
 
     if(!capabilities.torch){
 
-      alert("Flash não suportado");
+      alert(
+        "Flash não suportado"
+      );
 
       processingPaused = false;
 
@@ -506,6 +558,8 @@ async function toggleFlash(){
 
   }catch(e){
 
+    console.error(e);
+
     flashOn = false;
 
     alert("Falha no flash");
@@ -517,7 +571,7 @@ async function toggleFlash(){
 
     flashBusy = false;
 
-  },250);
+  },300);
 }
 
 /* ================= RGB -> HSL ================= */
@@ -528,23 +582,26 @@ function rgbToHsl(r,g,b){
   g/=255;
   b/=255;
 
-  const max=Math.max(r,g,b);
-  const min=Math.min(r,g,b);
+  const max =
+  Math.max(r,g,b);
+
+  const min =
+  Math.min(r,g,b);
 
   let h,s,l;
 
-  l=(max+min)/2;
+  l = (max+min)/2;
 
   if(max===min){
 
-    h=0;
-    s=0;
+    h = 0;
+    s = 0;
 
   }else{
 
-    const d=max-min;
+    const d = max-min;
 
-    s=
+    s =
     l>0.5
     ? d/(2-max-min)
     : d/(max+min);
@@ -552,19 +609,19 @@ function rgbToHsl(r,g,b){
     switch(max){
 
       case r:
-      h=(g-b)/d+(g<b?6:0);
+      h = (g-b)/d + (g<b?6:0);
       break;
 
       case g:
-      h=(b-r)/d+2;
+      h = (b-r)/d + 2;
       break;
 
       case b:
-      h=(r-g)/d+4;
+      h = (r-g)/d + 4;
       break;
     }
 
-    h/=6;
+    h /= 6;
   }
 
   return{
@@ -582,12 +639,15 @@ function rgbToLab(r,g,b){
   g/=255;
   b/=255;
 
-  [r,g,b]=[r,g,b].map(v=>
+  [r,g,b] =
+  [r,g,b].map(v=>
 
     v>0.04045
-    ? Math.pow((v+0.055)/1.055,2.4)
+    ? Math.pow(
+        (v+0.055)/1.055,
+        2.4
+      )
     : v/12.92
-
   );
 
   let x =
@@ -609,12 +669,12 @@ function rgbToLab(r,g,b){
   y/=1;
   z/=1.08883;
 
-  [x,y,z]=[x,y,z].map(v=>
+  [x,y,z] =
+  [x,y,z].map(v=>
 
     v>0.008856
     ? Math.cbrt(v)
     : (7.787*v)+(16/116)
-
   );
 
   return{
@@ -633,7 +693,9 @@ function deltaE(a,b){
   return Math.sqrt(
 
     (a.L-b.L)**2 +
+
     (a.a-b.a)**2 +
+
     (a.b-b.b)**2
 
   );
@@ -683,12 +745,14 @@ const oemDatabase = [
 
 oemDatabase.forEach(item=>{
 
-  item.lab = rgbToLab(
+  item.lab =
+  rgbToLab(
+
     item.rgb.r,
     item.rgb.g,
     item.rgb.b
-  );
 
+  );
 });
 
 /* ================= CAPTURA ================= */
@@ -697,40 +761,90 @@ function captureRaw(x,y){
 
   if(
     !video.videoWidth ||
+    !video.videoHeight ||
     processingPaused
   ){
-    return {r:0,g:0,b:0};
+    return{
+      r:0,
+      g:0,
+      b:0
+    };
   }
 
-  canvasA.width = video.videoWidth;
+  canvasA.width =
+  video.videoWidth;
 
-  canvasA.height = video.videoHeight;
+  canvasA.height =
+  video.videoHeight;
 
-  ctxA.drawImage(video,0,0);
+  ctxA.drawImage(
+    video,
+    0,
+    0,
+    canvasA.width,
+    canvasA.height
+  );
 
-  const s = 16;
+  const sampleSize = 24;
 
-  const data = ctxA.getImageData(
-    x-s,
-    y-s,
-    s*2,
-    s*2
+  const px =
+  Math.max(
+    0,
+    Math.floor(x - sampleSize/2)
+  );
+
+  const py =
+  Math.max(
+    0,
+    Math.floor(y - sampleSize/2)
+  );
+
+  const width =
+  Math.min(
+    sampleSize,
+    canvasA.width - px
+  );
+
+  const height =
+  Math.min(
+    sampleSize,
+    canvasA.height - py
+  );
+
+  if(width <= 0 || height <= 0){
+
+    return{
+      r:0,
+      g:0,
+      b:0
+    };
+  }
+
+  const data =
+  ctxA.getImageData(
+    px,
+    py,
+    width,
+    height
   ).data;
 
-  let r=0,g=0,b=0,c=0;
+  let r=0;
+  let g=0;
+  let b=0;
+  let c=0;
 
   for(let i=0;i<data.length;i+=4){
 
-    const rr=data[i];
-    const gg=data[i+1];
-    const bb=data[i+2];
+    const rr = data[i];
+    const gg = data[i+1];
+    const bb = data[i+2];
 
     const brightness =
     (rr+gg+bb)/3;
 
     if(
-      brightness<8 ||
-      brightness>247
+      brightness < 12 ||
+      brightness > 245
     ){
       continue;
     }
@@ -741,11 +855,12 @@ function captureRaw(x,y){
     const min =
     Math.min(rr,gg,bb);
 
-    const diff = max - min;
+    const diff =
+    max-min;
 
     if(
       universalMode &&
-      diff > 55
+      diff > 40
     ){
       continue;
     }
@@ -759,7 +874,11 @@ function captureRaw(x,y){
 
   if(c===0){
 
-    return {r:0,g:0,b:0};
+    return{
+      r:0,
+      g:0,
+      b:0
+    };
   }
 
   return{
@@ -775,42 +894,52 @@ function captureRaw(x,y){
 
 function detectUniversalColor(r,g,b){
 
-  const hsl = rgbToHsl(r,g,b);
+  const hsl =
+  rgbToHsl(r,g,b);
 
   const h = hsl.h;
   const s = hsl.s;
   const l = hsl.l;
 
-  const max=Math.max(r,g,b);
-  const min=Math.min(r,g,b);
+  const diff =
+  Math.max(r,g,b) -
+  Math.min(r,g,b);
 
-  const diff=max-min;
-
-  if(l>=80 && s<=10 && diff<=18){
+  if(
+    l >= 82 &&
+    s <= 10 &&
+    diff <= 18
+  ){
     return "Branco";
   }
 
-  if(l<=14 && s<=18){
+  if(
+    l <= 15 &&
+    s <= 20
+  ){
     return "Preto";
   }
 
-  if(s<=14 && l>14 && l<80){
+  if(
+    s <= 15 &&
+    l > 15 &&
+    l < 82
+  ){
     return "Cinza";
   }
 
-  if((h>=0 && h<=10)||(h>=350 && h<=360)){
+  if(
+    (h>=0 && h<=15) ||
+    (h>=345 && h<=360)
+  ){
     return "Vermelho";
   }
 
-  if(h>=311 && h<=349){
-    return "Rosa";
-  }
-
-  if(h>=11 && h<=38){
+  if(h>=16 && h<=40){
     return "Laranja";
   }
 
-  if(h>=39 && h<=68){
+  if(h>=41 && h<=68){
     return "Amarelo";
   }
 
@@ -822,11 +951,15 @@ function detectUniversalColor(r,g,b){
     return "Azul";
   }
 
-  if(h>=261 && h<=310){
+  if(h>=261 && h<=320){
     return "Roxo";
   }
 
-  return "";
+  if(h>=321 && h<=344){
+    return "Rosa";
+  }
+
+  return "Indefinido";
 }
 
 /* ================= OEM MATCH ================= */
@@ -834,16 +967,23 @@ function detectUniversalColor(r,g,b){
 function detectOEM(sig){
 
   const targetLab =
-  rgbToLab(sig.r,sig.g,sig.b);
+  rgbToLab(
+    sig.r,
+    sig.g,
+    sig.b
+  );
 
   let best = null;
 
-  let bestDelta = 999;
+  let bestDelta = Infinity;
 
   for(const color of oemDatabase){
 
     const d =
-    deltaE(targetLab,color.lab);
+    deltaE(
+      targetLab,
+      color.lab
+    );
 
     if(d < bestDelta){
 
@@ -854,8 +994,10 @@ function detectOEM(sig){
   }
 
   return{
+
     match:best,
     delta:bestDelta
+
   };
 }
 
@@ -863,14 +1005,47 @@ function detectOEM(sig){
 
 function analyzeOEM(){
 
-  const sig = captureRaw(
+  if(!video.videoWidth){
+
+    txt.innerText =
+    "Câmera ainda não iniciou";
+
+    return;
+  }
+
+  const sig =
+  captureRaw(
+
     video.videoWidth/2,
     video.videoHeight/2
+
   );
 
-  const result = detectOEM(sig);
+  if(
+    sig.r === 0 &&
+    sig.g === 0 &&
+    sig.b === 0
+  ){
+
+    txt.innerText =
+    "Falha na leitura da câmera";
+
+    return;
+  }
+
+  const result =
+  detectOEM(sig);
+
+  if(!result.match){
+
+    txt.innerText =
+    "Nenhuma cor encontrada";
+
+    return;
+  }
 
   const similarity =
+
   Math.max(
     0,
     100 - result.delta
@@ -906,39 +1081,50 @@ function moveLoop(){
 
   if(processingPaused){
 
-    requestAnimationFrame(moveLoop);
+    requestAnimationFrame(
+      moveLoop
+    );
+
     return;
   }
 
-  const sig = captureRaw(
+  const sig =
+  captureRaw(
+
     video.videoWidth/2,
     video.videoHeight/2
+
   );
 
   if(universalMode){
 
     const colorName =
     detectUniversalColor(
+
       sig.r,
       sig.g,
       sig.b
+
     );
 
     txt.innerText =
+    "Movimento: "
+    + colorName;
 
-    colorName === ""
-    ? "Movimento: analisando..."
-    : "Movimento: " + colorName;
+    if(
+      colorName !== "Indefinido"
+    ){
 
-    if(colorName !== ""){
-
-      if(colorName === detectedColor){
+      if(
+        colorName === detectedColor
+      ){
 
         stableFrames++;
 
       }else{
 
-        detectedColor = colorName;
+        detectedColor =
+        colorName;
 
         stableFrames = 0;
       }
@@ -948,10 +1134,7 @@ function moveLoop(){
         MIN_STABLE_FRAMES
       ){
 
-        if(colorName !== currentSpokenColor){
-
-          speak(colorName);
-        }
+        speak(colorName);
 
         stableFrames = 0;
       }
@@ -960,10 +1143,13 @@ function moveLoop(){
   }else{
 
     txt.innerText =
+
     RGB: ${sig.r}, ${sig.g}, ${sig.b};
   }
 
-  requestAnimationFrame(moveLoop);
+  requestAnimationFrame(
+    moveLoop
+  );
 }
 
 /* ================= MODOS ================= */
@@ -978,11 +1164,11 @@ function setMode(m){
 
   compareALab = null;
 
-  currentSpokenColor = "";
-
   detectedColor = "";
 
   stableFrames = 0;
+
+  currentSpokenColor = "";
 
   speechSynthesis.cancel();
 
@@ -1018,7 +1204,9 @@ function setMode(m){
 function searchBrand(){
 
   const brand =
-  document.getElementById("brandSearch")
+
+  document
+  .getElementById("brandSearch")
   .value
   .trim()
   .toLowerCase();
@@ -1031,7 +1219,8 @@ function searchBrand(){
 
     .filter(item=>
 
-      item.brand.toLowerCase()
+      item.brand
+      .toLowerCase()
       .includes(brand)
 
     )
@@ -1043,9 +1232,13 @@ function searchBrand(){
   .sort();
 
   const select =
-  document.getElementById("modelSelect");
+
+  document.getElementById(
+    "modelSelect"
+  );
 
   select.innerHTML =
+
   `<option value="">
   Selecione o modelo
   </option>`;
@@ -1053,12 +1246,14 @@ function searchBrand(){
   models.forEach(model=>{
 
     select.innerHTML +=
+
     `<option value="${model}">
     ${model}
     </option>`;
   });
 
-  document.getElementById("resultList")
+  document
+  .getElementById("resultList")
   .innerHTML = "";
 }
 
@@ -1067,11 +1262,16 @@ function searchBrand(){
 function showModelColors(){
 
   const model =
-  document.getElementById("modelSelect")
+
+  document
+  .getElementById("modelSelect")
   .value;
 
   const resultList =
-  document.getElementById("resultList");
+
+  document.getElementById(
+    "resultList"
+  );
 
   resultList.innerHTML = "";
 
@@ -1079,10 +1279,15 @@ function showModelColors(){
 
   oemDatabase
 
-  .filter(item=>item.model===model)
+  .filter(item=>
+    item.model === model
+  )
 
   .sort((a,b)=>
-    a.name.localeCompare(b.name)
+
+    a.name.localeCompare(
+      b.name
+    )
   );
 
   colors.forEach((item,index)=>{
@@ -1119,28 +1324,36 @@ function showModelColors(){
   });
 }
 
-/* ================= SELECIONA DATABASE ================= */
+/* ================= SELECIONAR DATABASE ================= */
 
 function selectDatabaseColor(index,colorName){
 
   const model =
-  document.getElementById("modelSelect")
+
+  document
+  .getElementById("modelSelect")
   .value;
 
   const colors =
 
   oemDatabase
 
-  .filter(item=>item.model===model)
+  .filter(item=>
+    item.model === model
+  )
 
   .sort((a,b)=>
-    a.name.localeCompare(b.name)
+
+    a.name.localeCompare(
+      b.name
+    )
   );
 
   selectedDatabaseColor =
   colors[index];
 
   txt.innerText =
+
   "Cor de referência selecionada: "
   + colorName;
 
@@ -1161,20 +1374,25 @@ function compareWithDatabase(sig){
   }
 
   const targetLab =
-  rgbToLab(sig.r,sig.g,sig.b);
+
+  rgbToLab(
+    sig.r,
+    sig.g,
+    sig.b
+  );
 
   const similarity =
 
   Math.max(
     0,
     100 -
+
     deltaE(
       targetLab,
       selectedDatabaseColor.lab
     )
-  )
 
-  .toFixed(1);
+  ).toFixed(1);
 
   txt.innerText =
 
@@ -1192,9 +1410,13 @@ function compareWithDatabase(sig){
 
 /* ================= CLIQUE ================= */
 
-video.addEventListener("click",(e)=>{
+video.addEventListener(
+"click",
+(e)=>{
 
   if(processingPaused) return;
+
+  if(!video.videoWidth) return;
 
   const rect =
   video.getBoundingClientRect();
@@ -1203,13 +1425,19 @@ video.addEventListener("click",(e)=>{
 
   (e.clientX - rect.left)
   *
-  (video.videoWidth / rect.width);
+  (
+    video.videoWidth /
+    rect.width
+  );
 
   const y =
 
   (e.clientY - rect.top)
   *
-  (video.videoHeight / rect.height);
+  (
+    video.videoHeight /
+    rect.height
+  );
 
   const sig =
   captureRaw(x,y);
@@ -1226,6 +1454,7 @@ video.addEventListener("click",(e)=>{
       compareA = sig;
 
       compareALab =
+
       rgbToLab(
         sig.r,
         sig.g,
@@ -1244,6 +1473,7 @@ video.addEventListener("click",(e)=>{
     }else{
 
       const compareBLab =
+
       rgbToLab(
         sig.r,
         sig.g,
@@ -1255,21 +1485,22 @@ video.addEventListener("click",(e)=>{
       Math.max(
         0,
         100 -
+
         deltaE(
           compareALab,
           compareBLab
         )
-      );
+
+      ).toFixed(1);
 
       txt.innerText =
+
       "Similaridade entre pontos: "
-      +
-      similarity.toFixed(1)
-      +
-      "%";
+      + similarity
+      + "%";
 
       speak(
-        similarity.toFixed(1)
+        similarity
         + " porcento similar"
       );
 
