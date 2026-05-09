@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -545,30 +546,10 @@ oemDatabase.forEach(item=>{
 
 function applyUniversalFilter(r,g,b){
 
-  if(!universalMode){
-    return {r,g,b};
-  }
-
-  const avg = (r + g + b) / 3;
-
-  if(avg <= 0){
-    return {r,g,b};
-  }
-
-  const factor = 128 / avg;
-
-  let nr = r * factor;
-  let ng = g * factor;
-  let nb = b * factor;
-
-  nr = Math.max(0,Math.min(255,nr));
-  ng = Math.max(0,Math.min(255,ng));
-  nb = Math.max(0,Math.min(255,nb));
-
   return {
-    r:Math.round(nr),
-    g:Math.round(ng),
-    b:Math.round(nb)
+    r:r,
+    g:g,
+    b:b
   };
 }
 
@@ -608,16 +589,10 @@ function captureRaw(x,y){
     c++;
   }
 
-  const filtered = applyUniversalFilter(
-    Math.round(r/c),
-    Math.round(g/c),
-    Math.round(b/c)
-  );
-
   return {
-    r:filtered.r,
-    g:filtered.g,
-    b:filtered.b
+    r:Math.round(r/c),
+    g:Math.round(g/c),
+    b:Math.round(b/c)
   };
 }
 
