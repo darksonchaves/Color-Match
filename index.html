@@ -297,34 +297,29 @@ let compareStep = 0;
 
 let selectedDatabaseColor = null;
 
-/* ================= AUDIO ESTÁVEL ================= */
+/* ================= AUDIO ================= */
 
 /*
-CORREÇÃO OFICIAL:
-- elimina repetição infinita
-- elimina sobreposição
-- elimina áudio misturado
-- elimina travamentos Android TTS
-- impede spam contínuo
+CORREÇÃO DEFINITIVA:
+
+A cor fala:
+- SOMENTE UMA VEZ
+- SOMENTE quando TROCAR
+- NÃO repete continuamente
+- NÃO reinicia enquanto continuar igual
 */
 
-let speechQueue = [];
+let currentSpokenColor = "";
 
-let speechRunning = false;
-
-let lastSpokenText = "";
-
-let lastSpeechTime = 0;
-
-const speechCooldown = 1800;
+let isSpeaking = false;
 
 /* ===== estabilidade ===== */
 
-let stableColor = "";
+let detectedColor = "";
 
 let stableFrames = 0;
 
-const MIN_STABLE_FRAMES = 10;
+const MIN_STABLE_FRAMES = 8;
 
 /* ================= FLASH ================= */
 
@@ -365,20 +360,31 @@ navigator.mediaDevices.getUserMedia({
 
 });
 
-/* ================= PROCESSADOR DE VOZ ================= */
+/* ================= VOZ ================= */
 
-function processSpeechQueue(){
+function speak(text){
 
   if(!voice) return;
 
-  if(speechRunning) return;
+  if(!text) return;
 
-  if(speechQueue.length === 0) return;
+/* ===== NÃO fala repetido ===== */
 
-  speechRunning = true;
+  if(text === currentSpokenColor){
+    return;
+  }
 
-  const text =
-  speechQueue.shift();
+/* ===== trava enquanto fala ===== */
+
+  if(isSpeaking){
+    return;
+  }
+
+  currentSpokenColor = text;
+
+  isSpeaking = true;
+
+  speechSynthesis.cancel();
 
   const msg =
   new SpeechSynthesisUtterance(text);
@@ -393,64 +399,15 @@ function processSpeechQueue(){
 
   msg.onend = ()=>{
 
-    speechRunning = false;
-
-    setTimeout(()=>{
-
-      processSpeechQueue();
-
-    },250);
+    isSpeaking = false;
   };
 
   msg.onerror = ()=>{
 
-    speechRunning = false;
-
-    setTimeout(()=>{
-
-      processSpeechQueue();
-
-    },300);
+    isSpeaking = false;
   };
 
   speechSynthesis.speak(msg);
-}
-
-/* ================= FALA ================= */
-
-function speak(text){
-
-  if(!voice) return;
-
-  if(!text) return;
-
-  const now = Date.now();
-
-/* ===== evita repetição ===== */
-
-  if(
-    text === lastSpokenText &&
-    now - lastSpeechTime < speechCooldown
-  ){
-    return;
-  }
-
-  lastSpokenText = text;
-
-  lastSpeechTime = now;
-
-/* ===== impede fila infinita ===== */
-
-  if(speechQueue.length > 1){
-
-    speechQueue = [
-      speechQueue[speechQueue.length - 1]
-    ];
-  }
-
-  speechQueue.push(text);
-
-  processSpeechQueue();
 }
 
 /* ================= TOGGLE AUDIO ================= */
@@ -461,15 +418,9 @@ function toggleVoice(){
 
   speechSynthesis.cancel();
 
-  speechQueue = [];
+  isSpeaking = false;
 
-  speechRunning = false;
-
-  lastSpokenText = "";
-
-  stableColor = "";
-
-  stableFrames = 0;
+  currentSpokenColor = "";
 
   alert(
     "Áudio: " +
@@ -485,6 +436,12 @@ function toggleUniversalMode(){
 
   const btn =
   document.getElementById("universalBtn");
+
+  currentSpokenColor = "";
+
+  stableFrames = 0;
+
+  detectedColor = "";
 
   if(universalMode){
 
@@ -1001,17 +958,17 @@ function moveLoop(){
     ? "Movimento: analisando..."
     : "Movimento: " + colorName;
 
-/* ===== estabilidade real ===== */
+/* ===== fala SOMENTE na troca ===== */
 
     if(colorName !== ""){
 
-      if(colorName === stableColor){
+      if(colorName === detectedColor){
 
         stableFrames++;
 
       }else{
 
-        stableColor = colorName;
+        detectedColor = colorName;
 
         stableFrames = 0;
       }
@@ -1021,7 +978,10 @@ function moveLoop(){
         MIN_STABLE_FRAMES
       ){
 
-        speak(colorName);
+        if(colorName !== currentSpokenColor){
+
+          speak(colorName);
+        }
 
         stableFrames = 0;
       }
@@ -1048,15 +1008,15 @@ function setMode(m){
 
   compareALab = null;
 
-  speechQueue = [];
+  currentSpokenColor = "";
 
-  speechRunning = false;
-
-  stableColor = "";
+  detectedColor = "";
 
   stableFrames = 0;
 
   speechSynthesis.cancel();
+
+  isSpeaking = false;
 
   cross.style.display =
 
@@ -1097,6 +1057,303 @@ function setMode(m){
     moveLoop();
   }
 }
+
+/* ================= PESQUISA ================= */
+
+function searchBrand(){
+
+  const brand =
+
+  document.getElementById("brandSearch")
+  .value
+  .trim()
+  .toLowerCase();
+
+  const models =
+
+  [...new Set(
+
+    oemDatabase
+
+    .filter(item=>
+
+      item.brand.toLowerCase()
+      .includes(brand)
+
+    )
+
+    .map(item=>item.model)
+
+  )]
+
+  .sort();
+
+  const select =
+  document.getElementById("modelSelect");
+
+  select.innerHTML =
+
+  `<option value="">
+  Selecione o modelo
+  </option>`;
+
+  models.forEach(model=>{
+
+    select.innerHTML +=
+
+    `<option value="${model}">
+      ${model}
+    </option>`;
+
+  });
+
+  document.getElementById("resultList")
+  .innerHTML = "";
+}
+
+/* ================= MOSTRAR CORES ================= */
+
+function showModelColors(){
+
+  const model =
+  document.getElementById("modelSelect")
+  .value;
+
+  const resultList =
+  document.getElementById("resultList");
+
+  resultList.innerHTML = "";
+
+  const colors =
+
+  oemDatabase
+
+  .filter(item=>item.model===model)
+
+  .sort((a,b)=>
+    a.name.localeCompare(b.name)
+  );
+
+  colors.forEach((item,index)=>{
+
+    resultList.innerHTML +=
+
+    `<div
+    class="item"
+    onclick="selectDatabaseColor(${index},'${item.name}')">
+
+      <span
+      class="colorBox"
+      style="
+      background:rgb(
+      ${item.rgb.r},
+      ${item.rgb.g},
+      ${item.rgb.b}
+      )">
+      </span>
+
+      <strong>${item.name}</strong>
+
+      <br>
+
+      Código:
+      ${item.code}
+
+      <br>
+
+      Ano:
+      ${item.year}
+
+      <br>
+
+      Modelo:
+      ${item.model}
+
+      <br>
+
+      Montadora:
+      ${item.brand}
+
+    </div>`;
+
+  });
+}
+
+/* ================= SELECIONA DATABASE ================= */
+
+function selectDatabaseColor(index,colorName){
+
+  const model =
+  document.getElementById("modelSelect")
+  .value;
+
+  const colors =
+
+  oemDatabase
+
+  .filter(item=>item.model===model)
+
+  .sort((a,b)=>
+    a.name.localeCompare(b.name)
+  );
+
+  selectedDatabaseColor =
+  colors[index];
+
+  txt.innerText =
+
+  "Cor de referência selecionada: "
+  + colorName;
+
+  speak(colorName);
+}
+
+/* ================= COMPARAR DATABASE ================= */
+
+function compareWithDatabase(sig){
+
+  if(!selectedDatabaseColor){
+
+    alert(
+      "Selecione uma cor da base de dados primeiro"
+    );
+
+    return;
+  }
+
+  const targetLab =
+  rgbToLab(sig.r,sig.g,sig.b);
+
+  const similarity =
+
+  Math.max(
+    0,
+    100 -
+    deltaE(
+      targetLab,
+      selectedDatabaseColor.lab
+    )
+  )
+
+  .toFixed(1);
+
+  const result =
+
+  "BASE OEM: "
+  + selectedDatabaseColor.name
+
+  + " | NOVA AMOSTRA: "
+
+  + similarity
+  + "% similar";
+
+  txt.innerText =
+  result;
+
+  speak(
+    similarity
+    + " porcento similar"
+  );
+}
+
+/* ================= CLIQUE ================= */
+
+video.addEventListener("click",(e)=>{
+
+  if(processingPaused) return;
+
+  const rect =
+  video.getBoundingClientRect();
+
+  const x =
+
+  (e.clientX - rect.left)
+  *
+  (video.videoWidth / rect.width);
+
+  const y =
+
+  (e.clientY - rect.top)
+  *
+  (video.videoHeight / rect.height);
+
+  const sig =
+  captureRaw(x,y);
+
+  if(mode === "static"){
+
+    analyzeOEM();
+  }
+
+  if(mode === "comparePoint"){
+
+    if(compareStep === 0){
+
+      compareA = sig;
+
+      compareALab =
+
+      rgbToLab(
+        sig.r,
+        sig.g,
+        sig.b
+      );
+
+      compareStep = 1;
+
+      txt.innerText =
+      "Primeiro ponto capturado";
+
+      speak(
+        "Primeiro ponto capturado"
+      );
+
+    }
+
+    else{
+
+      const compareBLab =
+
+      rgbToLab(
+        sig.r,
+        sig.g,
+        sig.b
+      );
+
+      const similarity =
+
+      Math.max(
+        0,
+        100 -
+        deltaE(
+          compareALab,
+          compareBLab
+        )
+      );
+
+      txt.innerText =
+
+      "Similaridade entre pontos: "
+      +
+      similarity.toFixed(1)
+      +
+      "%";
+
+      speak(
+        similarity.toFixed(1)
+        + " porcento similar"
+      );
+
+      compareStep = 0;
+    }
+  }
+
+  if(mode === "compareDatabase"){
+
+    compareWithDatabase(sig);
+  }
+
+});
 
 </script>
 
