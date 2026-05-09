@@ -1,12 +1,18 @@
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – OEM MultiBrand Edition</title>
+
+<title>
+ColorMatch Pro – OEM MultiBrand Edition
+</title>
 
 <style>
+
 body{
   margin:0;
   font-family:Arial;
@@ -139,7 +145,9 @@ canvas{
   background:#181818;
   border-top:2px solid #333;
 }
+
 </style>
+
 </head>
 
 <body>
@@ -179,15 +187,19 @@ Comparar Base de Dados
 <br><br>
 
 <div id="universalPanel">
-<h3>Modo Universal</h3>
+
+<h3>
+Modo Universal
+</h3>
 
 <button id="universalBtn" onclick="toggleUniversalMode()">
 Universal OFF
 </button>
 
 <p style="font-size:14px;color:#aaa;">
-Filtro inteligente para cores lisas OEM
+Reconhecimento de cores primárias lisas
 </p>
+
 </div>
 
 <video id="video" autoplay playsinline></video>
@@ -195,15 +207,17 @@ Filtro inteligente para cores lisas OEM
 <div id="cross"></div>
 
 <div id="panel">
-  <div class="box">
-    <canvas id="canvasA"></canvas>
-    <div>Referência</div>
-  </div>
 
-  <div class="box">
-    <canvas id="canvasB"></canvas>
-    <div>Comparação</div>
-  </div>
+<div class="box">
+<canvas id="canvasA"></canvas>
+<div>Referência</div>
+</div>
+
+<div class="box">
+<canvas id="canvasB"></canvas>
+<div>Comparação</div>
+</div>
+
 </div>
 
 <div id="databasePanel">
@@ -222,9 +236,11 @@ oninput="searchBrand()"
 <br>
 
 <select id="modelSelect" onchange="showModelColors()">
+
 <option value="">
 Selecione o modelo
 </option>
+
 </select>
 
 <div id="resultList"></div>
@@ -239,48 +255,86 @@ Inicializando...
 
 /* ================= ELEMENTOS ================= */
 
-const video = document.getElementById("video");
-const canvasA = document.getElementById("canvasA");
-const canvasB = document.getElementById("canvasB");
-const ctxA = canvasA.getContext("2d");
-const ctxB = canvasB.getContext("2d");
-const cross = document.getElementById("cross");
-const txt = document.getElementById("txt");
+const video =
+document.getElementById("video");
+
+const canvasA =
+document.getElementById("canvasA");
+
+const canvasB =
+document.getElementById("canvasB");
+
+const ctxA =
+canvasA.getContext("2d");
+
+const ctxB =
+canvasB.getContext("2d");
+
+const cross =
+document.getElementById("cross");
+
+const txt =
+document.getElementById("txt");
 
 /* ================= CONTROLE ================= */
 
 let mode = "static";
+
 let voice = true;
+
 let lastSpeak = "";
+
+let lastDetectedColor = "";
+
+let lastSpeechTime = 0;
+
 let compareA = null;
+
 let compareALab = null;
+
 let compareStep = 0;
+
 let selectedDatabaseColor = null;
+
 let universalMode = false;
 
 /* ================= FLASH ================= */
 
 let streamTrack = null;
+
 let flashOn = false;
+
 let flashBusy = false;
+
 let processingPaused = false;
 
 /* ================= CAMERA ================= */
 
 navigator.mediaDevices.getUserMedia({
+
   video:{
     facingMode:{
       ideal:"environment"
     }
   },
+
   audio:false
+
 })
+
 .then(stream=>{
+
   video.srcObject = stream;
-  streamTrack = stream.getVideoTracks()[0];
+
+  streamTrack =
+  stream.getVideoTracks()[0];
+
 })
+
 .catch(()=>{
+
   alert("Erro ao acessar câmera");
+
 });
 
 /* ================= VOZ ================= */
@@ -289,13 +343,23 @@ function speak(text){
 
   if(!voice) return;
 
-  if(lastSpeak === text) return;
+  const now = Date.now();
+
+  if(lastSpeak === text){
+
+    if(now - lastSpeechTime < 1800){
+      return;
+    }
+  }
 
   lastSpeak = text;
 
+  lastSpeechTime = now;
+
   speechSynthesis.cancel();
 
-  const msg = new SpeechSynthesisUtterance(text);
+  const msg =
+  new SpeechSynthesisUtterance(text);
 
   msg.lang = "pt-BR";
 
@@ -310,6 +374,8 @@ function toggleVoice(){
 
   lastSpeak = "";
 
+  lastDetectedColor = "";
+
   alert(
     "Áudio: " +
     (voice ? "ON" : "OFF")
@@ -322,27 +388,36 @@ function toggleUniversalMode(){
 
   universalMode = !universalMode;
 
-  const btn = document.getElementById("universalBtn");
+  const btn =
+  document.getElementById("universalBtn");
 
   if(universalMode){
 
-    btn.innerText = "Universal ON";
+    btn.innerText =
+    "Universal ON";
 
     btn.classList.add("activeMode");
 
-    txt.innerText = "Modo universal ativado";
+    txt.innerText =
+    "Modo universal ativado";
 
-    speak("Modo universal ativado");
+    speak(
+      "Modo universal ativado"
+    );
 
   }else{
 
-    btn.innerText = "Universal OFF";
+    btn.innerText =
+    "Universal OFF";
 
     btn.classList.remove("activeMode");
 
-    txt.innerText = "Modo universal desativado";
+    txt.innerText =
+    "Modo universal desativado";
 
-    speak("Modo universal desativado");
+    speak(
+      "Modo universal desativado"
+    );
   }
 }
 
@@ -364,13 +439,15 @@ async function toggleFlash(){
 
   try{
 
-    const capabilities = streamTrack.getCapabilities();
+    const capabilities =
+    streamTrack.getCapabilities();
 
     if(!capabilities.torch){
 
       alert("Flash não suportado");
 
       processingPaused = false;
+
       flashBusy = false;
 
       return;
@@ -379,11 +456,13 @@ async function toggleFlash(){
     flashOn = !flashOn;
 
     await streamTrack.applyConstraints({
+
       advanced:[
         {
           torch:flashOn
         }
       ]
+
     });
 
     await new Promise(resolve=>
@@ -400,7 +479,9 @@ async function toggleFlash(){
   processingPaused = false;
 
   setTimeout(()=>{
+
     flashBusy = false;
+
   },500);
 }
 
@@ -413,9 +494,11 @@ function rgbToLab(r,g,b){
   b/=255;
 
   [r,g,b]=[r,g,b].map(v=>
+
     v>0.04045
     ? Math.pow((v+0.055)/1.055,2.4)
     : v/12.92
+
   );
 
   let x =
@@ -438,15 +521,19 @@ function rgbToLab(r,g,b){
   z/=1.08883;
 
   [x,y,z]=[x,y,z].map(v=>
+
     v>0.008856
     ? Math.cbrt(v)
     : (7.787*v)+(16/116)
+
   );
 
   return{
+
     L:(116*y)-16,
     a:500*(x-y),
     b:200*(y-z)
+
   };
 }
 
@@ -455,9 +542,11 @@ function rgbToLab(r,g,b){
 function deltaE(a,b){
 
   return Math.sqrt(
+
     (a.L-b.L)**2 +
     (a.a-b.a)**2 +
     (a.b-b.b)**2
+
   );
 }
 
@@ -499,33 +588,6 @@ const oemDatabase = [
   code:"3U5",
   name:"Emotional Red",
   rgb:{r:126,g:31,b:36}
-},
-
-{
-  brand:"Toyota",
-  model:"Hilux",
-  year:"2024",
-  code:"040",
-  name:"Super White II",
-  rgb:{r:244,g:244,b:241}
-},
-
-{
-  brand:"Toyota",
-  model:"Hilux",
-  year:"2024",
-  code:"1G3",
-  name:"Graphite Metallic",
-  rgb:{r:92,g:95,b:102}
-},
-
-{
-  brand:"Toyota",
-  model:"SW4",
-  year:"2024",
-  code:"070",
-  name:"White Pearl",
-  rgb:{r:247,g:247,b:244}
 }
 
 ];
@@ -542,17 +604,6 @@ oemDatabase.forEach(item=>{
 
 });
 
-/* ================= FILTRO UNIVERSAL ================= */
-
-function applyUniversalFilter(r,g,b){
-
-  return {
-    r:r,
-    g:g,
-    b:b
-  };
-}
-
 /* ================= CAPTURA ================= */
 
 function captureRaw(x,y){
@@ -564,18 +615,23 @@ function captureRaw(x,y){
     return {r:0,g:0,b:0};
   }
 
-  canvasA.width = video.videoWidth;
-  canvasA.height = video.videoHeight;
+  canvasA.width =
+  video.videoWidth;
+
+  canvasA.height =
+  video.videoHeight;
 
   ctxA.drawImage(video,0,0);
 
   const s = 12;
 
   const data = ctxA.getImageData(
+
     x-s,
     y-s,
     s*2,
     s*2
+
   ).data;
 
   let r=0,g=0,b=0,c=0;
@@ -589,45 +645,128 @@ function captureRaw(x,y){
     c++;
   }
 
-  return {
+  return{
+
     r:Math.round(r/c),
     g:Math.round(g/c),
     b:Math.round(b/c)
+
   };
 }
 
-/* ================= NOME SIMPLES ================= */
+/* ================= UNIVERSAL COLOR ================= */
 
-function detectSimpleColor(r,g,b){
+function detectUniversalColor(r,g,b){
 
-  if(r > 200 && g > 200 && b > 200){
-    return "Branco";
-  }
+  const max =
+  Math.max(r,g,b);
 
-  if(r < 50 && g < 50 && b < 50){
+  const min =
+  Math.min(r,g,b);
+
+  const diff =
+  max - min;
+
+/* ================= PRETO ================= */
+
+  if(
+    r < 45 &&
+    g < 45 &&
+    b < 45
+  ){
     return "Preto";
   }
 
-  if(r > g && r > b){
+/* ================= BRANCO ================= */
+
+  if(
+    r > 210 &&
+    g > 210 &&
+    b > 210
+  ){
+    return "Branco";
+  }
+
+/* ================= CINZA ================= */
+
+  if(
+    diff < 18 &&
+    max > 60 &&
+    max < 210
+  ){
+    return "Cinza";
+  }
+
+/* ================= AMARELO ================= */
+
+  if(
+    r > 170 &&
+    g > 170 &&
+    b < 120
+  ){
+    return "Amarelo";
+  }
+
+/* ================= LARANJA ================= */
+
+  if(
+    r > 180 &&
+    g > 90 &&
+    g < 170 &&
+    b < 90
+  ){
+    return "Laranja";
+  }
+
+/* ================= VERMELHO ================= */
+
+  if(
+    r > 140 &&
+    g < 110 &&
+    b < 110
+  ){
     return "Vermelho";
   }
 
-  if(g > r && g > b){
+/* ================= VERDE ================= */
+
+  if(
+    g > 140 &&
+    r < 140 &&
+    b < 140
+  ){
     return "Verde";
   }
 
-  if(b > r && b > g){
+/* ================= AZUL ================= */
+
+  if(
+    b > 140 &&
+    r < 140 &&
+    g < 140
+  ){
     return "Azul";
   }
 
-  return "Cor detectada";
+/* ================= ROXO ================= */
+
+  if(
+    r > 120 &&
+    b > 120 &&
+    g < 100
+  ){
+    return "Roxo";
+  }
+
+  return "Cor indefinida";
 }
 
 /* ================= OEM MATCH ================= */
 
 function detectOEM(sig){
 
-  const targetLab = rgbToLab(sig.r,sig.g,sig.b);
+  const targetLab =
+  rgbToLab(sig.r,sig.g,sig.b);
 
   let best = null;
 
@@ -635,16 +774,18 @@ function detectOEM(sig){
 
   for(const color of oemDatabase){
 
-    const d = deltaE(targetLab,color.lab);
+    const d =
+    deltaE(targetLab,color.lab);
 
     if(d < bestDelta){
 
       bestDelta = d;
+
       best = color;
     }
   }
 
-  return {
+  return{
     match:best,
     delta:bestDelta
   };
@@ -659,14 +800,17 @@ function analyzeOEM(){
     video.videoHeight/2
   );
 
-  const result = detectOEM(sig);
+  const result =
+  detectOEM(sig);
 
-  const similarity = Math.max(
+  const similarity =
+  Math.max(
     0,
     100 - result.delta
   ).toFixed(1);
 
   const text =
+
   result.match.brand
   + " | "
   + result.match.model
@@ -685,34 +829,146 @@ function analyzeOEM(){
   speak(result.match.name);
 }
 
+/* ================= MOVIMENTO ================= */
+
+function moveLoop(){
+
+  if(mode !== "move") return;
+
+  if(processingPaused){
+
+    requestAnimationFrame(moveLoop);
+    return;
+  }
+
+  const sig = captureRaw(
+    video.videoWidth/2,
+    video.videoHeight/2
+  );
+
+  let colorName = "";
+
+/* ================= UNIVERSAL ================= */
+
+  if(universalMode){
+
+    colorName =
+    detectUniversalColor(
+      sig.r,
+      sig.g,
+      sig.b
+    );
+
+  }else{
+
+    colorName =
+    `RGB: ${sig.r}, ${sig.g}, ${sig.b}`;
+  }
+
+  txt.innerText =
+  "Movimento: " + colorName;
+
+/* ================= AUDIO ESTAVEL ================= */
+
+  if(
+    universalMode &&
+    colorName !== lastDetectedColor
+  ){
+
+    lastDetectedColor =
+    colorName;
+
+    speak(colorName);
+  }
+
+  requestAnimationFrame(moveLoop);
+}
+
+/* ================= MODOS ================= */
+
+function setMode(m){
+
+  mode = m;
+
+  compareStep = 0;
+
+  compareA = null;
+
+  compareALab = null;
+
+  lastSpeak = "";
+
+  lastDetectedColor = "";
+
+  cross.style.display =
+
+  (
+    m === "move" ||
+    m === "comparePoint" ||
+    m === "compareDatabase"
+  )
+
+  ? "block"
+  : "none";
+
+  if(m === "comparePoint"){
+
+    txt.innerText =
+    "Modo: COMPARAR PONTO A PONTO";
+  }
+
+  else if(m === "compareDatabase"){
+
+    txt.innerText =
+    "Modo: COMPARAR COM BASE DE DADOS";
+  }
+
+  else{
+
+    txt.innerText =
+    "Modo: " + m.toUpperCase();
+  }
+
+  if(m === "move"){
+    moveLoop();
+  }
+}
+
 /* ================= PESQUISA ================= */
 
 function searchBrand(){
 
   const brand =
+
   document.getElementById("brandSearch")
   .value
   .trim()
   .toLowerCase();
 
   const models =
+
   [...new Set(
 
     oemDatabase
 
     .filter(item=>
+
       item.brand.toLowerCase()
       .includes(brand)
+
     )
 
     .map(item=>item.model)
 
   )]
+
   .sort();
 
-  const select = document.getElementById("modelSelect");
+  const select =
+  document.getElementById("modelSelect");
 
   select.innerHTML =
+
   `<option value="">
   Selecione o modelo
   </option>`;
@@ -720,6 +976,7 @@ function searchBrand(){
   models.forEach(model=>{
 
     select.innerHTML +=
+
     `<option value="${model}">
       ${model}
     </option>`;
@@ -744,8 +1001,11 @@ function showModelColors(){
   resultList.innerHTML = "";
 
   const colors =
+
   oemDatabase
+
   .filter(item=>item.model===model)
+
   .sort((a,b)=>
     a.name.localeCompare(b.name)
   );
@@ -795,7 +1055,7 @@ function showModelColors(){
   });
 }
 
-/* ================= SELECIONA COR DATABASE ================= */
+/* ================= SELECIONA DATABASE ================= */
 
 function selectDatabaseColor(index,colorName){
 
@@ -804,15 +1064,20 @@ function selectDatabaseColor(index,colorName){
   .value;
 
   const colors =
+
   oemDatabase
+
   .filter(item=>item.model===model)
+
   .sort((a,b)=>
     a.name.localeCompare(b.name)
   );
 
-  selectedDatabaseColor = colors[index];
+  selectedDatabaseColor =
+  colors[index];
 
   txt.innerText =
+
   "Cor de referência selecionada: "
   + colorName;
 
@@ -832,9 +1097,11 @@ function compareWithDatabase(sig){
     return;
   }
 
-  const targetLab = rgbToLab(sig.r,sig.g,sig.b);
+  const targetLab =
+  rgbToLab(sig.r,sig.g,sig.b);
 
   const similarity =
+
   Math.max(
     0,
     100 -
@@ -843,98 +1110,26 @@ function compareWithDatabase(sig){
       selectedDatabaseColor.lab
     )
   )
+
   .toFixed(1);
 
   const result =
+
   "BASE OEM: "
   + selectedDatabaseColor.name
+
   + " | NOVA AMOSTRA: "
+
   + similarity
   + "% similar";
 
-  txt.innerText = result;
+  txt.innerText =
+  result;
 
   speak(
     similarity
     + " porcento similar"
   );
-}
-
-/* ================= MOVIMENTO ================= */
-
-function moveLoop(){
-
-  if(mode !== "move") return;
-
-  if(processingPaused){
-
-    requestAnimationFrame(moveLoop);
-    return;
-  }
-
-  const sig = captureRaw(
-    video.videoWidth/2,
-    video.videoHeight/2
-  );
-
-  const colorName = detectSimpleColor(
-    sig.r,
-    sig.g,
-    sig.b
-  );
-
-  txt.innerText =
-  "Movimento: " + colorName;
-
-  speak(colorName);
-
-  requestAnimationFrame(moveLoop);
-}
-
-/* ================= MODOS ================= */
-
-function setMode(m){
-
-  mode = m;
-
-  compareStep = 0;
-
-  compareA = null;
-
-  compareALab = null;
-
-  lastSpeak = "";
-
-  cross.style.display =
-  (
-    m === "move" ||
-    m === "comparePoint" ||
-    m === "compareDatabase"
-  )
-  ? "block"
-  : "none";
-
-  if(m === "comparePoint"){
-
-    txt.innerText =
-    "Modo: COMPARAR PONTO A PONTO";
-  }
-
-  else if(m === "compareDatabase"){
-
-    txt.innerText =
-    "Modo: COMPARAR COM BASE DE DADOS";
-  }
-
-  else{
-
-    txt.innerText =
-    "Modo: " + m.toUpperCase();
-  }
-
-  if(m === "move"){
-    moveLoop();
-  }
 }
 
 /* ================= CLIQUE ================= */
@@ -943,27 +1138,32 @@ video.addEventListener("click",(e)=>{
 
   if(processingPaused) return;
 
-  const rect = video.getBoundingClientRect();
+  const rect =
+  video.getBoundingClientRect();
 
   const x =
+
   (e.clientX - rect.left)
   *
   (video.videoWidth / rect.width);
 
   const y =
+
   (e.clientY - rect.top)
   *
   (video.videoHeight / rect.height);
 
-  const sig = captureRaw(x,y);
+  const sig =
+  captureRaw(x,y);
 
 /* ================= ESTATICO ================= */
 
   if(mode === "static"){
+
     analyzeOEM();
   }
 
-/* ================= COMPARAR PONTO A PONTO ================= */
+/* ================= COMPARE POINT ================= */
 
   if(mode === "comparePoint"){
 
@@ -971,7 +1171,9 @@ video.addEventListener("click",(e)=>{
 
       compareA = sig;
 
-      compareALab = rgbToLab(
+      compareALab =
+
+      rgbToLab(
         sig.r,
         sig.g,
         sig.b
@@ -990,13 +1192,16 @@ video.addEventListener("click",(e)=>{
 
     else{
 
-      const compareBLab = rgbToLab(
+      const compareBLab =
+
+      rgbToLab(
         sig.r,
         sig.g,
         sig.b
       );
 
       const similarity =
+
       Math.max(
         0,
         100 -
@@ -1007,6 +1212,7 @@ video.addEventListener("click",(e)=>{
       );
 
       txt.innerText =
+
       "Similaridade entre pontos: "
       +
       similarity.toFixed(1)
@@ -1022,9 +1228,10 @@ video.addEventListener("click",(e)=>{
     }
   }
 
-/* ================= COMPARAR DATABASE ================= */
+/* ================= DATABASE ================= */
 
   if(mode === "compareDatabase"){
+
     compareWithDatabase(sig);
   }
 
@@ -1034,4 +1241,3 @@ video.addEventListener("click",(e)=>{
 
 </body>
 </html>
-```
