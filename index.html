@@ -2,7 +2,9 @@
 <html lang="pt-BR">
 
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>
@@ -41,6 +43,10 @@ button{
 
 button:hover{
   background:#333;
+}
+
+.activeMode{
+  background:#00695c !important;
 }
 
 input,select{
@@ -133,18 +139,15 @@ canvas{
   padding:10px;
 }
 
-#universalBox{
+#universalPanel{
   margin-top:15px;
+  padding:10px;
   background:#181818;
-  padding:12px;
   border-top:2px solid #333;
 }
 
-.modeActive{
-  background:#00695c !important;
-}
-
 </style>
+
 </head>
 
 <body>
@@ -183,21 +186,18 @@ Comparar Base de Dados
 
 <br><br>
 
-<!-- MODOS UNIVERSAIS -->
-
-<div id="universalBox">
+<div id="universalPanel">
 
 <h3>
-Modos Universais
+Modo Universal
 </h3>
 
 <button id="universalBtn" onclick="toggleUniversalMode()">
-Modo Universal OFF
+Universal OFF
 </button>
 
 <p style="font-size:14px;color:#aaa;">
-Filtro OEM inteligente ativo somente na leitura da cor.
-Sem alterar estrutura principal do sistema.
+Filtro inteligente para cores lisas OEM
 </p>
 
 </div>
@@ -208,15 +208,15 @@ Sem alterar estrutura principal do sistema.
 
 <div id="panel">
 
-<div class="box">
-<canvas id="canvasA"></canvas>
-<div>Referência</div>
-</div>
+  <div class="box">
+    <canvas id="canvasA"></canvas>
+    <div>Referência</div>
+  </div>
 
-<div class="box">
-<canvas id="canvasB"></canvas>
-<div>Comparação</div>
-</div>
+  <div class="box">
+    <canvas id="canvasB"></canvas>
+    <div>Comparação</div>
+  </div>
 
 </div>
 
@@ -282,6 +282,8 @@ let mode = "static";
 
 let voice = true;
 
+let lastSpeak = "";
+
 let compareA = null;
 
 let compareALab = null;
@@ -304,14 +306,14 @@ let flashBusy = false;
 
 let processingPaused = false;
 
-/* ================= DATABASE OEM ================= */
+/* ================= DATABASE ================= */
 
 const database = {
 
   Toyota:[
     {
       name:"Super White",
-      rgb:[240,240,235]
+      rgb:[245,245,240]
     },
     {
       name:"Black Mica",
@@ -322,7 +324,7 @@ const database = {
   Honda:[
     {
       name:"Taffeta White",
-      rgb:[245,245,240]
+      rgb:[250,250,245]
     },
     {
       name:"Crystal Black",
@@ -333,7 +335,7 @@ const database = {
   BMW:[
     {
       name:"Alpine White",
-      rgb:[250,250,248]
+      rgb:[248,248,248]
     },
     {
       name:"Mineral Grey",
@@ -374,6 +376,10 @@ function speak(text){
 
   if(!voice) return;
 
+  if(lastSpeak === text) return;
+
+  lastSpeak = text;
+
   speechSynthesis.cancel();
 
   const msg =
@@ -384,6 +390,21 @@ function speak(text){
   speechSynthesis.speak(msg);
 }
 
+/* ================= TOGGLE VOICE ================= */
+
+function toggleVoice(){
+
+  voice = !voice;
+
+  lastSpeak = "";
+
+  txt.innerHTML =
+  voice ?
+  "Áudio ativado" :
+  "Áudio desativado";
+
+}
+
 /* ================= MODO ================= */
 
 function setMode(newMode){
@@ -392,8 +413,10 @@ function setMode(newMode){
 
   compareStep = 0;
 
+  lastSpeak = "";
+
   txt.innerHTML =
-  "Modo atual: " + newMode;
+  "Modo atual: " + mode;
 
   if(
     mode === "comparePoint" ||
@@ -406,7 +429,7 @@ function setMode(newMode){
 
 }
 
-/* ================= UNIVERSAL MODE ================= */
+/* ================= UNIVERSAL ================= */
 
 function toggleUniversalMode(){
 
@@ -418,24 +441,24 @@ function toggleUniversalMode(){
   if(universalMode){
 
     btn.innerHTML =
-    "Modo Universal ON";
+    "Universal ON";
 
-    btn.classList.add("modeActive");
+    btn.classList.add("activeMode");
 
     txt.innerHTML =
-    "Filtro universal ativado";
+    "Modo universal ativado";
 
     speak("Modo universal ativado");
 
   }else{
 
     btn.innerHTML =
-    "Modo Universal OFF";
+    "Universal OFF";
 
-    btn.classList.remove("modeActive");
+    btn.classList.remove("activeMode");
 
     txt.innerHTML =
-    "Filtro universal desativado";
+    "Modo universal desativado";
 
     speak("Modo universal desativado");
   }
@@ -503,20 +526,7 @@ async function toggleFlash(){
   },500);
 }
 
-/* ================= VOICE ================= */
-
-function toggleVoice(){
-
-  voice = !voice;
-
-  txt.innerHTML =
-  voice ?
-  "Áudio ativado" :
-  "Áudio desativado";
-
-}
-
-/* ================= RGB ================= */
+/* ================= RGB -> LAB ================= */
 
 function rgbToLab(r,g,b){
 
@@ -590,8 +600,6 @@ function applyUniversalFilter(r,g,b){
     return {r,g,b};
   }
 
-  // neutralização simples de brilho/reflexo
-
   const avg =
   (r + g + b)/3;
 
@@ -624,6 +632,7 @@ function captureCenter(){
   document.createElement("canvas");
 
   temp.width = video.videoWidth;
+
   temp.height = video.videoHeight;
 
   const tctx =
@@ -636,10 +645,10 @@ function captureCenter(){
   );
 
   const x =
-  temp.width/2;
+  temp.width / 2;
 
   const y =
-  temp.height/2;
+  temp.height / 2;
 
   const data =
   tctx.getImageData(
@@ -663,6 +672,34 @@ function captureCenter(){
     b:filtered.b
 
   };
+
+}
+
+/* ================= NOME DE COR ================= */
+
+function detectSimpleColor(r,g,b){
+
+  if(r > 200 && g > 200 && b > 200){
+    return "Branco";
+  }
+
+  if(r < 50 && g < 50 && b < 50){
+    return "Preto";
+  }
+
+  if(r > g && r > b){
+    return "Vermelho";
+  }
+
+  if(g > r && g > b){
+    return "Verde";
+  }
+
+  if(b > r && b > g){
+    return "Azul";
+  }
+
+  return "Cor detectada";
 
 }
 
@@ -729,9 +766,7 @@ function analyzeOEM(){
   ${best.delta.toFixed(2)}
   `;
 
-  speak(
-    "Melhor correspondência encontrada"
-  );
+  speak(best.name);
 
 }
 
@@ -762,6 +797,7 @@ function searchBrand(){
       document.createElement("option");
 
       option.value = brand;
+
       option.innerHTML = brand;
 
       modelSelect.appendChild(option);
@@ -821,9 +857,7 @@ setInterval(()=>{
 
   if(processingPaused) return;
 
-  if(
-    !video.videoWidth
-  ) return;
+  if(!video.videoWidth) return;
 
   const rgb =
   captureCenter();
@@ -846,7 +880,23 @@ setInterval(()=>{
     120
   );
 
-},200);
+  if(mode === "move"){
+
+    const colorName =
+    detectSimpleColor(
+      rgb.r,
+      rgb.g,
+      rgb.b
+    );
+
+    txt.innerHTML =
+    "Movimento: " + colorName;
+
+    speak(colorName);
+
+  }
+
+},300);
 
 </script>
 
