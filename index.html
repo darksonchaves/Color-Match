@@ -129,10 +129,6 @@ canvas{
   vertical-align:middle;
 }
 
-.selectedColor{
-  background:#004d40 !important;
-}
-
 #txt{
   margin-top:15px;
   font-size:18px;
@@ -197,7 +193,7 @@ Universal OFF
 </button>
 
 <p style="font-size:14px;color:#aaa;">
-Reconhecimento de cores primárias lisas
+Reconhecimento puro de cores primárias lisas
 </p>
 
 </div>
@@ -265,10 +261,10 @@ const canvasB =
 document.getElementById("canvasB");
 
 const ctxA =
-canvasA.getContext("2d");
+canvasA.getContext("2d",{willReadFrequently:true});
 
 const ctxB =
-canvasB.getContext("2d");
+canvasB.getContext("2d",{willReadFrequently:true});
 
 const cross =
 document.getElementById("cross");
@@ -282,12 +278,6 @@ let mode = "static";
 
 let voice = true;
 
-let lastSpeak = "";
-
-let lastDetectedColor = "";
-
-let lastSpeechTime = 0;
-
 let compareA = null;
 
 let compareALab = null;
@@ -297,6 +287,20 @@ let compareStep = 0;
 let selectedDatabaseColor = null;
 
 let universalMode = false;
+
+let moveRunning = false;
+
+/* ================= AUDIO ================= */
+
+let speechQueueBusy = false;
+
+let lastStableColor = "";
+
+let pendingColor = "";
+
+let pendingCount = 0;
+
+let lastSpeechTimestamp = 0;
 
 /* ================= FLASH ================= */
 
@@ -345,16 +349,11 @@ function speak(text){
 
   const now = Date.now();
 
-  if(lastSpeak === text){
-
-    if(now - lastSpeechTime < 1800){
-      return;
-    }
+  if(now - lastSpeechTimestamp < 2000){
+    return;
   }
 
-  lastSpeak = text;
-
-  lastSpeechTime = now;
+  lastSpeechTimestamp = now;
 
   speechSynthesis.cancel();
 
@@ -362,6 +361,12 @@ function speak(text){
   new SpeechSynthesisUtterance(text);
 
   msg.lang = "pt-BR";
+
+  msg.rate = 1;
+
+  msg.pitch = 1;
+
+  msg.volume = 1;
 
   speechSynthesis.speak(msg);
 }
@@ -372,9 +377,7 @@ function toggleVoice(){
 
   voice = !voice;
 
-  lastSpeak = "";
-
-  lastDetectedColor = "";
+  speechSynthesis.cancel();
 
   alert(
     "Áudio: " +
@@ -623,7 +626,7 @@ function captureRaw(x,y){
 
   ctxA.drawImage(video,0,0);
 
-  const s = 12;
+  const s = 10;
 
   const data = ctxA.getImageData(
 
@@ -654,7 +657,7 @@ function captureRaw(x,y){
   };
 }
 
-/* ================= UNIVERSAL COLOR ================= */
+/* ================= DETECTOR UNIVERSAL ================= */
 
 function detectUniversalColor(r,g,b){
 
@@ -667,33 +670,18 @@ function detectUniversalColor(r,g,b){
   const diff =
   max - min;
 
-/* ================= PRETO ================= */
+/* ================= IGNORAR METALICO ================= */
 
-  if(
-    r < 45 &&
-    g < 45 &&
-    b < 45
-  ){
-    return "Preto";
-  }
+  if(diff < 15){
 
-/* ================= BRANCO ================= */
+    if(max < 60){
+      return "Preto";
+    }
 
-  if(
-    r > 210 &&
-    g > 210 &&
-    b > 210
-  ){
-    return "Branco";
-  }
+    if(max > 210){
+      return "Branco";
+    }
 
-/* ================= CINZA ================= */
-
-  if(
-    diff < 18 &&
-    max > 60 &&
-    max < 210
-  ){
     return "Cinza";
   }
 
@@ -702,9 +690,39 @@ function detectUniversalColor(r,g,b){
   if(
     r > 170 &&
     g > 170 &&
-    b < 120
+    b < 110
   ){
     return "Amarelo";
+  }
+
+/* ================= VERMELHO ================= */
+
+  if(
+    r > 160 &&
+    g < 100 &&
+    b < 100
+  ){
+    return "Vermelho";
+  }
+
+/* ================= VERDE ================= */
+
+  if(
+    g > 150 &&
+    r < 130 &&
+    b < 130
+  ){
+    return "Verde";
+  }
+
+/* ================= AZUL ================= */
+
+  if(
+    b > 150 &&
+    r < 130 &&
+    g < 130
+  ){
+    return "Azul";
   }
 
 /* ================= LARANJA ================= */
@@ -713,39 +731,9 @@ function detectUniversalColor(r,g,b){
     r > 180 &&
     g > 90 &&
     g < 170 &&
-    b < 90
+    b < 80
   ){
     return "Laranja";
-  }
-
-/* ================= VERMELHO ================= */
-
-  if(
-    r > 140 &&
-    g < 110 &&
-    b < 110
-  ){
-    return "Vermelho";
-  }
-
-/* ================= VERDE ================= */
-
-  if(
-    g > 140 &&
-    r < 140 &&
-    b < 140
-  ){
-    return "Verde";
-  }
-
-/* ================= AZUL ================= */
-
-  if(
-    b > 140 &&
-    r < 140 &&
-    g < 140
-  ){
-    return "Azul";
   }
 
 /* ================= ROXO ================= */
@@ -758,7 +746,7 @@ function detectUniversalColor(r,g,b){
     return "Roxo";
   }
 
-  return "Cor indefinida";
+  return "";
 }
 
 /* ================= OEM MATCH ================= */
@@ -833,7 +821,11 @@ function analyzeOEM(){
 
 function moveLoop(){
 
-  if(mode !== "move") return;
+  if(mode !== "move"){
+
+    moveRunning = false;
+    return;
+  }
 
   if(processingPaused){
 
@@ -859,26 +851,50 @@ function moveLoop(){
       sig.b
     );
 
+    if(colorName === ""){
+
+      txt.innerText =
+      "Movimento: analisando cor...";
+    }
+
+    else{
+
+      txt.innerText =
+      "Movimento: " + colorName;
+    }
+
+/* ================= ESTABILIZADOR ================= */
+
+    if(colorName !== ""){
+
+      if(colorName === pendingColor){
+
+        pendingCount++;
+
+      }else{
+
+        pendingColor = colorName;
+
+        pendingCount = 1;
+      }
+
+/* ================= FALA APENAS SE ESTABILIZAR ================= */
+
+      if(
+        pendingCount >= 8 &&
+        colorName !== lastStableColor
+      ){
+
+        lastStableColor = colorName;
+
+        speak(colorName);
+      }
+    }
+
   }else{
 
-    colorName =
+    txt.innerText =
     `RGB: ${sig.r}, ${sig.g}, ${sig.b}`;
-  }
-
-  txt.innerText =
-  "Movimento: " + colorName;
-
-/* ================= AUDIO ESTAVEL ================= */
-
-  if(
-    universalMode &&
-    colorName !== lastDetectedColor
-  ){
-
-    lastDetectedColor =
-    colorName;
-
-    speak(colorName);
   }
 
   requestAnimationFrame(moveLoop);
@@ -896,9 +912,11 @@ function setMode(m){
 
   compareALab = null;
 
-  lastSpeak = "";
+  lastStableColor = "";
 
-  lastDetectedColor = "";
+  pendingColor = "";
+
+  pendingCount = 0;
 
   cross.style.display =
 
@@ -929,7 +947,13 @@ function setMode(m){
     "Modo: " + m.toUpperCase();
   }
 
-  if(m === "move"){
+  if(
+    m === "move" &&
+    !moveRunning
+  ){
+
+    moveRunning = true;
+
     moveLoop();
   }
 }
