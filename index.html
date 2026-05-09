@@ -307,7 +307,7 @@ let stableCounter = 0;
 
 let candidateColor = "";
 
-let lastSpeechTime = 0;
+let speakingNow = false;
 
 /* ================= FLASH ================= */
 
@@ -356,35 +356,46 @@ function speak(text){
 
   if(text === "") return;
 
-  const now = Date.now();
+/* ===== evita repetição imediata ===== */
 
-/* ===== evita spam sem criar delay alto ===== */
-
-  if(
-    text === currentSpeech &&
-    now - lastSpeechTime < 700
-  ){
+  if(text === currentSpeech){
     return;
   }
 
   currentSpeech = text;
 
-  lastSpeechTime = now;
+/* ===== elimina fila acumulada ===== */
 
-/* ===== limpa fila presa android ===== */
+  window.speechSynthesis.cancel();
 
-  speechSynthesis.cancel();
+/* ===== cria nova fala limpa ===== */
 
   const msg =
   new SpeechSynthesisUtterance(text);
 
   msg.lang = "pt-BR";
 
-  msg.rate = 1.15;
+  msg.rate = 1.35;
 
   msg.pitch = 1;
 
   msg.volume = 1;
+
+/* ===== trava durante fala ===== */
+
+  speakingNow = true;
+
+  msg.onend = ()=>{
+
+    speakingNow = false;
+
+  };
+
+  msg.onerror = ()=>{
+
+    speakingNow = false;
+
+  };
 
   speechSynthesis.speak(msg);
 }
@@ -398,6 +409,8 @@ function toggleVoice(){
   speechSynthesis.cancel();
 
   currentSpeech = "";
+
+  speakingNow = false;
 
   alert(
     "Áudio: " +
@@ -752,18 +765,21 @@ function detectUniversalColor(r,g,b){
 
   const l = hsl.l;
 
-/* ===== ignora reflexos ===== */
+/* ===== BRANCO MELHORADO ===== */
 
-  if(s < 12){
+  if(s < 10 && l > 82){
+    return "Branco";
+  }
 
-    if(l < 18){
-      return "Preto";
-    }
+/* ===== PRETO ===== */
 
-    if(l > 88){
-      return "Branco";
-    }
+  if(s < 12 && l < 18){
+    return "Preto";
+  }
 
+/* ===== CINZA ===== */
+
+  if(s < 15){
     return "Cinza";
   }
 
@@ -938,7 +954,7 @@ function moveLoop(){
     ? "Movimento: analisando..."
     : "Movimento: " + colorName;
 
-/* ===== estabilização inteligente ===== */
+/* ===== estabilização rápida ===== */
 
     if(colorName !== ""){
 
@@ -954,11 +970,12 @@ function moveLoop(){
         stableCounter = 1;
       }
 
-/* ===== resposta rápida sem atraso ===== */
+/* ===== fala SOMENTE quando mudar ===== */
 
       if(
-        stableCounter >= 3 &&
-        colorName !== lastColorSpoken
+        stableCounter >= 2 &&
+        colorName !== lastColorSpoken &&
+        !speakingNow
       ){
 
         lastColorSpoken =
@@ -996,6 +1013,10 @@ function setMode(m){
   lastColorSpoken = "";
 
   currentSpeech = "";
+
+  speakingNow = false;
+
+  speechSynthesis.cancel();
 
   cross.style.display =
 
