@@ -299,13 +299,24 @@ let selectedDatabaseColor = null;
 
 /* ================= AUDIO ================= */
 
-let lastSpokenColor = "";
+/*
+ALTERAÇÃO OFICIAL:
+Sistema de fila estável para impedir:
+- mistura de falas
+- sobreposição
+- delay quebrado
+- bug do Android SpeechSynthesis
+*/
 
-let speechLocked = false;
+let speechQueue = [];
 
-let pendingSpeech = null;
+let speechRunning = false;
+
+let lastQueuedText = "";
 
 let lastSpeechTime = 0;
+
+let speechCooldown = 1200;
 
 /* ================= FLASH ================= */
 
@@ -346,7 +357,57 @@ navigator.mediaDevices.getUserMedia({
 
 });
 
-/* ================= AUDIO ================= */
+/* ================= AUDIO ESTÁVEL ================= */
+
+function processSpeechQueue(){
+
+  if(!voice) return;
+
+  if(speechRunning) return;
+
+  if(speechQueue.length === 0) return;
+
+  speechRunning = true;
+
+  const text = speechQueue.shift();
+
+  const msg =
+  new SpeechSynthesisUtterance(text);
+
+  msg.lang = "pt-BR";
+
+  msg.rate = 1.15;
+
+  msg.pitch = 1;
+
+  msg.volume = 1;
+
+  msg.onend = ()=>{
+
+    speechRunning = false;
+
+    setTimeout(()=>{
+
+      processSpeechQueue();
+
+    },200);
+
+  };
+
+  msg.onerror = ()=>{
+
+    speechRunning = false;
+
+    setTimeout(()=>{
+
+      processSpeechQueue();
+
+    },300);
+
+  };
+
+  speechSynthesis.speak(msg);
+}
 
 function speak(text){
 
@@ -356,66 +417,39 @@ function speak(text){
 
   const now = Date.now();
 
-/* ===== impede repetição rápida ===== */
+/* ===== evita spam rápido ===== */
 
   if(
-    text === lastSpokenColor &&
-    now - lastSpeechTime < 900
+    text === lastQueuedText &&
+    now - lastSpeechTime < speechCooldown
   ){
     return;
   }
 
-/* ===== evita fila quebrada do Android ===== */
-
-  if(speechLocked){
-
-    pendingSpeech = text;
-    return;
-  }
-
-  speechLocked = true;
-
-  lastSpokenColor = text;
+  lastQueuedText = text;
 
   lastSpeechTime = now;
 
-  speechSynthesis.cancel();
+/* ===== limpa travamentos do Android ===== */
 
-  const msg =
-  new SpeechSynthesisUtterance(text);
+  if(speechSynthesis.speaking){
 
-  msg.lang = "pt-BR";
+    if(speechQueue.length > 2){
 
-  msg.rate = 1.30;
-
-  msg.pitch = 1;
-
-  msg.volume = 1;
-
-  msg.onend = ()=>{
-
-    speechLocked = false;
-
-    if(
-      pendingSpeech &&
-      pendingSpeech !== lastSpokenColor
-    ){
-
-      const next =
-      pendingSpeech;
-
-      pendingSpeech = null;
-
-      speak(next);
+      speechQueue = [
+        speechQueue[speechQueue.length - 1]
+      ];
     }
-  };
 
-  msg.onerror = ()=>{
+  }
 
-    speechLocked = false;
-  };
+/* ===== adiciona na fila ===== */
 
-  speechSynthesis.speak(msg);
+  speechQueue.push(text);
+
+/* ===== inicia processamento ===== */
+
+  processSpeechQueue();
 }
 
 /* ================= TOGGLE AUDIO ================= */
@@ -426,11 +460,11 @@ function toggleVoice(){
 
   speechSynthesis.cancel();
 
-  speechLocked = false;
+  speechQueue = [];
 
-  pendingSpeech = null;
+  speechRunning = false;
 
-  lastSpokenColor = "";
+  lastQueuedText = "";
 
   alert(
     "Áudio: " +
@@ -785,16 +819,12 @@ function detectUniversalColor(r,g,b){
 
   const l = hsl.l;
 
-/* ===== BRANCO ===== */
-
   if(
     s <= 12 &&
     l >= 84
   ){
     return "Branco";
   }
-
-/* ===== PRETO ===== */
 
   if(
     s <= 15 &&
@@ -803,15 +833,11 @@ function detectUniversalColor(r,g,b){
     return "Preto";
   }
 
-/* ===== CINZA ===== */
-
   if(
     s <= 15
   ){
     return "Cinza";
   }
-
-/* ===== vermelho ===== */
 
   if(
     (h >= 0 && h <= 12) ||
@@ -820,16 +846,12 @@ function detectUniversalColor(r,g,b){
     return "Vermelho";
   }
 
-/* ===== rosa ===== */
-
   if(
     h >= 312 &&
     h <= 344
   ){
     return "Rosa";
   }
-
-/* ===== laranja ===== */
 
   if(
     h >= 13 &&
@@ -838,16 +860,12 @@ function detectUniversalColor(r,g,b){
     return "Laranja";
   }
 
-/* ===== amarelo ===== */
-
   if(
     h >= 39 &&
     h <= 68
   ){
     return "Amarelo";
   }
-
-/* ===== verde ===== */
 
   if(
     h >= 69 &&
@@ -856,16 +874,12 @@ function detectUniversalColor(r,g,b){
     return "Verde";
   }
 
-/* ===== azul ===== */
-
   if(
     h >= 166 &&
     h <= 260
   ){
     return "Azul";
   }
-
-/* ===== roxo ===== */
 
   if(
     h >= 261 &&
@@ -982,11 +996,8 @@ function moveLoop(){
     ? "Movimento: analisando..."
     : "Movimento: " + colorName;
 
-/* ===== SOMENTE fala quando mudar ===== */
-
     if(
-      colorName !== "" &&
-      colorName !== lastSpokenColor
+      colorName !== ""
     ){
 
       speak(colorName);
@@ -1013,11 +1024,9 @@ function setMode(m){
 
   compareALab = null;
 
-  lastSpokenColor = "";
+  speechQueue = [];
 
-  speechLocked = false;
-
-  pendingSpeech = null;
+  speechRunning = false;
 
   speechSynthesis.cancel();
 
@@ -1283,14 +1292,10 @@ video.addEventListener("click",(e)=>{
   const sig =
   captureRaw(x,y);
 
-/* ================= ESTATICO ================= */
-
   if(mode === "static"){
 
     analyzeOEM();
   }
-
-/* ================= COMPARE POINT ================= */
 
   if(mode === "comparePoint"){
 
@@ -1354,8 +1359,6 @@ video.addEventListener("click",(e)=>{
       compareStep = 0;
     }
   }
-
-/* ================= DATABASE ================= */
 
   if(mode === "compareDatabase"){
 
