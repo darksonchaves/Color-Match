@@ -297,26 +297,34 @@ let compareStep = 0;
 
 let selectedDatabaseColor = null;
 
-/* ================= AUDIO ================= */
+/* ================= AUDIO ESTÁVEL ================= */
 
 /*
-ALTERAÇÃO OFICIAL:
-Sistema de fila estável para impedir:
-- mistura de falas
-- sobreposição
-- delay quebrado
-- bug do Android SpeechSynthesis
+CORREÇÃO OFICIAL:
+- elimina repetição infinita
+- elimina sobreposição
+- elimina áudio misturado
+- elimina travamentos Android TTS
+- impede spam contínuo
 */
 
 let speechQueue = [];
 
 let speechRunning = false;
 
-let lastQueuedText = "";
+let lastSpokenText = "";
 
 let lastSpeechTime = 0;
 
-let speechCooldown = 1200;
+const speechCooldown = 1800;
+
+/* ===== estabilidade ===== */
+
+let stableColor = "";
+
+let stableFrames = 0;
+
+const MIN_STABLE_FRAMES = 10;
 
 /* ================= FLASH ================= */
 
@@ -357,7 +365,7 @@ navigator.mediaDevices.getUserMedia({
 
 });
 
-/* ================= AUDIO ESTÁVEL ================= */
+/* ================= PROCESSADOR DE VOZ ================= */
 
 function processSpeechQueue(){
 
@@ -369,14 +377,15 @@ function processSpeechQueue(){
 
   speechRunning = true;
 
-  const text = speechQueue.shift();
+  const text =
+  speechQueue.shift();
 
   const msg =
   new SpeechSynthesisUtterance(text);
 
   msg.lang = "pt-BR";
 
-  msg.rate = 1.15;
+  msg.rate = 1.10;
 
   msg.pitch = 1;
 
@@ -390,8 +399,7 @@ function processSpeechQueue(){
 
       processSpeechQueue();
 
-    },200);
-
+    },250);
   };
 
   msg.onerror = ()=>{
@@ -403,11 +411,12 @@ function processSpeechQueue(){
       processSpeechQueue();
 
     },300);
-
   };
 
   speechSynthesis.speak(msg);
 }
+
+/* ================= FALA ================= */
 
 function speak(text){
 
@@ -417,37 +426,29 @@ function speak(text){
 
   const now = Date.now();
 
-/* ===== evita spam rápido ===== */
+/* ===== evita repetição ===== */
 
   if(
-    text === lastQueuedText &&
+    text === lastSpokenText &&
     now - lastSpeechTime < speechCooldown
   ){
     return;
   }
 
-  lastQueuedText = text;
+  lastSpokenText = text;
 
   lastSpeechTime = now;
 
-/* ===== limpa travamentos do Android ===== */
+/* ===== impede fila infinita ===== */
 
-  if(speechSynthesis.speaking){
+  if(speechQueue.length > 1){
 
-    if(speechQueue.length > 2){
-
-      speechQueue = [
-        speechQueue[speechQueue.length - 1]
-      ];
-    }
-
+    speechQueue = [
+      speechQueue[speechQueue.length - 1]
+    ];
   }
 
-/* ===== adiciona na fila ===== */
-
   speechQueue.push(text);
-
-/* ===== inicia processamento ===== */
 
   processSpeechQueue();
 }
@@ -464,7 +465,11 @@ function toggleVoice(){
 
   speechRunning = false;
 
-  lastQueuedText = "";
+  lastSpokenText = "";
+
+  stableColor = "";
+
+  stableFrames = 0;
 
   alert(
     "Áudio: " +
@@ -996,11 +1001,30 @@ function moveLoop(){
     ? "Movimento: analisando..."
     : "Movimento: " + colorName;
 
-    if(
-      colorName !== ""
-    ){
+/* ===== estabilidade real ===== */
 
-      speak(colorName);
+    if(colorName !== ""){
+
+      if(colorName === stableColor){
+
+        stableFrames++;
+
+      }else{
+
+        stableColor = colorName;
+
+        stableFrames = 0;
+      }
+
+      if(
+        stableFrames >=
+        MIN_STABLE_FRAMES
+      ){
+
+        speak(colorName);
+
+        stableFrames = 0;
+      }
     }
 
   }else{
@@ -1027,6 +1051,10 @@ function setMode(m){
   speechQueue = [];
 
   speechRunning = false;
+
+  stableColor = "";
+
+  stableFrames = 0;
 
   speechSynthesis.cancel();
 
@@ -1069,303 +1097,6 @@ function setMode(m){
     moveLoop();
   }
 }
-
-/* ================= PESQUISA ================= */
-
-function searchBrand(){
-
-  const brand =
-
-  document.getElementById("brandSearch")
-  .value
-  .trim()
-  .toLowerCase();
-
-  const models =
-
-  [...new Set(
-
-    oemDatabase
-
-    .filter(item=>
-
-      item.brand.toLowerCase()
-      .includes(brand)
-
-    )
-
-    .map(item=>item.model)
-
-  )]
-
-  .sort();
-
-  const select =
-  document.getElementById("modelSelect");
-
-  select.innerHTML =
-
-  `<option value="">
-  Selecione o modelo
-  </option>`;
-
-  models.forEach(model=>{
-
-    select.innerHTML +=
-
-    `<option value="${model}">
-      ${model}
-    </option>`;
-
-  });
-
-  document.getElementById("resultList")
-  .innerHTML = "";
-}
-
-/* ================= MOSTRAR CORES ================= */
-
-function showModelColors(){
-
-  const model =
-  document.getElementById("modelSelect")
-  .value;
-
-  const resultList =
-  document.getElementById("resultList");
-
-  resultList.innerHTML = "";
-
-  const colors =
-
-  oemDatabase
-
-  .filter(item=>item.model===model)
-
-  .sort((a,b)=>
-    a.name.localeCompare(b.name)
-  );
-
-  colors.forEach((item,index)=>{
-
-    resultList.innerHTML +=
-
-    `<div
-    class="item"
-    onclick="selectDatabaseColor(${index},'${item.name}')">
-
-      <span
-      class="colorBox"
-      style="
-      background:rgb(
-      ${item.rgb.r},
-      ${item.rgb.g},
-      ${item.rgb.b}
-      )">
-      </span>
-
-      <strong>${item.name}</strong>
-
-      <br>
-
-      Código:
-      ${item.code}
-
-      <br>
-
-      Ano:
-      ${item.year}
-
-      <br>
-
-      Modelo:
-      ${item.model}
-
-      <br>
-
-      Montadora:
-      ${item.brand}
-
-    </div>`;
-
-  });
-}
-
-/* ================= SELECIONA DATABASE ================= */
-
-function selectDatabaseColor(index,colorName){
-
-  const model =
-  document.getElementById("modelSelect")
-  .value;
-
-  const colors =
-
-  oemDatabase
-
-  .filter(item=>item.model===model)
-
-  .sort((a,b)=>
-    a.name.localeCompare(b.name)
-  );
-
-  selectedDatabaseColor =
-  colors[index];
-
-  txt.innerText =
-
-  "Cor de referência selecionada: "
-  + colorName;
-
-  speak(colorName);
-}
-
-/* ================= COMPARAR DATABASE ================= */
-
-function compareWithDatabase(sig){
-
-  if(!selectedDatabaseColor){
-
-    alert(
-      "Selecione uma cor da base de dados primeiro"
-    );
-
-    return;
-  }
-
-  const targetLab =
-  rgbToLab(sig.r,sig.g,sig.b);
-
-  const similarity =
-
-  Math.max(
-    0,
-    100 -
-    deltaE(
-      targetLab,
-      selectedDatabaseColor.lab
-    )
-  )
-
-  .toFixed(1);
-
-  const result =
-
-  "BASE OEM: "
-  + selectedDatabaseColor.name
-
-  + " | NOVA AMOSTRA: "
-
-  + similarity
-  + "% similar";
-
-  txt.innerText =
-  result;
-
-  speak(
-    similarity
-    + " porcento similar"
-  );
-}
-
-/* ================= CLIQUE ================= */
-
-video.addEventListener("click",(e)=>{
-
-  if(processingPaused) return;
-
-  const rect =
-  video.getBoundingClientRect();
-
-  const x =
-
-  (e.clientX - rect.left)
-  *
-  (video.videoWidth / rect.width);
-
-  const y =
-
-  (e.clientY - rect.top)
-  *
-  (video.videoHeight / rect.height);
-
-  const sig =
-  captureRaw(x,y);
-
-  if(mode === "static"){
-
-    analyzeOEM();
-  }
-
-  if(mode === "comparePoint"){
-
-    if(compareStep === 0){
-
-      compareA = sig;
-
-      compareALab =
-
-      rgbToLab(
-        sig.r,
-        sig.g,
-        sig.b
-      );
-
-      compareStep = 1;
-
-      txt.innerText =
-      "Primeiro ponto capturado";
-
-      speak(
-        "Primeiro ponto capturado"
-      );
-
-    }
-
-    else{
-
-      const compareBLab =
-
-      rgbToLab(
-        sig.r,
-        sig.g,
-        sig.b
-      );
-
-      const similarity =
-
-      Math.max(
-        0,
-        100 -
-        deltaE(
-          compareALab,
-          compareBLab
-        )
-      );
-
-      txt.innerText =
-
-      "Similaridade entre pontos: "
-      +
-      similarity.toFixed(1)
-      +
-      "%";
-
-      speak(
-        similarity.toFixed(1)
-        + " porcento similar"
-      );
-
-      compareStep = 0;
-    }
-  }
-
-  if(mode === "compareDatabase"){
-
-    compareWithDatabase(sig);
-  }
-
-});
 
 </script>
 
