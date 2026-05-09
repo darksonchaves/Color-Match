@@ -29,9 +29,15 @@ h2{
   font-size:28px;
 }
 
-video{
+#videoContainer{
+  position:relative;
+  display:inline-block;
   width:92%;
   max-width:900px;
+}
+
+video{
+  width:100%;
   min-height:260px;
   border-radius:12px;
   border:2px solid #333;
@@ -87,7 +93,7 @@ canvas{
 }
 
 #cross{
-  position:fixed;
+  position:absolute;
   top:50%;
   left:50%;
   width:34px;
@@ -260,7 +266,7 @@ Reconhecimento puro baseado na leitura real da câmera
 
 </div>
 
-<div style="position:relative;display:inline-block;width:100%;">
+<div id="videoContainer">
 
 <video
 id="video"
@@ -345,6 +351,9 @@ Inicializando câmera...
 const video =
 document.getElementById("video");
 
+const videoContainer =
+document.getElementById("videoContainer");
+
 const canvasA =
 document.getElementById("canvasA");
 
@@ -400,8 +409,6 @@ let selectedDatabaseColor = null;
 
 let currentSpokenColor = "";
 
-let isSpeaking = false;
-
 /* ================= ESTABILIDADE ================= */
 
 let detectedColor = "";
@@ -425,15 +432,6 @@ let processingPaused = false;
 async function startCamera(){
 
   try{
-
-    if(
-      !navigator.mediaDevices ||
-      !navigator.mediaDevices.getUserMedia
-    ){
-      throw new Error(
-        "getUserMedia não suportado"
-      );
-    }
 
     const stream =
     await navigator.mediaDevices.getUserMedia({
@@ -507,28 +505,10 @@ function speak(text){
 
   msg.lang = "pt-BR";
 
-  msg.rate = 1;
-
-  msg.pitch = 1;
-
-  msg.volume = 1;
-
-  isSpeaking = true;
-
-  msg.onend = ()=>{
-
-    isSpeaking = false;
-  };
-
-  msg.onerror = ()=>{
-
-    isSpeaking = false;
-  };
-
   speechSynthesis.speak(msg);
 }
 
-/* ================= TOGGLE AUDIO ================= */
+/* ================= AUDIO ================= */
 
 function toggleVoice(){
 
@@ -537,8 +517,6 @@ function toggleVoice(){
   speechSynthesis.cancel();
 
   currentSpokenColor = "";
-
-  isSpeaking = false;
 
   alert(
     "Áudio: " +
@@ -770,9 +748,7 @@ function deltaE(a,b){
   return Math.sqrt(
 
     (a.L-b.L)**2 +
-
     (a.a-b.a)**2 +
-
     (a.b-b.b)**2
   );
 }
@@ -823,11 +799,9 @@ oemDatabase.forEach(item=>{
 
   item.lab =
   rgbToLab(
-
     item.rgb.r,
     item.rgb.g,
     item.rgb.b
-
   );
 });
 
@@ -887,15 +861,6 @@ function captureRaw(x,y){
     canvasA.height - py
   );
 
-  if(width <= 0 || height <= 0){
-
-    return{
-      r:0,
-      g:0,
-      b:0
-    };
-  }
-
   const data =
   ctxA.getImageData(
     px,
@@ -911,34 +876,11 @@ function captureRaw(x,y){
 
   for(let i=0;i<data.length;i+=4){
 
-    const rr = data[i];
-    const gg = data[i+1];
-    const bb = data[i+2];
-
-    const brightness =
-    (rr+gg+bb)/3;
-
-    if(
-      brightness < 12 ||
-      brightness > 245
-    ){
-      continue;
-    }
-
-    r += rr;
-    g += gg;
-    b += bb;
+    r += data[i];
+    g += data[i+1];
+    b += data[i+2];
 
     c++;
-  }
-
-  if(c===0){
-
-    return{
-      r:0,
-      g:0,
-      b:0
-    };
   }
 
   return{
@@ -1007,7 +949,7 @@ function detectUniversalColor(r,g,b){
   return "Indefinido";
 }
 
-/* ================= OEM MATCH ================= */
+/* ================= OEM ================= */
 
 function detectOEM(sig){
 
@@ -1039,10 +981,8 @@ function detectOEM(sig){
   }
 
   return{
-
     match:best,
     delta:bestDelta
-
   };
 }
 
@@ -1060,22 +1000,12 @@ function analyzeOEM(){
 
   const sig =
   captureRaw(
-
     video.videoWidth/2,
     video.videoHeight/2
-
   );
 
   const result =
   detectOEM(sig);
-
-  if(!result.match){
-
-    txt.innerText =
-    "Nenhuma cor encontrada";
-
-    return;
-  }
 
   const similarity =
 
@@ -1123,19 +1053,15 @@ function moveLoop(){
 
   const sig =
   captureRaw(
-
     video.videoWidth/2,
     video.videoHeight/2
-
   );
 
   const color =
   detectUniversalColor(
-
     sig.r,
     sig.g,
     sig.b
-
   );
 
   txt.innerText =
@@ -1190,16 +1116,18 @@ function setMode(m){
   pointA.style.display = "none";
   pointB.style.display = "none";
 
-  cross.style.display =
-
-  (
+  if(
     m === "move" ||
     m === "comparePoint" ||
     m === "compareDatabase"
-  )
+  ){
 
-  ? "block"
-  : "none";
+    cross.style.display = "block";
+
+  }else{
+
+    cross.style.display = "none";
+  }
 
   txt.innerText =
   "Modo: " + m;
@@ -1297,13 +1225,6 @@ function showModelColors(){
 
   .filter(item=>
     item.model === model
-  )
-
-  .sort((a,b)=>
-
-    a.name.localeCompare(
-      b.name
-    )
   );
 
   colors.forEach((item,index)=>{
@@ -1356,13 +1277,6 @@ function selectDatabaseColor(index,colorName){
 
   .filter(item=>
     item.model === model
-  )
-
-  .sort((a,b)=>
-
-    a.name.localeCompare(
-      b.name
-    )
   );
 
   selectedDatabaseColor =
@@ -1458,6 +1372,12 @@ video.addEventListener(
   const sig =
   captureRaw(x,y);
 
+  const markerX =
+  e.clientX - rect.left;
+
+  const markerY =
+  e.clientY - rect.top;
+
   if(mode === "static"){
 
     analyzeOEM();
@@ -1480,10 +1400,10 @@ video.addEventListener(
       compareStep = 1;
 
       pointA.style.left =
-      e.clientX + "px";
+      markerX + "px";
 
       pointA.style.top =
-      e.clientY + "px";
+      markerY + "px";
 
       pointA.style.display =
       "block";
@@ -1501,10 +1421,10 @@ video.addEventListener(
     }else{
 
       pointB.style.left =
-      e.clientX + "px";
+      markerX + "px";
 
       pointB.style.top =
-      e.clientY + "px";
+      markerY + "px";
 
       pointB.style.display =
       "block";
@@ -1545,7 +1465,7 @@ video.addEventListener(
 
         compareStep = 0;
 
-      },300);
+      },500);
     }
   }
 
