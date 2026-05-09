@@ -2,9 +2,7 @@
 <html lang="pt-BR">
 
 <head>
-
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>
@@ -135,8 +133,18 @@ canvas{
   padding:10px;
 }
 
-</style>
+#universalBox{
+  margin-top:15px;
+  background:#181818;
+  padding:12px;
+  border-top:2px solid #333;
+}
 
+.modeActive{
+  background:#00695c !important;
+}
+
+</style>
 </head>
 
 <body>
@@ -175,21 +183,40 @@ Comparar Base de Dados
 
 <br><br>
 
+<!-- MODOS UNIVERSAIS -->
+
+<div id="universalBox">
+
+<h3>
+Modos Universais
+</h3>
+
+<button id="universalBtn" onclick="toggleUniversalMode()">
+Modo Universal OFF
+</button>
+
+<p style="font-size:14px;color:#aaa;">
+Filtro OEM inteligente ativo somente na leitura da cor.
+Sem alterar estrutura principal do sistema.
+</p>
+
+</div>
+
 <video id="video" autoplay playsinline></video>
 
 <div id="cross"></div>
 
 <div id="panel">
 
-  <div class="box">
-    <canvas id="canvasA"></canvas>
-    <div>Referência</div>
-  </div>
+<div class="box">
+<canvas id="canvasA"></canvas>
+<div>Referência</div>
+</div>
 
-  <div class="box">
-    <canvas id="canvasB"></canvas>
-    <div>Comparação</div>
-  </div>
+<div class="box">
+<canvas id="canvasB"></canvas>
+<div>Comparação</div>
+</div>
 
 </div>
 
@@ -204,7 +231,7 @@ type="text"
 id="brandSearch"
 placeholder="Digite a montadora..."
 oninput="searchBrand()"
->
+
 
 <br>
 
@@ -246,13 +273,14 @@ canvasB.getContext("2d");
 const cross =
 document.getElementById("cross");
 
+const txt =
+document.getElementById("txt");
+
 /* ================= CONTROLE ================= */
 
 let mode = "static";
 
 let voice = true;
-
-let lastSpeak = "";
 
 let compareA = null;
 
@@ -261,6 +289,10 @@ let compareALab = null;
 let compareStep = 0;
 
 let selectedDatabaseColor = null;
+
+/* ================= UNIVERSAL ================= */
+
+let universalMode = false;
 
 /* ================= FLASH ================= */
 
@@ -271,6 +303,45 @@ let flashOn = false;
 let flashBusy = false;
 
 let processingPaused = false;
+
+/* ================= DATABASE OEM ================= */
+
+const database = {
+
+  Toyota:[
+    {
+      name:"Super White",
+      rgb:[240,240,235]
+    },
+    {
+      name:"Black Mica",
+      rgb:[20,20,20]
+    }
+  ],
+
+  Honda:[
+    {
+      name:"Taffeta White",
+      rgb:[245,245,240]
+    },
+    {
+      name:"Crystal Black",
+      rgb:[15,15,15]
+    }
+  ],
+
+  BMW:[
+    {
+      name:"Alpine White",
+      rgb:[250,250,248]
+    },
+    {
+      name:"Mineral Grey",
+      rgb:[90,90,90]
+    }
+  ]
+
+};
 
 /* ================= CAMERA ================= */
 
@@ -311,6 +382,64 @@ function speak(text){
   msg.lang = "pt-BR";
 
   speechSynthesis.speak(msg);
+}
+
+/* ================= MODO ================= */
+
+function setMode(newMode){
+
+  mode = newMode;
+
+  compareStep = 0;
+
+  txt.innerHTML =
+  "Modo atual: " + newMode;
+
+  if(
+    mode === "comparePoint" ||
+    mode === "compareDatabase"
+  ){
+    cross.style.display = "block";
+  }else{
+    cross.style.display = "none";
+  }
+
+}
+
+/* ================= UNIVERSAL MODE ================= */
+
+function toggleUniversalMode(){
+
+  universalMode = !universalMode;
+
+  const btn =
+  document.getElementById("universalBtn");
+
+  if(universalMode){
+
+    btn.innerHTML =
+    "Modo Universal ON";
+
+    btn.classList.add("modeActive");
+
+    txt.innerHTML =
+    "Filtro universal ativado";
+
+    speak("Modo universal ativado");
+
+  }else{
+
+    btn.innerHTML =
+    "Modo Universal OFF";
+
+    btn.classList.remove("modeActive");
+
+    txt.innerHTML =
+    "Filtro universal desativado";
+
+    speak("Modo universal desativado");
+  }
+
 }
 
 /* ================= FLASH ================= */
@@ -374,669 +503,350 @@ async function toggleFlash(){
   },500);
 }
 
-/* ================= RGB -> LAB ================= */
+/* ================= VOICE ================= */
+
+function toggleVoice(){
+
+  voice = !voice;
+
+  txt.innerHTML =
+  voice ?
+  "Áudio ativado" :
+  "Áudio desativado";
+
+}
+
+/* ================= RGB ================= */
 
 function rgbToLab(r,g,b){
 
-  r/=255;
-  g/=255;
-  b/=255;
+  r /= 255;
+  g /= 255;
+  b /= 255;
 
-  [r,g,b]=[r,g,b].map(v=>
+  r = r > 0.04045 ?
+  Math.pow((r + 0.055)/1.055,2.4)
+  : r/12.92;
 
-    v>0.04045
-    ? Math.pow((v+0.055)/1.055,2.4)
-    : v/12.92
+  g = g > 0.04045 ?
+  Math.pow((g + 0.055)/1.055,2.4)
+  : g/12.92;
 
-  );
+  b = b > 0.04045 ?
+  Math.pow((b + 0.055)/1.055,2.4)
+  : b/12.92;
 
   let x =
-  r*0.4124 +
-  g*0.3576 +
-  b*0.1805;
+  (r*0.4124 + g*0.3576 + b*0.1805)/0.95047;
 
   let y =
-  r*0.2126 +
-  g*0.7152 +
-  b*0.0722;
+  (r*0.2126 + g*0.7152 + b*0.0722)/1.00000;
 
   let z =
-  r*0.0193 +
-  g*0.1192 +
-  b*0.9505;
+  (r*0.0193 + g*0.1192 + b*0.9505)/1.08883;
 
-  x/=0.95047;
-  y/=1;
-  z/=1.08883;
+  x = x > 0.008856 ?
+  Math.pow(x,1/3)
+  : (7.787*x)+(16/116);
 
-  [x,y,z]=[x,y,z].map(v=>
+  y = y > 0.008856 ?
+  Math.pow(y,1/3)
+  : (7.787*y)+(16/116);
 
-    v>0.008856
-    ? Math.cbrt(v)
-    : (7.787*v)+(16/116)
+  z = z > 0.008856 ?
+  Math.pow(z,1/3)
+  : (7.787*z)+(16/116);
 
-  );
+  return {
 
-  return{
-
-    L:(116*y)-16,
+    l:(116*y)-16,
     a:500*(x-y),
     b:200*(y-z)
 
   };
+
 }
 
 /* ================= DELTA E ================= */
 
-function deltaE(a,b){
+function deltaE(labA,labB){
 
   return Math.sqrt(
 
-    (a.L-b.L)**2 +
-    (a.a-b.a)**2 +
-    (a.b-b.b)**2
+    Math.pow(labA.l-labB.l,2)+
+    Math.pow(labA.a-labB.a,2)+
+    Math.pow(labA.b-labB.b,2)
 
   );
+
 }
 
-/* ================= DATABASE ================= */
+/* ================= UNIVERSAL FILTER ================= */
 
-const oemDatabase = [
+function applyUniversalFilter(r,g,b){
 
-{
-  brand:"Toyota",
-  model:"Corolla",
-  year:"2024",
-  code:"040",
-  name:"Super White II",
-  rgb:{r:244,g:244,b:241}
-},
+  if(!universalMode){
 
-{
-  brand:"Toyota",
-  model:"Corolla",
-  year:"2024",
-  code:"1F7",
-  name:"Classic Silver Metallic",
-  rgb:{r:169,g:173,b:177}
-},
+    return {r,g,b};
+  }
 
-{
-  brand:"Toyota",
-  model:"Corolla",
-  year:"2024",
-  code:"218",
-  name:"Midnight Black Metallic",
-  rgb:{r:27,g:27,b:27}
-},
+  // neutralização simples de brilho/reflexo
 
-{
-  brand:"Toyota",
-  model:"Corolla",
-  year:"2024",
-  code:"3U5",
-  name:"Emotional Red",
-  rgb:{r:126,g:31,b:36}
-},
+  const avg =
+  (r + g + b)/3;
 
-{
-  brand:"Toyota",
-  model:"Hilux",
-  year:"2024",
-  code:"040",
-  name:"Super White II",
-  rgb:{r:244,g:244,b:241}
-},
+  const factor =
+  128 / avg;
 
-{
-  brand:"Toyota",
-  model:"Hilux",
-  year:"2024",
-  code:"1G3",
-  name:"Graphite Metallic",
-  rgb:{r:92,g:95,b:102}
-},
+  let nr = r * factor;
+  let ng = g * factor;
+  let nb = b * factor;
 
-{
-  brand:"Toyota",
-  model:"SW4",
-  year:"2024",
-  code:"070",
-  name:"White Pearl",
-  rgb:{r:247,g:247,b:244}
+  nr = Math.max(0,Math.min(255,nr));
+  ng = Math.max(0,Math.min(255,ng));
+  nb = Math.max(0,Math.min(255,nb));
+
+  return {
+
+    r:Math.round(nr),
+    g:Math.round(ng),
+    b:Math.round(nb)
+
+  };
+
 }
-
-];
-
-/* ================= PREPARA LAB ================= */
-
-oemDatabase.forEach(item=>{
-
-  item.lab = rgbToLab(
-    item.rgb.r,
-    item.rgb.g,
-    item.rgb.b
-  );
-
-});
 
 /* ================= CAPTURA ================= */
 
-function captureRaw(x,y){
+function captureCenter(){
 
-  if(
-    !video.videoWidth ||
-    processingPaused
-  ){
-    return {r:0,g:0,b:0};
-  }
+  const temp =
+  document.createElement("canvas");
 
-  canvasA.width = video.videoWidth;
-  canvasA.height = video.videoHeight;
+  temp.width = video.videoWidth;
+  temp.height = video.videoHeight;
 
-  ctxA.drawImage(video,0,0);
+  const tctx =
+  temp.getContext("2d");
 
-  const s = 12;
+  tctx.drawImage(
+    video,
+    0,
+    0
+  );
 
-  const data = ctxA.getImageData(
-    x-s,
-    y-s,
-    s*2,
-    s*2
+  const x =
+  temp.width/2;
+
+  const y =
+  temp.height/2;
+
+  const data =
+  tctx.getImageData(
+    x,
+    y,
+    1,
+    1
   ).data;
 
-  let r=0,g=0,b=0,c=0;
+  let r = data[0];
+  let g = data[1];
+  let b = data[2];
 
-  for(let i=0;i<data.length;i+=4){
+  const filtered =
+  applyUniversalFilter(r,g,b);
 
-    r += data[i];
-    g += data[i+1];
-    b += data[i+2];
+  return {
 
-    c++;
-  }
-
-  return{
-
-    r:Math.round(r/c),
-    g:Math.round(g/c),
-    b:Math.round(b/c)
+    r:filtered.r,
+    g:filtered.g,
+    b:filtered.b
 
   };
+
 }
 
-/* ================= OEM MATCH ================= */
+/* ================= OEM ================= */
 
-function detectOEM(sig){
+function analyzeOEM(){
 
-  const targetLab =
-  rgbToLab(sig.r,sig.g,sig.b);
+  const rgb =
+  captureCenter();
+
+  const lab =
+  rgbToLab(
+    rgb.r,
+    rgb.g,
+    rgb.b
+  );
 
   let best = null;
 
   let bestDelta = 999;
 
-  for(const color of oemDatabase){
+  Object.keys(database).forEach(brand=>{
 
-    const d =
-    deltaE(targetLab,color.lab);
+    database[brand].forEach(color=>{
 
-    if(d < bestDelta){
+      const lab2 =
+      rgbToLab(
+        color.rgb[0],
+        color.rgb[1],
+        color.rgb[2]
+      );
 
-      bestDelta = d;
-      best = color;
-    }
-  }
+      const d =
+      deltaE(lab,lab2);
 
-  return{
-    match:best,
-    delta:bestDelta
-  };
-}
+      if(d < bestDelta){
 
-/* ================= ANALYZER ================= */
+        bestDelta = d;
 
-function analyzeOEM(){
+        best = {
 
-  const sig = captureRaw(
-    video.videoWidth/2,
-    video.videoHeight/2
+          brand,
+          name:color.name,
+          delta:d
+
+        };
+
+      }
+
+    });
+
+  });
+
+  txt.innerHTML =
+
+  `
+  Melhor Match OEM:
+  <br><br>
+  ${best.brand}
+  <br>
+  ${best.name}
+  <br><br>
+  DeltaE:
+  ${best.delta.toFixed(2)}
+  `;
+
+  speak(
+    "Melhor correspondência encontrada"
   );
 
-  const result =
-  detectOEM(sig);
-
-  const similarity =
-  Math.max(
-    0,
-    100 - result.delta
-  ).toFixed(1);
-
-  const text =
-
-  result.match.brand
-  + " | "
-  + result.match.model
-  + " | "
-  + result.match.year
-  + " | "
-  + result.match.code
-  + " | "
-  + result.match.name
-  + " | "
-  + similarity
-  + "%";
-
-  document.getElementById("txt").innerText =
-  text;
-
-  speak(result.match.name);
 }
 
 /* ================= PESQUISA ================= */
 
 function searchBrand(){
 
-  const brand =
-
-  document.getElementById("brandSearch")
+  const search =
+  document
+  .getElementById("brandSearch")
   .value
-  .trim()
   .toLowerCase();
 
-  const models =
-
-  [...new Set(
-
-    oemDatabase
-
-    .filter(item=>
-
-      item.brand.toLowerCase()
-      .includes(brand)
-
-    )
-
-    .map(item=>item.model)
-
-  )]
-
-  .sort();
-
-  const select =
+  const modelSelect =
   document.getElementById("modelSelect");
 
-  select.innerHTML =
+  modelSelect.innerHTML =
+  <option value="">Selecione o modelo</option>;
 
-  `<option value="">
-  Selecione o modelo
-  </option>`;
+  Object.keys(database).forEach(brand=>{
 
-  models.forEach(model=>{
+    if(
+      brand.toLowerCase()
+      .includes(search)
+    ){
 
-    select.innerHTML +=
+      const option =
+      document.createElement("option");
 
-    `<option value="${model}">
-      ${model}
-    </option>`;
+      option.value = brand;
+      option.innerHTML = brand;
+
+      modelSelect.appendChild(option);
+
+    }
 
   });
 
-  document.getElementById("resultList")
-  .innerHTML = "";
 }
 
 /* ================= MOSTRAR CORES ================= */
 
 function showModelColors(){
 
-  const model =
-  document.getElementById("modelSelect")
-  .value;
+  const brand =
+  document.getElementById("modelSelect").value;
 
-  const resultList =
+  const result =
   document.getElementById("resultList");
 
-  resultList.innerHTML = "";
+  result.innerHTML = "";
 
-  const colors =
+  if(!database[brand]) return;
 
-  oemDatabase
+  database[brand].forEach(color=>{
 
-  .filter(item=>item.model===model)
+    const div =
+    document.createElement("div");
 
-  .sort((a,b)=>
-    a.name.localeCompare(b.name)
-  );
+    div.className = "item";
 
-  colors.forEach((item,index)=>{
-
-    resultList.innerHTML +=
-
-    `<div
-    class="item"
-    onclick="selectDatabaseColor(${index},'${item.name}')">
+    div.innerHTML = `
 
       <span
       class="colorBox"
       style="
       background:rgb(
-      ${item.rgb.r},
-      ${item.rgb.g},
-      ${item.rgb.b}
+      ${color.rgb[0]},
+      ${color.rgb[1]},
+      ${color.rgb[2]}
       )">
       </span>
 
-      <strong>${item.name}</strong>
+      ${color.name}
 
-      <br>
+    `;
 
-      Código:
-      ${item.code}
-
-      <br>
-
-      Ano:
-      ${item.year}
-
-      <br>
-
-      Modelo:
-      ${item.model}
-
-      <br>
-
-      Montadora:
-      ${item.brand}
-
-    </div>`;
+    result.appendChild(div);
 
   });
 
 }
 
-/* ================= SELECIONA COR DATABASE ================= */
+/* ================= LOOP ================= */
 
-function selectDatabaseColor(index,colorName){
-
-  const model =
-  document.getElementById("modelSelect")
-  .value;
-
-  const colors =
-
-  oemDatabase
-
-  .filter(item=>item.model===model)
-
-  .sort((a,b)=>
-    a.name.localeCompare(b.name)
-  );
-
-  selectedDatabaseColor =
-  colors[index];
-
-  document.getElementById("txt").innerText =
-
-  "Cor de referência selecionada: "
-  + colorName;
-
-  speak(colorName);
-}
-
-/* ================= COMPARAR DATABASE ================= */
-
-function compareWithDatabase(sig){
-
-  if(!selectedDatabaseColor){
-
-    alert(
-      "Selecione uma cor da base de dados primeiro"
-    );
-
-    return;
-  }
-
-  const targetLab =
-  rgbToLab(sig.r,sig.g,sig.b);
-
-  const similarity =
-
-  Math.max(
-    0,
-    100 -
-    deltaE(
-      targetLab,
-      selectedDatabaseColor.lab
-    )
-  )
-
-  .toFixed(1);
-
-  const result =
-
-  "BASE OEM: "
-  + selectedDatabaseColor.name
-
-  + " | NOVA AMOSTRA: "
-
-  + similarity
-  + "% similar";
-
-  document.getElementById("txt").innerText =
-  result;
-
-  speak(
-    similarity
-    + " porcento similar"
-  );
-}
-
-/* ================= MOVIMENTO ================= */
-
-function moveLoop(){
-
-  if(mode !== "move") return;
-
-  if(processingPaused){
-
-    requestAnimationFrame(moveLoop);
-    return;
-  }
-
-  const sig =
-
-  captureRaw(
-    video.videoWidth/2,
-    video.videoHeight/2
-  );
-
-  document.getElementById("txt").innerText =
-
-  `RGB:
-  ${sig.r},
-  ${sig.g},
-  ${sig.b}`;
-
-  requestAnimationFrame(moveLoop);
-}
-
-/* ================= MODOS ================= */
-
-function setMode(m){
-
-  mode = m;
-
-  compareStep = 0;
-
-  compareA = null;
-
-  compareALab = null;
-
-  cross.style.display =
-
-  (
-    m === "move" ||
-    m === "comparePoint" ||
-    m === "compareDatabase"
-  )
-
-  ? "block"
-  : "none";
-
-  if(m === "comparePoint"){
-
-    document.getElementById("txt")
-    .innerText =
-
-    "Modo: COMPARAR PONTO A PONTO";
-
-  }
-
-  else if(m === "compareDatabase"){
-
-    document.getElementById("txt")
-    .innerText =
-
-    "Modo: COMPARAR COM BASE DE DADOS";
-
-  }
-
-  else{
-
-    document.getElementById("txt")
-    .innerText =
-
-    "Modo: "
-    + m.toUpperCase();
-
-  }
-
-  if(m === "move"){
-    moveLoop();
-  }
-}
-
-/* ================= CLIQUE ================= */
-
-video.addEventListener("click",(e)=>{
+setInterval(()=>{
 
   if(processingPaused) return;
 
-  const rect =
-  video.getBoundingClientRect();
+  if(
+    !video.videoWidth
+  ) return;
 
-  const x =
+  const rgb =
+  captureCenter();
 
-  (e.clientX - rect.left)
-  *
-  (video.videoWidth / rect.width);
+  canvasA.width = 120;
+  canvasA.height = 120;
 
-  const y =
+  ctxA.fillStyle = `
+  rgb(
+    ${rgb.r},
+    ${rgb.g},
+    ${rgb.b}
+  )
+  `;
 
-  (e.clientY - rect.top)
-  *
-  (video.videoHeight / rect.height);
-
-  const sig =
-  captureRaw(x,y);
-
-/* ================= ESTATICO ================= */
-
-  if(mode === "static"){
-
-    analyzeOEM();
-  }
-
-/* ================= COMPARAR PONTO A PONTO ================= */
-
-  if(mode === "comparePoint"){
-
-    if(compareStep === 0){
-
-      compareA = sig;
-
-      compareALab =
-
-      rgbToLab(
-        sig.r,
-        sig.g,
-        sig.b
-      );
-
-      compareStep = 1;
-
-      document.getElementById("txt")
-      .innerText =
-
-      "Primeiro ponto capturado";
-
-      speak(
-        "Primeiro ponto capturado"
-      );
-
-    }
-
-    else{
-
-      const compareBLab =
-
-      rgbToLab(
-        sig.r,
-        sig.g,
-        sig.b
-      );
-
-      const similarity =
-
-      Math.max(
-        0,
-        100 -
-        deltaE(
-          compareALab,
-          compareBLab
-        )
-      );
-
-      document.getElementById("txt")
-      .innerText =
-
-      "Similaridade entre pontos: "
-      +
-      similarity.toFixed(1)
-      +
-      "%";
-
-      speak(
-        similarity.toFixed(1)
-        + " porcento similar"
-      );
-
-      compareStep = 0;
-    }
-  }
-
-/* ================= COMPARAR DATABASE ================= */
-
-  if(mode === "compareDatabase"){
-
-    compareWithDatabase(sig);
-  }
-
-});
-
-/* ================= AUDIO ================= */
-
-function toggleVoice(){
-
-  voice = !voice;
-
-  alert(
-    "Áudio: "
-    +
-    (voice ? "ON" : "OFF")
+  ctxA.fillRect(
+    0,
+    0,
+    120,
+    120
   );
-}
+
+},200);
 
 </script>
 
