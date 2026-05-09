@@ -197,7 +197,7 @@ Universal OFF
 </button>
 
 <p style="font-size:14px;color:#aaa;">
-Filtro inteligente para cores lisas OEM
+Leitura bruta do sensor sem compensação artificial
 </p>
 
 </div>
@@ -362,9 +362,14 @@ navigator.mediaDevices.getUserMedia({
   streamTrack =
   stream.getVideoTracks()[0];
 
+  txt.innerHTML =
+  "Câmera iniciada";
+
 })
 
-.catch(()=>{
+.catch(error=>{
+
+  console.log(error);
 
   alert("Erro ao acessar câmera");
 
@@ -388,6 +393,7 @@ function speak(text){
   msg.lang = "pt-BR";
 
   speechSynthesis.speak(msg);
+
 }
 
 /* ================= TOGGLE VOICE ================= */
@@ -405,7 +411,7 @@ function toggleVoice(){
 
 }
 
-/* ================= MODO ================= */
+/* ================= MODOS ================= */
 
 function setMode(newMode){
 
@@ -422,9 +428,13 @@ function setMode(newMode){
     mode === "comparePoint" ||
     mode === "compareDatabase"
   ){
+
     cross.style.display = "block";
+
   }else{
+
     cross.style.display = "none";
+
   }
 
 }
@@ -461,6 +471,7 @@ function toggleUniversalMode(){
     "Modo universal desativado";
 
     speak("Modo universal desativado");
+
   }
 
 }
@@ -475,6 +486,7 @@ async function toggleFlash(){
 
     alert("Câmera não iniciada");
     return;
+
   }
 
   flashBusy = true;
@@ -491,9 +503,11 @@ async function toggleFlash(){
       alert("Flash não suportado");
 
       processingPaused = false;
+
       flashBusy = false;
 
       return;
+
     }
 
     flashOn = !flashOn;
@@ -517,13 +531,17 @@ async function toggleFlash(){
     flashOn = false;
 
     alert("Falha no flash");
+
   }
 
   processingPaused = false;
 
   setTimeout(()=>{
+
     flashBusy = false;
+
   },500);
+
 }
 
 /* ================= RGB -> LAB ================= */
@@ -591,39 +609,6 @@ function deltaE(labA,labB){
 
 }
 
-/* ================= UNIVERSAL FILTER ================= */
-
-function applyUniversalFilter(r,g,b){
-
-  if(!universalMode){
-
-    return {r,g,b};
-  }
-
-  const avg =
-  (r + g + b)/3;
-
-  const factor =
-  128 / avg;
-
-  let nr = r * factor;
-  let ng = g * factor;
-  let nb = b * factor;
-
-  nr = Math.max(0,Math.min(255,nr));
-  ng = Math.max(0,Math.min(255,ng));
-  nb = Math.max(0,Math.min(255,nb));
-
-  return {
-
-    r:Math.round(nr),
-    g:Math.round(ng),
-    b:Math.round(nb)
-
-  };
-
-}
-
 /* ================= CAPTURA ================= */
 
 function captureCenter(){
@@ -631,9 +616,11 @@ function captureCenter(){
   const temp =
   document.createElement("canvas");
 
-  temp.width = video.videoWidth;
+  temp.width =
+  video.videoWidth;
 
-  temp.height = video.videoHeight;
+  temp.height =
+  video.videoHeight;
 
   const tctx =
   temp.getContext("2d");
@@ -645,10 +632,10 @@ function captureCenter(){
   );
 
   const x =
-  temp.width / 2;
+  Math.floor(temp.width / 2);
 
   const y =
-  temp.height / 2;
+  Math.floor(temp.height / 2);
 
   const data =
   tctx.getImageData(
@@ -658,18 +645,11 @@ function captureCenter(){
     1
   ).data;
 
-  let r = data[0];
-  let g = data[1];
-  let b = data[2];
-
-  const filtered =
-  applyUniversalFilter(r,g,b);
-
   return {
 
-    r:filtered.r,
-    g:filtered.g,
-    b:filtered.b
+    r:data[0],
+    g:data[1],
+    b:data[2]
 
   };
 
@@ -697,6 +677,10 @@ function detectSimpleColor(r,g,b){
 
   if(b > r && b > g){
     return "Azul";
+  }
+
+  if(r > 180 && g > 180 && b < 100){
+    return "Amarelo";
   }
 
   return "Cor detectada";
