@@ -29,6 +29,7 @@ video{
   width:92%;
   border-radius:12px;
   border:2px solid #333;
+  object-fit:cover;
 }
 
 button{
@@ -193,12 +194,12 @@ Universal OFF
 </button>
 
 <p style="font-size:14px;color:#aaa;">
-Reconhecimento puro de cores primárias lisas
+Reconhecimento puro de cores lisas primárias
 </p>
 
 </div>
 
-<video id="video" autoplay playsinline></video>
+<video id="video" autoplay playsinline muted></video>
 
 <div id="cross"></div>
 
@@ -261,10 +262,16 @@ const canvasB =
 document.getElementById("canvasB");
 
 const ctxA =
-canvasA.getContext("2d",{willReadFrequently:true});
+canvasA.getContext(
+"2d",
+{willReadFrequently:true}
+);
 
 const ctxB =
-canvasB.getContext("2d",{willReadFrequently:true});
+canvasB.getContext(
+"2d",
+{willReadFrequently:true}
+);
 
 const cross =
 document.getElementById("cross");
@@ -278,6 +285,10 @@ let mode = "static";
 
 let voice = true;
 
+let universalMode = false;
+
+let moveRunning = false;
+
 let compareA = null;
 
 let compareALab = null;
@@ -286,21 +297,17 @@ let compareStep = 0;
 
 let selectedDatabaseColor = null;
 
-let universalMode = false;
-
-let moveRunning = false;
-
 /* ================= AUDIO ================= */
 
-let speechQueueBusy = false;
+let currentSpeech = "";
 
-let lastStableColor = "";
+let lastColorSpoken = "";
 
-let pendingColor = "";
+let stableCounter = 0;
 
-let pendingCount = 0;
+let candidateColor = "";
 
-let lastSpeechTimestamp = 0;
+let lastSpeechTime = 0;
 
 /* ================= FLASH ================= */
 
@@ -341,19 +348,30 @@ navigator.mediaDevices.getUserMedia({
 
 });
 
-/* ================= VOZ ================= */
+/* ================= AUDIO ================= */
 
 function speak(text){
 
   if(!voice) return;
 
+  if(text === "") return;
+
   const now = Date.now();
 
-  if(now - lastSpeechTimestamp < 2000){
+/* ===== evita spam sem criar delay alto ===== */
+
+  if(
+    text === currentSpeech &&
+    now - lastSpeechTime < 700
+  ){
     return;
   }
 
-  lastSpeechTimestamp = now;
+  currentSpeech = text;
+
+  lastSpeechTime = now;
+
+/* ===== limpa fila presa android ===== */
 
   speechSynthesis.cancel();
 
@@ -362,7 +380,7 @@ function speak(text){
 
   msg.lang = "pt-BR";
 
-  msg.rate = 1;
+  msg.rate = 1.15;
 
   msg.pitch = 1;
 
@@ -371,13 +389,15 @@ function speak(text){
   speechSynthesis.speak(msg);
 }
 
-/* ================= AUDIO ================= */
+/* ================= TOGGLE AUDIO ================= */
 
 function toggleVoice(){
 
   voice = !voice;
 
   speechSynthesis.cancel();
+
+  currentSpeech = "";
 
   alert(
     "Áudio: " +
@@ -469,7 +489,7 @@ async function toggleFlash(){
     });
 
     await new Promise(resolve=>
-      setTimeout(resolve,700)
+      setTimeout(resolve,400)
     );
 
   }catch(e){
@@ -485,7 +505,69 @@ async function toggleFlash(){
 
     flashBusy = false;
 
-  },500);
+  },300);
+}
+
+/* ================= RGB -> HSL ================= */
+
+function rgbToHsl(r,g,b){
+
+  r /= 255;
+  g /= 255;
+  b /= 255;
+
+  const max =
+  Math.max(r,g,b);
+
+  const min =
+  Math.min(r,g,b);
+
+  let h,s,l;
+
+  l = (max + min) / 2;
+
+  if(max === min){
+
+    h = 0;
+    s = 0;
+
+  }else{
+
+    const d = max - min;
+
+    s =
+    l > 0.5
+    ? d / (2 - max - min)
+    : d / (max + min);
+
+    switch(max){
+
+      case r:
+      h =
+      (g - b) / d +
+      (g < b ? 6 : 0);
+      break;
+
+      case g:
+      h =
+      (b - r) / d + 2;
+      break;
+
+      case b:
+      h =
+      (r - g) / d + 4;
+      break;
+    }
+
+    h /= 6;
+  }
+
+  return{
+
+    h:h * 360,
+    s:s * 100,
+    l:l * 100
+  };
 }
 
 /* ================= RGB -> LAB ================= */
@@ -626,7 +708,7 @@ function captureRaw(x,y){
 
   ctxA.drawImage(video,0,0);
 
-  const s = 10;
+  const s = 12;
 
   const data = ctxA.getImageData(
 
@@ -661,87 +743,89 @@ function captureRaw(x,y){
 
 function detectUniversalColor(r,g,b){
 
-  const max =
-  Math.max(r,g,b);
+  const hsl =
+  rgbToHsl(r,g,b);
 
-  const min =
-  Math.min(r,g,b);
+  const h = hsl.h;
 
-  const diff =
-  max - min;
+  const s = hsl.s;
 
-/* ================= IGNORAR METALICO ================= */
+  const l = hsl.l;
 
-  if(diff < 15){
+/* ===== ignora reflexos ===== */
 
-    if(max < 60){
+  if(s < 12){
+
+    if(l < 18){
       return "Preto";
     }
 
-    if(max > 210){
+    if(l > 88){
       return "Branco";
     }
 
     return "Cinza";
   }
 
-/* ================= AMARELO ================= */
+/* ===== vermelho ===== */
 
   if(
-    r > 170 &&
-    g > 170 &&
-    b < 110
-  ){
-    return "Amarelo";
-  }
-
-/* ================= VERMELHO ================= */
-
-  if(
-    r > 160 &&
-    g < 100 &&
-    b < 100
+    (h >= 0 && h <= 10) ||
+    (h >= 345 && h <= 360)
   ){
     return "Vermelho";
   }
 
-/* ================= VERDE ================= */
+/* ===== rosa ===== */
 
   if(
-    g > 150 &&
-    r < 130 &&
-    b < 130
+    h >= 311 &&
+    h <= 344
   ){
-    return "Verde";
+    return "Rosa";
   }
 
-/* ================= AZUL ================= */
+/* ===== laranja ===== */
 
   if(
-    b > 150 &&
-    r < 130 &&
-    g < 130
-  ){
-    return "Azul";
-  }
-
-/* ================= LARANJA ================= */
-
-  if(
-    r > 180 &&
-    g > 90 &&
-    g < 170 &&
-    b < 80
+    h >= 11 &&
+    h <= 39
   ){
     return "Laranja";
   }
 
-/* ================= ROXO ================= */
+/* ===== amarelo ===== */
 
   if(
-    r > 120 &&
-    b > 120 &&
-    g < 100
+    h >= 40 &&
+    h <= 68
+  ){
+    return "Amarelo";
+  }
+
+/* ===== verde ===== */
+
+  if(
+    h >= 69 &&
+    h <= 165
+  ){
+    return "Verde";
+  }
+
+/* ===== azul ===== */
+
+  if(
+    h >= 166 &&
+    h <= 260
+  ){
+    return "Azul";
+  }
+
+/* ===== roxo ===== */
+
+  if(
+    h >= 261 &&
+    h <= 310
   ){
     return "Roxo";
   }
@@ -834,58 +918,51 @@ function moveLoop(){
   }
 
   const sig = captureRaw(
+
     video.videoWidth/2,
     video.videoHeight/2
+
   );
-
-  let colorName = "";
-
-/* ================= UNIVERSAL ================= */
 
   if(universalMode){
 
-    colorName =
+    const colorName =
     detectUniversalColor(
       sig.r,
       sig.g,
       sig.b
     );
 
-    if(colorName === ""){
+    txt.innerText =
+    colorName === ""
+    ? "Movimento: analisando..."
+    : "Movimento: " + colorName;
 
-      txt.innerText =
-      "Movimento: analisando cor...";
-    }
-
-    else{
-
-      txt.innerText =
-      "Movimento: " + colorName;
-    }
-
-/* ================= ESTABILIZADOR ================= */
+/* ===== estabilização inteligente ===== */
 
     if(colorName !== ""){
 
-      if(colorName === pendingColor){
+      if(colorName === candidateColor){
 
-        pendingCount++;
+        stableCounter++;
 
       }else{
 
-        pendingColor = colorName;
+        candidateColor =
+        colorName;
 
-        pendingCount = 1;
+        stableCounter = 1;
       }
 
-/* ================= FALA APENAS SE ESTABILIZAR ================= */
+/* ===== resposta rápida sem atraso ===== */
 
       if(
-        pendingCount >= 8 &&
-        colorName !== lastStableColor
+        stableCounter >= 3 &&
+        colorName !== lastColorSpoken
       ){
 
-        lastStableColor = colorName;
+        lastColorSpoken =
+        colorName;
 
         speak(colorName);
       }
@@ -912,11 +989,13 @@ function setMode(m){
 
   compareALab = null;
 
-  lastStableColor = "";
+  stableCounter = 0;
 
-  pendingColor = "";
+  candidateColor = "";
 
-  pendingCount = 0;
+  lastColorSpoken = "";
+
+  currentSpeech = "";
 
   cross.style.display =
 
