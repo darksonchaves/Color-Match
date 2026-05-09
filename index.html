@@ -4,7 +4,11 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
+
 
 <title>
 ColorMatch Pro – OEM MultiBrand Edition
@@ -201,7 +205,10 @@ Comparar Base de Dados
 Modo Universal
 </h3>
 
-<button id="universalBtn" onclick="toggleUniversalMode()">
+<button
+id="universalBtn"
+onclick="toggleUniversalMode()"
+
 Universal OFF
 </button>
 
@@ -216,10 +223,11 @@ id="video"
 autoplay
 playsinline
 muted
-></video>
+</video>
+
 
 <div id="cameraStatus">
-Aguardando câmera...
+Inicializando câmera...
 </div>
 
 <div id="cross"></div>
@@ -249,11 +257,14 @@ type="text"
 id="brandSearch"
 placeholder="Digite a montadora..."
 oninput="searchBrand()"
->
+
 
 <br>
 
-<select id="modelSelect" onchange="showModelColors()">
+<select
+id="modelSelect"
+onchange="showModelColors()"
+
 
 <option value="">
 Selecione o modelo
@@ -266,7 +277,7 @@ Selecione o modelo
 </div>
 
 <p id="txt">
-Inicializando câmera...
+Inicializando sistema...
 </p>
 
 <script>
@@ -347,38 +358,28 @@ let processingPaused = false;
 
 /* ================= CAMERA ================= */
 
-async function startCamera(){
+navigator.mediaDevices.getUserMedia({
 
-  try{
-
-    if(
-      !navigator.mediaDevices ||
-      !navigator.mediaDevices.getUserMedia
-    ){
-      throw new Error("getUserMedia não suportado");
+  video:{
+    facingMode:{
+      ideal:"environment"
     }
+  },
 
-    const stream =
-    await navigator.mediaDevices.getUserMedia({
+  audio:false
 
-      video:{
-        facingMode:{
-          ideal:"environment"
-        },
-        width:{ideal:1280},
-        height:{ideal:720}
-      },
+})
 
-      audio:false
+.then(stream=>{
 
-    });
+  video.srcObject = stream;
 
-    video.srcObject = stream;
+  streamTrack =
+  stream.getVideoTracks()[0];
 
-    streamTrack =
-    stream.getVideoTracks()[0];
+  video.play()
 
-    await video.play();
+  .then(()=>{
 
     cameraStatus.innerText =
     "Câmera ativa";
@@ -386,28 +387,35 @@ async function startCamera(){
     txt.innerText =
     "Câmera iniciada com sucesso";
 
-  }catch(e){
+  })
 
-    console.error(e);
+  .catch(()=>{
 
     cameraStatus.innerText =
-    "Falha ao iniciar câmera";
+    "Falha ao iniciar preview";
 
     txt.innerText =
-    "Erro ao acessar câmera";
+    "Erro ao reproduzir câmera";
 
-    alert(
-      "Permita acesso à câmera no navegador"
-    );
-  }
-}
+  });
 
-window.addEventListener(
-"load",
-()=>{
-  startCamera();
-}
-);
+})
+
+.catch(error=>{
+
+  console.log(error);
+
+  cameraStatus.innerText =
+  "Falha ao iniciar câmera";
+
+  txt.innerText =
+  "Erro ao acessar câmera";
+
+  alert(
+    "Permita acesso à câmera no navegador"
+  );
+
+});
 
 /* ================= VOZ ================= */
 
@@ -464,8 +472,8 @@ function toggleVoice(){
   isSpeaking = false;
 
   alert(
-    "Áudio: " +
-    (voice ? "ON" : "OFF")
+    "Áudio: "
+    + (voice ? "ON" : "OFF")
   );
 }
 
@@ -558,7 +566,7 @@ async function toggleFlash(){
 
   }catch(e){
 
-    console.error(e);
+    console.log(e);
 
     flashOn = false;
 
@@ -849,22 +857,6 @@ function captureRaw(x,y){
       continue;
     }
 
-    const max =
-    Math.max(rr,gg,bb);
-
-    const min =
-    Math.min(rr,gg,bb);
-
-    const diff =
-    max-min;
-
-    if(
-      universalMode &&
-      diff > 40
-    ){
-      continue;
-    }
-
     r += rr;
     g += gg;
     b += bb;
@@ -901,14 +893,9 @@ function detectUniversalColor(r,g,b){
   const s = hsl.s;
   const l = hsl.l;
 
-  const diff =
-  Math.max(r,g,b) -
-  Math.min(r,g,b);
-
   if(
     l >= 82 &&
-    s <= 10 &&
-    diff <= 18
+    s <= 10
   ){
     return "Branco";
   }
@@ -1021,18 +1008,6 @@ function analyzeOEM(){
 
   );
 
-  if(
-    sig.r === 0 &&
-    sig.g === 0 &&
-    sig.b === 0
-  ){
-
-    txt.innerText =
-    "Falha na leitura da câmera";
-
-    return;
-  }
-
   const result =
   detectOEM(sig);
 
@@ -1096,55 +1071,46 @@ function moveLoop(){
 
   );
 
-  if(universalMode){
+  const colorName =
+  detectUniversalColor(
 
-    const colorName =
-    detectUniversalColor(
+    sig.r,
+    sig.g,
+    sig.b
 
-      sig.r,
-      sig.g,
-      sig.b
+  );
 
-    );
+  txt.innerText =
+  "Movimento: "
+  + colorName;
 
-    txt.innerText =
-    "Movimento: "
-    + colorName;
+  if(
+    colorName !== "Indefinido"
+  ){
 
     if(
-      colorName !== "Indefinido"
+      colorName === detectedColor
     ){
 
-      if(
-        colorName === detectedColor
-      ){
+      stableFrames++;
 
-        stableFrames++;
+    }else{
 
-      }else{
+      detectedColor =
+      colorName;
 
-        detectedColor =
-        colorName;
-
-        stableFrames = 0;
-      }
-
-      if(
-        stableFrames >=
-        MIN_STABLE_FRAMES
-      ){
-
-        speak(colorName);
-
-        stableFrames = 0;
-      }
+      stableFrames = 0;
     }
 
-  }else{
+    if(
+      stableFrames >=
+      MIN_STABLE_FRAMES
+    ){
 
-    txt.innerText =
+      speak(colorName);
 
-    RGB: ${sig.r}, ${sig.g}, ${sig.b};
+      stableFrames = 0;
+    }
   }
 
   requestAnimationFrame(
@@ -1367,7 +1333,7 @@ function compareWithDatabase(sig){
   if(!selectedDatabaseColor){
 
     alert(
-      "Selecione uma cor da base de dados primeiro"
+      "Selecione uma cor da base OEM primeiro"
     );
 
     return;
