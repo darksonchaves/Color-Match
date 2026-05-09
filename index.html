@@ -194,7 +194,7 @@ Universal OFF
 </button>
 
 <p style="font-size:14px;color:#aaa;">
-Reconhecimento puro de cores lisas primárias
+Reconhecimento puro baseado na leitura real da câmera
 </p>
 
 </div>
@@ -299,15 +299,13 @@ let selectedDatabaseColor = null;
 
 /* ================= AUDIO ================= */
 
-let currentSpeech = "";
+let lastSpokenColor = "";
 
-let lastColorSpoken = "";
+let speechLocked = false;
 
-let stableCounter = 0;
+let pendingSpeech = null;
 
-let candidateColor = "";
-
-let speakingNow = false;
+let lastSpeechTime = 0;
 
 /* ================= FLASH ================= */
 
@@ -354,47 +352,67 @@ function speak(text){
 
   if(!voice) return;
 
-  if(text === "") return;
+  if(!text) return;
 
-/* ===== evita repetição imediata ===== */
+  const now = Date.now();
 
-  if(text === currentSpeech){
+/* ===== impede repetição rápida ===== */
+
+  if(
+    text === lastSpokenColor &&
+    now - lastSpeechTime < 900
+  ){
     return;
   }
 
-  currentSpeech = text;
+/* ===== evita fila quebrada do Android ===== */
 
-/* ===== elimina fila acumulada ===== */
+  if(speechLocked){
 
-  window.speechSynthesis.cancel();
+    pendingSpeech = text;
+    return;
+  }
 
-/* ===== cria nova fala limpa ===== */
+  speechLocked = true;
+
+  lastSpokenColor = text;
+
+  lastSpeechTime = now;
+
+  speechSynthesis.cancel();
 
   const msg =
   new SpeechSynthesisUtterance(text);
 
   msg.lang = "pt-BR";
 
-  msg.rate = 1.35;
+  msg.rate = 1.30;
 
   msg.pitch = 1;
 
   msg.volume = 1;
 
-/* ===== trava durante fala ===== */
-
-  speakingNow = true;
-
   msg.onend = ()=>{
 
-    speakingNow = false;
+    speechLocked = false;
 
+    if(
+      pendingSpeech &&
+      pendingSpeech !== lastSpokenColor
+    ){
+
+      const next =
+      pendingSpeech;
+
+      pendingSpeech = null;
+
+      speak(next);
+    }
   };
 
   msg.onerror = ()=>{
 
-    speakingNow = false;
-
+    speechLocked = false;
   };
 
   speechSynthesis.speak(msg);
@@ -408,9 +426,11 @@ function toggleVoice(){
 
   speechSynthesis.cancel();
 
-  currentSpeech = "";
+  speechLocked = false;
 
-  speakingNow = false;
+  pendingSpeech = null;
+
+  lastSpokenColor = "";
 
   alert(
     "Áudio: " +
@@ -502,7 +522,7 @@ async function toggleFlash(){
     });
 
     await new Promise(resolve=>
-      setTimeout(resolve,400)
+      setTimeout(resolve,300)
     );
 
   }catch(e){
@@ -518,7 +538,7 @@ async function toggleFlash(){
 
     flashBusy = false;
 
-  },300);
+  },250);
 }
 
 /* ================= RGB -> HSL ================= */
@@ -765,28 +785,36 @@ function detectUniversalColor(r,g,b){
 
   const l = hsl.l;
 
-/* ===== BRANCO MELHORADO ===== */
+/* ===== BRANCO ===== */
 
-  if(s < 10 && l > 82){
+  if(
+    s <= 12 &&
+    l >= 84
+  ){
     return "Branco";
   }
 
 /* ===== PRETO ===== */
 
-  if(s < 12 && l < 18){
+  if(
+    s <= 15 &&
+    l <= 16
+  ){
     return "Preto";
   }
 
 /* ===== CINZA ===== */
 
-  if(s < 15){
+  if(
+    s <= 15
+  ){
     return "Cinza";
   }
 
 /* ===== vermelho ===== */
 
   if(
-    (h >= 0 && h <= 10) ||
+    (h >= 0 && h <= 12) ||
     (h >= 345 && h <= 360)
   ){
     return "Vermelho";
@@ -795,7 +823,7 @@ function detectUniversalColor(r,g,b){
 /* ===== rosa ===== */
 
   if(
-    h >= 311 &&
+    h >= 312 &&
     h <= 344
   ){
     return "Rosa";
@@ -804,8 +832,8 @@ function detectUniversalColor(r,g,b){
 /* ===== laranja ===== */
 
   if(
-    h >= 11 &&
-    h <= 39
+    h >= 13 &&
+    h <= 38
   ){
     return "Laranja";
   }
@@ -813,7 +841,7 @@ function detectUniversalColor(r,g,b){
 /* ===== amarelo ===== */
 
   if(
-    h >= 40 &&
+    h >= 39 &&
     h <= 68
   ){
     return "Amarelo";
@@ -841,7 +869,7 @@ function detectUniversalColor(r,g,b){
 
   if(
     h >= 261 &&
-    h <= 310
+    h <= 311
   ){
     return "Roxo";
   }
@@ -954,35 +982,14 @@ function moveLoop(){
     ? "Movimento: analisando..."
     : "Movimento: " + colorName;
 
-/* ===== estabilização rápida ===== */
+/* ===== SOMENTE fala quando mudar ===== */
 
-    if(colorName !== ""){
+    if(
+      colorName !== "" &&
+      colorName !== lastSpokenColor
+    ){
 
-      if(colorName === candidateColor){
-
-        stableCounter++;
-
-      }else{
-
-        candidateColor =
-        colorName;
-
-        stableCounter = 1;
-      }
-
-/* ===== fala SOMENTE quando mudar ===== */
-
-      if(
-        stableCounter >= 2 &&
-        colorName !== lastColorSpoken &&
-        !speakingNow
-      ){
-
-        lastColorSpoken =
-        colorName;
-
-        speak(colorName);
-      }
+      speak(colorName);
     }
 
   }else{
@@ -1006,15 +1013,11 @@ function setMode(m){
 
   compareALab = null;
 
-  stableCounter = 0;
+  lastSpokenColor = "";
 
-  candidateColor = "";
+  speechLocked = false;
 
-  lastColorSpoken = "";
-
-  currentSpeech = "";
-
-  speakingNow = false;
+  pendingSpeech = null;
 
   speechSynthesis.cancel();
 
