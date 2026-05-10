@@ -26,7 +26,7 @@
   .item{ padding:10px; border-bottom:1px solid #333; cursor:pointer; }
   .item:hover{ background:#2c2c2c; }
   .colorBox{ width:18px; height:18px; display:inline-block; border-radius:50%; margin-right:8px; border:1px solid #fff; vertical-align:middle; }
-  #txt{ margin-top:15px; font-size:18px; padding:10px; }
+  #txt{ margin-top:15px; font-size:18px; padding:10px; min-height: 40px;}
   #universalPanel{ margin-top:15px; padding:10px; background:#181818; border-top:2px solid #333; }
 </style>
 </head>
@@ -40,12 +40,11 @@
 <button onclick="setMode('compareDatabase')">Comparar Base de Dados</button>
 <button onclick="analyzeOEM()">🎨 OEM Scan</button>
 <button onclick="toggleFlash()">⚡ Flash</button>
-<button onclick="toggleVoice()">🔊 Áudio</button>
+<button id="voiceBtn" onclick="toggleVoice()">🔊 Áudio: ON</button>
 
 <div id="universalPanel">
   <h3>Modo Universal</h3>
   <button id="universalBtn" onclick="toggleUniversalMode()">Universal OFF</button>
-  <p style="font-size:14px;color:#aaa;">Reconhecimento baseado na leitura real da câmera</p>
 </div>
 
 <video id="video" autoplay playsinline muted></video>
@@ -74,7 +73,6 @@ const video = document.getElementById("video");
 const canvasA = document.getElementById("canvasA");
 const canvasB = document.getElementById("canvasB");
 const ctxA = canvasA.getContext("2d", {willReadFrequently:true});
-const ctxB = canvasB.getContext("2d", {willReadFrequently:true});
 const cross = document.getElementById("cross");
 const txt = document.getElementById("txt");
 
@@ -89,13 +87,13 @@ let compareStep = 0;
 let selectedDatabaseColor = null;
 
 /* ================= AUDIO & ESTABILIDADE ================= */
-let currentSpokenColor = "";
+let lastAnnouncedColor = ""; // Evita repetição (ex: azul, azul, azul)
 let isSpeaking = false;
 let detectedColor = "";
 let stableFrames = 0;
 const MIN_STABLE_FRAMES = 12; 
 let rgbBuffer = []; 
-const BUFFER_SIZE = 10; // Suavização de ruído
+const BUFFER_SIZE = 10;
 
 /* ================= FLASH & CAMERA ================= */
 let streamTrack = null;
@@ -111,33 +109,40 @@ navigator.mediaDevices.getUserMedia({
   streamTrack = stream.getVideoTracks()[0];
 }).catch(()=>{ alert("Erro ao acessar câmera"); });
 
-/* ================= FUNÇÃO DE VOZ ================= */
-function speak(text){
-  if(!voice || !text || text === currentSpokenColor || isSpeaking) return;
-  currentSpokenColor = text;
+/* ================= FUNÇÃO DE VOZ GLOBAL ================= */
+function speak(text) {
+  if (!voice || !text || isSpeaking) return;
+  
+  // No modo movimento, só fala se a cor for diferente da última dita
+  if (mode === "move" && text === lastAnnouncedColor) return;
+
+  lastAnnouncedColor = text;
   isSpeaking = true;
+  
   speechSynthesis.cancel();
   const msg = new SpeechSynthesisUtterance(text);
   msg.lang = "pt-BR";
-  msg.rate = 1.10;
-  msg.onend = () => isSpeaking = false;
-  msg.onerror = () => isSpeaking = false;
+  msg.rate = 1.1;
+  msg.onend = () => { isSpeaking = false; };
+  msg.onerror = () => { isSpeaking = false; };
   speechSynthesis.speak(msg);
 }
 
 function toggleVoice(){
   voice = !voice;
-  speechSynthesis.cancel();
-  isSpeaking = false;
-  currentSpokenColor = "";
-  alert("Áudio: " + (voice ? "ON" : "OFF"));
+  const btn = document.getElementById("voiceBtn");
+  btn.innerText = voice ? "🔊 Áudio: ON" : "🔇 Áudio: OFF";
+  if(!voice) {
+    speechSynthesis.cancel();
+    lastAnnouncedColor = "";
+  }
 }
 
 /* ================= MODO UNIVERSAL ================= */
 function toggleUniversalMode(){
   universalMode = !universalMode;
   const btn = document.getElementById("universalBtn");
-  currentSpokenColor = ""; stableFrames = 0; detectedColor = "";
+  lastAnnouncedColor = ""; stableFrames = 0; detectedColor = "";
   if(universalMode){
     btn.innerText = "Universal ON";
     btn.classList.add("activeMode");
@@ -152,16 +157,14 @@ function toggleUniversalMode(){
 /* ================= FLASH ================= */
 async function toggleFlash(){
   if(flashBusy || !streamTrack) return;
-  flashBusy = true; processingPaused = true;
+  flashBusy = true;
   try{
     const capabilities = streamTrack.getCapabilities();
-    if(!capabilities.torch){ alert("Flash não suportado"); processingPaused = false; flashBusy = false; return; }
+    if(!capabilities.torch) throw new Error();
     flashOn = !flashOn;
     await streamTrack.applyConstraints({ advanced:[{ torch:flashOn }] });
-    await new Promise(resolve=> setTimeout(resolve,300));
-  }catch(e){ flashOn = false; }
-  processingPaused = false;
-  setTimeout(()=>{ flashBusy = false; },250);
+  }catch(e){ alert("Flash não disponível"); }
+  flashBusy = false;
 }
 
 /* ================= MATEMÁTICA DE CORES ================= */
@@ -197,23 +200,23 @@ function deltaE(a,b){
 
 /* ================= BANCO DE DADOS OEM ================= */
 const oemDatabase = [
-  { brand:"Toyota", model:"Corolla", year:"2024", code:"040", name:"Super White II", rgb:{r:244,g:244,b:241} },
-  { brand:"Toyota", model:"Corolla", year:"2024", code:"1F7", name:"Classic Silver Metallic", rgb:{r:169,g:173,b:177} },
-  { brand:"Toyota", model:"Corolla", year:"2024", code:"218", name:"Midnight Black Metallic", rgb:{r:27,g:27,b:27} },
-  { brand:"Toyota", model:"Corolla", year:"2024", code:"3U5", name:"Emotional Red", rgb:{r:126,g:31,b:36} }
+  { brand:"Toyota", model:"Corolla", year:"2024", code:"040", name:"Branco Polar", rgb:{r:244,g:244,b:241} },
+  { brand:"Toyota", model:"Corolla", year:"2024", code:"1F7", name:"Prata Clássico", rgb:{r:169,g:173,b:177} },
+  { brand:"Toyota", model:"Corolla", year:"2024", code:"218", name:"Preto Atitude", rgb:{r:27,g:27,b:27} },
+  { brand:"Toyota", model:"Corolla", year:"2024", code:"3U5", name:"Vermelho Infinito", rgb:{r:126,g:31,b:36} }
 ];
 
 oemDatabase.forEach(item=>{
   item.lab = rgbToLab(item.rgb.r, item.rgb.g, item.rgb.b);
 });
 
-/* ================= CAPTURA COM BUFFER (ESTABILIDADE) ================= */
+/* ================= CAPTURA COM ESTABILIDADE ================= */
 function captureRaw(x,y){
   if(!video.videoWidth || processingPaused){ return {r:0,g:0,b:0}; }
   canvasA.width = video.videoWidth;
   canvasA.height = video.videoHeight;
   ctxA.drawImage(video,0,0);
-  const s = 12;
+  const s = 10;
   const data = ctxA.getImageData(x-s, y-s, s*2, s*2).data;
   let r=0,g=0,b=0,c=0;
   for(let i=0;i<data.length;i+=4){
@@ -221,7 +224,6 @@ function captureRaw(x,y){
   }
   const raw = { r:Math.round(r/c), g:Math.round(g/c), b:Math.round(b/c) };
   
-  // Lógica do Buffer
   rgbBuffer.push(raw);
   if(rgbBuffer.length > BUFFER_SIZE) rgbBuffer.shift();
   const avg = rgbBuffer.reduce((acc, curr) => {
@@ -234,11 +236,10 @@ function captureRaw(x,y){
     b: Math.round(avg.b / rgbBuffer.length)
   };
 
-  // Feedback Visual da Mira
   const diff = Math.abs(raw.r - finalRgb.r) + Math.abs(raw.g - finalRgb.g);
-  if(diff < 4 && rgbBuffer.length >= 5){
+  if(diff < 5 && rgbBuffer.length >= 5){
     cross.style.borderColor = "#00ffcc";
-    cross.style.boxShadow = "0 0 12px #00ffcc";
+    cross.style.boxShadow = "0 0 15px #00ffcc";
   } else {
     cross.style.borderColor = "#ff4444";
     cross.style.boxShadow = "none";
@@ -251,20 +252,48 @@ function captureRaw(x,y){
 function detectUniversalColor(r,g,b){
   const hsl = rgbToHsl(r,g,b);
   const {h, s, l} = hsl;
-  if(s <= 12 && l >= 84) return "Branco";
-  if(s <= 15 && l <= 16) return "Preto";
+  if(s <= 12 && l >= 80) return "Branco";
+  if(l <= 15) return "Preto";
   if(s <= 15) return "Cinza";
-  if((h >= 0 && h <= 12) || (h >= 345 && h <= 360)) return "Vermelho";
-  if(h >= 312 && h <= 344) return "Rosa";
-  if(h >= 13 && h <= 38) return "Laranja";
-  if(h >= 39 && h <= 68) return "Amarelo";
-  if(h >= 69 && h <= 165) return "Verde";
-  if(h >= 166 && h <= 260) return "Azul";
-  if(h >= 261 && h <= 311) return "Roxo";
+  if((h >= 0 && h <= 15) || (h >= 345 && h <= 360)) return "Vermelho";
+  if(h >= 16 && h <= 45) return "Laranja";
+  if(h >= 46 && h <= 70) return "Amarelo";
+  if(h >= 71 && h <= 160) return "Verde";
+  if(h >= 161 && h <= 255) return "Azul";
+  if(h >= 256 && h <= 310) return "Roxo";
+  if(h >= 311 && h <= 344) return "Rosa";
   return "";
 }
 
-/* ================= ANALYZER OEM ================= */
+/* ================= LOOP DE MOVIMENTO ================= */
+function moveLoop(){
+  if(mode !== "move"){ moveRunning = false; return; }
+  const sig = captureRaw(video.videoWidth/2, video.videoHeight/2);
+
+  if(universalMode){
+    const colorName = detectUniversalColor(sig.r, sig.g, sig.b);
+    if(colorName !== ""){
+        txt.innerText = "Cor: " + colorName;
+        if(colorName === detectedColor){ 
+            stableFrames++; 
+        } else { 
+            detectedColor = colorName; 
+            stableFrames = 0; 
+        }
+        
+        if(stableFrames >= MIN_STABLE_FRAMES){
+            speak(colorName);
+        }
+    } else {
+        txt.innerText = "Analisando...";
+    }
+  } else {
+    txt.innerText = `RGB: ${sig.r}, ${sig.g}, ${sig.b}`;
+  }
+  requestAnimationFrame(moveLoop);
+}
+
+/* ================= FUNÇÕES DE AÇÃO ================= */
 function analyzeOEM(){
   const sig = captureRaw(video.videoWidth/2, video.videoHeight/2);
   const targetLab = rgbToLab(sig.r, sig.g, sig.b);
@@ -274,33 +303,12 @@ function analyzeOEM(){
     if(d < bestDelta){ bestDelta = d; best = color; }
   }
   const similarity = Math.max(0, 100 - bestDelta).toFixed(1);
-  txt.innerText = `${best.brand} | ${best.model} | ${best.code} | ${best.name} | ${similarity}%`;
+  txt.innerText = `${best.name} (${best.code}) - ${similarity}%`;
   speak(best.name);
 }
 
-/* ================= LOOP DE MOVIMENTO ================= */
-function moveLoop(){
-  if(mode !== "move"){ moveRunning = false; return; }
-  if(processingPaused){ requestAnimationFrame(moveLoop); return; }
-  const sig = captureRaw(video.videoWidth/2, video.videoHeight/2);
-
-  if(universalMode){
-    const colorName = detectUniversalColor(sig.r, sig.g, sig.b);
-    txt.innerText = colorName === "" ? "Analisando..." : "Cor: " + colorName;
-    if(colorName !== ""){
-      if(colorName === detectedColor){ stableFrames++; }else{ detectedColor = colorName; stableFrames = 0; }
-      if(stableFrames === MIN_STABLE_FRAMES){ speak(colorName); }
-    }
-  }else{
-    txt.innerText = `RGB ESTÁVEL: ${sig.r}, ${sig.g}, ${sig.b}`;
-  }
-  requestAnimationFrame(moveLoop);
-}
-
-/* ================= MODOS E INTERFACE ================= */
 function setMode(m){
-  mode = m; compareStep = 0; compareA = null; currentSpokenColor = ""; detectedColor = ""; stableFrames = 0;
-  speechSynthesis.cancel(); isSpeaking = false;
+  mode = m; compareStep = 0; lastAnnouncedColor = ""; stableFrames = 0;
   cross.style.display = (m === "move" || m === "comparePoint" || m === "compareDatabase") ? "block" : "none";
   txt.innerText = "Modo: " + m.toUpperCase();
   if(m === "move" && !moveRunning){ moveRunning = true; moveLoop(); }
@@ -311,53 +319,52 @@ function searchBrand(){
   const models = [...new Set(oemDatabase.filter(item=> item.brand.toLowerCase().includes(brand)).map(item=>item.model))].sort();
   const select = document.getElementById("modelSelect");
   select.innerHTML = `<option value="">Selecione o modelo</option>`;
-  models.forEach(model=>{ select.innerHTML += `<option value="${model}">${model} </option>`; });
+  models.forEach(model=>{ select.innerHTML += `<option value="${model}">${model}</option>`; });
 }
 
 function showModelColors(){
   const model = document.getElementById("modelSelect").value;
   const resultList = document.getElementById("resultList");
   resultList.innerHTML = "";
-  const colors = oemDatabase.filter(item=>item.model===model).sort((a,b)=> a.name.localeCompare(b.name));
-  colors.forEach((item,index)=>{
+  const colors = oemDatabase.filter(item=>item.model===model);
+  colors.forEach(item=>{
     resultList.innerHTML += `<div class="item" onclick="selectDatabaseColor('${item.name}')">
       <span class="colorBox" style="background:rgb(${item.rgb.r},${item.rgb.g},${item.rgb.b})"></span>
-      <strong>${item.name}</strong> - ${item.code}
+      ${item.name} - ${item.code}
     </div>`;
   });
 }
 
-function selectDatabaseColor(colorName){
-  selectedDatabaseColor = oemDatabase.find(item => item.name === colorName);
-  txt.innerText = "Cor selecionada: " + colorName;
-  speak(colorName);
+function selectDatabaseColor(name){
+  selectedDatabaseColor = oemDatabase.find(i=>i.name===name);
+  txt.innerText = "Selecionado: " + name;
+  speak(name);
 }
 
-function compareWithDatabase(sig){
-  if(!selectedDatabaseColor){ alert("Selecione uma cor OEM primeiro"); return; }
-  const similarity = Math.max(0, 100 - deltaE(rgbToLab(sig.r,sig.g,sig.b), selectedDatabaseColor.lab)).toFixed(1);
-  txt.innerText = `Similaridade com ${selectedDatabaseColor.name}: ${similarity}%`;
-  speak(similarity + " por cento");
-}
-
-/* ================= CLIQUE NO VÍDEO ================= */
+/* ================= EVENTO DE CLIQUE ================= */
 video.addEventListener("click",(e)=>{
-  if(processingPaused) return;
   const rect = video.getBoundingClientRect();
   const x = (e.clientX - rect.left) * (video.videoWidth / rect.width);
   const y = (e.clientY - rect.top) * (video.videoHeight / rect.height);
   const sig = captureRaw(x,y);
 
   if(mode === "static") analyzeOEM();
-  if(mode === "compareDatabase") compareWithDatabase(sig);
+  if(mode === "compareDatabase"){
+    if(!selectedDatabaseColor) return alert("Selecione uma cor na lista");
+    const dE = deltaE(rgbToLab(sig.r,sig.g,sig.b), selectedDatabaseColor.lab);
+    const sim = Math.max(0, 100 - dE).toFixed(1);
+    txt.innerText = `Similaridade: ${sim}%`;
+    speak(sim + " por cento");
+  }
   if(mode === "comparePoint"){
     if(compareStep === 0){
-      compareA = sig; compareALab = rgbToLab(sig.r, sig.g, sig.b);
-      compareStep = 1; txt.innerText = "Ponto 1 Capturado"; speak("Ponto um");
-    }else{
-      const similarity = Math.max(0, 100 - deltaE(compareALab, rgbToLab(sig.r, sig.g, sig.b))).toFixed(1);
-      txt.innerText = `Similaridade: ${similarity}%`;
-      speak(similarity + " por cento");
+      compareALab = rgbToLab(sig.r, sig.g, sig.b);
+      compareStep = 1; txt.innerText = "Ponto 1 capturado"; speak("Ponto um");
+    } else {
+      const dE = deltaE(compareALab, rgbToLab(sig.r, sig.g, sig.b));
+      const sim = Math.max(0, 100 - dE).toFixed(1);
+      txt.innerText = `Similaridade: ${sim}%`;
+      speak(sim + " por cento");
       compareStep = 0;
     }
   }
