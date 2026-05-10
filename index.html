@@ -53,7 +53,7 @@
 </head>
 <body>
 
-<h2>ColorMatch Pro – Ultra Precision</h2>
+<h2>ColorMatch Pro – High Distinction Edition</h2>
 
 <div class="controls">
     <button id="btn-universal" onclick="toggleUniversal()">🌐 Modo Universal: OFF</button>
@@ -71,7 +71,7 @@
     <div id="pointB" class="pointMarker"></div>
 </div>
 
-<div id="txt">Aguardando comando...</div>
+<div id="txt">Iniciando sistema de precisão...</div>
 
 <div id="panel">
     <div class="box"><canvas id="canvasA"></canvas><div style="font-size:10px">AMOSTRA ATUAL</div></div>
@@ -104,7 +104,6 @@
     let compareStep = 0;
     let lastSpoken = "";
 
-    // --- MOTOR DE VOZ ---
     function speak(t) {
         if (!t || t === lastSpoken) return;
         speechSynthesis.cancel(); 
@@ -115,13 +114,13 @@
         lastSpoken = t;
     }
 
-    // --- MOTOR CIELAB AVANÇADO ---
-    function toLinear(v) {
-        v /= 255;
-        return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-    }
+    // --- MOTOR DE COR AVANÇADO (CORREÇÃO ROXO VS ROSA) ---
 
     function rgbToLab(r, g, b) {
+        const toLinear = (v) => {
+            v /= 255;
+            return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        };
         let R = toLinear(r), G = toLinear(g), B = toLinear(b);
         let x = (R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047;
         let y = (R * 0.2126 + G * 0.7152 + B * 0.0722) / 1.00000;
@@ -143,41 +142,59 @@
     }
 
     function detectName(lab) {
-        if (isUniversal) {
-            const chroma = Math.sqrt(lab.a**2 + lab.b**2);
-            if (chroma < 8) {
+        // Cálculo de Chroma (Intensidade da cor) e Hue (Matiz)
+        const chroma = Math.sqrt(lab.a**2 + lab.b**2);
+        let hue = Math.atan2(lab.b, lab.a) * (180 / Math.PI);
+        if (hue < 0) hue += 360;
+
+        // Filtro para Cores Neutras (Universal)
+        if (isUniversal || chroma < 10) {
+            if (chroma < 10) {
                 if (lab.L > 75) return "Branco Sólido";
                 if (lab.L < 25) return "Preto Sólido";
                 return "Cinza Sólido";
             }
         }
-        let hue = Math.atan2(lab.b, lab.a) * (180 / Math.PI);
-        if (hue < 0) hue += 360;
-        if (hue >= 350 || hue < 20) return "Vermelho";
+
+        // --- LÓGICA DE ALTA PRECISÃO PARA ROXO E ROSA ---
+        // Roxo: Geralmente entre 270 e 315 graus (puxa pro azulado)
+        // Rosa: Geralmente entre 315 e 350 graus (puxa pro avermelhado)
+        
+        if (hue >= 265 && hue < 315) {
+            // Se o componente 'a' (vermelho/verde) for muito dominante sobre o 'b', pode ser um rosa escuro.
+            // Mas no CIELAB, o roxo tem 'b' negativo (azul).
+            return (lab.b < -10) ? "Roxo" : "Rosa";
+        }
+        
+        if (hue >= 315 && hue < 355) {
+            // Zona de Rosa/Magenta
+            return "Rosa";
+        }
+
+        // Outras cores
+        if (hue >= 355 || hue < 20) return "Vermelho";
         if (hue >= 20 && hue < 45) return "Laranja";
         if (hue >= 45 && hue < 85) return "Amarelo";
         if (hue >= 85 && hue < 160) return "Verde";
-        if (hue >= 160 && hue < 255) return "Azul";
-        if (hue >= 255 && hue < 305) return "Roxo";
-        if (hue >= 305 && hue < 350) return "Rosa";
+        if (hue >= 160 && hue < 265) return "Azul";
+
         return "Cor Especial";
     }
 
-    // --- GESTÃO DE MODOS ---
+    // --- GESTÃO DE INTERFACE ---
+
     function toggleUniversal() {
         isUniversal = !isUniversal;
         const btn = document.getElementById("btn-universal");
         btn.classList.toggle("activeMode", isUniversal);
         btn.innerText = isUniversal ? "🌐 Modo Universal: ON" : "🌐 Modo Universal: OFF";
-        const msg = isUniversal ? "Modo universal ativado. Foco em cores sólidas." : "Modo de alta sensibilidade ativado.";
-        txt.innerText = msg;
         speak(isUniversal ? "Modo universal ligado" : "Modo universal desligado");
     }
 
     function setMode(m) {
         mode = m;
         compareStep = 0;
-        lastSpoken = ""; // Reseta fala ao trocar modo
+        lastSpoken = ""; 
         document.querySelectorAll('.controls button').forEach(b => {
             if(b.id !== 'btn-universal') b.classList.remove('activeMode');
         });
@@ -189,7 +206,6 @@
         if (m === "move") requestAnimationFrame(moveLoop);
     }
 
-    // --- CAPTURA E PROCESSAMENTO ---
     async function startCamera() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
@@ -199,7 +215,6 @@
             streamTrack = stream.getVideoTracks()[0];
         } catch (e) {
             txt.innerText = "Erro ao acessar câmera.";
-            speak("Erro ao acessar câmera");
         }
     }
 
@@ -222,12 +237,8 @@
         const rgb = capture(rect.width/2, rect.height/2, ctxA);
         const lab = rgbToLab(rgb.r, rgb.g, rgb.b);
         const name = detectName(lab);
-        txt.innerText = "Análise: " + name + " | L:" + Math.round(lab.L);
-        
-        // No modo movimento, falamos a cada 2 segundos se a cor mudar para não saturar o audio
-        if (name !== lastSpoken) {
-            speak(name);
-        }
+        txt.innerText = "Análise: " + name;
+        if (name !== lastSpoken) { speak(name); }
         requestAnimationFrame(moveLoop);
     }
 
@@ -243,28 +254,25 @@
             if (compareStep === 0) {
                 compareALab = lab;
                 pointA.style.left = x + "px"; pointA.style.top = y + "px"; pointA.style.display = "block";
-                txt.innerText = "Ponto A: " + name + ". Selecione Ponto B.";
-                speak("Ponto A " + name + ". Agora selecione o ponto B.");
+                txt.innerText = "Ponto A: " + name;
+                speak("Ponto A capturado. Agora selecione o ponto B.");
                 compareStep = 1;
             } else {
                 pointB.style.left = x + "px"; pointB.style.top = y + "px"; pointB.style.display = "block";
                 const dist = deltaE2000(compareALab, lab);
-                const sim = Math.max(0, 100 - (dist * 1.5)).toFixed(1);
+                const sim = Math.max(0, 100 - (dist * 1.8)).toFixed(1); // Sensibilidade ajustada
                 txt.innerText = "Similaridade: " + sim + "%";
-                speak(sim + " por cento de similaridade entre os pontos.");
+                speak(sim + " por cento de similaridade.");
                 compareStep = 0;
             }
         } else if (mode === "compareDatabase") {
-            if (!selectedDatabaseColor) {
-                speak("Por favor, selecione uma cor da base primeiro.");
-                return alert("Selecione uma cor OEM abaixo");
-            }
+            if (!selectedDatabaseColor) return speak("Selecione uma cor da base");
             const dist = deltaE2000(lab, selectedDatabaseColor.lab);
-            const sim = Math.max(0, 100 - (dist * 1.5)).toFixed(1);
-            txt.innerText = "Compatibilidade com " + selectedDatabaseColor.name + ": " + sim + "%";
-            speak("A cor capturada tem " + sim + " por cento de compatibilidade com " + selectedDatabaseColor.name);
+            const sim = Math.max(0, 100 - (dist * 1.8)).toFixed(1);
+            txt.innerText = "Match: " + sim + "%";
+            speak("Compatibilidade de " + sim + " por cento");
         } else if (mode === "static") {
-            txt.innerText = "Cor detectada: " + name;
+            txt.innerText = "Cor: " + name;
             speak(name);
         }
     });
@@ -277,13 +285,10 @@
         }
     }
 
-    // --- BANCO DE DADOS OEM ---
     const oemDatabase = [
         { brand: "Toyota", model: "Corolla", code: "040", name: "Branco Polar", rgb: {r:245, g:245, b:242} },
         { brand: "Toyota", model: "Corolla", code: "218", name: "Preto Atitude", rgb: {r:25, g:25, b:27} },
-        { brand: "Honda", model: "Civic", code: "NH-731P", name: "Preto Cristal", rgb: {r:18, g:18, b:20} },
-        { brand: "VW", model: "Gol", code: "R8R8", name: "Vermelho Flash", rgb: {r:190, g:30, b:40} },
-        { brand: "Fiat", model: "Uno", code: "249", name: "Branco Banchisa", rgb: {r:250, g:250, b:250} }
+        { brand: "VW", model: "Gol", code: "R8R8", name: "Vermelho Flash", rgb: {r:190, g:30, b:40} }
     ];
 
     function searchBrand() {
@@ -302,10 +307,9 @@
             const div = document.createElement("div");
             div.className = "item";
             div.innerHTML = `<span class="colorBox" style="background:rgb(${c.rgb.r},${c.rgb.g},${c.rgb.b})"></span> 
-                             <div><strong>${c.name}</strong> (${c.code})</div>`;
+                             <div><strong>${c.name}</strong></div>`;
             div.onclick = () => {
                 selectedDatabaseColor = {...c, lab: rgbToLab(c.rgb.r, c.rgb.g, c.rgb.b)};
-                txt.innerText = "Alvo: " + c.name;
                 speak("Alvo definido para " + c.name);
             };
             list.appendChild(div);
