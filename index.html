@@ -3,128 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ColorMatch Pro – Extreme Precision V2</title>
+    <title>ColorMatch Pro – Fidelity Restored</title>
     <style>
-        body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; text-align: center; }
-        h2 { margin-top: 15px; font-size: 22px; color: #00ffcc; text-transform: uppercase; letter-spacing: 1px; }
+        body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #050505; color: #fff; text-align: center; overflow-x: hidden; }
+        h2 { margin-top: 15px; font-size: 20px; color: #00ffcc; text-transform: uppercase; }
         
         #videoContainer { 
-            position: relative; display: inline-block; width: 95%; max-width: 800px; 
+            position: relative; display: inline-block; width: 95%; max-width: 600px; 
             margin-top: 10px; border-radius: 15px; overflow: hidden; border: 2px solid #333; 
         }
         video { width: 100%; display: block; object-fit: cover; background: #000; }
 
-        .controls { padding: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; background: #111; }
+        .controls { padding: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; background: #111; }
         button { 
-            padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; 
-            background: #222; color: #fff; font-weight: bold; font-size: 12px; transition: 0.2s;
+            padding: 10px 5px; border: none; border-radius: 6px; cursor: pointer; 
+            background: #222; color: #fff; font-weight: bold; font-size: 11px; transition: 0.2s;
         }
-        .activeMode { background: #00695c !important; border: 1px solid #00ffcc; color: #fff; }
-        
-        #btn-universal { background: #4a148c; border: 1px solid #9c27b0; }
-
-        #panel { display: flex; justify-content: space-around; padding: 10px; gap: 10px; }
-        .box { width: 48%; background: #181818; padding: 8px; border-radius: 10px; border: 1px solid #333; }
-        canvas { width: 100%; height: 60px; border-radius: 5px; background: #000; }
+        .activeMode { background: #00695c !important; border: 1px solid #00ffcc; }
 
         #cross { 
-            position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; 
-            transform: translate(-50%, -50%); display: none; pointer-events: none; z-index: 10; 
+            position: absolute; top: 50%; left: 50%; width: 30px; height: 30px; 
+            transform: translate(-50%, -50%); display: block; pointer-events: none; z-index: 10; 
         }
-        #cross::before, #cross::after { content: ""; position: absolute; background: rgba(0, 255, 204, 0.7); }
+        #cross::before, #cross::after { content: ""; position: absolute; background: #00ffcc; opacity: 0.8; }
         #cross::before { left: 50%; top: 0; width: 2px; height: 100%; transform: translateX(-50%); }
         #cross::after { top: 50%; left: 0; width: 100%; height: 2px; transform: translateY(-50%); }
 
-        .pointMarker { 
-            position: absolute; width: 20px; height: 20px; border: 2px solid #ffeb3b; 
-            border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 9; display: none;
-        }
-        #pointB { border-color: #ff5252; }
-
-        #txt { font-size: 18px; padding: 15px; min-height: 60px; font-weight: bold; color: #00ffcc; background: #000; border-bottom: 2px solid #00ffcc; }
+        #txt { font-size: 22px; padding: 20px; min-height: 50px; font-weight: bold; color: #00ffcc; background: #000; border-bottom: 3px solid #00ffcc; text-transform: uppercase; }
         
-        #hud { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.6); font-family: monospace; font-size: 10px; padding: 5px; text-align: left; pointer-events: none; color: #00ffcc; }
+        #hud { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); font-family: monospace; font-size: 10px; padding: 8px; text-align: left; color: #00ffcc; border-radius: 5px; border: 1px solid #444; }
 
-        #databasePanel { background: #111; padding: 15px; }
-        input, select { padding: 10px; border-radius: 5px; border: 1px solid #333; background: #181818; color: #fff; width: 90%; margin: 5px; }
-        #resultList { max-height: 150px; overflow-y: auto; background: #181818; border-radius: 5px; margin-top: 10px; }
-        .item { padding: 8px; border-bottom: 1px solid #222; cursor: pointer; display: flex; align-items: center; font-size: 13px; }
-        .colorBox { width: 20px; height: 20px; border-radius: 50%; margin-right: 10px; border: 1px solid #fff; }
+        .pointMarker { position: absolute; width: 16px; height: 16px; border: 2px solid #ffeb3b; border-radius: 50%; transform: translate(-50%, -50%); display: none; }
+        #pointB { border-color: #f44336; }
     </style>
 </head>
 <body>
 
-<h2>ColorMatch Pro – Extreme Precision V2</h2>
-
-<div class="controls">
-    <button id="btn-static" onclick="setMode('static')">Estático</button>
-    <button id="btn-move" onclick="setMode('move')">Movimento</button>
-    <button id="btn-comparePoint" onclick="setMode('comparePoint')">Ponto a Ponto</button>
-    <button id="btn-compareDatabase" onclick="setMode('compareDatabase')">Base OEM</button>
-    <button onclick="toggleFlash()">⚡ Flash</button>
-    <button onclick="location.reload()" style="background:#b71c1c">Recarregar</button>
-</div>
+<h2>ColorMatch Pro – V2.1 Real-World</h2>
 
 <div id="videoContainer">
     <video id="video" autoplay playsinline muted></video>
     <div id="hud">
         RGB: <span id="valRGB">0,0,0</span><br>
-        RATIO R/B: <span id="valRatio">0.0</span>
+        HUE: <span id="valHue">0°</span><br>
+        CHROMA: <span id="valChroma">0</span>
     </div>
     <div id="cross"></div>
     <div id="pointA" class="pointMarker"></div>
     <div id="pointB" class="pointMarker"></div>
 </div>
 
-<div id="txt">Sistema Pronto. Clique na cor.</div>
+<div id="txt">Iniciando Sensor...</div>
 
-<div id="panel">
-    <div class="box"><canvas id="canvasA"></canvas></div>
-    <div class="box"><canvas id="canvasB"></canvas></div>
-</div>
-
-<div id="databasePanel">
-    <input type="text" id="brandSearch" placeholder="Montadora (ex: Fiat, Ford)...">
-    <select id="modelSelect"><option value="">Modelo/Ano</option></select>
-    <div id="resultList"></div>
+<div class="controls">
+    <button id="btn-static" onclick="setMode('static')" class="activeMode">Estático</button>
+    <button id="btn-move" onclick="setMode('move')">Movimento</button>
+    <button id="btn-comparePoint" onclick="setMode('comparePoint')">Comparar</button>
+    <button onclick="toggleFlash()">⚡ Flash</button>
+    <button onclick="location.reload()" style="background:#444">Reset</button>
 </div>
 
 <script>
     const video = document.getElementById("video");
-    const canvasA = document.getElementById("canvasA");
-    const ctxA = canvasA.getContext("2d", {willReadFrequently:true});
     const txt = document.getElementById("txt");
-    const cross = document.getElementById("cross");
-    const pointA = document.getElementById("pointA");
-    const pointB = document.getElementById("pointB");
     const valRGB = document.getElementById("valRGB");
-    const valRatio = document.getElementById("valRatio");
-
+    const valHue = document.getElementById("valHue");
+    const valChroma = document.getElementById("valChroma");
+    
     let mode = "static";
     let streamTrack = null;
-    let flashOn = false;
-    let compareALab = null;
-    let compareStep = 0;
     let lastSpoken = "";
+    let compareStep = 0, compareALab = null;
 
-    // --- MOTOR DE VOZ VALIDADO ---
     function speak(t) {
         if (!t || t === lastSpoken) return;
-        window.speechSynthesis.cancel(); 
+        window.speechSynthesis.cancel();
         const m = new SpeechSynthesisUtterance(t);
         m.lang = "pt-BR";
-        m.rate = 1.0; 
         window.speechSynthesis.speak(m);
         lastSpoken = t;
     }
 
-    // --- MOTOR DE COR CIELAB + RATIO QUANTUM ---
     function rgbToLab(r, g, b) {
-        const toLinear = (v) => {
-            v /= 255;
-            return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-        };
-        let R = toLinear(r), G = toLinear(g), B = toLinear(b);
+        const toL = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+        let R = toL(r), G = toL(g), B = toL(b);
         let x = (R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047;
         let y = (R * 0.2126 + G * 0.7152 + B * 0.0722) / 1.00000;
         let z = (R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883;
@@ -133,138 +95,123 @@
     }
 
     function analyzeColor(lab) {
-        const { r, g, b } = lab;
-        const chroma = Math.sqrt(lab.a**2 + lab.b**2);
-        let hue = Math.atan2(lab.b, lab.a) * (180 / Math.PI);
+        const { r, g, b, L, a, b: labB } = lab;
+        const chroma = Math.sqrt(a**2 + labB**2);
+        let hue = Math.atan2(labB, a) * (180 / Math.PI);
         if (hue < 0) hue += 360;
 
-        const ratio = r / (b + 1);
+        // Atualiza HUD
         valRGB.innerText = `${Math.round(r)},${Math.round(g)},${Math.round(b)}`;
-        valRatio.innerText = ratio.toFixed(2);
+        valHue.innerText = Math.round(hue) + "°";
+        valChroma.innerText = Math.round(chroma);
 
-        // 1. Filtro de Neutros
-        if (chroma < 10) {
-            if (lab.L > 80) return "Branco";
-            if (lab.L < 20) return "Preto";
-            return "Cinza";
+        // 1. PRIORIDADE MÁXIMA: NEUTROS (Branco/Preto/Cinza)
+        // Se a cor for muito clara e tiver pouca saturação (chroma), é branco.
+        if (L > 85 && chroma < 18) return "Branco";
+        if (L < 15) return "Preto";
+        if (chroma < 12) return "Cinza";
+
+        // 2. LÓGICA DE CORES REAIS (Baseada em Hue com refinamento)
+        if (hue >= 350 || hue < 12) return "Vermelho";
+        if (hue >= 12 && hue < 45) return "Laranja";
+        if (hue >= 45 && hue < 70) return "Amarelo";
+        if (hue >= 70 && hue < 160) return "Verde";
+        if (hue >= 160 && hue < 250) return "Azul";
+
+        // 3. ZONA CRÍTICA: ROXO VS ROSA
+        if (hue >= 250 && hue < 350) {
+            // No Roxo, o Azul (B) é competitivo ou maior que o Vermelho (R)
+            // No Rosa, o Vermelho (R) domina muito o Azul (B)
+            const rbRatio = r / (b + 1);
+            if (rbRatio > 1.4) return "Rosa";
+            if (b > r * 0.6) return "Roxo"; // Se tiver azul suficiente, é roxo
+            return (hue < 310) ? "Roxo" : "Rosa";
         }
-
-        // 2. Lógica Quantum: Roxo vs Rosa (Zona Crítica)
-        if (hue > 260 && hue < 355) {
-            // Se o Vermelho for dominante sobre o azul (Ratio alto), é Rosa
-            if (ratio > 1.35) return "Rosa"; 
-            // Se o Azul for equilibrado ou maior que o Vermelho, é Roxo
-            if (ratio <= 1.25) return "Roxo";
-            // Desempate por Matiz (Hue)
-            return (hue < 315) ? "Roxo" : "Rosa";
-        }
-
-        // 3. Demais Cores
-        if (hue >= 355 || hue < 20) return "Vermelho";
-        if (hue >= 20 && hue < 45) return "Laranja";
-        if (hue >= 45 && hue < 85) return "Amarelo";
-        if (hue >= 85 && hue < 165) return "Verde";
-        if (hue >= 165 && hue < 260) return "Azul";
 
         return "Cor Indefinida";
     }
 
-    // --- CAPTURA COM KERNEL 10x10 (MÉDIA DE ÁREA) ---
-    function captureArea(x, y, ctx) {
-        const size = 10; // Kernel de amostragem
+    function capture(x, y) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const size = 12; // Kernel balanceado
+        canvas.width = size; canvas.height = size;
         const rect = video.getBoundingClientRect();
         const sx = video.videoWidth / rect.width;
         const sy = video.videoHeight / rect.height;
-        
-        ctx.canvas.width = size; ctx.canvas.height = size;
         ctx.drawImage(video, x*sx - size/2, y*sy - size/2, size, size, 0, 0, size, size);
-        
-        const d = ctx.getImageData(0, 0, size, size).data;
+        const data = ctx.getImageData(0,0,size,size).data;
         let r=0, g=0, b=0;
-        for(let i=0; i<d.length; i+=4) { r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
-        const count = d.length / 4;
-        return { r: r/count, g: g/count, b: b/count };
+        for(let i=0; i<data.length; i+=4) { r+=data[i]; g+=data[i+1]; b+=data[i+2]; }
+        return { r: r/(size*size), g: g/(size*size), b: b/(size*size) };
     }
 
-    // --- CONTROLE DE MODOS ---
-    function setMode(m) {
-        mode = m;
-        compareStep = 0;
-        document.querySelectorAll('.controls button').forEach(b => b.classList.remove('activeMode'));
-        document.getElementById('btn-' + m)?.classList.add('activeMode');
-        cross.style.display = (m === "move" || m === "static") ? "block" : "none";
-        pointA.style.display = pointB.style.display = "none";
-        txt.innerText = "Modo: " + m.toUpperCase();
-        speak("Modo " + m);
+    async function init() {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = stream;
+        streamTrack = stream.getVideoTracks()[0];
+        requestAnimationFrame(loop);
     }
 
-    async function startCamera() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "environment", focusMode: "continuous" }
-            });
-            video.srcObject = stream;
-            streamTrack = stream.getVideoTracks()[0];
-        } catch (e) {
-            txt.innerText = "Erro ao acessar câmera.";
+    function loop() {
+        if (mode === "move") {
+            const rect = video.getBoundingClientRect();
+            const rgb = capture(rect.width/2, rect.height/2);
+            const lab = rgbToLab(rgb.r, rgb.g, rgb.b);
+            const name = analyzeColor(lab);
+            txt.innerText = name;
+            speak(name);
         }
-    }
-
-    function moveLoop() {
-        if (mode !== "move") return;
-        const rect = video.getBoundingClientRect();
-        const rgb = captureArea(rect.width/2, rect.height/2, ctxA);
-        const lab = rgbToLab(rgb.r, rgb.g, rgb.b);
-        const name = analyzeColor(lab);
-        txt.innerText = "Detectado: " + name;
-        if (name !== lastSpoken) speak(name);
-        setTimeout(() => requestAnimationFrame(moveLoop), 500); // Delay para não sobrecarregar voz
+        requestAnimationFrame(loop);
     }
 
     video.addEventListener("click", (e) => {
         const rect = video.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        const rgb = captureArea(x, y, ctxA);
+        const rgb = capture(x, y);
         const lab = rgbToLab(rgb.r, rgb.g, rgb.b);
         const name = analyzeColor(lab);
 
         if (mode === "static") {
-            txt.innerText = "Cor: " + name;
+            txt.innerText = name;
             speak(name);
         } else if (mode === "comparePoint") {
             if (compareStep === 0) {
                 compareALab = lab;
-                pointA.style.left = x + "px"; pointA.style.top = y + "px"; pointA.style.display = "block";
-                speak("Ponto A " + name + ". Selecione o B.");
+                document.getElementById("pointA").style.left = x+"px";
+                document.getElementById("pointA").style.top = y+"px";
+                document.getElementById("pointA").style.display = "block";
+                speak("Ponto A: " + name);
                 compareStep = 1;
             } else {
-                pointB.style.left = x + "px"; pointB.style.top = y + "px"; pointB.style.display = "block";
-                const dL = lab.L - compareALab.L;
-                const da = lab.a - compareALab.a;
-                const db = lab.b - compareALab.b;
-                const dist = Math.sqrt(dL*dL + da*da + db*db);
-                const sim = Math.max(0, 100 - (dist * 2.5)).toFixed(1);
-                txt.innerText = "Similaridade: " + sim + "%";
-                speak(sim + " por cento de similaridade.");
+                document.getElementById("pointB").style.left = x+"px";
+                document.getElementById("pointB").style.top = y+"px";
+                document.getElementById("pointB").style.display = "block";
+                const dist = Math.sqrt((lab.L-compareALab.L)**2 + (lab.a-compareALab.a)**2 + (lab.b-compareALab.b)**2);
+                const sim = Math.max(0, 100 - (dist * 2)).toFixed(1);
+                txt.innerText = sim + "% Similar";
+                speak(sim + " por cento");
                 compareStep = 0;
             }
         }
     });
 
-    function toggleFlash() {
-        if (!streamTrack) return;
-        flashOn = !flashOn;
-        streamTrack.applyConstraints({ advanced: [{ torch: flashOn }] }).catch(e => console.log(e));
+    function setMode(m) {
+        mode = m;
+        document.querySelectorAll('button').forEach(b => b.classList.remove('activeMode'));
+        document.getElementById('btn-'+m).classList.add('activeMode');
+        txt.innerText = "Modo " + m;
     }
 
-    window.onload = () => { startCamera(); setMode('static'); };
+    function toggleFlash() {
+        if (streamTrack) {
+            const settings = streamTrack.getSettings();
+            streamTrack.applyConstraints({ advanced: [{ torch: !settings.torch }] });
+        }
+    }
 
-    // Observação: O modo de Movimento agora é ativado explicitamente
-    document.getElementById('btn-move').addEventListener('click', () => {
-        setTimeout(moveLoop, 1000);
-    });
-
+    init();
 </script>
 </body>
 </html>
