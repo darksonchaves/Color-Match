@@ -21,7 +21,6 @@
         }
         .activeMode { background: #00695c !important; border: 1px solid #00ffcc; color: #fff; }
         
-        /* Botão Especial Modo Universal */
         #btn-universal { background: #4a148c; border: 1px solid #9c27b0; }
         #btn-universal.activeMode { background: #9c27b0 !important; box-shadow: 0 0 10px #9c27b0; }
 
@@ -98,15 +97,25 @@
 
     let mode = "static";
     let isUniversal = false;
-    let voice = true;
     let streamTrack = null;
     let flashOn = false;
     let selectedDatabaseColor = null;
     let compareALab = null;
     let compareStep = 0;
+    let lastSpoken = "";
+
+    // --- MOTOR DE VOZ ---
+    function speak(t) {
+        if (!t || t === lastSpoken) return;
+        speechSynthesis.cancel(); 
+        const m = new SpeechSynthesisUtterance(t);
+        m.lang = "pt-BR";
+        m.rate = 1.1; 
+        speechSynthesis.speak(m);
+        lastSpoken = t;
+    }
 
     // --- MOTOR CIELAB AVANÇADO ---
-
     function toLinear(v) {
         v /= 255;
         return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
@@ -121,7 +130,6 @@
         return { L: (116 * f(y)) - 16, a: 500 * (f(x) - f(y)), b: 200 * (f(y) - f(z)) };
     }
 
-    // Fórmula Delta E 2000 Simplificada para Performance (Ajuste de Percepção Humana)
     function deltaE2000(labA, labB) {
         let dL = labA.L - labB.L;
         let da = labA.a - labB.a;
@@ -130,15 +138,12 @@
         let c2 = Math.sqrt(labB.a**2 + labB.b**2);
         let dC = c1 - c2;
         let dH = Math.sqrt(Math.max(0, da**2 + db**2 - dC**2));
-        
-        // Pesos baseados na sensibilidade do olho humano
         let sL = 1, sC = 1 + 0.045 * c1, sH = 1 + 0.015 * c1;
         return Math.sqrt((dL/sL)**2 + (dC/sC)**2 + (dH/sH)**2);
     }
 
     function detectName(lab) {
         if (isUniversal) {
-            // No modo Universal, ignoramos variações sutis de brilho e focamos no matiz puro
             const chroma = Math.sqrt(lab.a**2 + lab.b**2);
             if (chroma < 8) {
                 if (lab.L > 75) return "Branco Sólido";
@@ -146,35 +151,33 @@
                 return "Cinza Sólido";
             }
         }
-
         let hue = Math.atan2(lab.b, lab.a) * (180 / Math.PI);
         if (hue < 0) hue += 360;
-
-        // Calibração Refinada Humana (Ajuste Roxo/Rosa)
         if (hue >= 350 || hue < 20) return "Vermelho";
         if (hue >= 20 && hue < 45) return "Laranja";
         if (hue >= 45 && hue < 85) return "Amarelo";
         if (hue >= 85 && hue < 160) return "Verde";
         if (hue >= 160 && hue < 255) return "Azul";
-        if (hue >= 255 && hue < 305) return "Roxo"; // Reduzido para evitar invasão do Rosa
-        if (hue >= 305 && hue < 350) return "Rosa"; // Expandido para captar tons avermelhados/pink
+        if (hue >= 255 && hue < 305) return "Roxo";
+        if (hue >= 305 && hue < 350) return "Rosa";
         return "Cor Especial";
     }
 
     // --- GESTÃO DE MODOS ---
-
     function toggleUniversal() {
         isUniversal = !isUniversal;
         const btn = document.getElementById("btn-universal");
         btn.classList.toggle("activeMode", isUniversal);
         btn.innerText = isUniversal ? "🌐 Modo Universal: ON" : "🌐 Modo Universal: OFF";
-        txt.innerText = isUniversal ? "Foco em cores sólidas e primárias." : "Modo de alta sensibilidade ativado.";
-        speak(isUniversal ? "Modo universal ativado" : "Modo universal desligado");
+        const msg = isUniversal ? "Modo universal ativado. Foco em cores sólidas." : "Modo de alta sensibilidade ativado.";
+        txt.innerText = msg;
+        speak(isUniversal ? "Modo universal ligado" : "Modo universal desligado");
     }
 
     function setMode(m) {
         mode = m;
         compareStep = 0;
+        lastSpoken = ""; // Reseta fala ao trocar modo
         document.querySelectorAll('.controls button').forEach(b => {
             if(b.id !== 'btn-universal') b.classList.remove('activeMode');
         });
@@ -182,17 +185,22 @@
         cross.style.display = (m === "move" || m === "static") ? "block" : "none";
         if (m !== "comparePoint") { pointA.style.display = pointB.style.display = "none"; }
         txt.innerText = "Modo: " + m.toUpperCase();
+        speak("Modo " + m);
         if (m === "move") requestAnimationFrame(moveLoop);
     }
 
     // --- CAPTURA E PROCESSAMENTO ---
-
     async function startCamera() {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "environment", width: 1280, height: 720 }, audio: false
-        });
-        video.srcObject = stream;
-        streamTrack = stream.getVideoTracks()[0];
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment", width: 1280, height: 720 }, audio: false
+            });
+            video.srcObject = stream;
+            streamTrack = stream.getVideoTracks()[0];
+        } catch (e) {
+            txt.innerText = "Erro ao acessar câmera.";
+            speak("Erro ao acessar câmera");
+        }
     }
 
     function capture(x, y, ctx) {
@@ -213,7 +221,13 @@
         const rect = video.getBoundingClientRect();
         const rgb = capture(rect.width/2, rect.height/2, ctxA);
         const lab = rgbToLab(rgb.r, rgb.g, rgb.b);
-        txt.innerText = "Análise: " + detectName(lab) + " | L:" + Math.round(lab.L);
+        const name = detectName(lab);
+        txt.innerText = "Análise: " + name + " | L:" + Math.round(lab.L);
+        
+        // No modo movimento, falamos a cada 2 segundos se a cor mudar para não saturar o audio
+        if (name !== lastSpoken) {
+            speak(name);
+        }
         requestAnimationFrame(moveLoop);
     }
 
@@ -223,52 +237,53 @@
         const y = e.clientY - rect.top;
         const rgb = capture(x, y, ctxA);
         const lab = rgbToLab(rgb.r, rgb.g, rgb.b);
+        const name = detectName(lab);
 
         if (mode === "comparePoint") {
             if (compareStep === 0) {
                 compareALab = lab;
                 pointA.style.left = x + "px"; pointA.style.top = y + "px"; pointA.style.display = "block";
-                txt.innerText = "Ponto A capturado. Selecione Ponto B.";
+                txt.innerText = "Ponto A: " + name + ". Selecione Ponto B.";
+                speak("Ponto A " + name + ". Agora selecione o ponto B.");
                 compareStep = 1;
             } else {
                 pointB.style.left = x + "px"; pointB.style.top = y + "px"; pointB.style.display = "block";
                 const dist = deltaE2000(compareALab, lab);
                 const sim = Math.max(0, 100 - (dist * 1.5)).toFixed(1);
-                txt.innerText = "Similaridade Perceptiva: " + sim + "%";
-                speak(sim + " por cento de similaridade");
+                txt.innerText = "Similaridade: " + sim + "%";
+                speak(sim + " por cento de similaridade entre os pontos.");
                 compareStep = 0;
             }
         } else if (mode === "compareDatabase") {
-            if (!selectedDatabaseColor) return alert("Selecione uma cor OEM abaixo");
+            if (!selectedDatabaseColor) {
+                speak("Por favor, selecione uma cor da base primeiro.");
+                return alert("Selecione uma cor OEM abaixo");
+            }
             const dist = deltaE2000(lab, selectedDatabaseColor.lab);
             const sim = Math.max(0, 100 - (dist * 1.5)).toFixed(1);
             txt.innerText = "Compatibilidade com " + selectedDatabaseColor.name + ": " + sim + "%";
-            speak("Compatibilidade de " + sim + " por cento");
+            speak("A cor capturada tem " + sim + " por cento de compatibilidade com " + selectedDatabaseColor.name);
         } else if (mode === "static") {
-            txt.innerText = "Cor detectada: " + detectName(lab);
-            speak(detectName(lab));
+            txt.innerText = "Cor detectada: " + name;
+            speak(name);
         }
     });
 
     function toggleFlash() {
         flashOn = !flashOn;
-        streamTrack.applyConstraints({ advanced: [{ torch: flashOn }] });
-    }
-
-    function speak(t) {
-        if (!voice) return;
-        speechSynthesis.cancel();
-        const m = new SpeechSynthesisUtterance(t);
-        m.lang = "pt-BR";
-        speechSynthesis.speak(m);
+        if (streamTrack) {
+            streamTrack.applyConstraints({ advanced: [{ torch: flashOn }] });
+            speak(flashOn ? "Flash ligado" : "Flash desligado");
+        }
     }
 
     // --- BANCO DE DADOS OEM ---
     const oemDatabase = [
-        { brand: "Toyota", model: "Corolla", code: "040", name: "Super White II", rgb: {r:245, g:245, b:242} },
-        { brand: "Toyota", model: "Corolla", code: "218", name: "Midnight Black", rgb: {r:25, g:25, b:27} },
-        { brand: "Honda", model: "Civic", code: "NH-731P", name: "Crystal Black", rgb: {r:18, g:18, b:20} },
-        { brand: "VW", model: "Gol", code: "R8R8", name: "Flash Red", rgb: {r:190, g:30, b:40} }
+        { brand: "Toyota", model: "Corolla", code: "040", name: "Branco Polar", rgb: {r:245, g:245, b:242} },
+        { brand: "Toyota", model: "Corolla", code: "218", name: "Preto Atitude", rgb: {r:25, g:25, b:27} },
+        { brand: "Honda", model: "Civic", code: "NH-731P", name: "Preto Cristal", rgb: {r:18, g:18, b:20} },
+        { brand: "VW", model: "Gol", code: "R8R8", name: "Vermelho Flash", rgb: {r:190, g:30, b:40} },
+        { brand: "Fiat", model: "Uno", code: "249", name: "Branco Banchisa", rgb: {r:250, g:250, b:250} }
     ];
 
     function searchBrand() {
@@ -290,7 +305,8 @@
                              <div><strong>${c.name}</strong> (${c.code})</div>`;
             div.onclick = () => {
                 selectedDatabaseColor = {...c, lab: rgbToLab(c.rgb.r, c.rgb.g, c.rgb.b)};
-                txt.innerText = "Cor OEM Selecionada: " + c.name;
+                txt.innerText = "Alvo: " + c.name;
+                speak("Alvo definido para " + c.name);
             };
             list.appendChild(div);
         });
