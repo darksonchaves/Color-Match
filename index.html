@@ -2,249 +2,186 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ColorMatch Pro – Estabilidade OEM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ColorMatch Pro - Ultra Performance</title>
     <style>
-        body { margin: 0; font-family: Arial; background: #111; color: #fff; text-align: center; }
-        h2 { margin-top: 15px; font-size: 24px; color: #00ffcc; }
-        #videoContainer { position: relative; display: inline-block; width: 92%; max-width: 800px; border-radius: 12px; overflow: hidden; border: 2px solid #333; }
-        video { width: 100%; display: block; object-fit: cover; background: #000; }
-        .controls { padding: 10px; background: #181818; display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
-        button { padding: 10px 12px; border: none; border-radius: 8px; cursor: pointer; background: #222; color: #fff; font-size: 14px; }
-        .activeMode { background: #00695c !important; border: 1px solid #00ffcc; }
-        #txt { font-size: 20px; padding: 15px; min-height: 40px; color: #00ffcc; font-weight: bold; background: #000; }
-        #cross { position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; transform: translate(-50%, -50%); display: none; pointer-events: none; z-index: 999; }
-        #cross::before, #cross::after { content: ""; position: absolute; background: #00ffcc; }
-        #cross::before { left: 50%; top: 0; width: 2px; height: 100%; transform: translateX(-50%); }
-        #cross::after { top: 50%; left: 0; width: 100%; height: 2px; transform: translateY(-50%); }
-        .pointMarker { position: absolute; width: 24px; height: 24px; border: 3px solid #ffeb3b; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
-        #databasePanel { margin-top: 10px; padding: 15px; background: #181818; }
-        input, select { padding: 10px; border-radius: 8px; border: none; margin: 5px; width: 85%; }
-        #resultList { background: #1f1f1f; border-radius: 10px; padding: 10px; max-height: 200px; overflow-y: auto; }
-        .item { padding: 10px; border-bottom: 1px solid #333; cursor: pointer; text-align: left; }
-        .colorBox { width: 18px; height: 18px; display: inline-block; border-radius: 50%; margin-right: 8px; border: 1px solid #fff; vertical-align: middle; }
+        :root { --accent: #00ffcc; --bg: #0a0a0a; }
+        body { margin: 0; font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: #fff; overflow: hidden; }
+        
+        /* Interface Minimalista para Performance */
+        .ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; }
+        .top-bar { background: rgba(0,0,0,0.7); padding: 15px; pointer-events: auto; display: flex; justify-content: space-between; align-items: center; }
+        
+        video { width: 100vw; height: 100vh; object-fit: cover; }
+        
+        /* Mira de Precisão */
+        #reticle { 
+            position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; 
+            transform: translate(-50%, -50%); border: 2px solid var(--accent);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        }
+        #reticle::after { content: ''; width: 4px; height: 4px; background: var(--accent); border-radius: 50%; }
+
+        .data-display { background: rgba(0,0,0,0.85); padding: 20px; pointer-events: auto; border-top: 1px solid #333; }
+        #colorName { font-size: 32px; font-weight: bold; color: var(--accent); display: block; margin-bottom: 5px; }
+        #colorDetails { font-family: monospace; font-size: 14px; color: #888; }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        button { flex: 1; padding: 12px; border: 1px solid #444; background: #222; color: #fff; border-radius: 6px; font-weight: bold; }
+        button.active { background: var(--accent); color: #000; border-color: var(--accent); }
     </style>
 </head>
 <body>
 
-<h2>ColorMatch Pro – V3 Estável</h2>
+<div class="ui-overlay">
+    <div class="top-bar">
+        <span>COLORMIDIA v4.0</span>
+        <button onclick="toggleVoice()" id="voiceBtn" style="width: auto; padding: 5px 15px;">🔊 Áudio: ON</button>
+    </div>
 
-<div class="controls">
-    <button id="btn-static" onclick="setMode('static')" class="activeMode">Estático</button>
-    <button id="btn-move" onclick="setMode('move')">Movimento</button>
-    <button id="btn-comparePoint" onclick="setMode('comparePoint')">Comparar Pontos</button>
-    <button id="btn-compareDatabase" onclick="setMode('compareDatabase')">Base OEM</button>
-    <button onclick="toggleFlash()">⚡ Flash</button>
-    <button onclick="toggleVoice()">🔊 Áudio: <span id="voiceStatus">ON</span></button>
+    <div id="reticle"></div>
+
+    <div class="data-display">
+        <span id="colorName">ANALISANDO...</span>
+        <div id="colorDetails">RGB: 0, 0, 0 | LUX: 0%</div>
+        <div class="btn-group">
+            <button onclick="setMode('live')" id="btn-live" class="active">REAL-TIME</button>
+            <button onclick="toggleFlash()">FLASH</button>
+            <button onclick="location.reload()">RESET</button>
+        </div>
+    </div>
 </div>
 
-<div id="videoContainer">
-    <video id="video" autoplay playsinline muted></video>
-    <div id="cross"></div>
-    <div id="pointA" class="pointMarker" style="display:none"></div>
-    <div id="pointB" class="pointMarker" style="display:none; border-color:#ff5252"></div>
-</div>
-
-<div id="txt">Iniciando sistema...</div>
-
-<div id="databasePanel">
-    <input type="text" id="brandSearch" placeholder="Montadora..." oninput="searchBrand()">
-    <select id="modelSelect" onchange="showModelColors()"><option value="">Modelo</option></select>
-    <div id="resultList"></div>
-</div>
+<video id="video" autoplay playsinline muted></video>
+<canvas id="procCanvas" style="display:none;"></canvas>
 
 <script>
-    const video = document.getElementById("video");
-    const txt = document.getElementById("txt");
-    const cross = document.getElementById("cross");
-    const pointA = document.getElementById("pointA");
-    const pointB = document.getElementById("pointB");
-
-    let mode = "static";
-    let voice = true;
-    let streamTrack = null;
+    const video = document.getElementById('video');
+    const colorName = document.getElementById('colorName');
+    const colorDetails = document.getElementById('colorDetails');
+    const voiceBtn = document.getElementById('voiceBtn');
+    
+    let isVoice = true;
     let lastSpoken = "";
-    let compareStep = 0;
-    let compareALab = null;
-    let selectedDatabaseColor = null;
+    let streamTrack = null;
 
-    // --- BANCO DE DADOS OEM ---
-    const oemDatabase = [
-        { brand:"Toyota", model:"Corolla", year:"2024", code:"040", name:"Super White II", rgb:{r:244,g:244,b:241} },
-        { brand:"Toyota", model:"Corolla", year:"2024", code:"218", name:"Midnight Black Metallic", rgb:{r:27,g:27,b:27} },
-        { brand:"Toyota", model:"Corolla", year:"2024", code:"3U5", name:"Emotional Red", rgb:{r:126,g:31,b:36} }
-    ];
-
-    // --- INICIALIZAÇÃO ---
-    async function startCamera() {
+    // Configurações de Hardware Máximo
+    async function init() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
+                video: { 
+                    facingMode: "environment",
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    frameRate: { ideal: 60 }
+                }
             });
             video.srcObject = stream;
             streamTrack = stream.getVideoTracks()[0];
-            txt.innerText = "Câmera pronta.";
+            processFrame();
         } catch (e) {
-            txt.innerText = "Erro ao acessar câmera.";
+            colorName.innerText = "ERRO DE CÂMERA";
         }
     }
 
-    // --- MOTOR DE VOZ ---
-    function speak(t) {
-        if (!voice || !t || t === lastSpoken) return;
+    function processFrame() {
+        if (video.paused || video.ended) return;
+
+        const canvas = document.getElementById('procCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        
+        // Amostragem de área 20x20 para simular a fóvea humana
+        const size = 20;
+        canvas.width = size;
+        canvas.height = size;
+
+        // Captura central
+        const sx = (video.videoWidth / 2) - (size / 2);
+        const sy = (video.videoHeight / 2) - (size / 2);
+
+        ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
+        const imgData = ctx.getImageData(0, 0, size, size).data;
+
+        let r = 0, g = 0, b = 0;
+        for (let i = 0; i < imgData.length; i += 4) {
+            r += imgData[i];
+            g += imgData[i+1];
+            b += imgData[i+2];
+        }
+        
+        const count = imgData.length / 4;
+        analyzeColor(Math.floor(r/count), Math.floor(g/count), Math.floor(b/count));
+
+        requestAnimationFrame(processFrame);
+    }
+
+    function analyzeColor(r, g, b) {
+        // Lógica de Interpretação Humana (Foco em Intensidade)
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const delta = max - min;
+        const brightness = (max / 255) * 100;
+
+        // Conversão HSL para identificar a ALMA da cor
+        let h = 0;
+        if (delta !== 0) {
+            if (max === r) h = ((g - b) / delta) % 6;
+            else if (max === g) h = (b - r) / delta + 2;
+            else h = (r - g) / delta + 4;
+            h = Math.round(h * 60);
+            if (h < 0) h += 360;
+        }
+
+        const s = max === 0 ? 0 : (delta / max) * 100;
+
+        let name = "";
+
+        // Tabela de Percepção Humana Real
+        if (brightness < 12) name = "Preto";
+        else if (brightness > 85 && s < 10) name = "Branco";
+        else if (s < 12) name = "Cinza";
+        else {
+            if (h >= 345 || h < 15) name = "Vermelho";
+            else if (h >= 15 && h < 45) name = "Laranja";
+            else if (h >= 45 && h < 75) name = "Amarelo";
+            else if (h >= 75 && h < 160) name = "Verde";
+            else if (h >= 160 && h < 250) name = "Azul";
+            else if (h >= 250 && h < 300) name = "Roxo";
+            else name = "Rosa";
+        }
+
+        colorName.innerText = name.toUpperCase();
+        colorDetails.innerText = `RGB: ${r},${g},${b} | SAT: ${Math.round(s)}% | LUX: ${Math.round(brightness)}%`;
+        
+        if (name !== lastSpoken && isVoice) {
+            speak(name);
+        }
+    }
+
+    function speak(text) {
         window.speechSynthesis.cancel();
-        const m = new SpeechSynthesisUtterance(t);
-        m.lang = "pt-BR";
-        window.speechSynthesis.speak(m);
-        lastSpoken = t;
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'pt-BR';
+        msg.rate = 1.2;
+        window.speechSynthesis.speak(msg);
+        lastSpoken = text;
     }
 
     function toggleVoice() {
-        voice = !voice;
-        document.getElementById("voiceStatus").innerText = voice ? "ON" : "OFF";
+        isVoice = !isVoice;
+        voiceBtn.innerText = isVoice ? "🔊 Áudio: ON" : "🔇 Áudio: OFF";
     }
 
-    // --- MOTOR DE COR (HSL CONFIÁVEL) ---
-    function getRGB(x, y) {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d", {willReadFrequently:true});
-        const size = 15; // Amostragem média
-        canvas.width = size; canvas.height = size;
-        const rect = video.getBoundingClientRect();
-        const sx = video.videoWidth / rect.width;
-        const sy = video.videoHeight / rect.height;
-        ctx.drawImage(video, x*sx - size/2, y*sy - size/2, size, size, 0, 0, size, size);
-        const d = ctx.getImageData(0,0,size,size).data;
-        let r=0, g=0, b=0;
-        for(let i=0; i<d.length; i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
-        return { r: r/(d.length/4), g: g/(d.length/4), b: b/(d.length/4) };
-    }
-
-    function rgbToHsl(r, g, b) {
-        r/=255; g/=255; b/=255;
-        const max = Math.max(r, g, b), min = Math.min(r, g, b);
-        let h, s, l = (max + min) / 2;
-        if (max === min) { h = s = 0; }
-        else {
-            const d = max - min;
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch (max) {
-                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                case g: h = (b - r) / d + 2; break;
-                case b: h = (r - g) / d + 4; break;
-            }
-            h /= 6;
-        }
-        return { h: h * 360, s: s * 100, l: l * 100 };
-    }
-
-    function nameColor(r, g, b) {
-        const hsl = rgbToHsl(r, g, b);
-        const { h, s, l } = hsl;
-
-        if (l < 15) return "Preto";
-        if (l > 85 && s < 12) return "Branco";
-        if (s < 12) return "Cinza";
-
-        if (h < 15 || h > 345) return "Vermelho";
-        if (h < 45) return "Laranja";
-        if (h < 70) return "Amarelo";
-        if (h < 165) return "Verde";
-        if (h < 260) return "Azul";
-        if (h < 315) return "Roxo"; // Ajustado para não confundir com Rosa
-        return "Rosa";
-    }
-
-    // --- FUNÇÕES LAB PARA COMPARAÇÃO ---
-    function rgbToLab(r,g,b){
-        r/=255; g/=255; b/=255;
-        [r,g,b] = [r,g,b].map(v => v > 0.04045 ? Math.pow((v+0.055)/1.055, 2.4) : v/12.92);
-        let x = r*0.4124 + g*0.3576 + b*0.1805;
-        let y = r*0.2126 + g*0.7152 + b*0.0722;
-        let z = r*0.0193 + g*0.1192 + b*0.9505;
-        x/=0.95047; z/=1.08883;
-        [x,y,z] = [x,y,z].map(v => v > 0.008856 ? Math.pow(v, 1/3) : (7.787*v)+(16/116));
-        return { L:(116*y)-16, a:500*(x-y), b:200*(y-z) };
-    }
-
-    // --- LOGICA DE MODOS ---
-    function setMode(m) {
-        mode = m;
-        compareStep = 0;
-        document.querySelectorAll('.controls button').forEach(b => b.classList.remove('activeMode'));
-        document.getElementById('btn-' + m)?.classList.add('activeMode');
-        cross.style.display = (m === "move" || m === "comparePoint" || m === "compareDatabase") ? "block" : "none";
-        pointA.style.display = pointB.style.display = "none";
-        txt.innerText = "Modo " + m;
-        if(m === "move") requestAnimationFrame(moveLoop);
-    }
-
-    function moveLoop() {
-        if (mode !== "move") return;
-        const rect = video.getBoundingClientRect();
-        const rgb = getRGB(rect.width/2, rect.height/2);
-        const name = nameColor(rgb.r, rgb.g, rgb.b);
-        txt.innerText = "Cor: " + name;
-        speak(name);
-        requestAnimationFrame(moveLoop);
-    }
-
-    video.addEventListener("click", (e) => {
-        const rect = video.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const rgb = getRGB(x, y);
-        const name = nameColor(rgb.r, rgb.g, rgb.b);
-
-        if (mode === "static") {
-            txt.innerText = "Cor: " + name;
-            speak(name);
-        } else if (mode === "comparePoint") {
-            const lab = rgbToLab(rgb.r, rgb.g, rgb.b);
-            if (compareStep === 0) {
-                compareALab = lab;
-                pointA.style.left = x + "px"; pointA.style.top = y + "px"; pointA.style.display = "block";
-                speak("Ponto A definido");
-                compareStep = 1;
-            } else {
-                pointB.style.left = x + "px"; pointB.style.top = y + "px"; pointB.style.display = "block";
-                const dist = Math.sqrt((lab.L-compareALab.L)**2 + (lab.a-compareALab.a)**2 + (lab.b-compareALab.b)**2);
-                const sim = Math.max(0, 100 - dist).toFixed(1);
-                txt.innerText = "Similaridade: " + sim + "%";
-                speak(sim + "% de similaridade");
-                compareStep = 0;
-            }
-        }
-    });
-
-    // --- RECURSOS OEM ---
-    function searchBrand(){
-        const b = document.getElementById("brandSearch").value.toLowerCase();
-        const sel = document.getElementById("modelSelect");
-        sel.innerHTML = '<option value="">Modelo</option>';
-        const filtered = [...new Set(oemDatabase.filter(i => i.brand.toLowerCase().includes(b)).map(i => i.model))];
-        filtered.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
-    }
-
-    function showModelColors(){
-        const m = document.getElementById("modelSelect").value;
-        const list = document.getElementById("resultList");
-        list.innerHTML = "";
-        oemDatabase.filter(i => i.model === m).forEach(i => {
-            list.innerHTML += `<div class="item" onclick="speak('${i.name}')">
-                <span class="colorBox" style="background:rgb(${i.rgb.r},${i.rgb.g},${i.rgb.b})"></span>
-                ${i.name} (${i.code})</div>`;
-        });
-    }
-
-    function toggleFlash() {
-        if (streamTrack) {
-            const current = streamTrack.getSettings().torch || false;
-            streamTrack.applyConstraints({ advanced: [{ torch: !current }] });
+    async function toggleFlash() {
+        if (!streamTrack) return;
+        const caps = streamTrack.getCapabilities();
+        if (caps.torch) {
+            const settings = streamTrack.getSettings();
+            await streamTrack.applyConstraints({ advanced: [{ torch: !settings.torch }] });
         }
     }
 
-    window.onload = startCamera;
+    window.onload = init;
 </script>
 </body>
 </html>
