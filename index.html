@@ -3,36 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – Ultra Precision 100%</title>
+<title>ColorMatch Pro – Phase 1 Final</title>
 <style>
-  body{ margin:0; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#050505; color:#fff; text-align:center; }
-  #header{ padding: 15px; background: linear-gradient(180deg, #111, #050505); border-bottom: 1px solid #333; }
-  h2{ margin:0; color: #00ffcc; font-size: 1.2rem; letter-spacing: 1px; }
-  video{ width:94%; border-radius:18px; border:1px solid #444; margin-top: 10px; filter: contrast(1.1); }
-  button{ padding:12px; margin:4px; border:none; border-radius:8px; cursor:pointer; background:#1a1a1a; color:#fff; font-weight: bold; border: 1px solid #333; }
-  .activeMode{ background:#00695c !important; border-color: #00ffcc !important; box-shadow: 0 0 10px rgba(0,255,204,0.2); }
+  body{ margin:0; font-family: sans-serif; background:#050505; color:#fff; text-align:center; }
+  #header{ padding: 15px; background: #111; border-bottom: 1px solid #333; }
+  h2{ margin:0; color: #00ffcc; font-size: 1.1rem; }
+  video{ width:94%; border-radius:15px; border:1px solid #444; margin-top: 10px; }
+  button{ padding:12px; margin:4px; border:none; border-radius:8px; cursor:pointer; background:#222; color:#fff; font-weight: bold; }
+  .activeMode{ background:#00695c !important; border: 1px solid #00ffcc !important; }
   #cross{
-    position:fixed; top:50%; left:50%; width:34px; height:34px;
+    position:fixed; top:50%; left:50%; width:30px; height:30px;
     transform:translate(-50%,-50%); border:2px solid #00ffcc;
     border-radius:50%; pointer-events:none; z-index:999;
   }
-  #cross::after, #cross::before { content:''; position:absolute; background:#00ffcc; }
-  #cross::after { top:50%; left:-5px; width:44px; height:1px; transform:translateY(-50%); }
-  #cross::before { left:50%; top:-5px; width:1px; height:44px; transform:translateX(-50%); }
-  
-  #txt{ margin: 15px 0; font-size:24px; font-weight: 800; color: #00ffcc; text-shadow: 0 0 5px #000; height: 30px;}
-  .stats { font-size: 10px; color: #666; margin-bottom: 10px; }
+  #txt{ margin: 15px 0; font-size:24px; font-weight: 800; color: #00ffcc; height: 30px; text-transform: uppercase;}
+  .stats { font-size: 11px; color: #777; margin-bottom: 10px; }
 </style>
 </head>
 <body>
 
 <div id="header">
-  <h2>ULTRA PRECISION 100%</h2>
+  <h2>COLORMATCH PRO - FINAL STAGE</h2>
   <div style="margin-top:10px;">
-    <button onclick="setMode('move')" id="btnMove">MODO SCANNER</button>
-    <button onclick="toggleUniversal()" id="btnUniv">UNIVERSAL</button>
-    <button onclick="calibrateWhite()" style="color:#00ffcc">CALIBRAR</button>
-    <button id="voiceBtn" onclick="toggleVoice()">🔊 ON</button>
+    <button onclick="toggleUniversal()" id="btnUniv">UNIVERSAL: OFF</button>
+    <button onclick="calibrateWhite()" style="color:#00ffcc">CALIBRAR BRANCO</button>
+    <button id="voiceBtn" onclick="toggleVoice()">🔊 ÁUDIO: ON</button>
   </div>
 </div>
 
@@ -51,39 +46,39 @@ const ctxA = canvasA.getContext("2d", {willReadFrequently:true});
 const txt = document.getElementById("txt");
 const statsDisp = document.getElementById("stats");
 
-let mode = "move", voice = true, universalMode = false;
-let isSpeaking = false, lastAnnounced = "", stableFrames = 0;
-let streamTrack = null;
-
-// MOTOR DE ESTABILIDADE (Anti-Flicker)
+let voice = true, universalMode = false, isSpeaking = false;
+let lastAnnounced = "", stableFrames = 0;
 let smoothRGB = { r: 0, g: 0, b: 0 };
 let whiteOffset = { r: 255, g: 255, b: 255 };
 
-navigator.mediaDevices.getUserMedia({video:{facingMode:"environment", width: 1280, height: 720}}).then(s=>{
-  video.srcObject = s; streamTrack = s.getVideoTracks()[0];
+navigator.mediaDevices.getUserMedia({video:{facingMode:"environment", width: 1280}}).then(s=>{
+  video.srcObject = s;
   requestAnimationFrame(mainLoop);
 });
 
 function calibrateWhite() {
     const raw = getMultiPointRGB(video.videoWidth/2, video.videoHeight/2, true);
     whiteOffset = { r: raw.r, g: raw.g, b: raw.b };
-    speak("Calibrado");
+    speak("Branco calibrado");
 }
 
-// IMPLEMENTAÇÃO DE LEITURA EM 5 PONTOS (Amostragem em Cruz)
+function applySmartCorrection(r, g, b) {
+    // FUSÃO INTELIGENTE: Se a cor for vibrante (saturação alta), 
+    // reduzimos a calibração para não estourar o Vermelho/Rosa.
+    const saturation = Math.max(r, g, b) - Math.min(r, g, b);
+    const weight = saturation > 90 ? 0.2 : 1.0; 
+
+    const nr = (r * 255) / (whiteOffset.r * weight + 255 * (1 - weight));
+    const ng = (g * 255) / (whiteOffset.g * weight + 255 * (1 - weight));
+    const nb = (b * 255) / (whiteOffset.b * weight + 255 * (1 - weight));
+    return { r: Math.min(255, nr), g: Math.min(255, ng), b: Math.min(255, nb) };
+}
+
 function getMultiPointRGB(centerX, centerY, rawMode = false) {
     canvasA.width = video.videoWidth; canvasA.height = video.videoHeight;
     ctxA.drawImage(video, 0, 0);
-    
-    const offset = 15; // Distância dos pontos periféricos
-    const points = [
-        [centerX, centerY], // Centro
-        [centerX, centerY - offset], // Topo
-        [centerX, centerY + offset], // Base
-        [centerX - offset, centerY], // Esquerda
-        [centerX + offset, centerY]  // Direita
-    ];
-
+    const offset = 12;
+    const points = [[centerX, centerY], [centerX, centerY-offset], [centerX, centerY+offset], [centerX-offset, centerY], [centerX+offset, centerY]];
     let r=0, g=0, b=0;
     points.forEach(p => {
         const d = ctxA.getImageData(p[0]-2, p[1]-2, 4, 4).data;
@@ -91,54 +86,40 @@ function getMultiPointRGB(centerX, centerY, rawMode = false) {
         for(let i=0; i<d.length; i+=4){ pr+=d[i]; pg+=d[i+1]; pb+=d[i+2]; }
         r += pr/16; g += pg/16; b += pb/16;
     });
-
     let res = { r: r/5, g: g/5, b: b/5 };
-    
-    if(!rawMode) {
-        // Aplica correção de calibração
-        res.r = Math.min(255, (res.r * 255) / whiteOffset.r);
-        res.g = Math.min(255, (res.g * 255) / whiteOffset.g);
-        res.b = Math.min(255, (res.b * 255) / whiteOffset.b);
-    }
-    return res;
+    return rawMode ? res : applySmartCorrection(res.r, res.g, res.b);
 }
 
 function mainLoop() {
-    if(mode === "move") {
-        const raw = getMultiPointRGB(video.videoWidth/2, video.videoHeight/2);
-        
-        // FILTRO DE ESTABILIDADE TEMPORAL (Média Ponderada)
-        // 15% da cor nova + 85% da cor anterior = zero oscilação
-        smoothRGB.r = (raw.r * 0.15) + (smoothRGB.r * 0.85);
-        smoothRGB.g = (raw.g * 0.15) + (smoothRGB.g * 0.85);
-        smoothRGB.b = (raw.b * 0.15) + (smoothRGB.b * 0.85);
+    if(!video.videoWidth) { requestAnimationFrame(mainLoop); return; }
+    
+    const raw = getMultiPointRGB(video.videoWidth/2, video.videoHeight/2);
+    smoothRGB.r = (raw.r * 0.2) + (smoothRGB.r * 0.8);
+    smoothRGB.g = (raw.g * 0.2) + (smoothRGB.g * 0.8);
+    smoothRGB.b = (raw.b * 0.2) + (smoothRGB.b * 0.8);
 
-        const r = Math.round(smoothRGB.r);
-        const g = Math.round(smoothRGB.g);
-        const b = Math.round(smoothRGB.b);
+    const r = Math.round(smoothRGB.r), g = Math.round(smoothRGB.g), b = Math.round(smoothRGB.b);
+    const colorName = detectColor(r, g, b);
 
-        if(universalMode) {
-            const colorName = detectColor(r, g, b);
-            txt.innerText = colorName.toUpperCase();
-            
-            if(colorName === lastAnnounced) {
-                stableFrames++;
-                if(stableFrames === 15) speak(colorName);
-            } else {
-                lastAnnounced = colorName;
-                stableFrames = 0;
-            }
+    if(universalMode) {
+        txt.innerText = colorName;
+        // Lógica de Áudio Unificada
+        if(colorName === lastAnnounced) {
+            stableFrames++;
+            if(stableFrames === 15) speak(colorName);
         } else {
-            txt.innerText = `RGB: ${r},${g},${b}`;
+            lastAnnounced = colorName; stableFrames = 0;
         }
-        
-        statsDisp.innerText = `ESTABILIDADE: ${Math.min(100, stableFrames*7)}% | R:${r} G:${g} B:${b}`;
+    } else {
+        txt.innerText = `RGB: ${r},${g},${b}`;
+        stableFrames = 0; // No modo RGB não anunciamos nome automaticamente
     }
+    
+    statsDisp.innerText = `ESTABILIDADE: ${Math.min(100, stableFrames*7)}% | R:${r} G:${g} B:${b}`;
     requestAnimationFrame(mainLoop);
 }
 
 function detectColor(r,g,b){
-    // Lógica HSL de alta precisão
     let r1=r/255, g1=g/255, b1=b/255;
     const max=Math.max(r1,g1,b1), min=Math.min(r1,g1,b1), d=max-min;
     let h, s, l=(max+min)/2;
@@ -147,26 +128,21 @@ function detectColor(r,g,b){
         if(max===r1) h=(g1-b1)/d+(g1<b1?6:0); else if(max===g1) h=(b1-r1)/d+2; else h=(r1-g1)/d+4;
         h*=60;
     }
-
-    // AJUSTES FINOS 100% PRECISÃO
-    if (l > 0.85 && s < 0.12) return "Branco";
-    if (l < 0.20) return "Preto"; // Preto agora mais profundo
-    if (s < 0.12) return "Cinza";
-
+    if (l > 0.80 && s < 0.15) return "Branco";
+    if (l < 0.22) return "Preto";
+    if (s < 0.15) return "Cinza";
     if (h >= 265 && h <= 325) return "Roxo";
     if (h > 325 && h <= 350) return "Rosa";
-    if ((h >= 0 && h <= 15) || (h >= 351 && h <= 360)) {
-        return (l > 0.5 && s > 0.3) ? "Rosa" : "Vermelho";
-    }
-    if (h > 15 && h <= 48) return "Laranja";
+    if ((h >= 0 && h <= 16) || (h >= 351 && h <= 360)) return (l > 0.52 && s > 0.3) ? "Rosa" : "Vermelho";
+    if (h > 16 && h <= 48) return "Laranja";
     if (h > 48 && h <= 72) return "Amarelo";
     if (h > 72 && h <= 160) return "Verde";
     if (h > 160 && h <= 264) return "Azul";
-    return "Indefinido";
+    return "Analizando...";
 }
 
 function speak(t) {
-    if (!voice || isSpeaking) return;
+    if (!voice || isSpeaking || t === "Analizando...") return;
     isSpeaking = true;
     speechSynthesis.cancel();
     const m = new SpeechSynthesisUtterance(t);
@@ -177,12 +153,15 @@ function speak(t) {
 
 function toggleUniversal() {
     universalMode = !universalMode;
+    document.getElementById("btnUniv").innerText = "UNIVERSAL: " + (universalMode ? "ON" : "OFF");
     document.getElementById("btnUniv").classList.toggle("activeMode");
+    lastAnnounced = ""; stableFrames = 0;
 }
 
 function toggleVoice() {
     voice = !voice;
-    document.getElementById("voiceBtn").innerText = voice ? "🔊 ON" : "🔇 OFF";
+    document.getElementById("voiceBtn").innerText = voice ? "🔊 ÁUDIO: ON" : "🔇 ÁUDIO: OFF";
+    if(!voice) speechSynthesis.cancel();
 }
 </script>
 </body>
