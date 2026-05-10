@@ -10,14 +10,14 @@
   video{ width:92%; border-radius:12px; border:2px solid #333; object-fit:cover; }
   button{ padding:10px; margin:5px; border:none; border-radius:8px; cursor:pointer; background:#222; color:#fff; }
   button:hover{ background:#333; }
-  .activeMode{ background:#00695c !important; }
+  .activeMode{ background:#00695c !important; border: 2px solid #00ffcc !important; }
   #cross{
     position:fixed; top:50%; left:50%; width:26px; height:26px;
     transform:translate(-50%,-50%); border:2px solid #00ffcc;
     border-radius:50%; display:none; pointer-events:none; z-index:999;
     transition: all 0.2s;
   }
-  #txt{ margin-top:15px; font-size:18px; padding:10px; min-height: 40px; font-weight: bold;}
+  #txt{ margin-top:15px; font-size:22px; padding:10px; min-height: 50px; font-weight: bold; color: #00ffcc;}
   #resultList{ margin-top:10px; text-align:left; width:90%; max-width:700px; margin:0 auto; background:#1f1f1f; border-radius:10px; padding:10px; }
   .item{ padding:10px; border-bottom:1px solid #333; cursor:pointer; }
   .colorBox{ width:18px; height:18px; display:inline-block; border-radius:50%; margin-right:8px; border:1px solid #fff; vertical-align:middle; }
@@ -42,15 +42,15 @@
 <video id="video" autoplay playsinline muted></video>
 <div id="cross"></div>
 
+<p id="txt">Aguardando...</p>
+
 <div id="databasePanel" style="padding:15px; background:#181818;">
   <input type="text" id="brandSearch" placeholder="Montadora..." oninput="searchBrand()" style="padding:10px; border-radius:8px; width:80%;">
   <select id="modelSelect" onchange="showModelColors()" style="padding:10px; border-radius:8px; width:85%; margin-top:10px;">
-    <option value="">Modelo</option>
+    <option value="">Selecione o Modelo</option>
   </select>
   <div id="resultList"></div>
 </div>
-
-<p id="txt">Aguardando...</p>
 
 <canvas id="canvasA" style="display:none;"></canvas>
 
@@ -64,7 +64,7 @@ const txt = document.getElementById("txt");
 let mode = "static", voice = true, universalMode = false, moveRunning = false;
 let lastAnnouncedColor = "", isSpeaking = false, detectedColor = "", stableFrames = 0;
 let rgbBuffer = [], streamTrack = null, flashOn = false, selectedDatabaseColor = null;
-const BUFFER_SIZE = 10, MIN_STABLE_FRAMES = 10;
+const BUFFER_SIZE = 12, MIN_STABLE_FRAMES = 12;
 
 navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(s=>{
   video.srcObject = s; streamTrack = s.getVideoTracks()[0];
@@ -72,18 +72,22 @@ navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(s=>
 
 function speak(t) {
   if (!voice || !t || isSpeaking) return;
-  if (mode === "move" && t === lastAnnouncedColor) return;
-  lastAnnouncedColor = t; isSpeaking = true;
+  if (t === lastAnnouncedColor) return;
+  
+  isSpeaking = true;
+  lastAnnouncedColor = t;
   speechSynthesis.cancel();
   const m = new SpeechSynthesisUtterance(t);
-  m.lang = "pt-BR"; m.onend = () => isSpeaking = false;
+  m.lang = "pt-BR";
+  m.rate = 1.0;
+  m.onend = () => { isSpeaking = false; };
   speechSynthesis.speak(m);
 }
 
 function toggleVoice(){ 
     voice = !voice; 
     document.getElementById("voiceBtn").innerText = voice ? "🔊 Áudio: ON" : "🔇 Áudio: OFF";
-    if(!voice) speechSynthesis.cancel();
+    if(!voice) { speechSynthesis.cancel(); lastAnnouncedColor = ""; }
 }
 
 function toggleUniversalMode(){
@@ -91,7 +95,12 @@ function toggleUniversalMode(){
   const btn = document.getElementById("universalBtn");
   btn.innerText = universalMode ? "Universal ON" : "Universal OFF";
   btn.classList.toggle("activeMode", universalMode);
-  lastAnnouncedColor = ""; stableFrames = 0;
+  lastAnnouncedColor = ""; 
+  stableFrames = 0;
+  if(universalMode) {
+      setMode('move'); // Ativa o movimento automaticamente para o universal funcionar
+      speak("Modo universal ativado");
+  }
 }
 
 function rgbToHsl(r,g,b){
@@ -111,24 +120,24 @@ function rgbToHsl(r,g,b){
 
 function rgbToLab(r,g,b){
   r/=255; g/=255; b/=255;
-  [r,g,b]=[r,g,b].map(v=> v>0.04045?Math.pow((v+0.055)/1.055,2.4):v/12.92);
-  let x=r*0.4124+g*0.3576+b*0.1805, y=r*0.2126+g*0.7152+b*0.0722, z=r*0.0193+g*0.1192+b*0.9505;
-  x/=0.9504; y/=1; z/=1.0888;
-  [x,y,z]=[x,y,z].map(v=> v>0.0088?Math.cbrt(v):(7.787*v)+(16/116));
-  return {L:(116*y)-16, a:500*(x-y), b:200*(y-z)};
+  let [rr,gg,bb] = [r,g,b].map(v => v > 0.04045 ? Math.pow((v+0.055)/1.055, 2.4) : v/12.92);
+  let x = rr*0.4124 + gg*0.3576 + bb*0.1805;
+  let y = rr*0.2126 + gg*0.7152 + bb*0.0722;
+  let z = rr*0.0193 + gg*0.1192 + bb*0.9505;
+  x/=0.9504; y/=1.0000; z/=1.0888;
+  const f = v => v > 0.008856 ? Math.pow(v, 1/3) : (7.787*v) + (16/116);
+  return {L: (116*f(y)) - 16, a: 500*(f(x)-f(y)), b: 200*(f(y)-f(z))};
 }
 
 function detectUniversalColor(r,g,b){
   const hsl = rgbToHsl(r,g,b);
   const {h, s, l} = hsl;
 
-  // --- CALIBRAÇÃO ADAPTATIVA (Melhoria para Branco/Preto/Cinza) ---
-  if (l > 75 && s < 18) return "Branco"; // Baixei de 88 para 75
-  if (l < 22 && s < 25) return "Preto";  // Subi de 12 para 22
-  if (s < 15) return "Cinza"; 
+  if (l > 75 && s < 18) return "Branco"; 
+  if (l < 24 && s < 25) return "Preto";  
+  if (s < 16) return "Cinza"; 
 
-  // --- REFINAMENTO ROXO vs ROSA ---
-  if (h >= 265 && h <= 320) return "Roxo"; // Janela de roxo mais precisa
+  if (h >= 265 && h <= 320) return "Roxo"; 
   if (h > 320 && h <= 345) return "Rosa";
   
   if ((h >= 0 && h <= 15) || (h >= 346 && h <= 360)) {
@@ -166,18 +175,27 @@ function captureRaw(x,y){
 function moveLoop(){
   if(mode !== "move") { moveRunning = false; return; }
   const sig = captureRaw(video.videoWidth/2, video.videoHeight/2);
+  
   if(universalMode){
     const color = detectUniversalColor(sig.r, sig.g, sig.b);
     if(color){
-      txt.innerText = "Cor: " + color;
-      if(color === detectedColor) stableFrames++; else { detectedColor=color; stableFrames=0; }
+      txt.innerText = "COR: " + color.toUpperCase();
+      if(color === detectedColor) {
+          stableFrames++;
+      } else {
+          detectedColor = color;
+          stableFrames = 0;
+      }
       if(stableFrames >= MIN_STABLE_FRAMES) speak(color);
+    } else {
+      txt.innerText = "ANALISANDO...";
     }
-  } else { txt.innerText = `RGB: ${sig.r},${sig.g},${sig.b}`; }
+  } else {
+    txt.innerText = `RGB: ${sig.r}, ${sig.g}, ${sig.b}`;
+  }
   requestAnimationFrame(moveLoop);
 }
 
-// --- FUNÇÕES OEM E COMPARAÇÃO ---
 const oemDatabase = [
   { brand:"Toyota", model:"Corolla", year:"2024", code:"040", name:"Branco Polar", rgb:{r:244,g:244,b:241} },
   { brand:"Toyota", model:"Corolla", year:"2024", code:"1F7", name:"Prata Clássico", rgb:{r:169,g:173,b:177} },
@@ -187,9 +205,12 @@ const oemDatabase = [
 oemDatabase.forEach(i=> i.lab = rgbToLab(i.rgb.r, i.rgb.g, i.rgb.b));
 
 function setMode(m){
-  mode = m; lastAnnouncedColor = ""; stableFrames = 0;
+  mode = m; 
+  lastAnnouncedColor = ""; 
+  stableFrames = 0;
   cross.style.display = (m === "move" || m === "comparePoint" || m === "compareDatabase") ? "block" : "none";
   if(m === "move" && !moveRunning){ moveRunning = true; moveLoop(); }
+  if(m !== "move") universalMode = false; document.getElementById("universalBtn").classList.remove("activeMode");
 }
 
 async function toggleFlash(){
@@ -206,13 +227,35 @@ function analyzeOEM(){
     const d = Math.sqrt((lab.L-i.lab.L)**2+(lab.a-i.lab.a)**2+(lab.b-i.lab.b)**2);
     if(d < minD){ minD=d; best=i; }
   });
-  txt.innerText = `${best.name} - ${(100-minD).toFixed(1)}%`;
+  txt.innerText = `${best.name.toUpperCase()} - ${(100-minD).toFixed(1)}%`;
   speak(best.name);
 }
 
-// Funções de busca simplificadas para manter o foco
-function searchBrand(){ /* ...mantido da versão anterior... */ }
-function showModelColors(){ /* ...mantido da versão anterior... */ }
+function searchBrand(){
+  const brand = document.getElementById("brandSearch").value.trim().toLowerCase();
+  const models = [...new Set(oemDatabase.filter(item=> item.brand.toLowerCase().includes(brand)).map(item=>item.model))].sort();
+  const select = document.getElementById("modelSelect");
+  select.innerHTML = `<option value="">Selecione o Modelo</option>`;
+  models.forEach(model=>{ select.innerHTML += `<option value="${model}">${model}</option>`; });
+}
+
+function showModelColors(){
+  const model = document.getElementById("modelSelect").value;
+  const resultList = document.getElementById("resultList");
+  resultList.innerHTML = "";
+  oemDatabase.filter(item=>item.model===model).forEach(item=>{
+    resultList.innerHTML += `<div class="item" onclick="selectDatabaseColor('${item.name}')">
+      <span class="colorBox" style="background:rgb(${item.rgb.r},${item.rgb.g},${item.rgb.b})"></span>
+      ${item.name} - ${item.code}
+    </div>`;
+  });
+}
+
+function selectDatabaseColor(name){
+  selectedDatabaseColor = oemDatabase.find(i=>i.name===name);
+  txt.innerText = "SELECIONADO: " + name.toUpperCase();
+  speak(name);
+}
 
 video.addEventListener("click", e=>{
     const rect = video.getBoundingClientRect();
@@ -220,7 +263,14 @@ video.addEventListener("click", e=>{
     const y = (e.clientY - rect.top) * (video.videoHeight / rect.height);
     const sig = captureRaw(x,y);
     if(mode === "static") analyzeOEM();
-    // Outros modos seguem a mesma lógica de clique anterior
+    if(mode === "compareDatabase"){
+       if(!selectedDatabaseColor) return alert("Selecione uma cor primeiro!");
+       const labSig = rgbToLab(sig.r, sig.g, sig.b);
+       const d = Math.sqrt((labSig.L-selectedDatabaseColor.lab.L)**2+(labSig.a-selectedDatabaseColor.lab.a)**2+(labSig.b-selectedDatabaseColor.lab.b)**2);
+       const sim = (100 - d).toFixed(1);
+       txt.innerText = "SIMILARIDADE: " + sim + "%";
+       speak(sim + " por cento");
+    }
 });
 </script>
 </body>
