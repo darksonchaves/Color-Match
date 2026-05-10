@@ -1,632 +1,345 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ColorMatch Pro – OEM MultiBrand Edition</title>
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; text-align: center; }
+        h2 { margin-top: 15px; font-size: 24px; color: #00ffcc; }
+        
+        /* CONTAINER DE VÍDEO */
+        #videoContainer { 
+            position: relative; 
+            display: inline-block; 
+            width: 95%; 
+            max-width: 800px; 
+            margin-top: 10px; 
+            border-radius: 15px; 
+            overflow: hidden; 
+            border: 2px solid #333; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+        }
+        video { width: 100%; display: block; object-fit: cover; background: #000; }
 
-<meta charset="UTF-8">
+        /* CONTROLES */
+        .controls { padding: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; background: #111; }
+        button { 
+            padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; 
+            background: #222; color: #fff; font-weight: bold; transition: 0.3s; font-size: 14px;
+        }
+        button:hover { background: #444; }
+        .activeMode { background: #00695c !important; border: 1px solid #00ffcc; }
+        
+        /* PAINEL DE AMOSTRAS */
+        #panel { display: flex; justify-content: space-around; padding: 10px; gap: 10px; }
+        .box { width: 48%; background: #181818; padding: 10px; border-radius: 12px; border: 1px solid #333; }
+        canvas { width: 100%; height: 80px; border-radius: 8px; background: #000; margin-bottom: 5px; }
 
-<meta
-name="viewport"
-content="width=device-width, initial-scale=1.0"
+        /* MIRA E MARCADORES */
+        #cross { 
+            position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; 
+            transform: translate(-50%, -50%); display: none; pointer-events: none; z-index: 10; 
+        }
+        #cross::before, #cross::after { content: ""; position: absolute; background: #00ffcc; box-shadow: 0 0 8px #00ffcc; }
+        #cross::before { left: 50%; top: 0; width: 2px; height: 100%; transform: translateX(-50%); }
+        #cross::after { top: 50%; left: 0; width: 100%; height: 2px; transform: translateY(-50%); }
 
+        .pointMarker { 
+            position: absolute; width: 30px; height: 30px; border: 3px solid #ffeb3b; 
+            border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; 
+            z-index: 9; box-shadow: 0 0 10px #000; display: none; 
+        }
+        #pointB { border-color: #ff5252; }
 
-<title>
-ColorMatch Pro – OEM MultiBrand Edition
-</title>
-
-<style>
-
-body{
-  margin:0;
-  font-family:Arial;
-  background:#111;
-  color:#fff;
-  text-align:center;
-}
-
-h2{
-  margin-top:15px;
-  font-size:28px;
-}
-
-#videoContainer{
-  position:relative;
-  display:inline-block;
-  width:92%;
-  max-width:900px;
-  overflow:hidden;
-  border-radius:12px;
-}
-
-/* ================= VIDEO ================= */
-
-video{
-  width:100%;
-  min-height:260px;
-  border-radius:12px;
-  border:2px solid #333;
-  object-fit:cover;
-  background:#000;
-  display:block;
-
-  position:relative;
-  z-index:1;
-}
-
-/* ================= OVERLAY ================= */
-
-#cross,
-.pointMarker{
-  position:absolute;
-  z-index:9999;
-  pointer-events:none;
-}
-
-/* ================= MIRA CENTRAL ================= */
-
-#cross{
-  top:50%;
-  left:50%;
-  width:46px;
-  height:46px;
-  transform:translate(-50%,-50%);
-  display:none;
-}
-
-#cross::before,
-#cross::after{
-  content:"";
-  position:absolute;
-  background:#00ffcc;
-  box-shadow:0 0 12px #00ffcc;
-}
-
-#cross::before{
-  left:50%;
-  top:0;
-  width:3px;
-  height:100%;
-  transform:translateX(-50%);
-}
-
-#cross::after{
-  top:50%;
-  left:0;
-  width:100%;
-  height:3px;
-  transform:translateY(-50%);
-}
-
-/* ================= MARCADORES ================= */
-
-.pointMarker{
-  width:30px;
-  height:30px;
-  border-radius:50%;
-  transform:translate(-50%,-50%);
-  display:none;
-  box-sizing:border-box;
-}
-
-#pointA{
-  border:4px solid #ffee58;
-
-  box-shadow:
-  0 0 12px #ffee58,
-  0 0 25px rgba(255,238,88,0.5);
-}
-
-#pointB{
-  border:4px solid #ff5252;
-
-  box-shadow:
-  0 0 12px #ff5252,
-  0 0 25px rgba(255,82,82,0.5);
-}
-
-#pointA::after,
-#pointB::after{
-  content:"";
-  position:absolute;
-  top:50%;
-  left:50%;
-  width:8px;
-  height:8px;
-  border-radius:50%;
-  transform:translate(-50%,-50%);
-}
-
-#pointA::after{
-  background:#ffee58;
-}
-
-#pointB::after{
-  background:#ff5252;
-}
-
-/* ================= BOTÕES ================= */
-
-button{
-  padding:10px 14px;
-  margin:5px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  background:#222;
-  color:#fff;
-  font-size:15px;
-}
-
-button:hover{
-  background:#333;
-}
-
-.activeMode{
-  background:#00695c !important;
-}
-
-input,select{
-  padding:10px;
-  border-radius:8px;
-  border:none;
-  margin:5px;
-  width:90%;
-  max-width:420px;
-}
-
-/* ================= PAINEL ================= */
-
-#panel{
-  display:flex;
-  justify-content:space-around;
-  flex-wrap:wrap;
-  margin-top:15px;
-}
-
-.box{
-  width:45%;
-  min-width:160px;
-}
-
-canvas{
-  width:100%;
-  height:140px;
-  border-radius:10px;
-  background:#222;
-}
-
-/* ================= DATABASE ================= */
-
-#databasePanel{
-  margin-top:20px;
-  padding:15px;
-  background:#181818;
-  border-top:2px solid #333;
-}
-
-#resultList{
-  margin-top:10px;
-  text-align:left;
-  width:90%;
-  max-width:700px;
-  margin-left:auto;
-  margin-right:auto;
-  background:#1f1f1f;
-  border-radius:10px;
-  padding:10px;
-}
-
-.item{
-  padding:10px;
-  border-bottom:1px solid #333;
-  cursor:pointer;
-}
-
-.item:hover{
-  background:#2c2c2c;
-}
-
-.colorBox{
-  width:18px;
-  height:18px;
-  display:inline-block;
-  border-radius:50%;
-  margin-right:8px;
-  border:1px solid #fff;
-  vertical-align:middle;
-}
-
-#txt{
-  margin-top:15px;
-  font-size:18px;
-  padding:10px;
-  min-height:40px;
-}
-
-#universalPanel{
-  margin-top:15px;
-  padding:10px;
-  background:#181818;
-  border-top:2px solid #333;
-}
-
-#cameraStatus{
-  margin-top:10px;
-  color:#00ffcc;
-  font-size:15px;
-}
-
-</style>
-
+        /* TEXTO E STATUS */
+        #txt { font-size: 18px; padding: 15px; min-height: 60px; font-weight: bold; color: #00ffcc; background: #111; }
+        
+        /* DATABASE OEM */
+        #databasePanel { background: #111; padding: 15px; border-top: 1px solid #333; }
+        input, select { 
+            padding: 12px; border-radius: 8px; border: 1px solid #333; 
+            background: #222; color: #fff; width: 90%; max-width: 400px; margin: 5px; 
+        }
+        #resultList { max-height: 200px; overflow-y: auto; text-align: left; max-width: 500px; margin: 10px auto; background: #181818; border-radius: 8px; }
+        .item { padding: 10px; border-bottom: 1px solid #222; cursor: pointer; display: flex; align-items: center; }
+        .item:hover { background: #222; }
+        .colorBox { width: 24px; height: 24px; border-radius: 50%; margin-right: 12px; border: 1px solid #fff; flex-shrink: 0; }
+    </style>
 </head>
-
 <body>
 
-<h2>
-ColorMatch Pro – OEM MultiBrand Edition
-</h2>
+<h2>ColorMatch Pro – OEM Precision</h2>
 
-<button onclick="setMode('static')">
-Estático
-</button>
-
-<button onclick="setMode('move')">
-Movimento
-</button>
-
-<button onclick="setMode('comparePoint')">
-Comparar Ponto a Ponto
-</button>
-
-<button onclick="setMode('compareDatabase')">
-Comparar Base de Dados
-</button>
-
-<button onclick="analyzeOEM()">
-🎨 OEM Scan
-</button>
-
-<button onclick="toggleFlash()">
-⚡ Flash
-</button>
-
-<button onclick="toggleVoice()">
-🔊 Áudio
-</button>
-
-<br><br>
-
-<div id="universalPanel">
-
-<h3>
-Modo Universal
-</h3>
-
-<button
-id="universalBtn"
-onclick="toggleUniversalMode()"
-
-Universal OFF
-</button>
-
-<p style="font-size:14px;color:#aaa;">
-Reconhecimento puro baseado na leitura real da câmera
-</p>
-
+<div class="controls">
+    <button id="btn-static" onclick="setMode('static')">Estático</button>
+    <button id="btn-move" onclick="setMode('move')">Movimento</button>
+    <button id="btn-comparePoint" onclick="setMode('comparePoint')">Comparar Pontos</button>
+    <button id="btn-compareDatabase" onclick="setMode('compareDatabase')">Base OEM</button>
+    <button onclick="toggleFlash()">⚡ Flash</button>
+    <button onclick="toggleVoice()">🔊 Áudio</button>
 </div>
 
 <div id="videoContainer">
-
-<video
-id="video"
-autoplay
-playsinline
-muted
-</video>
-
-
-<!-- MIRA -->
-<div id="cross"></div>
-
-<!-- MARCADORES -->
-<div
-id="pointA"
-class="pointMarker"
+    <video id="video" autoplay playsinline muted></video>
+    <div id="cross"></div>
+    <div id="pointA" class="pointMarker"></div>
+    <div id="pointB" class="pointMarker"></div>
 </div>
 
-
-<div
-id="pointB"
-class="pointMarker"
-</div>
-
-
-</div>
-
-<div id="cameraStatus">
-Aguardando câmera...
-</div>
+<div id="txt">Iniciando câmera...</div>
 
 <div id="panel">
-
-<div class="box">
-<canvas id="canvasA"></canvas>
-<div>Referência</div>
-</div>
-
-<div class="box">
-<canvas id="canvasB"></canvas>
-<div>Comparação</div>
-</div>
-
+    <div class="box"><canvas id="canvasA"></canvas><div>Amostra A</div></div>
+    <div class="box"><canvas id="canvasB"></canvas><div>Amostra B</div></div>
 </div>
 
 <div id="databasePanel">
-
-<h3>
-Pesquisa OEM
-</h3>
-
-<input
-type="text"
-id="brandSearch"
-placeholder="Digite a montadora..."
-oninput="searchBrand()"
-
-
-<br>
-
-<select
-id="modelSelect"
-onchange="showModelColors()"
-
-
-<option value="">
-Selecione o modelo
-</option>
-
-</select>
-
-<div id="resultList"></div>
-
+    <h3>Pesquisa de Cores OEM</h3>
+    <input type="text" id="brandSearch" placeholder="Montadora (ex: Toyota)" oninput="searchBrand()">
+    <select id="modelSelect" onchange="showModelColors()"><option value="">Selecione o modelo</option></select>
+    <div id="resultList"></div>
 </div>
 
-<p id="txt">
-Inicializando câmera...
-</p>
-
 <script>
+    const video = document.getElementById("video");
+    const canvasA = document.getElementById("canvasA");
+    const canvasB = document.getElementById("canvasB");
+    const ctxA = canvasA.getContext("2d", {willReadFrequently:true});
+    const ctxB = canvasB.getContext("2d", {willReadFrequently:true});
+    const txt = document.getElementById("txt");
+    const cross = document.getElementById("cross");
+    const pointA = document.getElementById("pointA");
+    const pointB = document.getElementById("pointB");
 
-/* ================= ELEMENTOS ================= */
+    let mode = "static";
+    let voice = true;
+    let streamTrack = null;
+    let flashOn = false;
+    let selectedDatabaseColor = null;
+    let compareALab = null;
+    let compareStep = 0;
+    let currentSpokenColor = "";
 
-const video =
-document.getElementById("video");
+    /* ================= MOTOR MATEMÁTICO (LAB + LINEAR) ================= */
 
-const videoContainer =
-document.getElementById("videoContainer");
+    // Converte sRGB para Linear para precisão física
+    function toLinear(v) {
+        v /= 255;
+        return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    }
 
-const canvasA =
-document.getElementById("canvasA");
+    function rgbToLab(r, g, b) {
+        let R = toLinear(r), G = toLinear(g), B = toLinear(b);
+        let x = (R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047;
+        let y = (R * 0.2126 + G * 0.7152 + B * 0.0722) / 1.00000;
+        let z = (R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883;
 
-const canvasB =
-document.getElementById("canvasB");
+        const f = t => t > 0.008856 ? Math.pow(t, 1/3) : (7.787 * t) + (16/116);
+        return { L: (116 * f(y)) - 16, a: 500 * (f(x) - f(y)), b: 200 * (f(y) - f(z)) };
+    }
 
-const ctxA =
-canvasA.getContext(
-"2d",
-{willReadFrequently:true}
-);
+    function deltaE(a, b) {
+        return Math.sqrt((a.L-b.L)**2 + (a.a-b.a)**2 + (a.b-b.b)**2);
+    }
 
-const ctxB =
-canvasB.getContext(
-"2d",
-{willReadFrequently:true}
-);
+    function detectNameFromLab(lab) {
+        const chroma = Math.sqrt(lab.a**2 + lab.b**2);
+        // Lógica para Neutros (Branco, Cinza, Preto)
+        if (chroma < 10) {
+            if (lab.L > 85) return "Branco";
+            if (lab.L < 20) return "Preto";
+            return "Cinza";
+        }
+        // Lógica baseada no ângulo de Matiz (Hue Angle)
+        let hue = Math.atan2(lab.b, lab.a) * (180 / Math.PI);
+        if (hue < 0) hue += 360;
 
-const cross =
-document.getElementById("cross");
+        if (hue >= 350 || hue < 25) return "Vermelho";
+        if (hue >= 25 && hue < 50) return "Laranja";
+        if (hue >= 50 && hue < 90) return "Amarelo";
+        if (hue >= 90 && hue < 165) return "Verde";
+        if (hue >= 165 && hue < 265) return "Azul";
+        if (hue >= 265 && hue < 315) return "Roxo";
+        if (hue >= 315 && hue < 350) return "Rosa";
+        return "Cor Especial";
+    }
 
-const pointA =
-document.getElementById("pointA");
+    /* ================= GESTÃO DE CÂMERA ================= */
 
-const pointB =
-document.getElementById("pointB");
+    async function startCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment", width: {ideal: 1280}, height: {ideal: 720} }, 
+                audio: false
+            });
+            video.srcObject = stream;
+            streamTrack = stream.getVideoTracks()[0];
+            txt.innerText = "Câmera pronta para análise.";
+        } catch (e) {
+            txt.innerText = "Erro: Acesso à câmera negado.";
+        }
+    }
 
-const txt =
-document.getElementById("txt");
+    function captureArea(x, y, targetCtx) {
+        if (!video.videoWidth) return {r:0, g:0, b:0};
+        const sampleSize = 30;
+        const rect = video.getBoundingClientRect();
+        
+        // Mapeamento proporcional do toque na tela para o pixel real do vídeo
+        const scaleX = video.videoWidth / rect.width;
+        const scaleY = video.videoHeight / rect.height;
 
-const cameraStatus =
-document.getElementById("cameraStatus");
+        const canvas = targetCtx.canvas;
+        canvas.width = sampleSize;
+        canvas.height = sampleSize;
+        
+        targetCtx.drawImage(video, x * scaleX - (sampleSize/2), y * scaleY - (sampleSize/2), sampleSize, sampleSize, 0, 0, sampleSize, sampleSize);
+        
+        const data = targetCtx.getImageData(0, 0, sampleSize, sampleSize).data;
+        let r=0, g=0, b=0, count=0;
+        for(let i=0; i<data.length; i+=4) {
+            r += data[i]; g += data[i+1]; b += data[i+2]; count++;
+        }
+        return { r: Math.round(r/count), g: Math.round(g/count), b: Math.round(b/count) };
+    }
 
-/* ================= CONTROLE ================= */
+    /* ================= MODOS E INTERAÇÃO ================= */
 
-let mode = "static";
+    function setMode(m) {
+        mode = m;
+        compareStep = 0;
+        currentSpokenColor = "";
+        document.querySelectorAll('.controls button').forEach(b => b.classList.remove('activeMode'));
+        document.getElementById('btn-' + m)?.classList.add('activeMode');
+        
+        cross.style.display = (m === "move" || m === "static") ? "block" : "none";
+        if (m !== "comparePoint") {
+            pointA.style.display = "none";
+            pointB.style.display = "none";
+        }
+        txt.innerText = "Modo: " + m.toUpperCase();
+        if (m === "move") requestAnimationFrame(moveLoop);
+    }
 
-let moveRunning = false;
+    function moveLoop() {
+        if (mode !== "move") return;
+        const rect = video.getBoundingClientRect();
+        // Captura o centro da mira
+        const sig = captureArea(rect.width/2, rect.height/2, ctxB);
+        const lab = rgbToLab(sig.r, sig.g, sig.b);
+        const name = detectNameFromLab(lab);
+        
+        txt.innerText = "Lendo: " + name + " (L:" + Math.round(lab.L) + ")";
+        if (name !== currentSpokenColor) {
+            speak(name);
+            currentSpokenColor = name;
+        }
+        requestAnimationFrame(moveLoop);
+    }
 
-let processingPaused = false;
+    video.addEventListener("click", (e) => {
+        const rect = video.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+        const sig = captureArea(clickX, clickY, ctxA);
+        const lab = rgbToLab(sig.r, sig.g, sig.b);
 
-/* ================= CAMERA ================= */
-
-async function startCamera(){
-
-  try{
-
-    const stream =
-    await navigator.mediaDevices.getUserMedia({
-
-      video:{
-        facingMode:{
-          ideal:"environment"
-        },
-        width:{ideal:1280},
-        height:{ideal:720}
-      },
-
-      audio:false
-
+        if (mode === "comparePoint") {
+            if (compareStep === 0) {
+                compareALab = lab;
+                pointA.style.left = clickX + "px";
+                pointA.style.top = clickY + "px";
+                pointA.style.display = "block";
+                pointB.style.display = "none";
+                txt.innerText = "Ponto A fixado. Clique no Ponto B.";
+                speak("Ponto A fixado");
+                compareStep = 1;
+            } else {
+                pointB.style.left = clickX + "px";
+                pointB.style.top = clickY + "px";
+                pointB.style.display = "block";
+                const diff = deltaE(compareALab, lab);
+                const similarity = Math.max(0, 100 - diff).toFixed(1);
+                txt.innerText = "Similaridade entre pontos: " + similarity + "%";
+                speak(similarity + " por cento");
+                compareStep = 0;
+            }
+        } else if (mode === "compareDatabase") {
+            if (!selectedDatabaseColor) {
+                alert("Selecione uma cor na lista OEM primeiro.");
+                return;
+            }
+            const diff = deltaE(lab, selectedDatabaseColor.lab);
+            const sim = Math.max(0, 100 - diff).toFixed(1);
+            txt.innerText = "Comparado a " + selectedDatabaseColor.name + ": " + sim + "%";
+            speak(sim + " por cento");
+        } else if (mode === "static") {
+            const name = detectNameFromLab(lab);
+            txt.innerText = "Cor Identificada: " + name;
+            speak(name);
+        }
     });
 
-    video.srcObject = stream;
+    /* ================= FUNÇÕES DE SISTEMA ================= */
 
-    await video.play();
-
-    cameraStatus.innerText =
-    "Câmera ativa";
-
-    txt.innerText =
-    "Câmera iniciada com sucesso";
-
-  }catch(e){
-
-    console.error(e);
-
-    cameraStatus.innerText =
-    "Falha ao iniciar câmera";
-
-    txt.innerText =
-    "Erro ao acessar câmera";
-
-    alert(
-      "Permita acesso à câmera"
-    );
-  }
-}
-
-window.addEventListener(
-"load",
-()=>{
-  startCamera();
-}
-);
-
-/* ================= MOVE ================= */
-
-function moveLoop(){
-
-  if(mode !== "move"){
-
-    moveRunning = false;
-    return;
-  }
-
-  cross.style.display = "block";
-
-  requestAnimationFrame(
-    moveLoop
-  );
-}
-
-/* ================= MODOS ================= */
-
-function setMode(m){
-
-  mode = m;
-
-  pointA.style.display = "none";
-  pointB.style.display = "none";
-
-  if(
-    m === "move" ||
-    m === "comparePoint" ||
-    m === "compareDatabase"
-  ){
-
-    cross.style.display = "block";
-
-  }else{
-
-    cross.style.display = "none";
-  }
-
-  txt.innerText =
-  "Modo: " + m;
-
-  if(
-    m === "move" &&
-    !moveRunning
-  ){
-
-    moveRunning = true;
-
-    moveLoop();
-  }
-}
-
-/* ================= CLICK ================= */
-
-video.addEventListener(
-"click",
-(e)=>{
-
-  if(processingPaused) return;
-
-  if(!video.videoWidth) return;
-
-  const rect =
-  video.getBoundingClientRect();
-
-  const markerX =
-
-  (
-    (e.clientX - rect.left)
-    / rect.width
-  )
-
-  *
-  videoContainer.offsetWidth;
-
-  const markerY =
-
-  (
-    (e.clientY - rect.top)
-    / rect.height
-  )
-
-  *
-  videoContainer.offsetHeight;
-
-  if(mode === "comparePoint"){
-
-    if(
-      pointA.style.display ===
-      "none"
-    ){
-
-      pointA.style.left =
-      markerX + "px";
-
-      pointA.style.top =
-      markerY + "px";
-
-      pointA.style.display =
-      "block";
-
-      pointB.style.display =
-      "none";
-
-      txt.innerText =
-      "Primeiro ponto marcado";
-
-    }else{
-
-      pointB.style.left =
-      markerX + "px";
-
-      pointB.style.top =
-      markerY + "px";
-
-      pointB.style.display =
-      "block";
-
-      txt.innerText =
-      "Segundo ponto marcado";
+    function toggleFlash() {
+        if (!streamTrack) return;
+        flashOn = !flashOn;
+        streamTrack.applyConstraints({ advanced: [{ torch: flashOn }] }).catch(() => alert("Flash não disponível"));
     }
-  }
 
-});
+    function toggleVoice() { 
+        voice = !voice; 
+        txt.innerText = "Áudio " + (voice ? "Ativado" : "Desativado");
+    }
 
+    function speak(t) {
+        if (!voice) return;
+        speechSynthesis.cancel();
+        const m = new SpeechSynthesisUtterance(t);
+        m.lang = "pt-BR";
+        speechSynthesis.speak(m);
+    }
+
+    /* ================= DATABASE OEM ================= */
+    const oemDatabase = [
+        { brand: "Toyota", model: "Corolla", code: "040", name: "Super White II", rgb: {r:245, g:245, b:242} },
+        { brand: "Toyota", model: "Corolla", code: "218", name: "Midnight Black", rgb: {r:25, g:25, b:27} },
+        { brand: "Toyota", model: "Corolla", code: "3U5", name: "Emotional Red", rgb: {r:150, g:25, b:35} },
+        { brand: "Honda", model: "Civic", code: "NH-731P", name: "Crystal Black", rgb: {r:18, g:18, b:20} },
+        { brand: "VW", model: "Gol", code: "R8R8", name: "Flash Red", rgb: {r:190, g:30, b:40} },
+        { brand: "Fiat", model: "Toro", code: "249", name: "Branco Ambiente", rgb: {r:248, g:248, b:245} }
+    ];
+
+    function searchBrand() {
+        const query = document.getElementById("brandSearch").value.toLowerCase();
+        const filtered = oemDatabase.filter(i => i.brand.toLowerCase().includes(query));
+        const models = [...new Set(filtered.map(i => i.model))];
+        const sel = document.getElementById("modelSelect");
+        sel.innerHTML = '<option value="">Selecione o modelo</option>';
+        models.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+    }
+
+    function showModelColors() {
+        const mod = document.getElementById("modelSelect").value;
+        const list = document.getElementById("resultList");
+        list.innerHTML = "";
+        oemDatabase.filter(i => i.model === mod).forEach(c => {
+            const div = document.createElement("div");
+            div.className = "item";
+            div.innerHTML = `<span class="colorBox" style="background:rgb(${c.rgb.r},${c.rgb.g},${c.rgb.b})"></span> 
+                             <div><strong>${c.name}</strong><br><small>Código: ${c.code}</small></div>`;
+            div.onclick = () => {
+                selectedDatabaseColor = {...c, lab: rgbToLab(c.rgb.r, c.rgb.g, c.rgb.b)};
+                txt.innerText = "Alvo OEM: " + c.name;
+                speak(c.name);
+            };
+            list.appendChild(div);
+        });
+    }
+
+    window.onload = () => { startCamera(); setMode('static'); };
 </script>
-
 </body>
 </html>
