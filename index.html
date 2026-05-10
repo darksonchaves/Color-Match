@@ -3,81 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ColorMatch Pro – OEM MultiBrand Edition</title>
+    <title>ColorMatch Pro – Ultra Precision Edition</title>
     <style>
         body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #fff; text-align: center; }
-        h2 { margin-top: 15px; font-size: 24px; color: #00ffcc; }
+        h2 { margin-top: 15px; font-size: 22px; color: #00ffcc; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* CONTAINER DE VÍDEO */
         #videoContainer { 
-            position: relative; 
-            display: inline-block; 
-            width: 95%; 
-            max-width: 800px; 
-            margin-top: 10px; 
-            border-radius: 15px; 
-            overflow: hidden; 
-            border: 2px solid #333; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            position: relative; display: inline-block; width: 95%; max-width: 800px; 
+            margin-top: 10px; border-radius: 15px; overflow: hidden; border: 2px solid #333; 
         }
         video { width: 100%; display: block; object-fit: cover; background: #000; }
 
-        /* CONTROLES */
-        .controls { padding: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; background: #111; }
+        .controls { padding: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; background: #111; }
         button { 
-            padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; 
-            background: #222; color: #fff; font-weight: bold; transition: 0.3s; font-size: 14px;
+            padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; 
+            background: #222; color: #fff; font-weight: bold; font-size: 12px; transition: 0.2s;
         }
-        button:hover { background: #444; }
-        .activeMode { background: #00695c !important; border: 1px solid #00ffcc; }
+        .activeMode { background: #00695c !important; border: 1px solid #00ffcc; color: #fff; }
         
-        /* PAINEL DE AMOSTRAS */
-        #panel { display: flex; justify-content: space-around; padding: 10px; gap: 10px; }
-        .box { width: 48%; background: #181818; padding: 10px; border-radius: 12px; border: 1px solid #333; }
-        canvas { width: 100%; height: 80px; border-radius: 8px; background: #000; margin-bottom: 5px; }
+        /* Botão Especial Modo Universal */
+        #btn-universal { background: #4a148c; border: 1px solid #9c27b0; }
+        #btn-universal.activeMode { background: #9c27b0 !important; box-shadow: 0 0 10px #9c27b0; }
 
-        /* MIRA E MARCADORES */
+        #panel { display: flex; justify-content: space-around; padding: 10px; gap: 10px; }
+        .box { width: 48%; background: #181818; padding: 8px; border-radius: 10px; border: 1px solid #333; }
+        canvas { width: 100%; height: 60px; border-radius: 5px; background: #000; }
+
         #cross { 
-            position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; 
+            position: absolute; top: 50%; left: 50%; width: 30px; height: 30px; 
             transform: translate(-50%, -50%); display: none; pointer-events: none; z-index: 10; 
         }
-        #cross::before, #cross::after { content: ""; position: absolute; background: #00ffcc; box-shadow: 0 0 8px #00ffcc; }
+        #cross::before, #cross::after { content: ""; position: absolute; background: #00ffcc; }
         #cross::before { left: 50%; top: 0; width: 2px; height: 100%; transform: translateX(-50%); }
         #cross::after { top: 50%; left: 0; width: 100%; height: 2px; transform: translateY(-50%); }
 
         .pointMarker { 
-            position: absolute; width: 30px; height: 30px; border: 3px solid #ffeb3b; 
-            border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; 
-            z-index: 9; box-shadow: 0 0 10px #000; display: none; 
+            position: absolute; width: 20px; height: 20px; border: 2px solid #ffeb3b; 
+            border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 9;
         }
         #pointB { border-color: #ff5252; }
 
-        /* TEXTO E STATUS */
-        #txt { font-size: 18px; padding: 15px; min-height: 60px; font-weight: bold; color: #00ffcc; background: #111; }
+        #txt { font-size: 16px; padding: 12px; min-height: 50px; font-weight: bold; color: #00ffcc; background: #000; border-bottom: 1px solid #333; }
         
-        /* DATABASE OEM */
-        #databasePanel { background: #111; padding: 15px; border-top: 1px solid #333; }
-        input, select { 
-            padding: 12px; border-radius: 8px; border: 1px solid #333; 
-            background: #222; color: #fff; width: 90%; max-width: 400px; margin: 5px; 
-        }
-        #resultList { max-height: 200px; overflow-y: auto; text-align: left; max-width: 500px; margin: 10px auto; background: #181818; border-radius: 8px; }
-        .item { padding: 10px; border-bottom: 1px solid #222; cursor: pointer; display: flex; align-items: center; }
-        .item:hover { background: #222; }
-        .colorBox { width: 24px; height: 24px; border-radius: 50%; margin-right: 12px; border: 1px solid #fff; flex-shrink: 0; }
+        #databasePanel { background: #111; padding: 15px; }
+        input, select { padding: 10px; border-radius: 5px; border: 1px solid #333; background: #181818; color: #fff; width: 90%; margin: 5px; }
+        #resultList { max-height: 150px; overflow-y: auto; background: #181818; border-radius: 5px; margin-top: 10px; }
+        .item { padding: 8px; border-bottom: 1px solid #222; cursor: pointer; display: flex; align-items: center; font-size: 13px; }
+        .colorBox { width: 20px; height: 20px; border-radius: 50%; margin-right: 10px; border: 1px solid #fff; }
     </style>
 </head>
 <body>
 
-<h2>ColorMatch Pro – OEM Precision</h2>
+<h2>ColorMatch Pro – Ultra Precision</h2>
 
 <div class="controls">
+    <button id="btn-universal" onclick="toggleUniversal()">🌐 Modo Universal: OFF</button>
     <button id="btn-static" onclick="setMode('static')">Estático</button>
     <button id="btn-move" onclick="setMode('move')">Movimento</button>
-    <button id="btn-comparePoint" onclick="setMode('comparePoint')">Comparar Pontos</button>
+    <button id="btn-comparePoint" onclick="setMode('comparePoint')">Ponto a Ponto</button>
     <button id="btn-compareDatabase" onclick="setMode('compareDatabase')">Base OEM</button>
     <button onclick="toggleFlash()">⚡ Flash</button>
-    <button onclick="toggleVoice()">🔊 Áudio</button>
 </div>
 
 <div id="videoContainer">
@@ -87,16 +72,15 @@
     <div id="pointB" class="pointMarker"></div>
 </div>
 
-<div id="txt">Iniciando câmera...</div>
+<div id="txt">Aguardando comando...</div>
 
 <div id="panel">
-    <div class="box"><canvas id="canvasA"></canvas><div>Amostra A</div></div>
-    <div class="box"><canvas id="canvasB"></canvas><div>Amostra B</div></div>
+    <div class="box"><canvas id="canvasA"></canvas><div style="font-size:10px">AMOSTRA ATUAL</div></div>
+    <div class="box"><canvas id="canvasB"></canvas><div style="font-size:10px">ALVO COMPARATIVO</div></div>
 </div>
 
 <div id="databasePanel">
-    <h3>Pesquisa de Cores OEM</h3>
-    <input type="text" id="brandSearch" placeholder="Montadora (ex: Toyota)" oninput="searchBrand()">
+    <input type="text" id="brandSearch" placeholder="Pesquisar Montadora..." oninput="searchBrand()">
     <select id="modelSelect" onchange="showModelColors()"><option value="">Selecione o modelo</option></select>
     <div id="resultList"></div>
 </div>
@@ -113,17 +97,16 @@
     const pointB = document.getElementById("pointB");
 
     let mode = "static";
+    let isUniversal = false;
     let voice = true;
     let streamTrack = null;
     let flashOn = false;
     let selectedDatabaseColor = null;
     let compareALab = null;
     let compareStep = 0;
-    let currentSpokenColor = "";
 
-    /* ================= MOTOR MATEMÁTICO (LAB + LINEAR) ================= */
+    // --- MOTOR CIELAB AVANÇADO ---
 
-    // Converte sRGB para Linear para precisão física
     function toLinear(v) {
         v /= 255;
         return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
@@ -134,164 +117,142 @@
         let x = (R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047;
         let y = (R * 0.2126 + G * 0.7152 + B * 0.0722) / 1.00000;
         let z = (R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883;
-
         const f = t => t > 0.008856 ? Math.pow(t, 1/3) : (7.787 * t) + (16/116);
         return { L: (116 * f(y)) - 16, a: 500 * (f(x) - f(y)), b: 200 * (f(y) - f(z)) };
     }
 
-    function deltaE(a, b) {
-        return Math.sqrt((a.L-b.L)**2 + (a.a-b.a)**2 + (a.b-b.b)**2);
+    // Fórmula Delta E 2000 Simplificada para Performance (Ajuste de Percepção Humana)
+    function deltaE2000(labA, labB) {
+        let dL = labA.L - labB.L;
+        let da = labA.a - labB.a;
+        let db = labA.b - labB.b;
+        let c1 = Math.sqrt(labA.a**2 + labA.b**2);
+        let c2 = Math.sqrt(labB.a**2 + labB.b**2);
+        let dC = c1 - c2;
+        let dH = Math.sqrt(Math.max(0, da**2 + db**2 - dC**2));
+        
+        // Pesos baseados na sensibilidade do olho humano
+        let sL = 1, sC = 1 + 0.045 * c1, sH = 1 + 0.015 * c1;
+        return Math.sqrt((dL/sL)**2 + (dC/sC)**2 + (dH/sH)**2);
     }
 
-    function detectNameFromLab(lab) {
-        const chroma = Math.sqrt(lab.a**2 + lab.b**2);
-        // Lógica para Neutros (Branco, Cinza, Preto)
-        if (chroma < 10) {
-            if (lab.L > 85) return "Branco";
-            if (lab.L < 20) return "Preto";
-            return "Cinza";
+    function detectName(lab) {
+        if (isUniversal) {
+            // No modo Universal, ignoramos variações sutis de brilho e focamos no matiz puro
+            const chroma = Math.sqrt(lab.a**2 + lab.b**2);
+            if (chroma < 8) {
+                if (lab.L > 75) return "Branco Sólido";
+                if (lab.L < 25) return "Preto Sólido";
+                return "Cinza Sólido";
+            }
         }
-        // Lógica baseada no ângulo de Matiz (Hue Angle)
+
         let hue = Math.atan2(lab.b, lab.a) * (180 / Math.PI);
         if (hue < 0) hue += 360;
 
-        if (hue >= 350 || hue < 25) return "Vermelho";
-        if (hue >= 25 && hue < 50) return "Laranja";
-        if (hue >= 50 && hue < 90) return "Amarelo";
-        if (hue >= 90 && hue < 165) return "Verde";
-        if (hue >= 165 && hue < 265) return "Azul";
-        if (hue >= 265 && hue < 315) return "Roxo";
-        if (hue >= 315 && hue < 350) return "Rosa";
+        // Calibração Refinada Humana (Ajuste Roxo/Rosa)
+        if (hue >= 350 || hue < 20) return "Vermelho";
+        if (hue >= 20 && hue < 45) return "Laranja";
+        if (hue >= 45 && hue < 85) return "Amarelo";
+        if (hue >= 85 && hue < 160) return "Verde";
+        if (hue >= 160 && hue < 255) return "Azul";
+        if (hue >= 255 && hue < 305) return "Roxo"; // Reduzido para evitar invasão do Rosa
+        if (hue >= 305 && hue < 350) return "Rosa"; // Expandido para captar tons avermelhados/pink
         return "Cor Especial";
     }
 
-    /* ================= GESTÃO DE CÂMERA ================= */
+    // --- GESTÃO DE MODOS ---
 
-    async function startCamera() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "environment", width: {ideal: 1280}, height: {ideal: 720} }, 
-                audio: false
-            });
-            video.srcObject = stream;
-            streamTrack = stream.getVideoTracks()[0];
-            txt.innerText = "Câmera pronta para análise.";
-        } catch (e) {
-            txt.innerText = "Erro: Acesso à câmera negado.";
-        }
+    function toggleUniversal() {
+        isUniversal = !isUniversal;
+        const btn = document.getElementById("btn-universal");
+        btn.classList.toggle("activeMode", isUniversal);
+        btn.innerText = isUniversal ? "🌐 Modo Universal: ON" : "🌐 Modo Universal: OFF";
+        txt.innerText = isUniversal ? "Foco em cores sólidas e primárias." : "Modo de alta sensibilidade ativado.";
+        speak(isUniversal ? "Modo universal ativado" : "Modo universal desligado");
     }
-
-    function captureArea(x, y, targetCtx) {
-        if (!video.videoWidth) return {r:0, g:0, b:0};
-        const sampleSize = 30;
-        const rect = video.getBoundingClientRect();
-        
-        // Mapeamento proporcional do toque na tela para o pixel real do vídeo
-        const scaleX = video.videoWidth / rect.width;
-        const scaleY = video.videoHeight / rect.height;
-
-        const canvas = targetCtx.canvas;
-        canvas.width = sampleSize;
-        canvas.height = sampleSize;
-        
-        targetCtx.drawImage(video, x * scaleX - (sampleSize/2), y * scaleY - (sampleSize/2), sampleSize, sampleSize, 0, 0, sampleSize, sampleSize);
-        
-        const data = targetCtx.getImageData(0, 0, sampleSize, sampleSize).data;
-        let r=0, g=0, b=0, count=0;
-        for(let i=0; i<data.length; i+=4) {
-            r += data[i]; g += data[i+1]; b += data[i+2]; count++;
-        }
-        return { r: Math.round(r/count), g: Math.round(g/count), b: Math.round(b/count) };
-    }
-
-    /* ================= MODOS E INTERAÇÃO ================= */
 
     function setMode(m) {
         mode = m;
         compareStep = 0;
-        currentSpokenColor = "";
-        document.querySelectorAll('.controls button').forEach(b => b.classList.remove('activeMode'));
+        document.querySelectorAll('.controls button').forEach(b => {
+            if(b.id !== 'btn-universal') b.classList.remove('activeMode');
+        });
         document.getElementById('btn-' + m)?.classList.add('activeMode');
-        
         cross.style.display = (m === "move" || m === "static") ? "block" : "none";
-        if (m !== "comparePoint") {
-            pointA.style.display = "none";
-            pointB.style.display = "none";
-        }
+        if (m !== "comparePoint") { pointA.style.display = pointB.style.display = "none"; }
         txt.innerText = "Modo: " + m.toUpperCase();
         if (m === "move") requestAnimationFrame(moveLoop);
+    }
+
+    // --- CAPTURA E PROCESSAMENTO ---
+
+    async function startCamera() {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment", width: 1280, height: 720 }, audio: false
+        });
+        video.srcObject = stream;
+        streamTrack = stream.getVideoTracks()[0];
+    }
+
+    function capture(x, y, ctx) {
+        const size = 30;
+        const rect = video.getBoundingClientRect();
+        const sx = video.videoWidth / rect.width;
+        const sy = video.videoHeight / rect.height;
+        ctx.canvas.width = size; ctx.canvas.height = size;
+        ctx.drawImage(video, x*sx - size/2, y*sy - size/2, size, size, 0, 0, size, size);
+        const d = ctx.getImageData(0,0,size,size).data;
+        let r=0, g=0, b=0;
+        for(let i=0; i<d.length; i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
+        return {r: r/(d.length/4), g: g/(d.length/4), b: b/(d.length/4)};
     }
 
     function moveLoop() {
         if (mode !== "move") return;
         const rect = video.getBoundingClientRect();
-        // Captura o centro da mira
-        const sig = captureArea(rect.width/2, rect.height/2, ctxB);
-        const lab = rgbToLab(sig.r, sig.g, sig.b);
-        const name = detectNameFromLab(lab);
-        
-        txt.innerText = "Lendo: " + name + " (L:" + Math.round(lab.L) + ")";
-        if (name !== currentSpokenColor) {
-            speak(name);
-            currentSpokenColor = name;
-        }
+        const rgb = capture(rect.width/2, rect.height/2, ctxA);
+        const lab = rgbToLab(rgb.r, rgb.g, rgb.b);
+        txt.innerText = "Análise: " + detectName(lab) + " | L:" + Math.round(lab.L);
         requestAnimationFrame(moveLoop);
     }
 
     video.addEventListener("click", (e) => {
         const rect = video.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const clickY = e.clientY - rect.top;
-        const sig = captureArea(clickX, clickY, ctxA);
-        const lab = rgbToLab(sig.r, sig.g, sig.b);
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const rgb = capture(x, y, ctxA);
+        const lab = rgbToLab(rgb.r, rgb.g, rgb.b);
 
         if (mode === "comparePoint") {
             if (compareStep === 0) {
                 compareALab = lab;
-                pointA.style.left = clickX + "px";
-                pointA.style.top = clickY + "px";
-                pointA.style.display = "block";
-                pointB.style.display = "none";
-                txt.innerText = "Ponto A fixado. Clique no Ponto B.";
-                speak("Ponto A fixado");
+                pointA.style.left = x + "px"; pointA.style.top = y + "px"; pointA.style.display = "block";
+                txt.innerText = "Ponto A capturado. Selecione Ponto B.";
                 compareStep = 1;
             } else {
-                pointB.style.left = clickX + "px";
-                pointB.style.top = clickY + "px";
-                pointB.style.display = "block";
-                const diff = deltaE(compareALab, lab);
-                const similarity = Math.max(0, 100 - diff).toFixed(1);
-                txt.innerText = "Similaridade entre pontos: " + similarity + "%";
-                speak(similarity + " por cento");
+                pointB.style.left = x + "px"; pointB.style.top = y + "px"; pointB.style.display = "block";
+                const dist = deltaE2000(compareALab, lab);
+                const sim = Math.max(0, 100 - (dist * 1.5)).toFixed(1);
+                txt.innerText = "Similaridade Perceptiva: " + sim + "%";
+                speak(sim + " por cento de similaridade");
                 compareStep = 0;
             }
         } else if (mode === "compareDatabase") {
-            if (!selectedDatabaseColor) {
-                alert("Selecione uma cor na lista OEM primeiro.");
-                return;
-            }
-            const diff = deltaE(lab, selectedDatabaseColor.lab);
-            const sim = Math.max(0, 100 - diff).toFixed(1);
-            txt.innerText = "Comparado a " + selectedDatabaseColor.name + ": " + sim + "%";
-            speak(sim + " por cento");
+            if (!selectedDatabaseColor) return alert("Selecione uma cor OEM abaixo");
+            const dist = deltaE2000(lab, selectedDatabaseColor.lab);
+            const sim = Math.max(0, 100 - (dist * 1.5)).toFixed(1);
+            txt.innerText = "Compatibilidade com " + selectedDatabaseColor.name + ": " + sim + "%";
+            speak("Compatibilidade de " + sim + " por cento");
         } else if (mode === "static") {
-            const name = detectNameFromLab(lab);
-            txt.innerText = "Cor Identificada: " + name;
-            speak(name);
+            txt.innerText = "Cor detectada: " + detectName(lab);
+            speak(detectName(lab));
         }
     });
 
-    /* ================= FUNÇÕES DE SISTEMA ================= */
-
     function toggleFlash() {
-        if (!streamTrack) return;
         flashOn = !flashOn;
-        streamTrack.applyConstraints({ advanced: [{ torch: flashOn }] }).catch(() => alert("Flash não disponível"));
-    }
-
-    function toggleVoice() { 
-        voice = !voice; 
-        txt.innerText = "Áudio " + (voice ? "Ativado" : "Desativado");
+        streamTrack.applyConstraints({ advanced: [{ torch: flashOn }] });
     }
 
     function speak(t) {
@@ -302,23 +263,20 @@
         speechSynthesis.speak(m);
     }
 
-    /* ================= DATABASE OEM ================= */
+    // --- BANCO DE DADOS OEM ---
     const oemDatabase = [
         { brand: "Toyota", model: "Corolla", code: "040", name: "Super White II", rgb: {r:245, g:245, b:242} },
         { brand: "Toyota", model: "Corolla", code: "218", name: "Midnight Black", rgb: {r:25, g:25, b:27} },
-        { brand: "Toyota", model: "Corolla", code: "3U5", name: "Emotional Red", rgb: {r:150, g:25, b:35} },
         { brand: "Honda", model: "Civic", code: "NH-731P", name: "Crystal Black", rgb: {r:18, g:18, b:20} },
-        { brand: "VW", model: "Gol", code: "R8R8", name: "Flash Red", rgb: {r:190, g:30, b:40} },
-        { brand: "Fiat", model: "Toro", code: "249", name: "Branco Ambiente", rgb: {r:248, g:248, b:245} }
+        { brand: "VW", model: "Gol", code: "R8R8", name: "Flash Red", rgb: {r:190, g:30, b:40} }
     ];
 
     function searchBrand() {
-        const query = document.getElementById("brandSearch").value.toLowerCase();
-        const filtered = oemDatabase.filter(i => i.brand.toLowerCase().includes(query));
-        const models = [...new Set(filtered.map(i => i.model))];
+        const q = document.getElementById("brandSearch").value.toLowerCase();
+        const f = oemDatabase.filter(i => i.brand.toLowerCase().includes(q));
         const sel = document.getElementById("modelSelect");
         sel.innerHTML = '<option value="">Selecione o modelo</option>';
-        models.forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
+        [...new Set(f.map(i => i.model))].forEach(m => sel.innerHTML += `<option value="${m}">${m}</option>`);
     }
 
     function showModelColors() {
@@ -329,11 +287,10 @@
             const div = document.createElement("div");
             div.className = "item";
             div.innerHTML = `<span class="colorBox" style="background:rgb(${c.rgb.r},${c.rgb.g},${c.rgb.b})"></span> 
-                             <div><strong>${c.name}</strong><br><small>Código: ${c.code}</small></div>`;
+                             <div><strong>${c.name}</strong> (${c.code})</div>`;
             div.onclick = () => {
                 selectedDatabaseColor = {...c, lab: rgbToLab(c.rgb.r, c.rgb.g, c.rgb.b)};
-                txt.innerText = "Alvo OEM: " + c.name;
-                speak(c.name);
+                txt.innerText = "Cor OEM Selecionada: " + c.name;
             };
             list.appendChild(div);
         });
