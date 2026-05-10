@@ -27,7 +27,6 @@
   .item:hover{ background:#2c2c2c; }
   .colorBox{ width:18px; height:18px; display:inline-block; border-radius:50%; margin-right:8px; border:1px solid #fff; vertical-align:middle; }
   #txt{ margin-top:15px; font-size:18px; padding:10px; min-height: 40px;}
-  #universalPanel{ margin-top:15px; padding:10px; background:#181818; border-top:2px solid #333; }
 </style>
 </head>
 <body>
@@ -42,7 +41,7 @@
 <button onclick="toggleFlash()">⚡ Flash</button>
 <button id="voiceBtn" onclick="toggleVoice()">🔊 Áudio: ON</button>
 
-<div id="universalPanel">
+<div id="universalPanel" style="margin-top:15px; padding:10px; background:#181818; border-top:2px solid #333;">
   <h3>Modo Universal</h3>
   <button id="universalBtn" onclick="toggleUniversalMode()">Universal OFF</button>
 </div>
@@ -71,7 +70,6 @@
 /* ================= ELEMENTOS ================= */
 const video = document.getElementById("video");
 const canvasA = document.getElementById("canvasA");
-const canvasB = document.getElementById("canvasB");
 const ctxA = canvasA.getContext("2d", {willReadFrequently:true});
 const cross = document.getElementById("cross");
 const txt = document.getElementById("txt");
@@ -81,13 +79,12 @@ let mode = "static";
 let voice = true;
 let universalMode = false;
 let moveRunning = false;
-let compareA = null;
 let compareALab = null;
 let compareStep = 0;
 let selectedDatabaseColor = null;
 
 /* ================= AUDIO & ESTABILIDADE ================= */
-let lastAnnouncedColor = ""; // Evita repetição (ex: azul, azul, azul)
+let lastAnnouncedColor = "";
 let isSpeaking = false;
 let detectedColor = "";
 let stableFrames = 0;
@@ -95,11 +92,10 @@ const MIN_STABLE_FRAMES = 12;
 let rgbBuffer = []; 
 const BUFFER_SIZE = 10;
 
-/* ================= FLASH & CAMERA ================= */
+/* ================= CAMERA & FLASH ================= */
 let streamTrack = null;
 let flashOn = false;
 let flashBusy = false;
-let processingPaused = false;
 
 navigator.mediaDevices.getUserMedia({
   video:{ facingMode:{ ideal:"environment" } },
@@ -109,16 +105,13 @@ navigator.mediaDevices.getUserMedia({
   streamTrack = stream.getVideoTracks()[0];
 }).catch(()=>{ alert("Erro ao acessar câmera"); });
 
-/* ================= FUNÇÃO DE VOZ GLOBAL ================= */
+/* ================= FUNÇÕES DE VOZ ================= */
 function speak(text) {
   if (!voice || !text || isSpeaking) return;
-  
-  // No modo movimento, só fala se a cor for diferente da última dita
   if (mode === "move" && text === lastAnnouncedColor) return;
 
   lastAnnouncedColor = text;
   isSpeaking = true;
-  
   speechSynthesis.cancel();
   const msg = new SpeechSynthesisUtterance(text);
   msg.lang = "pt-BR";
@@ -130,12 +123,8 @@ function speak(text) {
 
 function toggleVoice(){
   voice = !voice;
-  const btn = document.getElementById("voiceBtn");
-  btn.innerText = voice ? "🔊 Áudio: ON" : "🔇 Áudio: OFF";
-  if(!voice) {
-    speechSynthesis.cancel();
-    lastAnnouncedColor = "";
-  }
+  document.getElementById("voiceBtn").innerText = voice ? "🔊 Áudio: ON" : "🔇 Áudio: OFF";
+  if(!voice) { speechSynthesis.cancel(); lastAnnouncedColor = ""; }
 }
 
 /* ================= MODO UNIVERSAL ================= */
@@ -154,20 +143,17 @@ function toggleUniversalMode(){
   }
 }
 
-/* ================= FLASH ================= */
 async function toggleFlash(){
   if(flashBusy || !streamTrack) return;
   flashBusy = true;
   try{
-    const capabilities = streamTrack.getCapabilities();
-    if(!capabilities.torch) throw new Error();
     flashOn = !flashOn;
     await streamTrack.applyConstraints({ advanced:[{ torch:flashOn }] });
   }catch(e){ alert("Flash não disponível"); }
   flashBusy = false;
 }
 
-/* ================= MATEMÁTICA DE CORES ================= */
+/* ================= MATEMÁTICA E CALIBRAÇÃO ================= */
 function rgbToHsl(r,g,b){
   r /= 255; g /= 255; b /= 255;
   const max = Math.max(r,g,b), min = Math.min(r,g,b);
@@ -198,6 +184,33 @@ function deltaE(a,b){
   return Math.sqrt((a.L-b.L)**2 + (a.a-b.a)**2 + (a.b-b.b)**2);
 }
 
+/* ================= DETECTOR UNIVERSAL RECALIBRADO ================= */
+function detectUniversalColor(r,g,b){
+  const hsl = rgbToHsl(r,g,b);
+  const {h, s, l} = hsl;
+
+  // Lógica Avançada para Branco, Preto e Cinza
+  if (l > 88 && s < 15) return "Branco";
+  if (l < 12) return "Preto";
+  if (s < 12) return "Cinza";
+
+  // Lógica para Rosa vs Vermelho
+  if ((h >= 0 && h <= 12) || (h >= 345 && h <= 360)) {
+    if (l > 60 && s > 20) return "Rosa"; // Rosa é Vermelho com muita luz
+    return "Vermelho";
+  }
+
+  // Demais Cores
+  if (h > 12 && h <= 45) return "Laranja";
+  if (h > 45 && h <= 70) return "Amarelo";
+  if (h > 70 && h <= 160) return "Verde";
+  if (h > 160 && h <= 255) return "Azul";
+  if (h > 255 && h <= 300) return "Roxo";
+  if (h > 300 && h <= 344) return "Rosa";
+
+  return "";
+}
+
 /* ================= BANCO DE DADOS OEM ================= */
 const oemDatabase = [
   { brand:"Toyota", model:"Corolla", year:"2024", code:"040", name:"Branco Polar", rgb:{r:244,g:244,b:241} },
@@ -205,23 +218,18 @@ const oemDatabase = [
   { brand:"Toyota", model:"Corolla", year:"2024", code:"218", name:"Preto Atitude", rgb:{r:27,g:27,b:27} },
   { brand:"Toyota", model:"Corolla", year:"2024", code:"3U5", name:"Vermelho Infinito", rgb:{r:126,g:31,b:36} }
 ];
+oemDatabase.forEach(item=> item.lab = rgbToLab(item.rgb.r, item.rgb.g, item.rgb.b));
 
-oemDatabase.forEach(item=>{
-  item.lab = rgbToLab(item.rgb.r, item.rgb.g, item.rgb.b);
-});
-
-/* ================= CAPTURA COM ESTABILIDADE ================= */
+/* ================= CAPTURA E LOOP ================= */
 function captureRaw(x,y){
-  if(!video.videoWidth || processingPaused){ return {r:0,g:0,b:0}; }
+  if(!video.videoWidth) return {r:0,g:0,b:0};
   canvasA.width = video.videoWidth;
   canvasA.height = video.videoHeight;
   ctxA.drawImage(video,0,0);
   const s = 10;
   const data = ctxA.getImageData(x-s, y-s, s*2, s*2).data;
   let r=0,g=0,b=0,c=0;
-  for(let i=0;i<data.length;i+=4){
-    r += data[i]; g += data[i+1]; b += data[i+2]; c++;
-  }
+  for(let i=0;i<data.length;i+=4){ r += data[i]; g += data[i+1]; b += data[i+2]; c++; }
   const raw = { r:Math.round(r/c), g:Math.round(g/c), b:Math.round(b/c) };
   
   rgbBuffer.push(raw);
@@ -230,11 +238,7 @@ function captureRaw(x,y){
     acc.r += curr.r; acc.g += curr.g; acc.b += curr.b; return acc;
   }, {r:0,g:0,b:0});
 
-  const finalRgb = {
-    r: Math.round(avg.r / rgbBuffer.length),
-    g: Math.round(avg.g / rgbBuffer.length),
-    b: Math.round(avg.b / rgbBuffer.length)
-  };
+  const finalRgb = { r: Math.round(avg.r / rgbBuffer.length), g: Math.round(avg.g / rgbBuffer.length), b: Math.round(avg.b / rgbBuffer.length) };
 
   const diff = Math.abs(raw.r - finalRgb.r) + Math.abs(raw.g - finalRgb.g);
   if(diff < 5 && rgbBuffer.length >= 5){
@@ -244,56 +248,26 @@ function captureRaw(x,y){
     cross.style.borderColor = "#ff4444";
     cross.style.boxShadow = "none";
   }
-
   return finalRgb;
 }
 
-/* ================= DETECTOR UNIVERSAL ================= */
-function detectUniversalColor(r,g,b){
-  const hsl = rgbToHsl(r,g,b);
-  const {h, s, l} = hsl;
-  if(s <= 12 && l >= 80) return "Branco";
-  if(l <= 15) return "Preto";
-  if(s <= 15) return "Cinza";
-  if((h >= 0 && h <= 15) || (h >= 345 && h <= 360)) return "Vermelho";
-  if(h >= 16 && h <= 45) return "Laranja";
-  if(h >= 46 && h <= 70) return "Amarelo";
-  if(h >= 71 && h <= 160) return "Verde";
-  if(h >= 161 && h <= 255) return "Azul";
-  if(h >= 256 && h <= 310) return "Roxo";
-  if(h >= 311 && h <= 344) return "Rosa";
-  return "";
-}
-
-/* ================= LOOP DE MOVIMENTO ================= */
 function moveLoop(){
   if(mode !== "move"){ moveRunning = false; return; }
   const sig = captureRaw(video.videoWidth/2, video.videoHeight/2);
-
   if(universalMode){
     const colorName = detectUniversalColor(sig.r, sig.g, sig.b);
     if(colorName !== ""){
         txt.innerText = "Cor: " + colorName;
-        if(colorName === detectedColor){ 
-            stableFrames++; 
-        } else { 
-            detectedColor = colorName; 
-            stableFrames = 0; 
-        }
-        
-        if(stableFrames >= MIN_STABLE_FRAMES){
-            speak(colorName);
-        }
-    } else {
-        txt.innerText = "Analisando...";
-    }
+        if(colorName === detectedColor){ stableFrames++; } else { detectedColor = colorName; stableFrames = 0; }
+        if(stableFrames >= MIN_STABLE_FRAMES) speak(colorName);
+    } else { txt.innerText = "Analisando..."; }
   } else {
     txt.innerText = `RGB: ${sig.r}, ${sig.g}, ${sig.b}`;
   }
   requestAnimationFrame(moveLoop);
 }
 
-/* ================= FUNÇÕES DE AÇÃO ================= */
+/* ================= INTERAÇÃO ================= */
 function analyzeOEM(){
   const sig = captureRaw(video.videoWidth/2, video.videoHeight/2);
   const targetLab = rgbToLab(sig.r, sig.g, sig.b);
@@ -303,7 +277,7 @@ function analyzeOEM(){
     if(d < bestDelta){ bestDelta = d; best = color; }
   }
   const similarity = Math.max(0, 100 - bestDelta).toFixed(1);
-  txt.innerText = `${best.name} (${best.code}) - ${similarity}%`;
+  txt.innerText = `${best.name} - ${similarity}%`;
   speak(best.name);
 }
 
@@ -326,8 +300,7 @@ function showModelColors(){
   const model = document.getElementById("modelSelect").value;
   const resultList = document.getElementById("resultList");
   resultList.innerHTML = "";
-  const colors = oemDatabase.filter(item=>item.model===model);
-  colors.forEach(item=>{
+  oemDatabase.filter(item=>item.model===model).forEach(item=>{
     resultList.innerHTML += `<div class="item" onclick="selectDatabaseColor('${item.name}')">
       <span class="colorBox" style="background:rgb(${item.rgb.r},${item.rgb.g},${item.rgb.b})"></span>
       ${item.name} - ${item.code}
@@ -341,18 +314,15 @@ function selectDatabaseColor(name){
   speak(name);
 }
 
-/* ================= EVENTO DE CLIQUE ================= */
 video.addEventListener("click",(e)=>{
   const rect = video.getBoundingClientRect();
   const x = (e.clientX - rect.left) * (video.videoWidth / rect.width);
   const y = (e.clientY - rect.top) * (video.videoHeight / rect.height);
   const sig = captureRaw(x,y);
-
   if(mode === "static") analyzeOEM();
   if(mode === "compareDatabase"){
-    if(!selectedDatabaseColor) return alert("Selecione uma cor na lista");
-    const dE = deltaE(rgbToLab(sig.r,sig.g,sig.b), selectedDatabaseColor.lab);
-    const sim = Math.max(0, 100 - dE).toFixed(1);
+    if(!selectedDatabaseColor) return alert("Selecione uma cor");
+    const sim = Math.max(0, 100 - deltaE(rgbToLab(sig.r,sig.g,sig.b), selectedDatabaseColor.lab)).toFixed(1);
     txt.innerText = `Similaridade: ${sim}%`;
     speak(sim + " por cento");
   }
@@ -361,8 +331,7 @@ video.addEventListener("click",(e)=>{
       compareALab = rgbToLab(sig.r, sig.g, sig.b);
       compareStep = 1; txt.innerText = "Ponto 1 capturado"; speak("Ponto um");
     } else {
-      const dE = deltaE(compareALab, rgbToLab(sig.r, sig.g, sig.b));
-      const sim = Math.max(0, 100 - dE).toFixed(1);
+      const sim = Math.max(0, 100 - deltaE(compareALab, rgbToLab(sig.r, sig.g, sig.b))).toFixed(1);
       txt.innerText = `Similaridade: ${sim}%`;
       speak(sim + " por cento");
       compareStep = 0;
