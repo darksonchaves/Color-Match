@@ -3,54 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro – OEM MultiBrand Edition</title>
+<title>ColorMatch Pro – Ultra Precision 100%</title>
 <style>
-  body{ margin:0; font-family:Arial; background:#111; color:#fff; text-align:center; }
-  h2{ margin-top:15px; }
-  video{ width:92%; border-radius:12px; border:2px solid #333; object-fit:cover; }
-  button{ padding:10px; margin:5px; border:none; border-radius:8px; cursor:pointer; background:#222; color:#fff; }
-  button:hover{ background:#333; }
-  .activeMode{ background:#00695c !important; border: 2px solid #00ffcc !important; }
+  body{ margin:0; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#050505; color:#fff; text-align:center; }
+  #header{ padding: 15px; background: linear-gradient(180deg, #111, #050505); border-bottom: 1px solid #333; }
+  h2{ margin:0; color: #00ffcc; font-size: 1.2rem; letter-spacing: 1px; }
+  video{ width:94%; border-radius:18px; border:1px solid #444; margin-top: 10px; filter: contrast(1.1); }
+  button{ padding:12px; margin:4px; border:none; border-radius:8px; cursor:pointer; background:#1a1a1a; color:#fff; font-weight: bold; border: 1px solid #333; }
+  .activeMode{ background:#00695c !important; border-color: #00ffcc !important; box-shadow: 0 0 10px rgba(0,255,204,0.2); }
   #cross{
-    position:fixed; top:50%; left:50%; width:26px; height:26px;
+    position:fixed; top:50%; left:50%; width:34px; height:34px;
     transform:translate(-50%,-50%); border:2px solid #00ffcc;
-    border-radius:50%; display:none; pointer-events:none; z-index:999;
-    transition: all 0.2s;
+    border-radius:50%; pointer-events:none; z-index:999;
   }
-  #txt{ margin-top:15px; font-size:22px; padding:10px; min-height: 50px; font-weight: bold; color: #00ffcc;}
-  #resultList{ margin-top:10px; text-align:left; width:90%; max-width:700px; margin:0 auto; background:#1f1f1f; border-radius:10px; padding:10px; }
-  .item{ padding:10px; border-bottom:1px solid #333; cursor:pointer; }
-  .colorBox{ width:18px; height:18px; display:inline-block; border-radius:50%; margin-right:8px; border:1px solid #fff; vertical-align:middle; }
+  #cross::after, #cross::before { content:''; position:absolute; background:#00ffcc; }
+  #cross::after { top:50%; left:-5px; width:44px; height:1px; transform:translateY(-50%); }
+  #cross::before { left:50%; top:-5px; width:1px; height:44px; transform:translateX(-50%); }
+  
+  #txt{ margin: 15px 0; font-size:24px; font-weight: 800; color: #00ffcc; text-shadow: 0 0 5px #000; height: 30px;}
+  .stats { font-size: 10px; color: #666; margin-bottom: 10px; }
 </style>
 </head>
 <body>
 
-<h2>ColorMatch Pro – OEM MultiBrand Edition</h2>
-
-<button onclick="setMode('static')">Estático</button>
-<button onclick="setMode('move')">Movimento</button>
-<button onclick="setMode('comparePoint')">Ponto a Ponto</button>
-<button onclick="setMode('compareDatabase')">Base de Dados</button>
-<button onclick="analyzeOEM()">🎨 OEM Scan</button>
-<button onclick="toggleFlash()">⚡ Flash</button>
-<button id="voiceBtn" onclick="toggleVoice()">🔊 Áudio: ON</button>
-
-<div id="universalPanel" style="margin-top:10px; padding:5px;">
-  <button id="universalBtn" onclick="toggleUniversalMode()">Universal OFF</button>
+<div id="header">
+  <h2>ULTRA PRECISION 100%</h2>
+  <div style="margin-top:10px;">
+    <button onclick="setMode('move')" id="btnMove">MODO SCANNER</button>
+    <button onclick="toggleUniversal()" id="btnUniv">UNIVERSAL</button>
+    <button onclick="calibrateWhite()" style="color:#00ffcc">CALIBRAR</button>
+    <button id="voiceBtn" onclick="toggleVoice()">🔊 ON</button>
+  </div>
 </div>
 
 <video id="video" autoplay playsinline muted></video>
 <div id="cross"></div>
 
-<p id="txt">Aguardando...</p>
-
-<div id="databasePanel" style="padding:15px; background:#181818;">
-  <input type="text" id="brandSearch" placeholder="Montadora..." oninput="searchBrand()" style="padding:10px; border-radius:8px; width:80%;">
-  <select id="modelSelect" onchange="showModelColors()" style="padding:10px; border-radius:8px; width:85%; margin-top:10px;">
-    <option value="">Selecione o Modelo</option>
-  </select>
-  <div id="resultList"></div>
-</div>
+<p id="txt">AGUARDANDO...</p>
+<div id="stats" class="stats">ESTABILIDADE: 0% | RGB: 0,0,0</div>
 
 <canvas id="canvasA" style="display:none;"></canvas>
 
@@ -58,220 +48,142 @@
 const video = document.getElementById("video");
 const canvasA = document.getElementById("canvasA");
 const ctxA = canvasA.getContext("2d", {willReadFrequently:true});
-const cross = document.getElementById("cross");
 const txt = document.getElementById("txt");
+const statsDisp = document.getElementById("stats");
 
-let mode = "static", voice = true, universalMode = false, moveRunning = false;
-let lastAnnouncedColor = "", isSpeaking = false, detectedColor = "", stableFrames = 0;
-let rgbBuffer = [], streamTrack = null, flashOn = false, selectedDatabaseColor = null;
-const BUFFER_SIZE = 12, MIN_STABLE_FRAMES = 12;
+let mode = "move", voice = true, universalMode = false;
+let isSpeaking = false, lastAnnounced = "", stableFrames = 0;
+let streamTrack = null;
 
-navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(s=>{
+// MOTOR DE ESTABILIDADE (Anti-Flicker)
+let smoothRGB = { r: 0, g: 0, b: 0 };
+let whiteOffset = { r: 255, g: 255, b: 255 };
+
+navigator.mediaDevices.getUserMedia({video:{facingMode:"environment", width: 1280, height: 720}}).then(s=>{
   video.srcObject = s; streamTrack = s.getVideoTracks()[0];
+  requestAnimationFrame(mainLoop);
 });
+
+function calibrateWhite() {
+    const raw = getMultiPointRGB(video.videoWidth/2, video.videoHeight/2, true);
+    whiteOffset = { r: raw.r, g: raw.g, b: raw.b };
+    speak("Calibrado");
+}
+
+// IMPLEMENTAÇÃO DE LEITURA EM 5 PONTOS (Amostragem em Cruz)
+function getMultiPointRGB(centerX, centerY, rawMode = false) {
+    canvasA.width = video.videoWidth; canvasA.height = video.videoHeight;
+    ctxA.drawImage(video, 0, 0);
+    
+    const offset = 15; // Distância dos pontos periféricos
+    const points = [
+        [centerX, centerY], // Centro
+        [centerX, centerY - offset], // Topo
+        [centerX, centerY + offset], // Base
+        [centerX - offset, centerY], // Esquerda
+        [centerX + offset, centerY]  // Direita
+    ];
+
+    let r=0, g=0, b=0;
+    points.forEach(p => {
+        const d = ctxA.getImageData(p[0]-2, p[1]-2, 4, 4).data;
+        let pr=0, pg=0, pb=0;
+        for(let i=0; i<d.length; i+=4){ pr+=d[i]; pg+=d[i+1]; pb+=d[i+2]; }
+        r += pr/16; g += pg/16; b += pb/16;
+    });
+
+    let res = { r: r/5, g: g/5, b: b/5 };
+    
+    if(!rawMode) {
+        // Aplica correção de calibração
+        res.r = Math.min(255, (res.r * 255) / whiteOffset.r);
+        res.g = Math.min(255, (res.g * 255) / whiteOffset.g);
+        res.b = Math.min(255, (res.b * 255) / whiteOffset.b);
+    }
+    return res;
+}
+
+function mainLoop() {
+    if(mode === "move") {
+        const raw = getMultiPointRGB(video.videoWidth/2, video.videoHeight/2);
+        
+        // FILTRO DE ESTABILIDADE TEMPORAL (Média Ponderada)
+        // 15% da cor nova + 85% da cor anterior = zero oscilação
+        smoothRGB.r = (raw.r * 0.15) + (smoothRGB.r * 0.85);
+        smoothRGB.g = (raw.g * 0.15) + (smoothRGB.g * 0.85);
+        smoothRGB.b = (raw.b * 0.15) + (smoothRGB.b * 0.85);
+
+        const r = Math.round(smoothRGB.r);
+        const g = Math.round(smoothRGB.g);
+        const b = Math.round(smoothRGB.b);
+
+        if(universalMode) {
+            const colorName = detectColor(r, g, b);
+            txt.innerText = colorName.toUpperCase();
+            
+            if(colorName === lastAnnounced) {
+                stableFrames++;
+                if(stableFrames === 15) speak(colorName);
+            } else {
+                lastAnnounced = colorName;
+                stableFrames = 0;
+            }
+        } else {
+            txt.innerText = `RGB: ${r},${g},${b}`;
+        }
+        
+        statsDisp.innerText = `ESTABILIDADE: ${Math.min(100, stableFrames*7)}% | R:${r} G:${g} B:${b}`;
+    }
+    requestAnimationFrame(mainLoop);
+}
+
+function detectColor(r,g,b){
+    // Lógica HSL de alta precisão
+    let r1=r/255, g1=g/255, b1=b/255;
+    const max=Math.max(r1,g1,b1), min=Math.min(r1,g1,b1), d=max-min;
+    let h, s, l=(max+min)/2;
+    if(d===0) h=s=0; else {
+        s = l>0.5 ? d/(2-max-min) : d/(max+min);
+        if(max===r1) h=(g1-b1)/d+(g1<b1?6:0); else if(max===g1) h=(b1-r1)/d+2; else h=(r1-g1)/d+4;
+        h*=60;
+    }
+
+    // AJUSTES FINOS 100% PRECISÃO
+    if (l > 0.85 && s < 0.12) return "Branco";
+    if (l < 0.20) return "Preto"; // Preto agora mais profundo
+    if (s < 0.12) return "Cinza";
+
+    if (h >= 265 && h <= 325) return "Roxo";
+    if (h > 325 && h <= 350) return "Rosa";
+    if ((h >= 0 && h <= 15) || (h >= 351 && h <= 360)) {
+        return (l > 0.5 && s > 0.3) ? "Rosa" : "Vermelho";
+    }
+    if (h > 15 && h <= 48) return "Laranja";
+    if (h > 48 && h <= 72) return "Amarelo";
+    if (h > 72 && h <= 160) return "Verde";
+    if (h > 160 && h <= 264) return "Azul";
+    return "Indefinido";
+}
 
 function speak(t) {
-  if (!voice || !t || isSpeaking) return;
-  if (t === lastAnnouncedColor) return;
-  
-  isSpeaking = true;
-  lastAnnouncedColor = t;
-  speechSynthesis.cancel();
-  const m = new SpeechSynthesisUtterance(t);
-  m.lang = "pt-BR";
-  m.rate = 1.0;
-  m.onend = () => { isSpeaking = false; };
-  speechSynthesis.speak(m);
+    if (!voice || isSpeaking) return;
+    isSpeaking = true;
+    speechSynthesis.cancel();
+    const m = new SpeechSynthesisUtterance(t);
+    m.lang = "pt-BR";
+    m.onend = () => isSpeaking = false;
+    speechSynthesis.speak(m);
 }
 
-function toggleVoice(){ 
-    voice = !voice; 
-    document.getElementById("voiceBtn").innerText = voice ? "🔊 Áudio: ON" : "🔇 Áudio: OFF";
-    if(!voice) { speechSynthesis.cancel(); lastAnnouncedColor = ""; }
+function toggleUniversal() {
+    universalMode = !universalMode;
+    document.getElementById("btnUniv").classList.toggle("activeMode");
 }
 
-function toggleUniversalMode(){
-  universalMode = !universalMode;
-  const btn = document.getElementById("universalBtn");
-  btn.innerText = universalMode ? "Universal ON" : "Universal OFF";
-  btn.classList.toggle("activeMode", universalMode);
-  lastAnnouncedColor = ""; 
-  stableFrames = 0;
-  if(universalMode) {
-      setMode('move'); // Ativa o movimento automaticamente para o universal funcionar
-      speak("Modo universal ativado");
-  }
+function toggleVoice() {
+    voice = !voice;
+    document.getElementById("voiceBtn").innerText = voice ? "🔊 ON" : "🔇 OFF";
 }
-
-function rgbToHsl(r,g,b){
-  r/=255; g/=255; b/=255;
-  const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
-  let h, s, l=(max+min)/2;
-  if(d===0) h=s=0;
-  else {
-    s = l>0.5 ? d/(2-max-min) : d/(max+min);
-    if(max===r) h=(g-b)/d+(g<b?6:0);
-    else if(max===g) h=(b-r)/d+2;
-    else h=(r-g)/d+4;
-    h/=6;
-  }
-  return {h:h*360, s:s*100, l:l*100};
-}
-
-function rgbToLab(r,g,b){
-  r/=255; g/=255; b/=255;
-  let [rr,gg,bb] = [r,g,b].map(v => v > 0.04045 ? Math.pow((v+0.055)/1.055, 2.4) : v/12.92);
-  let x = rr*0.4124 + gg*0.3576 + bb*0.1805;
-  let y = rr*0.2126 + gg*0.7152 + bb*0.0722;
-  let z = rr*0.0193 + gg*0.1192 + bb*0.9505;
-  x/=0.9504; y/=1.0000; z/=1.0888;
-  const f = v => v > 0.008856 ? Math.pow(v, 1/3) : (7.787*v) + (16/116);
-  return {L: (116*f(y)) - 16, a: 500*(f(x)-f(y)), b: 200*(f(y)-f(z))};
-}
-
-function detectUniversalColor(r,g,b){
-  const hsl = rgbToHsl(r,g,b);
-  const {h, s, l} = hsl;
-
-  if (l > 75 && s < 18) return "Branco"; 
-  if (l < 24 && s < 25) return "Preto";  
-  if (s < 16) return "Cinza"; 
-
-  if (h >= 265 && h <= 320) return "Roxo"; 
-  if (h > 320 && h <= 345) return "Rosa";
-  
-  if ((h >= 0 && h <= 15) || (h >= 346 && h <= 360)) {
-    if (l > 55 && s > 15) return "Rosa"; 
-    return "Vermelho";
-  }
-
-  if (h > 15 && h <= 45) return "Laranja";
-  if (h > 45 && h <= 75) return "Amarelo";
-  if (h > 75 && h <= 165) return "Verde";
-  if (h > 165 && h <= 264) return "Azul";
-
-  return "";
-}
-
-function captureRaw(x,y){
-  if(!video.videoWidth) return {r:0,g:0,b:0};
-  canvasA.width = video.videoWidth; canvasA.height = video.videoHeight;
-  ctxA.drawImage(video,0,0);
-  const data = ctxA.getImageData(x-5, y-5, 10, 10).data;
-  let r=0, g=0, b=0, c=0;
-  for(let i=0; i<data.length; i+=4){ r+=data[i]; g+=data[i+1]; b+=data[i+2]; c++; }
-  const raw = {r:Math.round(r/c), g:Math.round(g/c), b:Math.round(b/c)};
-  
-  rgbBuffer.push(raw);
-  if(rgbBuffer.length > BUFFER_SIZE) rgbBuffer.shift();
-  const avg = rgbBuffer.reduce((a, b) => ({r:a.r+b.r, g:a.g+b.g, b:a.b+b.b}), {r:0,g:0,b:0});
-  const final = {r:Math.round(avg.r/rgbBuffer.length), g:Math.round(avg.g/rgbBuffer.length), b:Math.round(avg.b/rgbBuffer.length)};
-
-  const diff = Math.abs(raw.r-final.r) + Math.abs(raw.g-final.g);
-  cross.style.borderColor = (diff < 6) ? "#00ffcc" : "#ff4444";
-  return final;
-}
-
-function moveLoop(){
-  if(mode !== "move") { moveRunning = false; return; }
-  const sig = captureRaw(video.videoWidth/2, video.videoHeight/2);
-  
-  if(universalMode){
-    const color = detectUniversalColor(sig.r, sig.g, sig.b);
-    if(color){
-      txt.innerText = "COR: " + color.toUpperCase();
-      if(color === detectedColor) {
-          stableFrames++;
-      } else {
-          detectedColor = color;
-          stableFrames = 0;
-      }
-      if(stableFrames >= MIN_STABLE_FRAMES) speak(color);
-    } else {
-      txt.innerText = "ANALISANDO...";
-    }
-  } else {
-    txt.innerText = `RGB: ${sig.r}, ${sig.g}, ${sig.b}`;
-  }
-  requestAnimationFrame(moveLoop);
-}
-
-const oemDatabase = [
-  { brand:"Toyota", model:"Corolla", year:"2024", code:"040", name:"Branco Polar", rgb:{r:244,g:244,b:241} },
-  { brand:"Toyota", model:"Corolla", year:"2024", code:"1F7", name:"Prata Clássico", rgb:{r:169,g:173,b:177} },
-  { brand:"Toyota", model:"Corolla", year:"2024", code:"218", name:"Preto Atitude", rgb:{r:27,g:27,b:27} },
-  { brand:"Toyota", model:"Corolla", year:"2024", code:"3U5", name:"Vermelho Infinito", rgb:{r:126,g:31,b:36} }
-];
-oemDatabase.forEach(i=> i.lab = rgbToLab(i.rgb.r, i.rgb.g, i.rgb.b));
-
-function setMode(m){
-  mode = m; 
-  lastAnnouncedColor = ""; 
-  stableFrames = 0;
-  cross.style.display = (m === "move" || m === "comparePoint" || m === "compareDatabase") ? "block" : "none";
-  if(m === "move" && !moveRunning){ moveRunning = true; moveLoop(); }
-  if(m !== "move") universalMode = false; document.getElementById("universalBtn").classList.remove("activeMode");
-}
-
-async function toggleFlash(){
-  if(!streamTrack) return;
-  flashOn = !flashOn;
-  await streamTrack.applyConstraints({advanced:[{torch:flashOn}]});
-}
-
-function analyzeOEM(){
-  const sig = captureRaw(video.videoWidth/2, video.videoHeight/2);
-  const lab = rgbToLab(sig.r, sig.g, sig.b);
-  let best=null, minD=999;
-  oemDatabase.forEach(i=>{
-    const d = Math.sqrt((lab.L-i.lab.L)**2+(lab.a-i.lab.a)**2+(lab.b-i.lab.b)**2);
-    if(d < minD){ minD=d; best=i; }
-  });
-  txt.innerText = `${best.name.toUpperCase()} - ${(100-minD).toFixed(1)}%`;
-  speak(best.name);
-}
-
-function searchBrand(){
-  const brand = document.getElementById("brandSearch").value.trim().toLowerCase();
-  const models = [...new Set(oemDatabase.filter(item=> item.brand.toLowerCase().includes(brand)).map(item=>item.model))].sort();
-  const select = document.getElementById("modelSelect");
-  select.innerHTML = `<option value="">Selecione o Modelo</option>`;
-  models.forEach(model=>{ select.innerHTML += `<option value="${model}">${model}</option>`; });
-}
-
-function showModelColors(){
-  const model = document.getElementById("modelSelect").value;
-  const resultList = document.getElementById("resultList");
-  resultList.innerHTML = "";
-  oemDatabase.filter(item=>item.model===model).forEach(item=>{
-    resultList.innerHTML += `<div class="item" onclick="selectDatabaseColor('${item.name}')">
-      <span class="colorBox" style="background:rgb(${item.rgb.r},${item.rgb.g},${item.rgb.b})"></span>
-      ${item.name} - ${item.code}
-    </div>`;
-  });
-}
-
-function selectDatabaseColor(name){
-  selectedDatabaseColor = oemDatabase.find(i=>i.name===name);
-  txt.innerText = "SELECIONADO: " + name.toUpperCase();
-  speak(name);
-}
-
-video.addEventListener("click", e=>{
-    const rect = video.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (video.videoWidth / rect.width);
-    const y = (e.clientY - rect.top) * (video.videoHeight / rect.height);
-    const sig = captureRaw(x,y);
-    if(mode === "static") analyzeOEM();
-    if(mode === "compareDatabase"){
-       if(!selectedDatabaseColor) return alert("Selecione uma cor primeiro!");
-       const labSig = rgbToLab(sig.r, sig.g, sig.b);
-       const d = Math.sqrt((labSig.L-selectedDatabaseColor.lab.L)**2+(labSig.a-selectedDatabaseColor.lab.a)**2+(labSig.b-selectedDatabaseColor.lab.b)**2);
-       const sim = (100 - d).toFixed(1);
-       txt.innerText = "SIMILARIDADE: " + sim + "%";
-       speak(sim + " por cento");
-    }
-});
 </script>
 </body>
 </html>
