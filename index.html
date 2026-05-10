@@ -3,28 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - Sincronia Total</title>
+<title>ColorMatch Pro - Anti-Sombra & Sincronia</title>
 <style>
-  body{ margin:0; font-family: sans-serif; background:#050505; color:#fff; text-align:center; overflow:hidden; }
-  #header{ padding: 10px; background: #111; border-bottom: 1px solid #333; }
-  video{ width:100%; max-height: 70vh; object-fit: cover; }
-  button{ padding:15px; margin:5px; border-radius:10px; border:none; background:#222; color:white; font-weight:bold; }
-  .active{ background:#00ffcc; color:#000; }
-  #cross{ position:fixed; top:50%; left:50%; width:40px; height:40px; transform:translate(-50%,-50%); border:3px solid #00ffcc; border-radius:50%; pointer-events:none; }
-  #display{ font-size: 32px; font-weight: 900; color: #00ffcc; margin: 20px 0; text-transform: uppercase; }
+  body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#050505; color:#fff; text-align:center; overflow:hidden; }
+  #header{ padding: 10px; background: #111; border-bottom: 1px solid #333; display: flex; justify-content: center; gap: 10px; }
+  video{ width:100%; max-height: 65vh; object-fit: cover; border-bottom: 2px solid #222; }
+  button{ padding:12px 18px; border-radius:8px; border:none; background:#222; color:white; font-weight:bold; cursor: pointer; transition: 0.3s; }
+  .active{ background:#00ffcc !important; color:#000 !important; box-shadow: 0 0 10px #00ffcc; }
+  #cross{ position:fixed; top:50%; left:50%; width:40px; height:40px; transform:translate(-50%,-50%); border:3px solid #00ffcc; border-radius:50%; pointer-events:none; z-index: 10; }
+  #display{ font-size: 36px; font-weight: 900; color: #00ffcc; margin: 15px 0; text-transform: uppercase; letter-spacing: 2px; }
+  .info { color: #666; font-size: 12px; }
 </style>
 </head>
 <body>
 
 <div id="header">
   <button onclick="toggleUniv()" id="btnU">MODO: OFF</button>
-  <button onclick="calibrate()">CALIBRAR</button>
-  <button onclick="toggleVoice()" id="btnV">ÁUDIO: ON</button>
+  <button onclick="calibrate()">CALIBRAR BRANCO</button>
+  <button onclick="toggleVoice()" id="btnV" class="active">🔊 ÁUDIO: ON</button>
 </div>
 
 <video id="v" autoplay playsinline muted></video>
 <div id="cross"></div>
-<div id="display">AGUARDANDO...</div>
+
+<div id="display">INICIANDO...</div>
+<div id="stats" class="info">RGB: 0, 0, 0 | ESTABILIDADE: 0%</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -33,36 +36,43 @@ const video = document.getElementById('v');
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d', {willReadFrequently: true});
 const display = document.getElementById('display');
+const stats = document.getElementById('stats');
 
 let isUniv = false, isVoice = true, isSpeaking = false;
 let lastColor = "", stableCount = 0;
 let offset = {r:255, g:255, b:255};
 
-navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(s => video.srcObject = s);
+// Inicializa câmera
+navigator.mediaDevices.getUserMedia({video:{facingMode:"environment", width: 1280}}).then(s => video.srcObject = s);
 
 function calibrate() {
-    const data = getRGB();
+    const data = getAverageRGB();
     offset = {r: data.r, g: data.g, b: data.b};
-    speak("Calibrado");
+    speak("Branco calibrado");
 }
 
-function getRGB() {
+function getAverageRGB() {
+    if(!video.videoWidth) return {r:0, g:0, b:0};
     canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0);
-    // Pegando área central 20x20 para suavizar o metalizado
-    const d = ctx.getImageData(video.videoWidth/2 - 10, video.videoHeight/2 - 10, 20, 20).data;
+    
+    // Área de captura 20x20 para suavizar metalizados/verniz
+    const size = 20;
+    const d = ctx.getImageData(video.videoWidth/2 - size/2, video.videoHeight/2 - size/2, size, size).data;
+    
     let r=0, g=0, b=0;
     for(let i=0; i<d.length; i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
-    return { r: r/(d.length/4), g: g/(d.length/4), b: b/(d.length/4) };
+    const total = d.length/4;
+    return { r: r/total, g: g/total, b: b/total };
 }
 
 function solveColor(r, g, b) {
-    // Normalização baseada na calibração
+    // Aplicação da calibração
     let nr = (r * 255) / offset.r;
     let ng = (g * 255) / offset.g;
     let nb = (b * 255) / offset.b;
     
-    // Converte para HSL para lógica mais "humana"
+    // Conversão para HSL (Human Perception)
     let r1=nr/255, g1=ng/255, b1=nb/255;
     const max=Math.max(r1,g1,b1), min=Math.min(r1,g1,b1), d=max-min;
     let h, s, l=(max+min)/2;
@@ -72,60 +82,85 @@ function solveColor(r, g, b) {
         h*=60;
     }
 
-    if (l < 0.15) return "Preto";
-    if (l > 0.85 && s < 0.2) return "Branco";
-    if (s < 0.15) return "Cinza";
+    // --- ENGENHARIA ANTI-SOMBRA (Sua nova lógica) ---
+    // Ajusta o limite entre Laranja e Amarelo baseado na luz (l)
+    let yellowLimit = (l < 0.45) ? 42 : 48; 
+
+    if (l < 0.12) return "Preto";
+    if (l > 0.88 && s < 0.15) return "Branco";
+    if (s < 0.12) return "Cinza";
     
-    if (h < 15 || h > 345) return (l < 0.45 && s > 0.5) ? "Vermelho Escuro" : "Vermelho";
-    if (h < 45) return "Laranja";
-    if (h < 75) return "Amarelo";
+    if (h < 18 || h > 342) return "Vermelho";
+    if (h < yellowLimit) return "Laranja";
+    if (h < 78) return "Amarelo"; 
     if (h < 165) return "Verde";
-    if (h < 260) return "Azul";
-    if (h < 300) return "Roxo";
+    if (h < 255) return "Azul";
+    if (h < 305) return "Roxo";
+    
     return "Rosa";
 }
 
-function loop() {
+function mainLoop() {
     if(video.videoWidth) {
-        const rgb = getRGB();
+        const rgb = getAverageRGB();
         const colorName = solveColor(rgb.r, rgb.g, rgb.b);
 
         if(isUniv) {
             display.innerText = colorName;
-            // Sincronia: Só fala se o nome estiver estável no visor
-            if(colorName === lastColor) {
+            
+            // Lógica de Sincronia Visor x Áudio
+            if(colorName === lastColor && colorName !== "Analizando...") {
                 stableCount++;
-                if(stableCount === 25) speak(colorName);
+                // Quando atinge 22 frames de estabilidade (~0.8s), ele fala
+                if(stableCount === 22) speak(colorName);
             } else {
                 lastColor = colorName;
                 stableCount = 0;
             }
+            stats.innerText = `ESTABILIDADE: ${Math.min(100, stableCount*5)}% | RGB: ${Math.round(rgb.r)},${Math.round(rgb.g)},${Math.round(rgb.b)}`;
         } else {
-            display.innerText = `R:${Math.round(rgb.r)} G:${Math.round(rgb.g)} B:${rgb.b}`;
+            display.innerText = `RGB: ${Math.round(rgb.r)},${Math.round(rgb.g)},${Math.round(rgb.b)}`;
+            stableCount = 0;
         }
     }
-    requestAnimationFrame(loop);
+    requestAnimationFrame(mainLoop);
 }
-requestAnimationFrame(loop);
 
 function speak(t) {
     if(!isVoice || isSpeaking) return;
     isSpeaking = true;
-    const u = new SpeechSynthesisUtterance(t);
-    u.lang = 'pt-BR';
-    u.onend = () => isSpeaking = false;
-    speechSynthesis.speak(u);
+    
+    // Limpa falas anteriores para evitar delay
+    window.speechSynthesis.cancel();
+    
+    const msg = new SpeechSynthesisUtterance(t);
+    msg.lang = 'pt-BR';
+    msg.rate = 1.1; // Um pouco mais rápido para parecer profissional
+    msg.onend = () => { isSpeaking = false; };
+    msg.onerror = () => { isSpeaking = false; };
+    
+    window.speechSynthesis.speak(msg);
 }
 
+// Controles de Interface
 function toggleUniv() { 
     isUniv = !isUniv; 
-    document.getElementById('btnU').classList.toggle('active');
-    document.getElementById('btnU').innerText = isUniv ? "MODO: ON" : "MODO: OFF";
+    const btn = document.getElementById('btnU');
+    btn.classList.toggle('active');
+    btn.innerText = isUniv ? "MODO: ON" : "MODO: OFF";
+    lastColor = ""; stableCount = 0;
 }
+
 function toggleVoice() { 
     isVoice = !isVoice; 
-    document.getElementById('btnV').classList.toggle('active');
+    const btn = document.getElementById('btnV');
+    btn.classList.toggle('active');
+    btn.innerText = isVoice ? "🔊 ÁUDIO: ON" : "🔇 ÁUDIO: OFF";
+    if(!isVoice) window.speechSynthesis.cancel();
 }
+
+// Inicia o motor
+requestAnimationFrame(mainLoop);
 </script>
 </body>
 </html>
