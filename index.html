@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - Global Engine v1</title>
+<title>ColorMatch Pro - Global Engine v2</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
   #header{ padding: 10px; background: #111; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; }
   #video-container { position: relative; width: 100%; height: 65vh; background: #000; overflow: hidden; }
   video{ width: 100%; height: 100%; object-fit: contain; }
-  button{ padding:10px 14px; border-radius:6px; border:none; background:#222; color:white; font-weight:bold; cursor:pointer; }
+  button{ padding:10px 14px; border-radius:8px; border:none; background:#222; color:white; font-weight:bold; cursor:pointer; }
   .active{ background:#00ffcc !important; color:#000 !important; }
   #cross{ 
-    position:absolute; top:50%; left:50%; width:40px; height:40px; 
+    position:absolute; top:50%; left:50%; width:44px; height:44px; 
     transform:translate(-50%,-50%); border:2px solid #00ffcc; 
     border-radius:50%; pointer-events:none; z-index: 10; 
   }
   #cross::after { content: ''; position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: #00ffcc; border-radius: 50%; transform: translate(-50%, -50%); }
-  #display{ font-size: 42px; font-weight: 900; color: #00ffcc; margin: 15px 0; text-transform: uppercase; min-height: 50px; text-shadow: 0 0 10px rgba(0,255,204,0.3); }
-  .info { color: #888; font-size: 11px; letter-spacing: 1px; }
+  #display{ font-size: 42px; font-weight: 900; color: #00ffcc; margin: 15px 0; text-transform: uppercase; min-height: 50px; }
+  .info { color: #888; font-size: 11px; }
 </style>
 </head>
 <body>
@@ -35,7 +35,7 @@
 </div>
 
 <div id="display">AGUARDANDO...</div>
-<div id="stats" class="info">SISTEMA DE PRECISÃO GLOBAL</div>
+<div id="stats" class="info">PROCESSAMENTO DE CORES REALISTAS</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -66,7 +66,7 @@ function speak(t) {
 function calibrate() {
     const data = getCenterColor();
     offset = {r: data.r, g: data.g, b: data.b};
-    speak("Referência capturada");
+    speak("Calibrado");
 }
 
 function getCenterColor() {
@@ -77,8 +77,7 @@ function getCenterColor() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const x = canvas.width / 2;
     const y = canvas.height / 2;
-    // Amostragem 7x7 para diluir ruídos de sensores de baixa qualidade
-    const d = ctx.getImageData(x - 3, y - 3, 7, 7).data;
+    const d = ctx.getImageData(x - 4, y - 4, 9, 9).data; // Amostragem 9x9 para maior fidelidade
     let r=0, g=0, b=0;
     for(let i=0; i<d.length; i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
     const total = d.length/4;
@@ -86,53 +85,55 @@ function getCenterColor() {
 }
 
 function solveColor(r, g, b) {
-    // Normalização Global: Compensação de balanço de branco
+    // Normalização baseada na calibração
     let nr = (r / (offset.r || 255)) * 255;
     let ng = (g / (offset.g || 255)) * 255;
     let nb = (b / (offset.b || 255)) * 255;
     
-    // Clamp de valores
-    nr = Math.min(255, nr); ng = Math.min(255, ng); nb = Math.min(255, nb);
+    const max = Math.max(nr, ng, nb);
+    const min = Math.min(nr, ng, nb);
+    const chroma = max - min;
+    const lum = (max + min) / 510;
 
-    let r1=nr/255, g1=ng/255, b1=nb/255;
-    const max=Math.max(r1,g1,b1), min=Math.min(r1,g1,b1), d=max-min;
-    let h, s, l=(max+min)/2;
-    
-    if(d===0) h=s=0; else {
-        s = l>0.5 ? d/(2-max-min) : d/(max+min);
-        if(max===r1) h=(g1-b1)/d+(g1<b1?6:0); else if(max===g1) h=(b1-r1)/d+2; else h=(r1-g1)/d+4;
-        h*=60;
+    // Cálculo do Matiz (Hue)
+    let h = 0;
+    if (chroma !== 0) {
+        if (max === nr) h = ((ng - nb) / chroma) % 6;
+        else if (max === ng) h = (nb - nr) / chroma + 2;
+        else h = (nr - ng) / chroma + 4;
+        h = Math.round(h * 60);
+        if (h < 0) h += 360;
     }
 
-    // --- MOTOR DE DECISÃO UNIVERSAL ---
+    // --- LÓGICA DE DECISÃO MELHORADA ---
 
-    // Tons Neutros
-    if (l < 0.20) return "Preto";
-    if (s < 0.15) return (l > 0.80) ? "Branco" : "Cinza";
+    // 1. Detecção de Neutros (Melhorada para evitar Preto/Cinza falso)
+    if (lum < 0.18) return "Preto";
+    if (chroma < 25) { // Se a "força" da cor for baixa, é cinza ou branco
+        return (lum > 0.75) ? "Branco" : "Cinza";
+    }
 
-    // Lógica para Vermelho e Rosa (O ponto crítico)
-    if (h < 18 || h > 335) {
-        // Regra de Ouro Global: Rosa possui uma componente Azul/Verde maior que o Vermelho puro
-        // E uma luminosidade geralmente acima de 40%
-        if (l > 0.42 && (nb > nr * 0.5 || ng > nr * 0.4)) {
+    // 2. O GRANDE CONFLITO: Vermelho vs Rosa
+    if (h < 22 || h > 330) {
+        // ROSA: Fisicamente, o Rosa tem muito mais 'luz branca' (Verde e Azul misturados)
+        // Se a média de Verde e Azul for alta comparada ao Vermelho, é Rosa.
+        const whiteMix = (ng + nb) / 2;
+        if (whiteMix > 110 || (lum > 0.45 && chroma < 160)) {
             return "Rosa";
         }
-        return (l < 0.32) ? "Vermelho Escuro" : "Vermelho";
+        return (lum < 0.35) ? "Vermelho Escuro" : "Vermelho";
     }
 
-    // Roxo (Estabilizado)
-    if (h >= 255 && h < 305) return "Roxo";
-    
-    // Transição Rosa/Roxo
-    if (h >= 305 && h <= 335) return "Rosa";
+    // 3. Roxo vs Rosa (Transição)
+    if (h >= 265 && h <= 300) return "Roxo";
+    if (h > 300 && h <= 330) return "Rosa";
 
-    // Outros canais
-    let yellowThreshold = (l < 0.45) ? 42 : 48; 
-    if (h >= 18 && h < yellowThreshold) return "Laranja";
-    if (h >= yellowThreshold && h < 68) return "Amarelo";
+    // 4. Outras Cores
+    if (h >= 22 && h < 48) return (lum < 0.4) ? "Marrom" : "Laranja";
+    if (h >= 48 && h < 68) return "Amarelo";
     if (h >= 68 && h < 155) return "Verde";
-    if (h >= 155 && h < 255) return "Azul";
-    
+    if (h >= 155 && h < 265) return "Azul";
+
     return "Analizando...";
 }
 
@@ -145,13 +146,12 @@ function mainLoop() {
             display.innerText = colorName;
             if(colorName === lastColor && colorName !== "Analizando...") {
                 stableCount++;
-                if(stableCount === 15) speak(colorName);
+                if(stableCount === 12) speak(colorName); // Mais rápido para feedback imediato
             } else {
                 lastColor = colorName;
                 stableCount = 0;
             }
-            // Stats simplificados para análise de engenharia rápida
-            stats.innerText = `R:${Math.round(rgb.r)} G:${Math.round(rgb.g)} B:${Math.round(rgb.b)}`;
+            stats.innerText = `R:${Math.round(rgb.r)} G:${Math.round(rgb.g)} B:${Math.round(rgb.b)} | LUM: ${Math.round((rgb.r+rgb.g+rgb.b)/7.65)}%`;
         } else {
             display.innerText = `RGB: ${Math.round(rgb.r)},${Math.round(rgb.g)},${Math.round(rgb.b)}`;
         }
@@ -161,9 +161,10 @@ function mainLoop() {
 
 function toggleUniv() { 
     isUniv = !isUniv; 
-    document.getElementById('btnU').classList.toggle('active');
-    document.getElementById('btnU').innerText = isUniv ? "UNIVERSAL: ON" : "UNIVERSAL: OFF";
-    if(isUniv) speak("Leitura iniciada");
+    const btn = document.getElementById('btnU');
+    btn.classList.toggle('active');
+    btn.innerText = isUniv ? "UNIVERSAL: ON" : "UNIVERSAL: OFF";
+    if(isUniv) speak("Modo Universal");
     stableCount = 0;
 }
 
