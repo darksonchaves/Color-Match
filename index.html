@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - v8.1 Iron Gate</title>
+<title>ColorMatch Pro - v8.2 Precision Lens</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
   #header{ padding: 12px; background: #0a0a0a; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid #1a1a1a; }
@@ -13,39 +13,37 @@
   .active{ background:#00ffcc !important; color:#000 !important; border: 1px solid #00ffcc; }
   .lock-active { background:#ff3366 !important; color:#fff !important; border: 1px solid #ff3366; }
   
+  /* RETORNO DA MIRA CIRCULAR */
   #cross{ 
-    position:absolute; top:50%; left:50%; width:90px; height:90px; 
-    transform:translate(-50%,-50%); border:2px dashed #444; 
-    border-radius:12px; pointer-events:none; z-index: 10;
-    transition: 0.2s;
+    position:absolute; top:50%; left:50%; width:100px; height:100px; 
+    transform:translate(-50%,-50%); border:3px double #444; 
+    border-radius: 50%; pointer-events:none; z-index: 10;
+    transition: 0.3s;
   }
-  /* Quando o sinal é validado, a mira "acende" */
-  .cross-valid { border: 3px solid #00ffcc !important; box-shadow: 0 0 20px #00ffcc; border-style: solid !important; }
-  .locked-bg { box-shadow: 0 0 0 4000px rgba(0,0,0,0.92); }
+  .cross-valid { border: 4px solid #00ffcc !important; box-shadow: 0 0 25px rgba(0,255,204,0.6); }
 
-  #display{ font-size: 42px; font-weight: 900; color: #555; margin: 15px 0; height: 50px; text-transform: uppercase; }
-  .display-valid { color: #00ffcc !important; text-shadow: 0 0 10px rgba(0,255,204,0.5); }
-  #status-bar { font-size: 12px; color: #ff3366; font-weight: bold; height: 20px; text-transform: uppercase; }
-  .info { color: #333; font-size: 10px; letter-spacing: 1px; }
+  #display{ font-size: 44px; font-weight: 900; color: #444; margin: 15px 0; height: 55px; text-transform: uppercase; letter-spacing: -1px; }
+  .display-valid { color: #00ffcc !important; }
+  #status-bar { font-size: 11px; color: #ff3366; font-weight: bold; height: 20px; text-transform: uppercase; letter-spacing: 1px; }
+  .info { color: #444; font-size: 10px; }
 </style>
 </head>
 <body>
 
 <div id="header">
   <button onclick="toggleUniv()" id="btnU">SISTEMA: OFF</button>
-  <button onclick="toggleLock()" id="btnL" class="lock-active">TRAVA DE PRECISÃO: ON</button>
+  <button onclick="toggleLock()" id="btnL" class="lock-active">TRAVA 12CM: ON</button>
   <button onclick="calibrate()">CALIBRAR BRANCO</button>
   <button onclick="toggleVoice()" id="btnV" class="active">ÁUDIO</button>
 </div>
 
 <div id="video-container">
   <video id="v" autoplay playsinline muted></video>
-  <div id="cross" class="locked-bg"></div>
-</div>
+  <div id="cross"></div> </div>
 
-<div id="status-bar">AGUARDANDO SINAL...</div>
-<div id="display">BLOQUEADO</div>
-<div id="stats" class="info">V8.1 | IRON GATE PROTOCOL</div>
+<div id="status-bar">SISTEMA PRONTO</div>
+<div id="display">AGUARDANDO</div>
+<div id="stats" class="info">V8.2 | PADRONIZAÇÃO DE DISTÂNCIA POR SATURAÇÃO</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -68,9 +66,8 @@ function toggleLock() {
     isLocked = !isLocked;
     const btn = document.getElementById('btnL');
     btn.classList.toggle('lock-active');
-    cross.classList.toggle('locked-bg');
-    btn.innerText = isLocked ? "TRAVA DE PRECISÃO: ON" : "TRAVA DE PRECISÃO: OFF";
-    if(isLocked) resetSystem();
+    btn.innerText = isLocked ? "TRAVA 12CM: ON" : "TRAVA 12CM: OFF";
+    resetSystem();
 }
 
 function resetSystem() {
@@ -78,6 +75,7 @@ function resetSystem() {
     display.innerText = "BLOQUEADO";
     display.classList.remove("display-valid");
     cross.classList.remove("cross-valid");
+    statusBar.style.color = "#ff3366";
 }
 
 function speak(t) {
@@ -91,7 +89,7 @@ function speak(t) {
 function calibrate() {
     const data = getCenterColor();
     offset = {r: data.r, g: data.g, b: data.b};
-    speak("Referência padrão calibrada");
+    speak("Branco calibrado");
 }
 
 function getCenterColor() {
@@ -100,14 +98,13 @@ function getCenterColor() {
     }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const x = canvas.width / 2, y = canvas.height / 2;
-    const d = ctx.getImageData(x - 15, y - 15, 30, 30).data;
+    // Captura em círculo: pegamos uma amostra central
+    const d = ctx.getImageData(x - 10, y - 10, 20, 20).data;
     let r=0, g=0, b=0, v=0;
     for(let i=0; i<d.length; i+=4){
-        if ((d[i]+d[i+1]+d[i+2])/3 < 252) {
-            r += d[i]; g += d[i+1]; b += d[i+2]; v++;
-        }
+        r += d[i]; g += d[i+1]; b += d[i+2]; v++;
     }
-    return v > 0 ? { r: r/v, g: g/v, b: b/v } : { r: 128, g: 128, b: 128 };
+    return { r: r/v, g: g/v, b: b/v };
 }
 
 function solveColor(r, g, b) {
@@ -120,27 +117,25 @@ function solveColor(r, g, b) {
     const chroma = max - min;
     const brightness = (nr + ng + nb) / 3;
 
-    // --- LÓGICA DE BLOQUEIO DE FERRO (IRON GATE) ---
-    const MIN_CHROMA_LIMIT = 32; // Aumentado para rigor extremo
+    // --- AJUSTE FINO DA DISTÂNCIA (v8.2) ---
+    // Aumentamos para 40 para garantir que o objeto esteja muito próximo
+    const RIGOR_THRESHOLD = 40; 
     
     if (isLocked) {
-        if (chroma < MIN_CHROMA_LIMIT) {
-            statusBar.innerText = "SINAL INSUFICIENTE - APROXIME";
+        if (chroma < RIGOR_THRESHOLD && brightness < 200) {
+            statusBar.innerText = "SINAL FRACO - APROXIME MAIS";
+            statusBar.style.color = "#ff3366";
             display.classList.remove("display-valid");
             cross.classList.remove("cross-valid");
             return "BLOQUEADO";
         } else {
-            statusBar.innerText = "SINAL VALIDADO";
+            statusBar.innerText = "DISTÂNCIA IDEAL ATINGIDA";
             statusBar.style.color = "#00ffcc";
             display.classList.add("display-valid");
             cross.classList.add("cross-valid");
         }
-    } else {
-        statusBar.innerText = "MODO LIVRE - SEM PRECISÃO";
-        statusBar.style.color = "#888";
     }
 
-    // A partir daqui o motor de interpretação só roda se passar pelo filtro acima
     let h = 0;
     if (chroma > 0) {
         if (max === nr) h = (ng - nb) / chroma + (ng < nb ? 6 : 0);
@@ -150,30 +145,29 @@ function solveColor(r, g, b) {
     }
 
     if (chroma < 18) {
-        if (brightness < 40) return "Preto";
-        if (brightness > 215) return "Branco";
+        if (brightness < 45) return "Preto";
+        if (brightness > 210) return "Branco";
         return "Cinza";
     }
 
+    // Matriz de cores simplificada para teste de fidelidade
     if (h < 18 || h > 342) {
-        if (nb > nr * 0.45 || (brightness > 120 && ng > 65)) return "Rosa";
+        if (nb > nr * 0.45 || (brightness > 120 && ng > 70)) return "Rosa";
         return (brightness < 80) ? "Vermelho Escuro" : "Vermelho";
     }
     if (h >= 18 && h < 48) return (brightness < 90) ? "Marrom" : "Laranja";
     if (h >= 48 && h < 65) return "Amarelo";
     if (h >= 65 && h < 165) return (brightness < 75) ? "Verde Escuro" : "Verde";
     if (h >= 165 && h < 265) return "Azul";
-    if (h >= 265 && h < 320) {
-        if (nr > nb * 1.3) return "Rosa";
-        return "Roxo";
-    }
+    if (h >= 265 && h < 320) return "Roxo";
+    
     return "Rosa";
 }
 
 function getStableColor(newColor) {
     if (newColor === "BLOQUEADO") return "BLOQUEADO";
     colorHistory.push(newColor);
-    if (colorHistory.length > 25) colorHistory.shift();
+    if (colorHistory.length > 20) colorHistory.shift();
     return colorHistory.sort((a,b) =>
           colorHistory.filter(v => v===a).length - colorHistory.filter(v => v===b).length
     ).pop();
@@ -188,7 +182,7 @@ function mainLoop() {
             display.innerText = colorName;
             if(colorName === lastColor && colorName !== "BLOQUEADO") {
                 stableCount++;
-                if(stableCount === 25) speak(colorName);
+                if(stableCount === 20) speak(colorName);
             } else { lastColor = colorName; stableCount = 0; }
         } else {
             display.innerText = "STANDBY";
@@ -202,7 +196,7 @@ function toggleUniv() {
     const btn = document.getElementById('btnU');
     btn.classList.toggle('active');
     btn.innerText = isUniv ? "SISTEMA: ON" : "SISTEMA: OFF";
-    if(isUniv) { speak("Protocolo de precisão ativado."); resetSystem(); }
+    if(isUniv) { speak("Sistema ativo."); resetSystem(); }
 }
 
 function toggleVoice() { 
