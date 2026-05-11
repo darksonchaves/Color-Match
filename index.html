@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - Refinamento Final Fase 1</title>
+<title>ColorMatch Pro - Refinamento de Hardware Benchmark</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
   #header{ padding: 10px; background: #111; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; }
   #video-container { position: relative; width: 100%; height: 65vh; background: #000; overflow: hidden; }
   video{ width: 100%; height: 100%; object-fit: contain; }
-  button{ padding:10px 14px; border-radius:8px; border:none; background:#222; color:white; font-weight:bold; cursor:pointer; }
+  button{ padding:10px 14px; border-radius:6px; border:none; background:#222; color:white; font-weight:bold; cursor:pointer; }
   .active{ background:#00ffcc !important; color:#000 !important; }
   #cross{ 
     position:absolute; top:50%; left:50%; width:30px; height:30px; 
@@ -35,7 +35,7 @@
 </div>
 
 <div id="display">AGUARDANDO...</div>
-<div id="stats" class="info">ESTABILIDADE: 0% | AUDIO: PRONTO</div>
+<div id="stats" class="info">ESTABILIDADE: 0% | SENSOR: IPHONE REF</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -50,7 +50,13 @@ let isUniv = false, isVoice = true;
 let lastColor = "", stableCount = 0;
 let offset = {r:255, g:255, b:255};
 
-navigator.mediaDevices.getUserMedia({video:{facingMode:"environment", width: {ideal: 1280}}}).then(s => {
+navigator.mediaDevices.getUserMedia({
+    video:{
+        facingMode:"environment", 
+        width: {ideal: 1920}, // Buscando o máximo do iPhone 12 Pro Max
+        frameRate: {ideal: 30}
+    }
+}).then(s => {
     video.srcObject = s;
 });
 
@@ -66,7 +72,7 @@ function speak(t) {
 function calibrate() {
     const data = getCenterColor();
     offset = {r: data.r, g: data.g, b: data.b};
-    const wakeUp = new SpeechSynthesisUtterance("Calibrado");
+    const wakeUp = new SpeechSynthesisUtterance("Referência Calibrada");
     wakeUp.lang = 'pt-BR';
     window.speechSynthesis.speak(wakeUp);
 }
@@ -79,7 +85,7 @@ function getCenterColor() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const x = canvas.width / 2;
     const y = canvas.height / 2;
-    // Amostragem um pouco maior (5x5) para estabilizar cores escuras
+    // Amostragem 5x5 para máxima estabilidade em hardware Pro
     const d = ctx.getImageData(x - 2, y - 2, 5, 5).data;
     let r=0, g=0, b=0;
     for(let i=0; i<d.length; i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
@@ -101,29 +107,34 @@ function solveColor(r, g, b) {
         h*=60;
     }
 
-    // --- REAJUSTE DE ENGENHARIA PARA CORES CONFLITANTES ---
+    // --- LÓGICA DE ALTA FIDELIDADE (IPHONE BENCHMARK) ---
 
-    // 1. SOLUÇÃO PRETO VS CINZA: Subimos o limite de luminância (L)
-    // Se a luminosidade for menor que 22%, forçamos ser Preto (antes era 18%)
-    if (l < 0.22) return "Preto";
-    
-    // 2. SOLUÇÃO CINZA: Ajuste de saturação (S)
-    if (s < 0.12) return (l > 0.75) ? "Branco" : "Cinza";
-    
-    // 3. SOLUÇÃO ROXO VS ROSA: Reajuste de Matiz (H)
-    // Expandimos a "zona de segurança" do Roxo para 250 até 310 graus
-    if (h >= 250 && h < 310) {
-        // Se houver muita luz, o roxo tende a virar rosa, então "seguramos" aqui
-        return "Roxo";
+    // PRETO E CINZA (Refinado)
+    if (l < 0.20) return "Preto";
+    if (s < 0.15) return (l > 0.80) ? "Branco" : "Cinza";
+
+    // AJUSTE CRÍTICO: VERMELHO vs ROSA vs ROXO
+    // O Vermelho puro mora perto do 0 ou 360.
+    if (h < 20 || h > 330) {
+        // Se a luminosidade for alta E a saturação não for extrema, é Rosa.
+        // Vermelhos reais no iPhone 12 Pro tendem a ser muito saturados (S > 0.5)
+        if (l > 0.45 && s < 0.75) {
+            return "Rosa";
+        }
+        return (l < 0.30) ? "Vermelho Escuro" : "Vermelho";
     }
+
+    // ROXO (Mantendo a zona de segurança aprovada)
+    if (h >= 250 && h < 310) return "Roxo";
     
-    // 4. DEMAIS CORES (Mantidas)
-    if (h < 15 || h > 345) return (l < 0.35) ? "Vermelho Escuro" : "Vermelho";
+    // ROSA (Zona de transição para o Roxo)
+    if (h >= 310 && h <= 330) return "Rosa";
+
+    // DEMAIS CORES
     let yellowThreshold = (l < 0.45) ? 40 : 46; 
-    if (h >= 15 && h < yellowThreshold) return "Laranja";
-    if (h >= yellowThreshold && h < 72) return "Amarelo";
-    if (h >= 310 && h < 345) return "Rosa";
-    if (h >= 72 && h < 160) return "Verde";
+    if (h >= 20 && h < yellowThreshold) return "Laranja";
+    if (h >= yellowThreshold && h < 70) return "Amarelo";
+    if (h >= 70 && h < 160) return "Verde";
     if (h >= 160 && h < 250) return "Azul";
     
     return "Analizando...";
@@ -136,17 +147,14 @@ function mainLoop() {
 
         if(isUniv) {
             display.innerText = colorName;
-
             if(colorName === lastColor && colorName !== "Analizando...") {
                 stableCount++;
-                if(stableCount === 18) { // Ajuste fino na velocidade de fala
-                    speak(colorName);
-                }
+                if(stableCount === 18) speak(colorName);
             } else {
                 lastColor = colorName;
                 stableCount = 0;
             }
-            stats.innerText = `LUM: ${Math.round(100*rgb.r/255)}% | SAT: ${Math.round(100*(Math.max(rgb.r,rgb.g,rgb.b)-Math.min(rgb.r,rgb.g,rgb.b))/255)}%`;
+            stats.innerText = `L:${Math.round(rgb.r)} G:${Math.round(rgb.g)} B:${Math.round(rgb.b)} | H:${Math.round(360)}°`;
         } else {
             display.innerText = `RGB: ${Math.round(rgb.r)},${Math.round(rgb.g)},${Math.round(rgb.b)}`;
         }
@@ -159,13 +167,10 @@ function toggleUniv() {
     const btn = document.getElementById('btnU');
     btn.classList.toggle('active');
     btn.innerText = isUniv ? "UNIVERSAL: ON" : "UNIVERSAL: OFF";
-    
     if(isUniv) {
         const startMsg = new SpeechSynthesisUtterance("Modo Universal Ativado");
         startMsg.lang = 'pt-BR';
         window.speechSynthesis.speak(startMsg);
-    } else {
-        window.speechSynthesis.cancel();
     }
     stableCount = 0;
 }
