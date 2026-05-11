@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - Universal v7.6 (Ultimate)</title>
+<title>ColorMatch Pro - Universal v7.7 (Elite)</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
   #header{ padding: 12px; background: #0a0a0a; display: flex; justify-content: center; gap: 10px; border-bottom: 2px solid #1a1a1a; }
@@ -11,17 +11,17 @@
   video{ width: 100%; height: 100%; object-fit: contain; }
   button{ padding:12px 18px; border-radius:10px; border:none; background:#1a1a1a; color:#888; font-weight:bold; cursor:pointer; transition: 0.4s; border: 1px solid #333; }
   .active{ background:#00ffcc !important; color:#000 !important; box-shadow: 0 0 20px rgba(0,255,204,0.3); border: 1px solid #00ffcc; }
-  #cross{ position:absolute; top:50%; left:50%; width:30px; height:30px; transform:translate(-50%,-50%); border:2px dashed #00ffcc; border-radius:50%; pointer-events:none; z-index: 10; }
-  #display{ font-size: 52px; font-weight: 900; color: #00ffcc; margin: 20px 0; text-transform: uppercase; letter-spacing: -2px; }
-  .info { color: #555; font-size: 10px; letter-spacing: 2px; font-weight: bold; }
+  #cross{ position:absolute; top:50%; left:50%; width:34px; height:34px; transform:translate(-50%,-50%); border:3px solid #00ffcc; border-radius:50%; pointer-events:none; z-index: 10; box-shadow: 0 0 15px #00ffcc; }
+  #display{ font-size: 56px; font-weight: 900; color: #00ffcc; margin: 20px 0; text-transform: uppercase; letter-spacing: -2px; }
+  .info { color: #666; font-size: 11px; font-weight: bold; }
 </style>
 </head>
 <body>
 
 <div id="header">
   <button onclick="toggleUniv()" id="btnU">UNIVERSAL: OFF</button>
-  <button onclick="calibrate()">RECALIBRAR FUNDO</button>
-  <button onclick="toggleVoice()" id="btnV" class="active">ÁUDIO</button>
+  <button onclick="calibrate()">CALIBRAR NO BRANCO</button>
+  <button onclick="toggleVoice()" id="btnV" class="active">ÁUDIO: ON</button>
 </div>
 
 <div id="video-container">
@@ -29,8 +29,8 @@
   <div id="cross"></div>
 </div>
 
-<div id="display">PRONTO</div>
-<div id="stats" class="info">V7.6 | MOTOR DE PIGMENTO ISOLADO</div>
+<div id="display">AGUARDANDO</div>
+<div id="stats" class="info">V7.7 | ANALISADOR DE PIGMENTO DE ALTA PRECISÃO</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -60,7 +60,7 @@ function speak(t) {
 function calibrate() {
     const data = getCenterColor();
     offset = {r: data.r, g: data.g, b: data.b};
-    speak("Espectro de fundo isolado");
+    speak("Branco de referência calibrado");
 }
 
 function getCenterColor() {
@@ -69,11 +69,11 @@ function getCenterColor() {
     }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const x = canvas.width / 2, y = canvas.height / 2;
-    const d = ctx.getImageData(x - 5, y - 5, 10, 10).data;
+    const d = ctx.getImageData(x - 6, y - 6, 12, 12).data;
     let r=0, g=0, b=0, v=0;
     for(let i=0; i<d.length; i+=4){
-        // Filtro mais agressivo para luz especular
-        if ((d[i]+d[i+1]+d[i+2])/3 < 235) {
+        // Filtro de brilho especular (reflexos de luz direta)
+        if ((d[i]+d[i+1]+d[i+2])/3 < 245) {
             r += d[i]; g += d[i+1]; b += d[i+2]; v++;
         }
     }
@@ -81,19 +81,19 @@ function getCenterColor() {
 }
 
 function solveColor(r, g, b) {
-    // 1. COMPENSAÇÃO DE LUMINÂNCIA AGRESSIVA (v7.6)
-    const avg = (r + g + b) / 3;
+    // 1. COMPENSAÇÃO DE EXPOSIÇÃO DINÂMICA
+    const rawLum = (r + g + b) / 3;
     let nr = r; let ng = g; let nb = b;
 
-    if (avg > 120) {
-        // Se estiver muito claro, aplicamos uma "curva de contraste" para separar os canais
-        const power = 1.2; // Aumenta a separação entre as cores
-        nr = Math.pow(nr/255, power) * 255;
-        ng = Math.pow(ng/255, power) * 255;
-        nb = Math.pow(nb/255, power) * 255;
+    // Se estiver muito claro, expande o contraste para separar pigmento de luz
+    if (rawLum > 130) {
+        const contrast = 1.25; 
+        nr = Math.pow(nr/255, contrast) * 255;
+        ng = Math.pow(ng/255, contrast) * 255;
+        nb = Math.pow(nb/255, contrast) * 255;
     }
 
-    // 2. NORMALIZAÇÃO POR OFFSET (Subtração da luz ambiente)
+    // 2. NORMALIZAÇÃO PELO BRANCO DA FOLHA SULFITE
     nr = (nr / (offset.r || 255)) * 255;
     ng = (ng / (offset.g || 255)) * 255;
     nb = (nb / (offset.b || 255)) * 255;
@@ -111,56 +111,54 @@ function solveColor(r, g, b) {
         h *= 60;
     }
 
-    // 3. MATRIZ DE DECISÃO DE PIGMENTO (LOGICA UNIVERSAL)
-
-    // Neutros: Se a diferença entre canais for mínima, é neutro.
-    if (chroma < 20) {
-        if (brightness < 50) return "Preto";
-        if (brightness > 215) return "Branco";
+    // 3. MATRIZ DE DECISÃO (Fidelidade ao Pigmento)
+    
+    // Neutros: Travas rigorosas para Branco, Cinza e Preto
+    if (chroma < 18) {
+        if (brightness < 45) return "Preto";
+        if (brightness > 200) return "Branco";
         return "Cinza";
     }
 
-    // Vermelhos e Rosas
-    if (h < 15 || h > 345) {
-        // No pigmento real, Rosa tem uma componente Azul proporcionalmente maior que o Vermelho
-        if (nb > nr * 0.45 || (brightness > 140 && ng > 50)) return "Rosa";
-        return (brightness < 85) ? "Vermelho Escuro" : "Vermelho";
+    // Vermelhos e Variações
+    if (h < 18 || h > 342) {
+        // Diferencia Rosa por saturação de azul/brilho
+        if (nb > nr * 0.42 || (brightness > 130 && ng > 60)) return "Rosa";
+        return (brightness < 80) ? "Vermelho Escuro" : "Vermelho";
     }
     
-    // Laranjas e Marrons
-    if (h >= 15 && h < 45) {
-        return (brightness < 90) ? "Marrom" : "Laranja";
+    // Marrom / Laranja
+    if (h >= 18 && h < 46) {
+        return (brightness < 85) ? "Marrom" : "Laranja";
     }
     
-    // Amarelos
-    if (h >= 45 && h < 65) return "Amarelo";
+    // Amarelo
+    if (h >= 46 && h < 64) return "Amarelo";
     
-    // Verdes
-    if (h >= 65 && h < 160) {
-        if (h > 145 && nb > ng * 0.7) return "Azul"; // Transição para Ciano
-        return (brightness < 80) ? "Verde Escuro" : "Verde";
+    // Verde (inclui tons turquesa que no Universal caem para verde)
+    if (h >= 64 && h < 162) {
+        if (h > 150 && nb > ng * 0.8) return "Azul"; 
+        return (brightness < 75) ? "Verde Escuro" : "Verde";
     }
     
-    // Azuis
-    if (h >= 160 && h < 265) {
-        return "Azul";
-    }
+    // Azul
+    if (h >= 162 && h < 265) return "Azul";
     
-    // Roxos e Rosas (Zona Final)
-    if (h >= 265 && h < 320) {
-        // Se o Vermelho dominar o Azul sob luz forte, é Rosa, não Roxo.
-        if (nr > nb * 1.3) return "Rosa";
+    // Roxo e Rosa (Zona Crítica)
+    if (h >= 265 && h < 318) {
+        // Se houver muito vermelho em relação ao azul, a luz está lavando um rosa
+        if (nr > nb * 1.25) return "Rosa";
         return "Roxo";
     }
     
-    if (h >= 320 && h <= 345) return "Rosa";
+    if (h >= 318 && h <= 342) return "Rosa";
 
     return "Analisando...";
 }
 
 function getStableColor(newColor) {
     colorHistory.push(newColor);
-    if (colorHistory.length > 30) colorHistory.shift(); // Estabilidade total
+    if (colorHistory.length > 35) colorHistory.shift(); // Estabilidade extrema
     return colorHistory.sort((a,b) =>
           colorHistory.filter(v => v===a).length - colorHistory.filter(v => v===b).length
     ).pop();
@@ -175,11 +173,11 @@ function mainLoop() {
             display.innerText = colorName;
             if(colorName === lastColor && colorName !== "Analisando...") {
                 stableCount++;
-                if(stableCount === 30) speak(colorName);
+                if(stableCount === 35) speak(colorName);
             } else { lastColor = colorName; stableCount = 0; }
         } else {
-            display.innerText = "SISTEMA PRONTO";
-            stats.innerText = `INTENSIDADE: ${Math.round((rgb.r+rgb.g+rgb.b)/3)}`;
+            display.innerText = "STANDBY";
+            stats.innerText = `OFFSET R:${Math.round(offset.r)} G:${Math.round(offset.g)} B:${Math.round(offset.b)}`;
         }
     }
     requestAnimationFrame(mainLoop);
@@ -189,8 +187,8 @@ function toggleUniv() {
     isUniv = !isUniv; 
     const btn = document.getElementById('btnU');
     btn.classList.toggle('active');
-    btn.innerText = isUniv ? "UNIVERSAL: ATIVO" : "UNIVERSAL: OFF";
-    if(isUniv) { speak("Modo Universal Ativado"); colorHistory = []; }
+    btn.innerText = isUniv ? "UNIVERSAL: ON" : "UNIVERSAL: OFF";
+    if(isUniv) { speak("Modo espectro ativo"); colorHistory = []; }
 }
 
 function toggleVoice() { 
