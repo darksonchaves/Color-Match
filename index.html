@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - Global Engine v2</title>
+<title>ColorMatch Pro - Global Engine v3</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
   #header{ padding: 10px; background: #111; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; }
   #video-container { position: relative; width: 100%; height: 65vh; background: #000; overflow: hidden; }
   video{ width: 100%; height: 100%; object-fit: contain; }
-  button{ padding:10px 14px; border-radius:8px; border:none; background:#222; color:white; font-weight:bold; cursor:pointer; }
-  .active{ background:#00ffcc !important; color:#000 !important; }
+  button{ padding:10px 14px; border-radius:8px; border:none; background:#222; color:white; font-weight:bold; cursor:pointer; transition: 0.3s; }
+  .active{ background:#00ffcc !important; color:#000 !important; box-shadow: 0 0 15px rgba(0,255,204,0.4); }
   #cross{ 
-    position:absolute; top:50%; left:50%; width:44px; height:44px; 
+    position:absolute; top:50%; left:50%; width:40px; height:40px; 
     transform:translate(-50%,-50%); border:2px solid #00ffcc; 
     border-radius:50%; pointer-events:none; z-index: 10; 
   }
   #cross::after { content: ''; position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: #00ffcc; border-radius: 50%; transform: translate(-50%, -50%); }
   #display{ font-size: 42px; font-weight: 900; color: #00ffcc; margin: 15px 0; text-transform: uppercase; min-height: 50px; }
-  .info { color: #888; font-size: 11px; }
+  .info { color: #888; font-size: 11px; letter-spacing: 1px; }
 </style>
 </head>
 <body>
@@ -35,7 +35,7 @@
 </div>
 
 <div id="display">AGUARDANDO...</div>
-<div id="stats" class="info">PROCESSAMENTO DE CORES REALISTAS</div>
+<div id="stats" class="info">ESTABILIZAÇÃO DE REFLEXO ATIVA</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -50,8 +50,13 @@ let isUniv = false, isVoice = true;
 let lastColor = "", stableCount = 0;
 let offset = {r:255, g:255, b:255};
 
+// Configuração otimizada para iPhone 12 Pro Max e dispositivos Pro
 navigator.mediaDevices.getUserMedia({
-    video:{ facingMode:"environment", width: {ideal: 1280} }
+    video:{ 
+        facingMode:"environment", 
+        width: {ideal: 1280},
+        exposureMode: "continuous" 
+    }
 }).then(s => { video.srcObject = s; });
 
 function speak(t) {
@@ -77,15 +82,28 @@ function getCenterColor() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const x = canvas.width / 2;
     const y = canvas.height / 2;
-    const d = ctx.getImageData(x - 4, y - 4, 9, 9).data; // Amostragem 9x9 para maior fidelidade
-    let r=0, g=0, b=0;
-    for(let i=0; i<d.length; i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
-    const total = d.length/4;
-    return { r: r/total, g: g/total, b: b/total };
+    
+    // Amostragem Expandida (11x11) para filtrar ruído e reflexos
+    const size = 11;
+    const d = ctx.getImageData(x - Math.floor(size/2), y - Math.floor(size/2), size, size).data;
+    
+    let r=0, g=0, b=0, validPixels=0;
+
+    for(let i=0; i<d.length; i+=4){
+        // FILTRO DE ESPECULARIDADE: Ignora pixels que são puro reflexo de luz (muito brancos)
+        // Isso impede que o brilho do plástico "lave" a cor real.
+        if (d[i] < 245 || d[i+1] < 245 || d[i+2] < 245) {
+            r += d[i]; g += d[i+1]; b += d[i+2];
+            validPixels++;
+        }
+    }
+
+    if(validPixels === 0) return { r: d[0], g: d[1], b: d[2] }; // Fallback caso tudo seja brilho
+    return { r: r/validPixels, g: g/validPixels, b: b/validPixels };
 }
 
 function solveColor(r, g, b) {
-    // Normalização baseada na calibração
+    // Aplicação da Calibração
     let nr = (r / (offset.r || 255)) * 255;
     let ng = (g / (offset.g || 255)) * 255;
     let nb = (b / (offset.b || 255)) * 255;
@@ -95,7 +113,6 @@ function solveColor(r, g, b) {
     const chroma = max - min;
     const lum = (max + min) / 510;
 
-    // Cálculo do Matiz (Hue)
     let h = 0;
     if (chroma !== 0) {
         if (max === nr) h = ((ng - nb) / chroma) % 6;
@@ -105,34 +122,38 @@ function solveColor(r, g, b) {
         if (h < 0) h += 360;
     }
 
-    // --- LÓGICA DE DECISÃO MELHORADA ---
+    // --- LÓGICA DE PRECISÃO V3 ---
 
-    // 1. Detecção de Neutros (Melhorada para evitar Preto/Cinza falso)
-    if (lum < 0.18) return "Preto";
-    if (chroma < 25) { // Se a "força" da cor for baixa, é cinza ou branco
-        return (lum > 0.75) ? "Branco" : "Cinza";
+    // 1. Neutros com tolerância a sombras
+    if (lum < 0.15) return "Preto";
+    if (chroma < 20) {
+        if (lum > 0.85) return "Branco";
+        return "Cinza";
     }
 
-    // 2. O GRANDE CONFLITO: Vermelho vs Rosa
-    if (h < 22 || h > 330) {
-        // ROSA: Fisicamente, o Rosa tem muito mais 'luz branca' (Verde e Azul misturados)
-        // Se a média de Verde e Azul for alta comparada ao Vermelho, é Rosa.
-        const whiteMix = (ng + nb) / 2;
-        if (whiteMix > 110 || (lum > 0.45 && chroma < 160)) {
+    // 2. Refino Rosa vs Vermelho (Foco do vídeo)
+    if (h < 22 || h > 335) {
+        // Se a luminosidade for média/alta e o equilíbrio entre R e os outros diminuir, é Rosa.
+        // O Vermelho "ganha" se for muito escuro ou muito saturado (chroma alto)
+        const density = nr / (ng + nb + 1); 
+        if (lum > 0.40 && density < 1.8) {
             return "Rosa";
         }
         return (lum < 0.35) ? "Vermelho Escuro" : "Vermelho";
     }
 
-    // 3. Roxo vs Rosa (Transição)
-    if (h >= 265 && h <= 300) return "Roxo";
-    if (h > 300 && h <= 330) return "Rosa";
+    // 3. Roxo e Transições
+    if (h >= 265 && h <= 305) return "Roxo";
+    if (h > 305 && h <= 335) return "Rosa";
 
-    // 4. Outras Cores
-    if (h >= 22 && h < 48) return (lum < 0.4) ? "Marrom" : "Laranja";
-    if (h >= 48 && h < 68) return "Amarelo";
-    if (h >= 68 && h < 155) return "Verde";
-    if (h >= 155 && h < 265) return "Azul";
+    // 4. Outras Categorias
+    if (h >= 22 && h < 46) {
+        if (lum < 0.38) return "Marrom";
+        return "Laranja";
+    }
+    if (h >= 46 && h < 68) return "Amarelo";
+    if (h >= 68 && h < 158) return "Verde";
+    if (h >= 158 && h < 265) return "Azul";
 
     return "Analizando...";
 }
@@ -146,12 +167,12 @@ function mainLoop() {
             display.innerText = colorName;
             if(colorName === lastColor && colorName !== "Analizando...") {
                 stableCount++;
-                if(stableCount === 12) speak(colorName); // Mais rápido para feedback imediato
+                if(stableCount === 14) speak(colorName);
             } else {
                 lastColor = colorName;
                 stableCount = 0;
             }
-            stats.innerText = `R:${Math.round(rgb.r)} G:${Math.round(rgb.g)} B:${Math.round(rgb.b)} | LUM: ${Math.round((rgb.r+rgb.g+rgb.b)/7.65)}%`;
+            stats.innerText = `LUM: ${Math.round(lum*100)}% | R:${Math.round(rgb.r)} G:${Math.round(rgb.g)} B:${Math.round(rgb.b)}`;
         } else {
             display.innerText = `RGB: ${Math.round(rgb.r)},${Math.round(rgb.g)},${Math.round(rgb.b)}`;
         }
@@ -164,7 +185,7 @@ function toggleUniv() {
     const btn = document.getElementById('btnU');
     btn.classList.toggle('active');
     btn.innerText = isUniv ? "UNIVERSAL: ON" : "UNIVERSAL: OFF";
-    if(isUniv) speak("Modo Universal");
+    if(isUniv) speak("Leitura ativada");
     stableCount = 0;
 }
 
