@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - Refinamento de Hardware Benchmark</title>
+<title>ColorMatch Pro - Global Engine v1</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
   #header{ padding: 10px; background: #111; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; }
@@ -12,13 +12,13 @@
   button{ padding:10px 14px; border-radius:6px; border:none; background:#222; color:white; font-weight:bold; cursor:pointer; }
   .active{ background:#00ffcc !important; color:#000 !important; }
   #cross{ 
-    position:absolute; top:50%; left:50%; width:30px; height:30px; 
+    position:absolute; top:50%; left:50%; width:40px; height:40px; 
     transform:translate(-50%,-50%); border:2px solid #00ffcc; 
     border-radius:50%; pointer-events:none; z-index: 10; 
   }
-  #cross::after { content: ''; position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: #00ffcc; border-radius: 50%; transform: translate(-50%, -50%); }
-  #display{ font-size: 42px; font-weight: 900; color: #00ffcc; margin: 15px 0; text-transform: uppercase; min-height: 50px; }
-  .info { color: #888; font-size: 11px; }
+  #cross::after { content: ''; position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: #00ffcc; border-radius: 50%; transform: translate(-50%, -50%); }
+  #display{ font-size: 42px; font-weight: 900; color: #00ffcc; margin: 15px 0; text-transform: uppercase; min-height: 50px; text-shadow: 0 0 10px rgba(0,255,204,0.3); }
+  .info { color: #888; font-size: 11px; letter-spacing: 1px; }
 </style>
 </head>
 <body>
@@ -35,7 +35,7 @@
 </div>
 
 <div id="display">AGUARDANDO...</div>
-<div id="stats" class="info">ESTABILIDADE: 0% | SENSOR: IPHONE REF</div>
+<div id="stats" class="info">SISTEMA DE PRECISÃO GLOBAL</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -51,14 +51,8 @@ let lastColor = "", stableCount = 0;
 let offset = {r:255, g:255, b:255};
 
 navigator.mediaDevices.getUserMedia({
-    video:{
-        facingMode:"environment", 
-        width: {ideal: 1920}, // Buscando o máximo do iPhone 12 Pro Max
-        frameRate: {ideal: 30}
-    }
-}).then(s => {
-    video.srcObject = s;
-});
+    video:{ facingMode:"environment", width: {ideal: 1280} }
+}).then(s => { video.srcObject = s; });
 
 function speak(t) {
     if(!isVoice || !isUniv) return;
@@ -72,9 +66,7 @@ function speak(t) {
 function calibrate() {
     const data = getCenterColor();
     offset = {r: data.r, g: data.g, b: data.b};
-    const wakeUp = new SpeechSynthesisUtterance("Referência Calibrada");
-    wakeUp.lang = 'pt-BR';
-    window.speechSynthesis.speak(wakeUp);
+    speak("Referência capturada");
 }
 
 function getCenterColor() {
@@ -85,8 +77,8 @@ function getCenterColor() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const x = canvas.width / 2;
     const y = canvas.height / 2;
-    // Amostragem 5x5 para máxima estabilidade em hardware Pro
-    const d = ctx.getImageData(x - 2, y - 2, 5, 5).data;
+    // Amostragem 7x7 para diluir ruídos de sensores de baixa qualidade
+    const d = ctx.getImageData(x - 3, y - 3, 7, 7).data;
     let r=0, g=0, b=0;
     for(let i=0; i<d.length; i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
     const total = d.length/4;
@@ -94,48 +86,52 @@ function getCenterColor() {
 }
 
 function solveColor(r, g, b) {
-    let nr = (r * 255) / (offset.r || 255);
-    let ng = (g * 255) / (offset.g || 255);
-    let nb = (b * 255) / (offset.b || 255);
+    // Normalização Global: Compensação de balanço de branco
+    let nr = (r / (offset.r || 255)) * 255;
+    let ng = (g / (offset.g || 255)) * 255;
+    let nb = (b / (offset.b || 255)) * 255;
     
+    // Clamp de valores
+    nr = Math.min(255, nr); ng = Math.min(255, ng); nb = Math.min(255, nb);
+
     let r1=nr/255, g1=ng/255, b1=nb/255;
     const max=Math.max(r1,g1,b1), min=Math.min(r1,g1,b1), d=max-min;
     let h, s, l=(max+min)/2;
+    
     if(d===0) h=s=0; else {
         s = l>0.5 ? d/(2-max-min) : d/(max+min);
         if(max===r1) h=(g1-b1)/d+(g1<b1?6:0); else if(max===g1) h=(b1-r1)/d+2; else h=(r1-g1)/d+4;
         h*=60;
     }
 
-    // --- LÓGICA DE ALTA FIDELIDADE (IPHONE BENCHMARK) ---
+    // --- MOTOR DE DECISÃO UNIVERSAL ---
 
-    // PRETO E CINZA (Refinado)
+    // Tons Neutros
     if (l < 0.20) return "Preto";
     if (s < 0.15) return (l > 0.80) ? "Branco" : "Cinza";
 
-    // AJUSTE CRÍTICO: VERMELHO vs ROSA vs ROXO
-    // O Vermelho puro mora perto do 0 ou 360.
-    if (h < 20 || h > 330) {
-        // Se a luminosidade for alta E a saturação não for extrema, é Rosa.
-        // Vermelhos reais no iPhone 12 Pro tendem a ser muito saturados (S > 0.5)
-        if (l > 0.45 && s < 0.75) {
+    // Lógica para Vermelho e Rosa (O ponto crítico)
+    if (h < 18 || h > 335) {
+        // Regra de Ouro Global: Rosa possui uma componente Azul/Verde maior que o Vermelho puro
+        // E uma luminosidade geralmente acima de 40%
+        if (l > 0.42 && (nb > nr * 0.5 || ng > nr * 0.4)) {
             return "Rosa";
         }
-        return (l < 0.30) ? "Vermelho Escuro" : "Vermelho";
+        return (l < 0.32) ? "Vermelho Escuro" : "Vermelho";
     }
 
-    // ROXO (Mantendo a zona de segurança aprovada)
-    if (h >= 250 && h < 310) return "Roxo";
+    // Roxo (Estabilizado)
+    if (h >= 255 && h < 305) return "Roxo";
     
-    // ROSA (Zona de transição para o Roxo)
-    if (h >= 310 && h <= 330) return "Rosa";
+    // Transição Rosa/Roxo
+    if (h >= 305 && h <= 335) return "Rosa";
 
-    // DEMAIS CORES
-    let yellowThreshold = (l < 0.45) ? 40 : 46; 
-    if (h >= 20 && h < yellowThreshold) return "Laranja";
-    if (h >= yellowThreshold && h < 70) return "Amarelo";
-    if (h >= 70 && h < 160) return "Verde";
-    if (h >= 160 && h < 250) return "Azul";
+    // Outros canais
+    let yellowThreshold = (l < 0.45) ? 42 : 48; 
+    if (h >= 18 && h < yellowThreshold) return "Laranja";
+    if (h >= yellowThreshold && h < 68) return "Amarelo";
+    if (h >= 68 && h < 155) return "Verde";
+    if (h >= 155 && h < 255) return "Azul";
     
     return "Analizando...";
 }
@@ -149,12 +145,13 @@ function mainLoop() {
             display.innerText = colorName;
             if(colorName === lastColor && colorName !== "Analizando...") {
                 stableCount++;
-                if(stableCount === 18) speak(colorName);
+                if(stableCount === 15) speak(colorName);
             } else {
                 lastColor = colorName;
                 stableCount = 0;
             }
-            stats.innerText = `L:${Math.round(rgb.r)} G:${Math.round(rgb.g)} B:${Math.round(rgb.b)} | H:${Math.round(360)}°`;
+            // Stats simplificados para análise de engenharia rápida
+            stats.innerText = `R:${Math.round(rgb.r)} G:${Math.round(rgb.g)} B:${Math.round(rgb.b)}`;
         } else {
             display.innerText = `RGB: ${Math.round(rgb.r)},${Math.round(rgb.g)},${Math.round(rgb.b)}`;
         }
@@ -164,22 +161,15 @@ function mainLoop() {
 
 function toggleUniv() { 
     isUniv = !isUniv; 
-    const btn = document.getElementById('btnU');
-    btn.classList.toggle('active');
-    btn.innerText = isUniv ? "UNIVERSAL: ON" : "UNIVERSAL: OFF";
-    if(isUniv) {
-        const startMsg = new SpeechSynthesisUtterance("Modo Universal Ativado");
-        startMsg.lang = 'pt-BR';
-        window.speechSynthesis.speak(startMsg);
-    }
+    document.getElementById('btnU').classList.toggle('active');
+    document.getElementById('btnU').innerText = isUniv ? "UNIVERSAL: ON" : "UNIVERSAL: OFF";
+    if(isUniv) speak("Leitura iniciada");
     stableCount = 0;
 }
 
 function toggleVoice() { 
     isVoice = !isVoice; 
-    const btn = document.getElementById('btnV');
-    btn.classList.toggle('active');
-    btn.innerText = isVoice ? "🔊 ÁUDIO: ON" : "🔇 ÁUDIO: OFF";
+    document.getElementById('btnV').classList.toggle('active');
     if(!isVoice) window.speechSynthesis.cancel();
 }
 
