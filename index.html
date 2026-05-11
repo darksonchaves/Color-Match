@@ -3,22 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - Global Engine v4</title>
+<title>ColorMatch Pro - Refino Máximo v5</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
   #header{ padding: 10px; background: #111; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; }
   #video-container { position: relative; width: 100%; height: 65vh; background: #000; overflow: hidden; }
   video{ width: 100%; height: 100%; object-fit: contain; }
-  button{ padding:10px 14px; border-radius:6px; border:none; background:#222; color:white; font-weight:bold; cursor:pointer; transition: 0.3s; }
+  button{ padding:10px 14px; border-radius:8px; border:none; background:#222; color:white; font-weight:bold; cursor:pointer; transition: 0.3s; }
   .active{ background:#00ffcc !important; color:#000 !important; box-shadow: 0 0 15px rgba(0,255,204,0.4); }
   #cross{ 
-    position:absolute; top:50%; left:50%; width:40px; height:40px; 
-    transform:translate(-50%,-50%); border:2px solid #00ffcc; 
+    position:absolute; top:50%; left:50%; width:36px; height:36px; 
+    transform:translate(-50%,-50%); border:3px solid #00ffcc; 
     border-radius:50%; pointer-events:none; z-index: 10; 
   }
-  #cross::after { content: ''; position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: #00ffcc; border-radius: 50%; transform: translate(-50%, -50%); }
-  #display{ font-size: 42px; font-weight: 900; color: #00ffcc; margin: 15px 0; text-transform: uppercase; min-height: 50px; }
-  .info { color: #888; font-size: 11px; letter-spacing: 1px; }
+  #display{ font-size: 42px; font-weight: 900; color: #00ffcc; margin: 15px 0; text-transform: uppercase; min-height: 50px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+  .info { color: #888; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
 </style>
 </head>
 <body>
@@ -35,7 +34,7 @@
 </div>
 
 <div id="display">AGUARDANDO...</div>
-<div id="stats" class="info">ESTABILIZAÇÃO DE REFLEXO ATIVA</div>
+<div id="stats" class="info">MOTOR DE PRECISÃO V5</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -49,13 +48,10 @@ const stats = document.getElementById('stats');
 let isUniv = false, isVoice = true;
 let lastColor = "", stableCount = 0;
 let offset = {r:255, g:255, b:255};
-let currentLum = 0; // Variável global para evitar erro de referência
+let colorHistory = []; // Buffer para estabilidade temporal
 
 navigator.mediaDevices.getUserMedia({
-    video:{ 
-        facingMode:"environment", 
-        width: {ideal: 1280}
-    }
+    video:{ facingMode:"environment", width: {ideal: 1280} }
 }).then(s => { video.srcObject = s; });
 
 function speak(t) {
@@ -63,14 +59,14 @@ function speak(t) {
     window.speechSynthesis.cancel();
     const msg = new SpeechSynthesisUtterance(t);
     msg.lang = 'pt-BR';
-    msg.rate = 1.3;
+    msg.rate = 1.4;
     window.speechSynthesis.speak(msg);
 }
 
 function calibrate() {
     const data = getCenterColor();
     offset = {r: data.r, g: data.g, b: data.b};
-    speak("Calibrado");
+    speak("Referência atualizada");
 }
 
 function getCenterColor() {
@@ -81,33 +77,32 @@ function getCenterColor() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const x = canvas.width / 2;
     const y = canvas.height / 2;
+    const size = 15; // Amostragem maior para média mais suave
+    const d = ctx.getImageData(x - 7, y - 7, size, size).data;
     
-    const size = 11;
-    const d = ctx.getImageData(x - Math.floor(size/2), y - Math.floor(size/2), size, size).data;
-    
-    let r=0, g=0, b=0, validPixels=0;
-
+    let r=0, g=0, b=0, v=0;
     for(let i=0; i<d.length; i+=4){
-        // Filtro de Especularidade (Melhorado)
-        if (d[i] < 250 || d[i+1] < 250 || d[i+2] < 250) {
+        // Filtro de Especularidade Dinâmico (ignora picos de branco puro)
+        if (!(d[i] > 248 && d[i+1] > 248 && d[i+2] > 248)) {
             r += d[i]; g += d[i+1]; b += d[i+2];
-            validPixels++;
+            v++;
         }
     }
-
-    if(validPixels === 0) return { r: d[0], g: d[1], b: d[2] };
-    return { r: r/validPixels, g: g/validPixels, b: b/validPixels };
+    return v > 0 ? { r: r/v, g: g/v, b: b/v } : { r: d[0], g: d[1], b: d[2] };
 }
 
 function solveColor(r, g, b) {
-    let nr = (r / (offset.r || 255)) * 255;
-    let ng = (g / (offset.g || 255)) * 255;
-    let nb = (b / (offset.b || 255)) * 255;
+    // 1. Normalização e Correção de Gama (Refino de fidelidade)
+    let nr = Math.pow((r / (offset.r || 255)), 0.9) * 255;
+    let ng = Math.pow((g / (offset.g || 255)), 0.9) * 255;
+    let nb = Math.pow((b / (offset.b || 255)), 0.9) * 255;
+    
+    // 2. Luminância Perceptual (Y) - Como o humano vê o brilho
+    const y = (0.299 * nr + 0.587 * ng + 0.114 * nb) / 255;
     
     const max = Math.max(nr, ng, nb);
     const min = Math.min(nr, ng, nb);
     const chroma = max - min;
-    currentLum = (max + min) / 510; // Atualiza a global para o visor
 
     let h = 0;
     if (chroma !== 0) {
@@ -118,75 +113,70 @@ function solveColor(r, g, b) {
         if (h < 0) h += 360;
     }
 
-    if (currentLum < 0.15) return "Preto";
-    if (chroma < 20) {
-        if (currentLum > 0.85) return "Branco";
-        return "Cinza";
+    // 3. Matriz de Decisão Refinada
+    if (y < 0.12) return "Preto";
+    if (chroma < 22) return (y > 0.80) ? "Branco" : "Cinza";
+
+    // Foco Rosa/Vermelho/Laranja
+    if (h < 20 || h > 335) {
+        const ratio = nr / (ng + nb + 1);
+        if (y > 0.38 && ratio < 1.7) return "Rosa";
+        return (y < 0.32) ? "Vermelho Escuro" : "Vermelho";
     }
 
-    // Lógica Rosa vs Vermelho Refinada
-    if (h < 22 || h > 335) {
-        const density = nr / (ng + nb + 1); 
-        if (currentLum > 0.40 && density < 1.9) {
-            return "Rosa";
-        }
-        return (currentLum < 0.35) ? "Vermelho Escuro" : "Vermelho";
-    }
+    if (h >= 20 && h < 45) return (y < 0.35) ? "Marrom" : "Laranja";
+    if (h >= 45 && h < 65) return "Amarelo";
+    if (h >= 65 && h < 155) return "Verde";
+    if (h >= 155 && h < 260) return "Azul";
+    if (h >= 260 && h < 300) return "Roxo";
+    if (h >= 300 && h <= 335) return "Rosa";
 
-    if (h >= 265 && h <= 305) return "Roxo";
-    if (h > 305 && h <= 335) return "Rosa";
+    return "Processando...";
+}
 
-    if (h >= 22 && h < 46) {
-        if (currentLum < 0.38) return "Marrom";
-        return "Laranja";
-    }
-    if (h >= 46 && h < 68) return "Amarelo";
-    if (h >= 68 && h < 158) return "Verde";
-    if (h >= 158 && h < 265) return "Azul";
-
-    return "Analizando...";
+function getStableColor(newColor) {
+    colorHistory.push(newColor);
+    if (colorHistory.length > 6) colorHistory.shift();
+    // Retorna a cor mais frequente no histórico (voto majoritário)
+    return colorHistory.sort((a,b) =>
+          colorHistory.filter(v => v===a).length - colorHistory.filter(v => v===b).length
+    ).pop();
 }
 
 function mainLoop() {
-    try {
-        if(video.videoWidth > 0) {
-            const rgb = getCenterColor();
-            const colorName = solveColor(rgb.r, rgb.g, rgb.b);
+    if(video.videoWidth > 0) {
+        const rgb = getCenterColor();
+        const rawColor = solveColor(rgb.r, rgb.g, rgb.b);
+        const colorName = getStableColor(rawColor);
 
-            if(isUniv) {
-                display.innerText = colorName;
-                if(colorName === lastColor && colorName !== "Analizando...") {
-                    stableCount++;
-                    if(stableCount === 14) speak(colorName);
-                } else {
-                    lastColor = colorName;
-                    stableCount = 0;
-                }
-                stats.innerText = `LUM: ${Math.round(currentLum*100)}% | R:${Math.round(rgb.r)} G:${Math.round(rgb.g)} B:${Math.round(rgb.b)}`;
+        if(isUniv) {
+            display.innerText = colorName;
+            if(colorName === lastColor && colorName !== "Processando...") {
+                stableCount++;
+                if(stableCount === 12) speak(colorName);
             } else {
-                display.innerText = `RGB: ${Math.round(rgb.r)},${Math.round(rgb.g)},${Math.round(rgb.b)}`;
-                stats.innerText = "ESTABILIZAÇÃO DE REFLEXO ATIVA";
+                lastColor = colorName;
+                stableCount = 0;
             }
+            stats.innerText = `Fidelidade: ALTA | R:${Math.round(rgb.r)} G:${Math.round(rgb.g)} B:${Math.round(rgb.b)}`;
+        } else {
+            display.innerText = `RGB: ${Math.round(rgb.r)},${Math.round(rgb.g)},${Math.round(rgb.b)}`;
+            stats.innerText = "Aguardando Modo Universal";
         }
-    } catch (e) {
-        console.log("Erro no loop:", e);
     }
     requestAnimationFrame(mainLoop);
 }
 
 function toggleUniv() { 
     isUniv = !isUniv; 
-    const btn = document.getElementById('btnU');
-    btn.classList.toggle('active');
-    btn.innerText = isUniv ? "UNIVERSAL: ON" : "UNIVERSAL: OFF";
-    if(isUniv) speak("Leitura ativada");
-    stableCount = 0;
+    document.getElementById('btnU').classList.toggle('active');
+    document.getElementById('btnU').innerText = isUniv ? "UNIVERSAL: ON" : "UNIVERSAL: OFF";
+    if(isUniv) { speak("Sistema de precisão ativado"); colorHistory = []; }
 }
 
 function toggleVoice() { 
     isVoice = !isVoice; 
-    const btn = document.getElementById('btnV');
-    btn.classList.toggle('active');
+    document.getElementById('btnV').classList.toggle('active');
     if(!isVoice) window.speechSynthesis.cancel();
 }
 
