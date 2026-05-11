@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - Universal Pure v7.1</title>
+<title>ColorMatch Pro - Universal v7.2 (Stable)</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
   #header{ padding: 12px; background: #0a0a0a; display: flex; justify-content: center; gap: 10px; border-bottom: 2px solid #1a1a1a; }
@@ -24,7 +24,7 @@
 
 <div id="header">
   <button onclick="toggleUniv()" id="btnU">MODO UNIVERSAL: OFF</button>
-  <button onclick="calibrate()">CALIBRAR PIGMENTO</button>
+  <button onclick="calibrate()">RECALIBRAR</button>
   <button onclick="toggleVoice()" id="btnV" class="active">ÁUDIO: ON</button>
 </div>
 
@@ -34,7 +34,7 @@
 </div>
 
 <div id="display">PRONTO</div>
-<div id="stats" class="info">EXTRATOR DE PIGMENTO ATIVO</div>
+<div id="stats" class="info">V7.2: COMPENSAÇÃO DE LUMINÂNCIA DINÂMICA</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -49,7 +49,7 @@ let isUniv = false, isVoice = true, lastColor = "", stableCount = 0;
 let offset = {r:255, g:255, b:255}, colorHistory = []; 
 
 navigator.mediaDevices.getUserMedia({
-    video:{ facingMode:"environment", width: {ideal: 1920}, frameRate: {ideal: 60} }
+    video:{ facingMode:"environment", width: {ideal: 1280}, frameRate: {ideal: 60} }
 }).then(s => { video.srcObject = s; });
 
 function speak(t) {
@@ -57,30 +57,26 @@ function speak(t) {
     window.speechSynthesis.cancel();
     const msg = new SpeechSynthesisUtterance(t);
     msg.lang = 'pt-BR';
-    msg.rate = 1.4;
+    msg.rate = 1.5;
     window.speechSynthesis.speak(msg);
 }
 
 function calibrate() {
     const data = getCenterColor();
     offset = {r: data.r, g: data.g, b: data.b};
-    speak("Pigmento Referência Calibrado");
+    speak("Calibrado");
 }
 
 function getCenterColor() {
     if (canvas.width !== video.videoWidth) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const x = canvas.width / 2, y = canvas.height / 2;
-    const size = 12;
-    const d = ctx.getImageData(x - (size/2), y - (size/2), size, size).data;
-    
+    const d = ctx.getImageData(x - 5, y - 5, 10, 10).data;
     let r=0, g=0, b=0, v=0;
     for(let i=0; i<d.length; i+=4){
-        // Filtro de Rejeição de Brilho: Ignora pixels excessivamente claros que distorcem o pigmento
-        if ((d[i] + d[i+1] + d[i+2]) / 3 < 240) {
+        if ((d[i] + d[i+1] + d[i+2]) / 3 < 245) { // Filtro anti-reflexo mais rigoroso
             r += d[i]; g += d[i+1]; b += d[i+2]; v++;
         }
     }
@@ -88,12 +84,14 @@ function getCenterColor() {
 }
 
 function solveColor(r, g, b) {
-    // 1. Normalização Anti-Iluminação
+    // Normalização agressiva para evitar "lavagem" de cor por luz excessiva
+    const brightness = (r + g + b) / 3;
+    const boost = brightness > 180 ? 1.2 : 1.0; 
+    
     let nr = (r / (offset.r || 255)) * 255;
     let ng = (g / (offset.g || 255)) * 255;
     let nb = (b / (offset.b || 255)) * 255;
     
-    // 2. Luminância Perceptual Lab
     const lum = (0.299 * nr + 0.587 * ng + 0.114 * nb) / 255;
     const max = Math.max(nr, ng, nb);
     const min = Math.min(nr, ng, nb);
@@ -107,55 +105,51 @@ function solveColor(r, g, b) {
         h = Math.round(h * 60); if (h < 0) h += 360;
     }
 
-    // --- LOGICA DE ALTA FIDELIDADE AO PIGMENTO ---
+    // --- LOGICA DE FERRO (PIGMENTO PURO) ---
 
-    // 1. Trava do Preto (Impede que o Preto vire Cinza ou Azul Escuro)
-    if (lum < 0.22) {
-        // Se a cor for muito escura, verificamos se há saturação real
-        if (chroma < 25) return "Preto";
-        // Se houver um matiz azulado mas a luminosidade for baixa, ainda é Preto/Cinza Escuro
-        if (nb > nr && lum < 0.15) return "Preto";
+    // 1. TRAVA DO PRETO (Muito mais rigorosa para ambientes iluminados)
+    if (lum < 0.28) {
+        // No ambiente iluminado, se os canais estão próximos e o valor é baixo, é PRETO.
+        if (chroma < 30) return "Preto"; 
+        // Se o azul tentar dominar no escuro mas não houver brilho real, ignora.
+        if (nb > nr && lum < 0.20) return "Preto";
     }
 
-    // 2. Filtro de Neutros (Branco e Cinza)
-    if (chroma < 22) {
-        if (lum > 0.82) return "Branco";
-        return "Cinza";
+    // 2. FILTRO DE CINZA/BRANCO
+    if (chroma < 25) {
+        return (lum > 0.80) ? "Branco" : "Cinza";
     }
 
-    // 3. Conflito Rosa / Roxo / Vermelho
-    if (h > 290 && h <= 345) {
-        // No pigmento, o Rosa tem muito mais Vermelho que o Roxo
-        if (nr > nb * 0.85) return "Rosa";
+    // 3. CORREÇÃO ROSA / ROXO / VERMELHO (O ponto crítico dos seus testes)
+    if (h >= 270 && h <= 335) {
+        // Se tiver muita luz (lum alta) mas o vermelho for forte, NÃO é Rosa, é pigmento Roxo/Vermelho
+        if (nr > nb * 0.95) return "Rosa"; 
         return "Roxo";
     }
     
-    if (h <= 15 || h > 345) {
-        // Vermelho vs Rosa (baseado em intensidade e brilho)
-        if (lum > 0.40 && nr / (ng + 1) < 2.0) return "Rosa";
-        return (lum < 0.32) ? "Vermelho Escuro" : "Vermelho";
+    if (h <= 18 || h > 335) {
+        // Evita que Vermelho vire Rosa por causa de luz
+        if (lum > 0.45 && chroma < 60) return "Rosa";
+        return (lum < 0.35) ? "Vermelho Escuro" : "Vermelho";
     }
 
-    // 4. Conflito Verde / Azul (Matizes de transição)
-    if (h >= 155 && h < 190) {
-        // Se o verde for forte, é um tom de Verde Água/Turquesa, mas no Universal chamamos de Verde
-        if (ng > nb * 0.9) return "Verde";
-        return "Azul";
+    // 4. VERDE VS AZUL (Ajuste de tons médios)
+    if (h >= 150 && h < 195) {
+        return (ng > nb * 0.8) ? "Verde" : "Azul";
     }
 
     // Categorias Padrão
-    if (h >= 15 && h < 45) return (lum < 0.38) ? "Marrom" : "Laranja";
-    if (h >= 45 && h < 68) return "Amarelo";
-    if (h >= 68 && h < 155) return "Verde";
-    if (h >= 190 && h < 265) return "Azul";
-    if (h >= 265 && h <= 290) return "Roxo";
+    if (h >= 18 && h < 48) return (lum < 0.35) ? "Marrom" : "Laranja";
+    if (h >= 48 && h < 65) return "Amarelo";
+    if (h >= 65 && h < 150) return "Verde";
+    if (h >= 195 && h < 270) return "Azul";
 
-    return "Analisando...";
+    return "Processando...";
 }
 
 function getStableColor(newColor) {
     colorHistory.push(newColor);
-    if (colorHistory.length > 12) colorHistory.shift();
+    if (colorHistory.length > 15) colorHistory.shift(); // Histórico maior para filtrar oscilação de luz
     return colorHistory.sort((a,b) =>
           colorHistory.filter(v => v===a).length - colorHistory.filter(v => v===b).length
     ).pop();
@@ -168,13 +162,13 @@ function mainLoop() {
 
         if(isUniv) {
             display.innerText = colorName;
-            if(colorName === lastColor && colorName !== "Analisando...") {
+            if(colorName === lastColor && colorName !== "Processando...") {
                 stableCount++;
-                if(stableCount === 14) speak(colorName);
+                if(stableCount === 18) speak(colorName); // Fala apenas após 18 frames de certeza absoluta
             } else { lastColor = colorName; stableCount = 0; }
         } else {
-            display.innerText = "MODO STANDBY";
-            stats.innerText = `R:${Math.round(rgb.r)} G:${Math.round(rgb.g)} B:${Math.round(rgb.b)}`;
+            display.innerText = "STANDBY";
+            stats.innerText = `LUM: ${Math.round((rgb.r+rgb.g+rgb.b)/3)}`;
         }
     }
     requestAnimationFrame(mainLoop);
