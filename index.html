@@ -9,7 +9,7 @@
   #header{ padding: 10px; background: #111; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; }
   #video-container { position: relative; width: 100%; height: 65vh; background: #000; overflow: hidden; }
   video{ width: 100%; height: 100%; object-fit: contain; }
-  button{ padding:10px 14px; border-radius:6px; border:none; background:#222; color:white; font-weight:bold; cursor:pointer; }
+  button{ padding:10px 14px; border-radius:8px; border:none; background:#222; color:white; font-weight:bold; cursor:pointer; }
   .active{ background:#00ffcc !important; color:#000 !important; }
   #cross{ 
     position:absolute; top:50%; left:50%; width:30px; height:30px; 
@@ -54,31 +54,24 @@ navigator.mediaDevices.getUserMedia({video:{facingMode:"environment", width: {id
     video.srcObject = s;
 });
 
-// FUNÇÃO DE VOZ REFORMULADA PARA MAIOR COMPATIBILIDADE
+// Função speak simplificada e robusta
 function speak(t) {
-    if(!isVoice) return;
+    if(!isVoice || !isUniv) return;
     
-    // Cancela qualquer fala anterior imediatamente
-    window.speechSynthesis.cancel();
+    window.speechSynthesis.cancel(); // Para tudo o que estiver falando
     
     const msg = new SpeechSynthesisUtterance(t);
     msg.lang = 'pt-BR';
-    msg.rate = 1.3; // Velocidade ligeiramente maior para fluidez
-    msg.pitch = 1.0;
+    msg.rate = 1.3;
     
-    // Verificação de segurança: Só fala se o visor ainda mostrar essa cor
-    setTimeout(() => {
-        if(display.innerText === t) {
-            window.speechSynthesis.speak(msg);
-        }
-    }, 50); 
+    window.speechSynthesis.speak(msg);
 }
 
 function calibrate() {
     const data = getCenterColor();
     offset = {r: data.r, g: data.g, b: data.b};
     
-    // "Despertar" obrigatório para o navegador liberar o som
+    // Teste de áudio imediato
     const wakeUp = new SpeechSynthesisUtterance("Calibrado");
     wakeUp.lang = 'pt-BR';
     window.speechSynthesis.speak(wakeUp);
@@ -112,7 +105,6 @@ function solveColor(r, g, b) {
         h*=60;
     }
 
-    // Lógica de interpretação mantida conforme aprovado por você
     if (l < 0.18) return "Preto";
     if (s < 0.12) return (l > 0.7) ? "Branco" : "Cinza";
     if (h < 15 || h > 345) return (l < 0.35) ? "Vermelho Escuro" : "Vermelho";
@@ -136,17 +128,15 @@ function mainLoop() {
 
             if(colorName === lastColor && colorName !== "Analizando...") {
                 stableCount++;
-                // Aguarda estabilidade para evitar falar cores de transição
-                if(stableCount === 20) {
+                // Reduzi para 15 frames para ser mais rápido na resposta
+                if(stableCount === 15) {
                     speak(colorName);
                 }
             } else {
                 lastColor = colorName;
                 stableCount = 0;
-                // Se a cor mudou no visor, silencia o anterior imediatamente
-                if(window.speechSynthesis.speaking) window.speechSynthesis.cancel();
             }
-            stats.innerText = `ESTABILIDADE: ${Math.min(100, stableCount*5)}% | R:${Math.round(rgb.r)} G:${Math.round(rgb.g)}`;
+            stats.innerText = `ESTABILIDADE: ${Math.min(100, stableCount*7)}% | R:${Math.round(rgb.r)} G:${Math.round(rgb.g)}`;
         } else {
             display.innerText = `RGB: ${Math.round(rgb.r)},${Math.round(rgb.g)},${Math.round(rgb.b)}`;
         }
@@ -156,15 +146,27 @@ function mainLoop() {
 
 function toggleUniv() { 
     isUniv = !isUniv; 
-    document.getElementById('btnU').classList.toggle('active');
-    document.getElementById('btnU').innerText = isUniv ? "UNIVERSAL: ON" : "UNIVERSAL: OFF";
+    const btn = document.getElementById('btnU');
+    btn.classList.toggle('active');
+    btn.innerText = isUniv ? "UNIVERSAL: ON" : "UNIVERSAL: OFF";
+    
+    // TRUQUE DE ENGENHARIA: Ativa o som no momento do clique
+    if(isUniv) {
+        const startMsg = new SpeechSynthesisUtterance("Iniciando Leitura");
+        startMsg.lang = 'pt-BR';
+        window.speechSynthesis.speak(startMsg);
+    } else {
+        window.speechSynthesis.cancel();
+    }
+    
     stableCount = 0;
 }
 
 function toggleVoice() { 
     isVoice = !isVoice; 
-    document.getElementById('btnV').classList.toggle('active');
-    document.getElementById('btnV').innerText = isVoice ? "🔊 ÁUDIO: ON" : "🔇 ÁUDIO: OFF";
+    const btn = document.getElementById('btnV');
+    btn.classList.toggle('active');
+    btn.innerText = isVoice ? "🔊 ÁUDIO: ON" : "🔇 ÁUDIO: OFF";
     if(!isVoice) window.speechSynthesis.cancel();
 }
 
