@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - Universal v7.2 (Stable)</title>
+<title>ColorMatch Pro - Spectral Engine v7.4</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
   #header{ padding: 12px; background: #0a0a0a; display: flex; justify-content: center; gap: 10px; border-bottom: 2px solid #1a1a1a; }
@@ -11,12 +11,8 @@
   video{ width: 100%; height: 100%; object-fit: contain; }
   button{ padding:12px 18px; border-radius:10px; border:none; background:#1a1a1a; color:#888; font-weight:bold; cursor:pointer; transition: 0.4s; border: 1px solid #333; }
   .active{ background:#00ffcc !important; color:#000 !important; box-shadow: 0 0 20px rgba(0,255,204,0.3); border: 1px solid #00ffcc; }
-  #cross{ 
-    position:absolute; top:50%; left:50%; width:30px; height:30px; 
-    transform:translate(-50%,-50%); border:2px dashed #00ffcc; 
-    border-radius:50%; pointer-events:none; z-index: 10;
-  }
-  #display{ font-size: 48px; font-weight: 900; color: #00ffcc; margin: 20px 0; text-transform: uppercase; letter-spacing: -2px; }
+  #cross{ position:absolute; top:50%; left:50%; width:30px; height:30px; transform:translate(-50%,-50%); border:2px dashed #00ffcc; border-radius:50%; pointer-events:none; z-index: 10; }
+  #display{ font-size: 48px; font-weight: 900; color: #00ffcc; margin: 20px 0; text-transform: uppercase; }
   .info { color: #444; font-size: 10px; letter-spacing: 2px; font-weight: bold; }
 </style>
 </head>
@@ -24,7 +20,7 @@
 
 <div id="header">
   <button onclick="toggleUniv()" id="btnU">MODO UNIVERSAL: OFF</button>
-  <button onclick="calibrate()">RECALIBRAR</button>
+  <button onclick="calibrate()">CALIBRAR ESPECTRO</button>
   <button onclick="toggleVoice()" id="btnV" class="active">ÁUDIO: ON</button>
 </div>
 
@@ -33,8 +29,8 @@
   <div id="cross"></div>
 </div>
 
-<div id="display">PRONTO</div>
-<div id="stats" class="info">V7.2: COMPENSAÇÃO DE LUMINÂNCIA DINÂMICA</div>
+<div id="display">AGUARDANDO</div>
+<div id="stats" class="info">V7.4: LEITURA DE PIGMENTO PRIMÁRIO</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -64,7 +60,7 @@ function speak(t) {
 function calibrate() {
     const data = getCenterColor();
     offset = {r: data.r, g: data.g, b: data.b};
-    speak("Calibrado");
+    speak("Espectro Calibrado");
 }
 
 function getCenterColor() {
@@ -76,80 +72,83 @@ function getCenterColor() {
     const d = ctx.getImageData(x - 5, y - 5, 10, 10).data;
     let r=0, g=0, b=0, v=0;
     for(let i=0; i<d.length; i+=4){
-        if ((d[i] + d[i+1] + d[i+2]) / 3 < 245) { // Filtro anti-reflexo mais rigoroso
-            r += d[i]; g += d[i+1]; b += d[i+2]; v++;
-        }
+        r += d[i]; g += d[i+1]; b += d[i+2]; v++;
     }
-    return v > 0 ? { r: r/v, g: g/v, b: b/v } : { r: 128, g: 128, b: 128 };
+    return { r: r/v, g: g/v, b: b/v };
 }
 
 function solveColor(r, g, b) {
-    // Normalização agressiva para evitar "lavagem" de cor por luz excessiva
+    // 1. NORMALIZAÇÃO ESPECTRAL (Converte para % de presença de cor)
+    const sum = r + g + b + 1;
+    let pr = r / sum;
+    let pg = g / sum;
+    let pb = b / sum;
+
+    // Compensação de Calibração
+    const offSum = offset.r + offset.g + offset.b + 1;
+    pr /= (offset.r / offSum);
+    pg /= (offset.g / offSum);
+    pb /= (offset.b / offSum);
+
+    const nSum = pr + pg + pb;
+    pr /= nSum; pg /= nSum; pb /= nSum;
+
+    // 2. CÁLCULO DE PUREZA (Chroma) E LUMINÂNCIA
+    const maxP = Math.max(pr, pg, pb);
+    const minP = Math.min(pr, pg, pb);
+    const purity = maxP - minP;
     const brightness = (r + g + b) / 3;
-    const boost = brightness > 180 ? 1.2 : 1.0; 
-    
-    let nr = (r / (offset.r || 255)) * 255;
-    let ng = (g / (offset.g || 255)) * 255;
-    let nb = (b / (offset.b || 255)) * 255;
-    
-    const lum = (0.299 * nr + 0.587 * ng + 0.114 * nb) / 255;
-    const max = Math.max(nr, ng, nb);
-    const min = Math.min(nr, ng, nb);
-    const chroma = max - min;
 
+    // 3. MOTOR DE DECISÃO UNIVERSAL (Fiel ao Espectro)
+    
+    // Trava de Neutros: Preto, Cinza e Branco
+    if (purity < 0.08) {
+        if (brightness < 55) return "Preto";
+        if (brightness > 195) return "Branco";
+        return "Cinza";
+    }
+
+    // Cálculo do Matiz (Hue) baseado nas proporções normalizadas
     let h = 0;
-    if (chroma !== 0) {
-        if (max === nr) h = ((ng - nb) / chroma) % 6;
-        else if (max === ng) h = (nb - nr) / chroma + 2;
-        else h = (nr - ng) / chroma + 4;
-        h = Math.round(h * 60); if (h < 0) h += 360;
-    }
+    if (maxP === pr) h = (pg - pb) / (maxP - minP);
+    else if (maxP === pg) h = 2 + (pb - pr) / (maxP - minP);
+    else h = 4 + (pr - pg) / (maxP - minP);
+    h *= 60; if (h < 0) h += 360;
 
-    // --- LOGICA DE FERRO (PIGMENTO PURO) ---
-
-    // 1. TRAVA DO PRETO (Muito mais rigorosa para ambientes iluminados)
-    if (lum < 0.28) {
-        // No ambiente iluminado, se os canais estão próximos e o valor é baixo, é PRETO.
-        if (chroma < 30) return "Preto"; 
-        // Se o azul tentar dominar no escuro mas não houver brilho real, ignora.
-        if (nb > nr && lum < 0.20) return "Preto";
-    }
-
-    // 2. FILTRO DE CINZA/BRANCO
-    if (chroma < 25) {
-        return (lum > 0.80) ? "Branco" : "Cinza";
-    }
-
-    // 3. CORREÇÃO ROSA / ROXO / VERMELHO (O ponto crítico dos seus testes)
-    if (h >= 270 && h <= 335) {
-        // Se tiver muita luz (lum alta) mas o vermelho for forte, NÃO é Rosa, é pigmento Roxo/Vermelho
-        if (nr > nb * 0.95) return "Rosa"; 
-        return "Roxo";
+    // Categorização por Assinatura (Foco em todas as cores)
+    if (h < 15 || h > 340) {
+        // Diferencia Vermelho de Rosa pela "pobreza" do canal verde
+        if (pg > 0.32 && brightness > 120) return "Rosa";
+        return (brightness < 80) ? "Vermelho Escuro" : "Vermelho";
     }
     
-    if (h <= 18 || h > 335) {
-        // Evita que Vermelho vire Rosa por causa de luz
-        if (lum > 0.45 && chroma < 60) return "Rosa";
-        return (lum < 0.35) ? "Vermelho Escuro" : "Vermelho";
+    if (h >= 15 && h < 45) {
+        return (brightness < 100) ? "Marrom" : "Laranja";
     }
-
-    // 4. VERDE VS AZUL (Ajuste de tons médios)
-    if (h >= 150 && h < 195) {
-        return (ng > nb * 0.8) ? "Verde" : "Azul";
+    
+    if (h >= 45 && h < 70) return "Amarelo";
+    
+    if (h >= 70 && h < 160) {
+        // Verde puro vs tons de floresta
+        return (brightness < 70) ? "Verde Escuro" : "Verde";
     }
+    
+    if (h >= 160 && h < 260) {
+        // Azul vs Ciano/Verde Água
+        if (h < 185 && pg > 0.35) return "Verde"; // Tons turquesa
+        return "Azul";
+    }
+    
+    if (h >= 260 && h < 310) return "Roxo";
+    
+    if (h >= 310 && h <= 340) return "Rosa";
 
-    // Categorias Padrão
-    if (h >= 18 && h < 48) return (lum < 0.35) ? "Marrom" : "Laranja";
-    if (h >= 48 && h < 65) return "Amarelo";
-    if (h >= 65 && h < 150) return "Verde";
-    if (h >= 195 && h < 270) return "Azul";
-
-    return "Processando...";
+    return "Analisando...";
 }
 
 function getStableColor(newColor) {
     colorHistory.push(newColor);
-    if (colorHistory.length > 15) colorHistory.shift(); // Histórico maior para filtrar oscilação de luz
+    if (colorHistory.length > 25) colorHistory.shift(); 
     return colorHistory.sort((a,b) =>
           colorHistory.filter(v => v===a).length - colorHistory.filter(v => v===b).length
     ).pop();
@@ -162,13 +161,13 @@ function mainLoop() {
 
         if(isUniv) {
             display.innerText = colorName;
-            if(colorName === lastColor && colorName !== "Processando...") {
+            if(colorName === lastColor && colorName !== "Analisando...") {
                 stableCount++;
-                if(stableCount === 18) speak(colorName); // Fala apenas após 18 frames de certeza absoluta
+                if(stableCount === 25) speak(colorName);
             } else { lastColor = colorName; stableCount = 0; }
         } else {
-            display.innerText = "STANDBY";
-            stats.innerText = `LUM: ${Math.round((rgb.r+rgb.g+rgb.b)/3)}`;
+            display.innerText = "PRONTO";
+            stats.innerText = `PIGMENTO: ${Math.round(rgb.r)},${Math.round(rgb.g)},${Math.round(rgb.b)}`;
         }
     }
     requestAnimationFrame(mainLoop);
@@ -179,13 +178,12 @@ function toggleUniv() {
     const btn = document.getElementById('btnU');
     btn.classList.toggle('active');
     btn.innerText = isUniv ? "MODO UNIVERSAL: ON" : "MODO UNIVERSAL: OFF";
-    if(isUniv) { speak("Modo Universal Ativado"); colorHistory = []; }
+    if(isUniv) { speak("Sistema Base Ativado"); colorHistory = []; }
 }
 
 function toggleVoice() { 
     isVoice = !isVoice; 
     document.getElementById('btnV').classList.toggle('active');
-    document.getElementById('btnV').innerText = isVoice ? "ÁUDIO: ON" : "ÁUDIO: OFF";
 }
 
 requestAnimationFrame(mainLoop);
