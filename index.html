@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - Anti-Sombra & Sincronia</title>
+<title>ColorMatch Pro - Final Stage</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#050505; color:#fff; text-align:center; overflow:hidden; }
-  #header{ padding: 10px; background: #111; border-bottom: 1px solid #333; display: flex; justify-content: center; gap: 10px; }
-  video{ width:100%; max-height: 65vh; object-fit: cover; border-bottom: 2px solid #222; }
-  button{ padding:12px 18px; border-radius:8px; border:none; background:#222; color:white; font-weight:bold; cursor: pointer; transition: 0.3s; }
-  .active{ background:#00ffcc !important; color:#000 !important; box-shadow: 0 0 10px #00ffcc; }
-  #cross{ position:fixed; top:50%; left:50%; width:40px; height:40px; transform:translate(-50%,-50%); border:3px solid #00ffcc; border-radius:50%; pointer-events:none; z-index: 10; }
-  #display{ font-size: 36px; font-weight: 900; color: #00ffcc; margin: 15px 0; text-transform: uppercase; letter-spacing: 2px; }
-  .info { color: #666; font-size: 12px; }
+  #header{ padding: 10px; background: #111; border-bottom: 1px solid #333; display: flex; justify-content: center; gap: 8px; }
+  video{ width:100%; max-height: 65vh; object-fit: cover; }
+  button{ padding:10px 14px; border-radius:6px; border:none; background:#222; color:white; font-weight:bold; font-size: 11px; text-transform: uppercase; }
+  .active{ background:#00ffcc !important; color:#000 !important; }
+  #cross{ position:fixed; top:50%; left:50%; width:35px; height:35px; transform:translate(-50%,-50%); border:2px solid #00ffcc; border-radius:50%; pointer-events:none; z-index: 10; }
+  #display{ font-size: 42px; font-weight: 900; color: #00ffcc; margin: 10px 0; text-transform: uppercase; height: 50px; }
+  .info { color: #888; font-size: 11px; font-family: monospace; }
 </style>
 </head>
 <body>
 
 <div id="header">
-  <button onclick="toggleUniv()" id="btnU">MODO: OFF</button>
+  <button onclick="toggleUniv()" id="btnU">UNIVERSAL: OFF</button>
   <button onclick="calibrate()">CALIBRAR BRANCO</button>
   <button onclick="toggleVoice()" id="btnV" class="active">🔊 ÁUDIO: ON</button>
 </div>
@@ -27,7 +27,7 @@
 <div id="cross"></div>
 
 <div id="display">INICIANDO...</div>
-<div id="stats" class="info">RGB: 0, 0, 0 | ESTABILIDADE: 0%</div>
+<div id="stats" class="info">ESTABILIDADE: 0% | RGB: ---</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -42,37 +42,46 @@ let isUniv = false, isVoice = true, isSpeaking = false;
 let lastColor = "", stableCount = 0;
 let offset = {r:255, g:255, b:255};
 
-// Inicializa câmera
 navigator.mediaDevices.getUserMedia({video:{facingMode:"environment", width: 1280}}).then(s => video.srcObject = s);
 
 function calibrate() {
-    const data = getAverageRGB();
+    const data = getMedianRGB();
     offset = {r: data.r, g: data.g, b: data.b};
     speak("Branco calibrado");
 }
 
-function getAverageRGB() {
+// NOVO: Amostragem por Mediana em 9 pontos (melhor para metalizado/reflexo)
+function getMedianRGB() {
     if(!video.videoWidth) return {r:0, g:0, b:0};
     canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0);
     
-    // Área de captura 20x20 para suavizar metalizados/verniz
-    const size = 20;
-    const d = ctx.getImageData(video.videoWidth/2 - size/2, video.videoHeight/2 - size/2, size, size).data;
+    const centerX = video.videoWidth / 2;
+    const centerY = video.videoHeight / 2;
+    const step = 8; // Distância entre pontos de amostragem
     
-    let r=0, g=0, b=0;
-    for(let i=0; i<d.length; i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
-    const total = d.length/4;
-    return { r: r/total, g: g/total, b: b/total };
+    let rs = [], gs = [], bs = [];
+    
+    for(let y = -1; y <= 1; y++) {
+        for(let x = -1; x <= 1; x++) {
+            const d = ctx.getImageData(centerX + (x*step), centerY + (y*step), 1, 1).data;
+            rs.push(d[0]); gs.push(d[1]); bs.push(d[2]);
+        }
+    }
+    
+    const median = arr => {
+        const s = [...arr].sort((a,b) => a-b);
+        return s[4]; // Meio da lista de 9 pontos
+    };
+
+    return { r: median(rs), g: median(gs), b: median(bs) };
 }
 
 function solveColor(r, g, b) {
-    // Aplicação da calibração
-    let nr = (r * 255) / offset.r;
-    let ng = (g * 255) / offset.g;
-    let nb = (b * 255) / offset.b;
+    let nr = (r * 255) / (offset.r || 255);
+    let ng = (g * 255) / (offset.g || 255);
+    let nb = (b * 255) / (offset.b || 255);
     
-    // Conversão para HSL (Human Perception)
     let r1=nr/255, g1=ng/255, b1=nb/255;
     const max=Math.max(r1,g1,b1), min=Math.min(r1,g1,b1), d=max-min;
     let h, s, l=(max+min)/2;
@@ -82,84 +91,82 @@ function solveColor(r, g, b) {
         h*=60;
     }
 
-    // --- ENGENHARIA ANTI-SOMBRA (Sua nova lógica) ---
-    // Ajusta o limite entre Laranja e Amarelo baseado na luz (l)
-    let yellowLimit = (l < 0.45) ? 42 : 48; 
+    // --- REFINAMENTO DE QUADRANTES (FASE 1 FINAL) ---
+    
+    // 1. Ajuste Preto/Cinza (Fundamental para o carregador e sombras)
+    if (l < 0.18) return "Preto";
+    if (s < 0.12) return (l > 0.7) ? "Branco" : "Cinza";
+    
+    // 2. Ajuste do Vermelho (Metalizado do Creme Dental)
+    if (h < 15 || h > 345) {
+        return (l < 0.35) ? "Vermelho Escuro" : "Vermelho";
+    }
+    
+    // 3. Ajuste Amarelo vs Laranja (O segredo da sombra do isqueiro)
+    // Se o Verde (G) for forte, seguramos no Amarelo
+    let yellowThreshold = (l < 0.5) ? 40 : 46; 
+    if (h >= 15 && h < yellowThreshold) return "Laranja";
+    if (h >= yellowThreshold && h < 72) return "Amarelo";
+    
+    // 4. Ajuste Roxo vs Rosa (O dilema do vídeo 2)
+    // Expandimos o Roxo para evitar que caia no Rosa
+    if (h >= 255 && h < 295) return "Roxo";
+    if (h >= 295 && h < 345) return "Rosa";
 
-    if (l < 0.12) return "Preto";
-    if (l > 0.88 && s < 0.15) return "Branco";
-    if (s < 0.12) return "Cinza";
+    if (h >= 72 && h < 160) return "Verde";
+    if (h >= 160 && h < 255) return "Azul";
     
-    if (h < 18 || h > 342) return "Vermelho";
-    if (h < yellowLimit) return "Laranja";
-    if (h < 78) return "Amarelo"; 
-    if (h < 165) return "Verde";
-    if (h < 255) return "Azul";
-    if (h < 305) return "Roxo";
-    
-    return "Rosa";
+    return "Indefinido";
 }
 
 function mainLoop() {
     if(video.videoWidth) {
-        const rgb = getAverageRGB();
+        const rgb = getMedianRGB();
         const colorName = solveColor(rgb.r, rgb.g, rgb.b);
 
         if(isUniv) {
-            display.innerText = colorName;
-            
-            // Lógica de Sincronia Visor x Áudio
-            if(colorName === lastColor && colorName !== "Analizando...") {
+            // Histérese: Só atualiza se houver confiança
+            if(colorName === lastColor) {
                 stableCount++;
-                // Quando atinge 22 frames de estabilidade (~0.8s), ele fala
-                if(stableCount === 22) speak(colorName);
+                if(stableCount === 20) speak(colorName);
             } else {
+                // Se a cor mudou, esperamos um pouco antes de trocar no visor
+                if(stableCount > 5) { // Pequeno delay para evitar tremulação
+                    display.innerText = colorName;
+                }
                 lastColor = colorName;
                 stableCount = 0;
             }
             stats.innerText = `ESTABILIDADE: ${Math.min(100, stableCount*5)}% | RGB: ${Math.round(rgb.r)},${Math.round(rgb.g)},${Math.round(rgb.b)}`;
         } else {
             display.innerText = `RGB: ${Math.round(rgb.r)},${Math.round(rgb.g)},${Math.round(rgb.b)}`;
-            stableCount = 0;
         }
     }
     requestAnimationFrame(mainLoop);
 }
 
 function speak(t) {
-    if(!isVoice || isSpeaking) return;
+    if(!isVoice || isSpeaking || t === "Indefinido") return;
     isSpeaking = true;
-    
-    // Limpa falas anteriores para evitar delay
     window.speechSynthesis.cancel();
-    
     const msg = new SpeechSynthesisUtterance(t);
     msg.lang = 'pt-BR';
-    msg.rate = 1.1; // Um pouco mais rápido para parecer profissional
-    msg.onend = () => { isSpeaking = false; };
-    msg.onerror = () => { isSpeaking = false; };
-    
+    msg.rate = 1.2;
+    msg.onend = () => isSpeaking = false;
     window.speechSynthesis.speak(msg);
 }
 
-// Controles de Interface
 function toggleUniv() { 
     isUniv = !isUniv; 
-    const btn = document.getElementById('btnU');
-    btn.classList.toggle('active');
-    btn.innerText = isUniv ? "MODO: ON" : "MODO: OFF";
-    lastColor = ""; stableCount = 0;
+    document.getElementById('btnU').classList.toggle('active');
+    document.getElementById('btnU').innerText = isUniv ? "UNIVERSAL: ON" : "UNIVERSAL: OFF";
 }
 
 function toggleVoice() { 
     isVoice = !isVoice; 
-    const btn = document.getElementById('btnV');
-    btn.classList.toggle('active');
-    btn.innerText = isVoice ? "🔊 ÁUDIO: ON" : "🔇 ÁUDIO: OFF";
-    if(!isVoice) window.speechSynthesis.cancel();
+    document.getElementById('btnV').classList.toggle('active');
 }
 
-// Inicia o motor
 requestAnimationFrame(mainLoop);
 </script>
 </body>
