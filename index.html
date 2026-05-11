@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - Sincronia de Precisão</title>
+<title>ColorMatch Pro - Refinamento Final Fase 1</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
   #header{ padding: 10px; background: #111; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; }
@@ -54,24 +54,18 @@ navigator.mediaDevices.getUserMedia({video:{facingMode:"environment", width: {id
     video.srcObject = s;
 });
 
-// Função speak simplificada e robusta
 function speak(t) {
     if(!isVoice || !isUniv) return;
-    
-    window.speechSynthesis.cancel(); // Para tudo o que estiver falando
-    
+    window.speechSynthesis.cancel();
     const msg = new SpeechSynthesisUtterance(t);
     msg.lang = 'pt-BR';
     msg.rate = 1.3;
-    
     window.speechSynthesis.speak(msg);
 }
 
 function calibrate() {
     const data = getCenterColor();
     offset = {r: data.r, g: data.g, b: data.b};
-    
-    // Teste de áudio imediato
     const wakeUp = new SpeechSynthesisUtterance("Calibrado");
     wakeUp.lang = 'pt-BR';
     window.speechSynthesis.speak(wakeUp);
@@ -85,10 +79,12 @@ function getCenterColor() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const x = canvas.width / 2;
     const y = canvas.height / 2;
-    const d = ctx.getImageData(x - 2, y - 2, 4, 4).data;
+    // Amostragem um pouco maior (5x5) para estabilizar cores escuras
+    const d = ctx.getImageData(x - 2, y - 2, 5, 5).data;
     let r=0, g=0, b=0;
     for(let i=0; i<d.length; i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
-    return { r: r/4, g: g/4, b: b/4 };
+    const total = d.length/4;
+    return { r: r/total, g: g/total, b: b/total };
 }
 
 function solveColor(r, g, b) {
@@ -105,16 +101,31 @@ function solveColor(r, g, b) {
         h*=60;
     }
 
-    if (l < 0.18) return "Preto";
-    if (s < 0.12) return (l > 0.7) ? "Branco" : "Cinza";
+    // --- REAJUSTE DE ENGENHARIA PARA CORES CONFLITANTES ---
+
+    // 1. SOLUÇÃO PRETO VS CINZA: Subimos o limite de luminância (L)
+    // Se a luminosidade for menor que 22%, forçamos ser Preto (antes era 18%)
+    if (l < 0.22) return "Preto";
+    
+    // 2. SOLUÇÃO CINZA: Ajuste de saturação (S)
+    if (s < 0.12) return (l > 0.75) ? "Branco" : "Cinza";
+    
+    // 3. SOLUÇÃO ROXO VS ROSA: Reajuste de Matiz (H)
+    // Expandimos a "zona de segurança" do Roxo para 250 até 310 graus
+    if (h >= 250 && h < 310) {
+        // Se houver muita luz, o roxo tende a virar rosa, então "seguramos" aqui
+        return "Roxo";
+    }
+    
+    // 4. DEMAIS CORES (Mantidas)
     if (h < 15 || h > 345) return (l < 0.35) ? "Vermelho Escuro" : "Vermelho";
     let yellowThreshold = (l < 0.45) ? 40 : 46; 
     if (h >= 15 && h < yellowThreshold) return "Laranja";
     if (h >= yellowThreshold && h < 72) return "Amarelo";
-    if (h >= 255 && h < 295) return "Roxo";
-    if (h >= 295 && h < 345) return "Rosa";
+    if (h >= 310 && h < 345) return "Rosa";
     if (h >= 72 && h < 160) return "Verde";
-    if (h >= 160 && h < 255) return "Azul";
+    if (h >= 160 && h < 250) return "Azul";
+    
     return "Analizando...";
 }
 
@@ -128,15 +139,14 @@ function mainLoop() {
 
             if(colorName === lastColor && colorName !== "Analizando...") {
                 stableCount++;
-                // Reduzi para 15 frames para ser mais rápido na resposta
-                if(stableCount === 15) {
+                if(stableCount === 18) { // Ajuste fino na velocidade de fala
                     speak(colorName);
                 }
             } else {
                 lastColor = colorName;
                 stableCount = 0;
             }
-            stats.innerText = `ESTABILIDADE: ${Math.min(100, stableCount*7)}% | R:${Math.round(rgb.r)} G:${Math.round(rgb.g)}`;
+            stats.innerText = `LUM: ${Math.round(100*rgb.r/255)}% | SAT: ${Math.round(100*(Math.max(rgb.r,rgb.g,rgb.b)-Math.min(rgb.r,rgb.g,rgb.b))/255)}%`;
         } else {
             display.innerText = `RGB: ${Math.round(rgb.r)},${Math.round(rgb.g)},${Math.round(rgb.b)}`;
         }
@@ -150,15 +160,13 @@ function toggleUniv() {
     btn.classList.toggle('active');
     btn.innerText = isUniv ? "UNIVERSAL: ON" : "UNIVERSAL: OFF";
     
-    // TRUQUE DE ENGENHARIA: Ativa o som no momento do clique
     if(isUniv) {
-        const startMsg = new SpeechSynthesisUtterance("Iniciando Leitura");
+        const startMsg = new SpeechSynthesisUtterance("Modo Universal Ativado");
         startMsg.lang = 'pt-BR';
         window.speechSynthesis.speak(startMsg);
     } else {
         window.speechSynthesis.cancel();
     }
-    
     stableCount = 0;
 }
 
