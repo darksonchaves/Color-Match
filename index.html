@@ -7,12 +7,10 @@
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
   #header{ padding: 10px; background: #111; display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid #333; }
-  /* O Vídeo agora ocupa a tela de forma a não distorcer a mira */
   #video-container { position: relative; width: 100%; height: 65vh; background: #000; overflow: hidden; }
   video{ width: 100%; height: 100%; object-fit: contain; }
   button{ padding:10px 14px; border-radius:6px; border:none; background:#222; color:white; font-weight:bold; cursor:pointer; }
   .active{ background:#00ffcc !important; color:#000 !important; }
-  /* Mira redesenhada para precisão absoluta */
   #cross{ 
     position:absolute; top:50%; left:50%; width:30px; height:30px; 
     transform:translate(-50%,-50%); border:2px solid #00ffcc; 
@@ -37,7 +35,7 @@
 </div>
 
 <div id="display">AGUARDANDO...</div>
-<div id="stats" class="info">ESTABILIDADE: 0% | SINCRONIA: OK</div>
+<div id="stats" class="info">ESTABILIDADE: 0% | AUDIO: PRONTO</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -56,34 +54,50 @@ navigator.mediaDevices.getUserMedia({video:{facingMode:"environment", width: {id
     video.srcObject = s;
 });
 
+// FUNÇÃO DE VOZ REFORMULADA PARA MAIOR COMPATIBILIDADE
+function speak(t) {
+    if(!isVoice) return;
+    
+    // Cancela qualquer fala anterior imediatamente
+    window.speechSynthesis.cancel();
+    
+    const msg = new SpeechSynthesisUtterance(t);
+    msg.lang = 'pt-BR';
+    msg.rate = 1.3; // Velocidade ligeiramente maior para fluidez
+    msg.pitch = 1.0;
+    
+    // Verificação de segurança: Só fala se o visor ainda mostrar essa cor
+    setTimeout(() => {
+        if(display.innerText === t) {
+            window.speechSynthesis.speak(msg);
+        }
+    }, 50); 
+}
+
 function calibrate() {
     const data = getCenterColor();
     offset = {r: data.r, g: data.g, b: data.b};
-    speak("Calibrado");
+    
+    // "Despertar" obrigatório para o navegador liberar o som
+    const wakeUp = new SpeechSynthesisUtterance("Calibrado");
+    wakeUp.lang = 'pt-BR';
+    window.speechSynthesis.speak(wakeUp);
 }
 
 function getCenterColor() {
-    // AJUSTE DO PONTO 1: Sincronia de coordenadas
-    // Garantimos que o canvas tem o tamanho real do stream de vídeo
     if (canvas.width !== video.videoWidth) {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
     }
-    
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // Pegamos exatamente o centro matemático do frame de vídeo
     const x = canvas.width / 2;
     const y = canvas.height / 2;
-    
-    // Leitura em pequena grade para evitar ruído, mas centralizada no ponto
     const d = ctx.getImageData(x - 2, y - 2, 4, 4).data;
     let r=0, g=0, b=0;
     for(let i=0; i<d.length; i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
     return { r: r/4, g: g/4, b: b/4 };
 }
 
-// Sua lógica de interpretação preservada integralmente
 function solveColor(r, g, b) {
     let nr = (r * 255) / (offset.r || 255);
     let ng = (g * 255) / (offset.g || 255);
@@ -98,6 +112,7 @@ function solveColor(r, g, b) {
         h*=60;
     }
 
+    // Lógica de interpretação mantida conforme aprovado por você
     if (l < 0.18) return "Preto";
     if (s < 0.12) return (l > 0.7) ? "Branco" : "Cinza";
     if (h < 15 || h > 345) return (l < 0.35) ? "Vermelho Escuro" : "Vermelho";
@@ -117,44 +132,26 @@ function mainLoop() {
         const colorName = solveColor(rgb.r, rgb.g, rgb.b);
 
         if(isUniv) {
-            // Atualiza o visor IMEDIATAMENTE
             display.innerText = colorName;
 
-            // AJUSTE DO PONTO 2: Sincronia visor x áudio
             if(colorName === lastColor && colorName !== "Analizando...") {
                 stableCount++;
-                // Só fala se a cor estiver estável e for a mesma que está no visor
-                if(stableCount === 25) {
+                // Aguarda estabilidade para evitar falar cores de transição
+                if(stableCount === 20) {
                     speak(colorName);
                 }
             } else {
                 lastColor = colorName;
                 stableCount = 0;
-                // Se a cor mudou, cancelamos qualquer fala pendente da cor antiga
+                // Se a cor mudou no visor, silencia o anterior imediatamente
                 if(window.speechSynthesis.speaking) window.speechSynthesis.cancel();
             }
-            stats.innerText = `ESTABILIDADE: ${Math.min(100, stableCount*4)}% | R:${Math.round(rgb.r)} G:${Math.round(rgb.g)}`;
+            stats.innerText = `ESTABILIDADE: ${Math.min(100, stableCount*5)}% | R:${Math.round(rgb.r)} G:${Math.round(rgb.g)}`;
         } else {
             display.innerText = `RGB: ${Math.round(rgb.r)},${Math.round(rgb.g)},${Math.round(rgb.b)}`;
         }
     }
     requestAnimationFrame(mainLoop);
-}
-
-function speak(t) {
-    if(!isVoice) return;
-    
-    // Limpeza radical da fila antes de falar a cor atual
-    window.speechSynthesis.cancel();
-    
-    const msg = new SpeechSynthesisUtterance(t);
-    msg.lang = 'pt-BR';
-    msg.rate = 1.2;
-    
-    // Verificação extra: o áudio só sai se o texto no visor ainda for o mesmo
-    if(display.innerText === t) {
-        window.speechSynthesis.speak(msg);
-    }
 }
 
 function toggleUniv() { 
@@ -167,6 +164,7 @@ function toggleUniv() {
 function toggleVoice() { 
     isVoice = !isVoice; 
     document.getElementById('btnV').classList.toggle('active');
+    document.getElementById('btnV').innerText = isVoice ? "🔊 ÁUDIO: ON" : "🔇 ÁUDIO: OFF";
     if(!isVoice) window.speechSynthesis.cancel();
 }
 
