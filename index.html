@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - v8.8 Frame Lock</title>
+<title>ColorMatch Pro - v8.9 Standard Gauge</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
   #header{ padding: 12px; background: #0a0a0a; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid #1a1a1a; }
@@ -16,17 +16,28 @@
   #cross{ 
     position:absolute; top:50%; left:50%; 
     transform:translate(-50%,-50%); 
-    border:3px solid rgba(255,255,255,0.2); 
     border-radius: 50%; pointer-events:none; z-index: 10;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
-  /* Mira de 12cm agora serve como guia de preenchimento */
-  .cross-locked { width: 130px; height: 130px; border: 4px dashed rgba(255,255,255,0.5); }
-  .cross-free { width: 30px; height: 30px; border: 2px solid #00ffcc; }
-  .cross-valid { border: 4px solid #00ffcc !important; box-shadow: 0 0 40px #00ffcc; background: rgba(0,255,204,0.1); }
+  /* PADRONIZAÇÃO FÍSICA: 35% da largura da tela independente do dispositivo */
+  .cross-locked { 
+    width: 35vw; 
+    height: 35vw; 
+    border: 5px dashed rgba(255,255,255,0.4); 
+  }
+  .cross-free { 
+    width: 8vw; 
+    height: 8vw; 
+    border: 2px solid #00ffcc; 
+  }
+  .cross-valid { 
+    border: 6px solid #00ffcc !important; 
+    box-shadow: 0 0 50px #00ffcc; 
+    background: rgba(0,255,204,0.15); 
+  }
 
   #display{ font-size: 48px; font-weight: 900; color: #444; margin: 15px 0; height: 60px; text-transform: uppercase; }
-  .display-valid { color: #00ffcc !important; }
+  .display-valid { color: #00ffcc !important; text-shadow: 0 0 10px rgba(0,255,204,0.5); }
   #status-bar { font-size: 10px; color: #ff3366; font-weight: bold; height: 20px; letter-spacing: 1px; }
 </style>
 </head>
@@ -35,7 +46,7 @@
 <div id="header">
   <button onclick="toggleUniv()" id="btnU">SISTEMA: OFF</button>
   <button onclick="toggleLock()" id="btnL" class="lock-active">TRAVA 12CM: ON</button>
-  <button onclick="calibrate()">RE-CALIBRAR</button>
+  <button onclick="calibrate()">CALIBRAR BRANCO</button>
   <button onclick="toggleVoice()" id="btnV" class="active">ÁUDIO</button>
 </div>
 
@@ -44,8 +55,8 @@
   <div id="cross" class="cross-locked"></div>
 </div>
 
-<div id="status-bar">AGUARDANDO PREENCHIMENTO</div>
-<div id="display">---</div>
+<div id="status-bar">AGUARDANDO COBERTURA TOTAL</div>
+<div id="display">PRONTO</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -68,17 +79,18 @@ function speak(t) {
     if(!isVoice || !isUniv) return;
     window.speechSynthesis.cancel();
     const msg = new SpeechSynthesisUtterance(t);
-    msg.lang = 'pt-BR'; msg.rate = 1.6;
+    msg.lang = 'pt-BR'; msg.rate = 1.7;
     window.speechSynthesis.speak(msg);
 }
 
 function toggleLock() {
     isLocked = !isLocked;
-    document.getElementById('btnL').classList.toggle('lock-active');
-    document.getElementById('btnL').innerText = isLocked ? "TRAVA 12CM: ON" : "TRAVA 12CM: OFF";
+    const btn = document.getElementById('btnL');
+    btn.classList.toggle('lock-active');
+    btn.innerText = isLocked ? "TRAVA 12CM: ON" : "TRAVA 12CM: OFF";
     cross.className = isLocked ? "cross-locked" : "cross-free";
     resetSystem();
-    speak(isLocked ? "Modo aproximação ativado" : "Modo livre");
+    speak(isLocked ? "Modo aproximação" : "Modo livre");
 }
 
 function resetSystem() {
@@ -102,11 +114,11 @@ function getPixelData(x, y) {
     const d = ctx.getImageData(x - 5, y - 5, 10, 10).data;
     let r=0, g=0, b=0;
     for(let i=0; i<d.length; i+=4){ r += d[i]; g += d[i+1]; b += d[i+2]; }
-    return { r: r/(d.length/4), g: g/(d.length/4), b: b/(d.length/4) };
+    const total = d.length/4;
+    return { r: r/total, g: g/total, b: b/total };
 }
 
 function solveColor(r, g, b) {
-    // CORAÇÃO (MODO UNIVERSAL)
     let nr = (r / (offset.r || 255)) * 255;
     let ng = (g / (offset.g || 255)) * 255;
     let nb = (b / (offset.b || 255)) * 255;
@@ -116,7 +128,6 @@ function solveColor(r, g, b) {
     const chroma = max - min;
     const brightness = (nr + ng + nb) / 3;
 
-    // MOTOR ESPECTRAL
     let h = 0;
     if (chroma > 0) {
         if (max === nr) h = (ng - nb) / chroma + (ng < nb ? 6 : 0);
@@ -150,24 +161,27 @@ function mainLoop() {
     if(video.videoWidth > 0) {
         const centerX = video.videoWidth / 2;
         const centerY = video.videoHeight / 2;
-        const radius = isLocked ? 60 : 10; // Raio da mira
+        
+        // Calculamos o raio baseado no tamanho proporcional da mira (vw)
+        const gaugeSize = (window.innerWidth * 0.35) * (video.videoWidth / window.innerWidth);
+        const radius = isLocked ? gaugeSize / 2 : 15;
 
-        // Captura o Centro
         const center = getPixelData(centerX, centerY);
 
         if (isLocked) {
-            // VALIDAÇÃO DE PREENCHIMENTO (Top, Bottom, Left, Right)
+            // Checagem de 4 pontos cardeais na borda da mira proporcional
             const t = getPixelData(centerX, centerY - radius);
             const b = getPixelData(centerX, centerY + radius);
             const l = getPixelData(centerX - radius, centerY);
             const r = getPixelData(centerX + radius, centerY);
 
-            // Verifica se a cor nas bordas é similar ao centro (tolerância de 15%)
             const diff = (c1, c2) => Math.abs(c1.r - c2.r) + Math.abs(c1.g - c2.g) + Math.abs(c1.b - c2.b);
+            // Tolerância de similaridade de cor para validar preenchimento
             const isFilled = [t, b, l, r].every(p => diff(center, p) < 45);
 
             if (!isFilled) {
-                statusBar.innerText = "COBRA TODO O CÍRCULO COM A COR";
+                statusBar.innerText = "COBRA O CÍRCULO COM A COR";
+                statusBar.style.color = "#ff3366";
                 display.innerText = "AGUARDANDO";
                 cross.classList.remove("cross-valid");
                 requestAnimationFrame(mainLoop);
@@ -176,12 +190,13 @@ function mainLoop() {
         }
 
         const colorName = solveColor(center.r, center.g, center.b);
-        statusBar.innerText = isLocked ? "FOCO CONFIRMADO" : "MODO LIVRE";
+        statusBar.innerText = isLocked ? "FOCO ESTÁVEL" : "MODO LIVRE";
+        statusBar.style.color = "#00ffcc";
         cross.classList.add("cross-valid");
 
         if(isUniv) {
             history.push(colorName);
-            if (history.length > 15) history.shift();
+            if (history.length > 20) history.shift();
             const stableColor = history.sort((a,b) =>
                 history.filter(v => v===a).length - history.filter(v => v===b).length
             ).pop();
