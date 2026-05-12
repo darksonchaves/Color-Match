@@ -3,38 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - v9.5 Architecture</title>
+<title>ColorMatch Pro - v10 Enterprise</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
-  #header{ padding: 12px; background: #0a0a0a; display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; border-bottom: 2px solid #1a1a1a; }
+  #header{ padding: 10px; background: #0a0a0a; display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; border-bottom: 2px solid #1a1a1a; }
   #video-container { position: relative; width: 100%; height: 55vh; background: #000; }
   video{ width: 100%; height: 100%; object-fit: contain; }
   
-  button{ padding:8px 10px; border-radius:6px; border:1px solid #333; background:#111; color:#666; font-weight:bold; font-size: 10px; cursor:pointer; }
-  .active-mode{ background:#00ffcc !important; color:#000 !important; border: 1px solid #00ffcc; }
-  .univ-active{ border-color: #ffaa00 !important; color: #ffaa00 !important; }
-  .univ-on{ background: #ffaa00 !important; color: #000 !important; }
+  button{ padding:8px 6px; border-radius:4px; border:1px solid #444; background:#111; color:#aaa; font-weight:bold; font-size: 9px; cursor:pointer; min-width: 80px; }
+  .active-btn{ background:#00ffcc !important; color:#000 !important; border-color:#00ffcc; }
+  .univ-on{ background: #ffaa00 !important; color: #000 !important; border-color: #ffaa00; }
 
   #cross{ 
     position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); 
     border-radius: 50%; pointer-events:none; z-index: 10;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
   }
-  /* Estilos Dinâmicos da Mira */
-  .cross-livre { width: 10vw; height: 10vw; border: 2px solid #fff; }
-  .cross-padrao { width: 40vw; height: 40vw; border: 3px dashed rgba(255,255,255,0.4); }
-  .valid { border: 5px solid #00ffcc !important; box-shadow: 0 0 30px #00ffcc; }
+  .cross-livre { width: 40px; height: 40px; border: 2px solid #00ffcc; box-shadow: 0 0 10px #00ffcc; }
+  .cross-padrao { width: 45vw; height: 45vw; border: 3px dashed rgba(255,255,255,0.5); }
+  .is-valid { border: 6px solid #00ffcc !important; background: rgba(0,255,204,0.1); }
 
-  #display{ font-size: 45px; font-weight: 900; color: #555; margin: 15px 0; height: 55px; text-transform: uppercase; }
-  .text-valid { color: #00ffcc !important; }
-  #status-bar { font-size: 11px; color: #ff3366; font-weight: bold; height: 20px; text-transform: uppercase; }
+  #display{ font-size: 48px; font-weight: 900; color: #333; margin: 10px 0; height: 60px; text-transform: uppercase; letter-spacing: 2px; }
+  .active-text { color: #00ffcc !important; text-shadow: 0 0 15px rgba(0,255,204,0.6); }
+  #status{ font-size: 10px; color: #ff3366; font-weight: bold; height: 15px; letter-spacing: 1px; }
 </style>
 </head>
 <body>
 
 <div id="header">
-  <button id="btnUniv" onclick="toggleUniv()">MODO UNIVERSAL: OFF</button>
-  <button id="btnLivre" onclick="setMode('LIVRE')" class="active-mode">MOV. LIVRE</button>
+  <button id="btnUniv" onclick="toggleUniv()">UNIVERSAL: OFF</button>
+  <button id="btnLivre" onclick="setMode('LIVRE')" class="active-btn">MOV. LIVRE</button>
   <button id="btnPadrao" onclick="setMode('PADRAO')">MOV. PADRÃO</button>
   <button onclick="calibrate()">CALIBRAR</button>
 </div>
@@ -44,7 +42,7 @@
   <div id="cross" class="cross-livre"></div>
 </div>
 
-<div id="status-bar">SISTEMA INICIALIZADO</div>
+<div id="status">SISTEMA ATIVO</div>
 <div id="display">---</div>
 
 <canvas id="c" style="display:none;"></canvas>
@@ -52,45 +50,41 @@
 <script>
 const video = document.getElementById('v');
 const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', {willReadFrequently: true});
 const display = document.getElementById('display');
-const statusBar = document.getElementById('status-bar');
+const status = document.getElementById('status');
 const cross = document.getElementById('cross');
 
-let currentMode = 'LIVRE'; // LIVRE ou PADRAO
-let isUniversal = false;
-let lastSpeech = "", stableCount = 0, history = [];
+let mode = 'LIVRE', isUniv = false, lastAnnounced = "", history = [];
 let offset = {r:255, g:255, b:255};
 
-navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(s => video.srcObject = s);
+navigator.mediaDevices.getUserMedia({video:{facingMode:"environment", width:1280}}).then(s => video.srcObject = s);
 
 function setMode(m) {
-    currentMode = m;
-    document.getElementById('btnLivre').classList.toggle('active-mode', m === 'LIVRE');
-    document.getElementById('btnPadrao').classList.toggle('active-mode', m === 'PADRAO');
-    cross.className = (m === 'LIVRE') ? 'cross-livre' : 'cross-padrao';
-    history = [];
-    speak(m === 'LIVRE' ? "Movimento livre" : "Movimento padrão");
+    mode = m;
+    document.getElementById('btnLivre').className = (m==='LIVRE'?'active-btn':'');
+    document.getElementById('btnPadrao').className = (m==='PADRAO'?'active-btn':'');
+    cross.className = (m==='LIVRE'?'cross-livre':'cross-padrao');
+    announce(m === 'LIVRE' ? "Modo Livre" : "Modo Padrão");
 }
 
 function toggleUniv() {
-    isUniversal = !isUniversal;
-    const btn = document.getElementById('btnUniv');
-    btn.classList.toggle('univ-on', isUniversal);
-    btn.innerText = `MODO UNIVERSAL: ${isUniversal ? 'ON' : 'OFF'}`;
-    speak(isUniversal ? "Espectro universal ativo" : "Leitura bruta");
+    isUniv = !isUniv;
+    document.getElementById('btnUniv').className = (isUniv?'univ-on':'');
+    document.getElementById('btnUniv').innerText = `UNIVERSAL: ${isUniv?'ON':'OFF'}`;
+    announce(isUniv ? "Universal Ativado" : "Universal Desativado");
 }
 
-function speak(t) {
-    if(!t || t === lastSpeech) return;
+function announce(t) {
+    if(t === lastAnnounced || !t) return;
     window.speechSynthesis.cancel();
-    const m = new SpeechSynthesisUtterance(t);
-    m.lang = 'pt-BR'; m.rate = 1.8;
-    window.speechSynthesis.speak(m);
-    lastSpeech = t;
+    const msg = new SpeechSynthesisUtterance(t);
+    msg.lang = 'pt-BR'; msg.rate = 1.7;
+    window.speechSynthesis.speak(msg);
+    lastAnnounced = t;
 }
 
-function getPixel(x, y, s = 10) {
+function getColor(x, y, s=15) {
     if (canvas.width !== video.videoWidth) { canvas.width = video.videoWidth; canvas.height = video.videoHeight; }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const d = ctx.getImageData(x-(s/2), y-(s/2), s, s).data;
@@ -99,81 +93,73 @@ function getPixel(x, y, s = 10) {
     return { r: r/(d.length/4), g: g/(d.length/4), b: b/(d.length/4) };
 }
 
-function solveColor(rgb) {
+function processColor(rgb) {
     let r = rgb.r, g = rgb.g, b = rgb.b;
-    // Se UNIVERSAL está ON, aplica calibração
-    if(isUniversal) {
-        r = (r / offset.r) * 255;
-        g = (g / offset.g) * 255;
-        b = (b / offset.b) * 255;
-    }
-
+    if(isUniv) { r=(r/offset.r)*255; g=(g/offset.g)*255; b=(b/offset.b)*255; }
+    
     const max = Math.max(r,g,b), min = Math.min(r,g,b), chroma = max-min, bri = (r+g+b)/3;
     let h = 0;
-    if(chroma > 0) {
+    if(chroma > 5) {
         if(max===r) h=(g-b)/chroma+(g<b?6:0); else if(max===g) h=(b-r)/chroma+2; else h=(r-g)/chroma+4;
         h*=60;
     }
 
-    // LÓGICA DE CORTE MELHORADA (Evita o "Preto" falso em reflexos)
-    if (chroma < 15) {
-        if (bri < 25) return "Preto"; // Só fica preto se estiver realmente escuro
-        if (bri > 220) return "Branco";
+    if (chroma < 12) {
+        if (bri < 30) return "Preto";
+        if (bri > 210) return "Branco";
         return "Cinza";
     }
 
-    if (h < 20 || h > 340) return (nb > nr * 0.5) ? "Rosa" : (bri < 70 ? "Vermelho Escuro" : "Vermelho");
-    if (h >= 20 && h < 48) return (bri < 60) ? "Marrom" : "Laranja";
-    if (h >= 48 && h < 65) return "Amarelo";
-    if (h >= 65 && h < 160) return (bri < 75) ? "Verde Escuro" : "Verde";
-    if (h >= 160 && h < 260) return "Azul";
-    if (h >= 260 && h < 320) return "Roxo";
+    if (h < 25 || h > 335) return (b > r * 0.6) ? "Rosa" : (bri < 75 ? "Vermelho Escuro" : "Vermelho");
+    if (h >= 25 && h < 50) return (bri < 65) ? "Marrom" : "Laranja";
+    if (h >= 50 && h < 70) return "Amarelo";
+    if (h >= 70 && h < 165) return (bri < 80) ? "Verde Escuro" : "Verde";
+    if (h >= 165 && h < 260) return "Azul";
+    if (h >= 260 && h < 315) return "Roxo";
     return "Rosa";
 }
 
-function mainLoop() {
-    const cX = video.videoWidth/2, cY = video.videoHeight/2;
-    const centerRGB = getPixel(cX, cY, 20);
+function loop() {
+    if(video.videoWidth > 0) {
+        const cX = video.videoWidth/2, cY = video.videoHeight/2;
+        const mainRGB = getColor(cX, cY, 20);
 
-    if (currentMode === 'PADRAO') {
-        const radius = (window.innerWidth * 0.40) * (video.videoWidth / window.innerWidth) / 2;
-        const samples = [getPixel(cX, cY-radius), getPixel(cX, cY+radius), getPixel(cX-radius, cY), getPixel(cX+radius, cY)];
-        const isFilled = samples.every(s => Math.abs(s.r - centerRGB.r) + Math.abs(s.g - centerRGB.g) + Math.abs(s.b - centerRGB.b) < 100);
+        if (mode === 'PADRAO') {
+            const rad = (window.innerWidth * 0.45) * (video.videoWidth/window.innerWidth) / 2;
+            const samples = [getColor(cX, cY-rad, 10), getColor(cX, cY+rad, 10), getColor(cX-rad, cY, 10), getColor(cX+rad, cY, 10)];
+            const diff = (c) => Math.abs(c.r-mainRGB.r) + Math.abs(c.g-mainRGB.g) + Math.abs(c.b-mainRGB.b);
+            const score = samples.filter(s => diff(s) < 120).length; // Média estatística (3 de 4 pontos)
 
-        if (!isFilled) {
-            statusBar.innerText = "PREENCHA O CÍRCULO";
-            display.innerText = "AGUARDANDO";
-            cross.classList.remove("valid");
-            requestAnimationFrame(mainLoop); return;
+            if (score < 3) {
+                status.innerText = "ALINHE O OBJETO"; status.style.color = "#ff3366";
+                display.innerText = "AGUARDANDO"; display.className = "";
+                cross.classList.remove("is-valid");
+                requestAnimationFrame(loop); return;
+            }
         }
+
+        const res = processColor(mainRGB);
+        display.innerText = res;
+        display.className = "active-text";
+        status.innerText = (mode==='LIVRE'?"LEITURA DINÂMICA":"PADRÃO 12CM");
+        status.style.color = "#00ffcc";
+        cross.classList.add("is-valid");
+
+        history.push(res);
+        if(history.length > 6) history.shift();
+        const stable = history.sort((a,b) => history.filter(v=>v===a).length - history.filter(v=>v===b).length).pop();
+        if(stable === res) announce(res);
     }
-
-    const result = solveColor(centerRGB);
-    cross.classList.add("valid");
-    statusBar.innerText = (currentMode === 'LIVRE') ? "LEITURA LIVRE" : "PADRÃO 12CM";
-    
-    display.innerText = result;
-    display.classList.add("text-valid");
-
-    history.push(result);
-    if(history.length > 10) history.shift();
-    const stable = history.sort((a,b) => history.filter(v=>v===a).length - history.filter(v=>v===b).length).pop();
-    
-    if(stable === result) {
-        stableCount++;
-        if(stableCount === 15) speak(result);
-    } else { stableCount = 0; }
-
-    requestAnimationFrame(mainLoop);
+    requestAnimationFrame(loop);
 }
 
 function calibrate() {
-    const d = getPixel(video.videoWidth/2, video.videoHeight/2, 40);
-    offset = {r:d.r, g:d.g, b:d.b};
-    speak("Calibrado");
+    const d = getColor(video.videoWidth/2, video.videoHeight/2, 40);
+    offset = {r:d.r||255, g:d.g||255, b:d.b||255};
+    announce("Calibrado");
 }
 
-requestAnimationFrame(mainLoop);
+loop();
 </script>
 </body>
 </html>
