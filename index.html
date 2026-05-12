@@ -3,37 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - v8.9.1 Audio Fix</title>
+<title>ColorMatch Pro - v9.0 Final Accuracy</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
-  #header{ padding: 12px; background: #0a0a0a; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid #1a1a1a; }
+  #header{ padding: 12px; background: #0a0a0a; display: flex; justify-content: center; gap: 8px; border-bottom: 2px solid #1a1a1a; }
   #video-container { position: relative; width: 100%; height: 60vh; background: #000; }
   video{ width: 100%; height: 100%; object-fit: contain; }
-  button{ padding:10px 12px; border-radius:8px; border:none; background:#1a1a1a; color:#888; font-weight:bold; cursor:pointer; border: 1px solid #333; font-size: 10px; }
+  button{ padding:10px 12px; border-radius:8px; border:none; background:#1a1a1a; color:#888; font-weight:bold; font-size: 10px; border: 1px solid #333; }
   .active{ background:#00ffcc !important; color:#000 !important; border: 1px solid #00ffcc; }
-  .lock-active { background:#ff3366 !important; color:#fff !important; border: 1px solid #ff3366; }
   
   #cross{ 
     position:absolute; top:50%; left:50%; 
     transform:translate(-50%,-50%); 
     border-radius: 50%; pointer-events:none; z-index: 10;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease-in-out;
   }
-  .cross-locked { width: 35vw; height: 35vw; border: 5px dashed rgba(255,255,255,0.4); }
-  .cross-free { width: 8vw; height: 8vw; border: 2px solid #00ffcc; }
-  .cross-valid { border: 6px solid #00ffcc !important; box-shadow: 0 0 50px #00ffcc; background: rgba(0,255,204,0.15); }
+  .cross-locked { width: 40vw; height: 40vw; border: 4px dashed rgba(255,255,255,0.3); }
+  .cross-valid { border: 6px solid #00ffcc !important; box-shadow: 0 0 40px #00ffcc; background: rgba(0,255,204,0.1); }
 
-  #display{ font-size: 48px; font-weight: 900; color: #444; margin: 15px 0; height: 60px; text-transform: uppercase; }
-  .display-valid { color: #00ffcc !important; text-shadow: 0 0 10px rgba(0,255,204,0.5); }
-  #status-bar { font-size: 10px; color: #ff3366; font-weight: bold; height: 20px; letter-spacing: 1px; }
+  #display{ font-size: 52px; font-weight: 900; color: #444; margin: 10px 0; height: 65px; text-transform: uppercase; }
+  .display-valid { color: #00ffcc !important; }
+  #status-bar { font-size: 11px; color: #ff3366; font-weight: bold; height: 20px; letter-spacing: 1px; }
 </style>
 </head>
 <body>
 
 <div id="header">
   <button onclick="toggleUniv()" id="btnU">SISTEMA: OFF</button>
-  <button onclick="toggleLock()" id="btnL" class="lock-active">TRAVA 12CM: ON</button>
-  <button onclick="calibrate()">CALIBRAR BRANCO</button>
+  <button onclick="calibrate()">CALIBRAR</button>
   <button onclick="toggleVoice()" id="btnV" class="active">ÁUDIO</button>
 </div>
 
@@ -42,8 +39,8 @@
   <div id="cross" class="cross-locked"></div>
 </div>
 
-<div id="status-bar">AGUARDANDO COBERTURA TOTAL</div>
-<div id="display">PRONTO</div>
+<div id="status-bar">APROXIME DO OBJETO</div>
+<div id="display">---</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -55,66 +52,38 @@ const display = document.getElementById('display');
 const statusBar = document.getElementById('status-bar');
 const cross = document.getElementById('cross');
 
-let isUniv = false, isVoice = true, isLocked = true, lastColor = "", stableCount = 0;
+let isUniv = false, isVoice = true, lastSpeech = "", stableCount = 0;
 let offset = {r:255, g:255, b:255}, history = []; 
 
 navigator.mediaDevices.getUserMedia({
     video:{ facingMode:"environment", width: {ideal: 1280} }
 }).then(s => { video.srcObject = s; });
 
-// Função de fala otimizada para evitar travamentos
 function speak(t) {
-    if(!isVoice || !isUniv || !t || t === "---" || t === "AGUARDANDO") return;
-    
-    window.speechSynthesis.cancel(); // Limpa fila anterior
+    if(!isVoice || !isUniv || t === lastSpeech) return;
+    window.speechSynthesis.cancel();
     const msg = new SpeechSynthesisUtterance(t);
-    msg.lang = 'pt-BR';
-    msg.rate = 1.7;
-    msg.volume = 1.0;
-    
-    // Forçar inicialização do motor de voz
+    msg.lang = 'pt-BR'; msg.rate = 1.8;
     window.speechSynthesis.speak(msg);
+    lastSpeech = t;
 }
 
-function toggleLock() {
-    isLocked = !isLocked;
-    document.getElementById('btnL').innerText = isLocked ? "TRAVA 12CM: ON" : "TRAVA 12CM: OFF";
-    document.getElementById('btnL').classList.toggle('lock-active');
-    cross.className = isLocked ? "cross-locked" : "cross-free";
-    resetSystem();
-    speak(isLocked ? "Modo aproximação" : "Modo livre");
-}
-
-function resetSystem() {
-    history = [];
-    lastColor = "";
-    stableCount = 0;
-    display.innerText = "STANDBY";
-    display.classList.remove("display-valid");
-    cross.classList.remove("cross-valid");
-}
-
-function calibrate() {
-    const data = getPixelData(video.videoWidth/2, video.videoHeight/2);
-    offset = {r: data.r, g: data.g, b: data.b};
-    speak("Calibrado");
-}
-
-function getPixelData(x, y) {
+function getPixelData(x, y, size = 15) {
     if (canvas.width !== video.videoWidth) {
         canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const d = ctx.getImageData(x - 5, y - 5, 10, 10).data;
+    const d = ctx.getImageData(x - (size/2), y - (size/2), size, size).data;
     let r=0, g=0, b=0;
     for(let i=0; i<d.length; i+=4){ r += d[i]; g += d[i+1]; b += d[i+2]; }
-    return { r: r/(d.length/4), g: g/(d.length/4), b: b/(d.length/4) };
+    const total = d.length/4;
+    return { r: r/total, g: g/total, b: b/total };
 }
 
 function solveColor(r, g, b) {
-    let nr = (r / (offset.r || 255)) * 255;
-    let ng = (g / (offset.g || 255)) * 255;
-    let nb = (b / (offset.b || 255)) * 255;
+    let nr = (r / offset.r) * 255;
+    let ng = (g / offset.g) * 255;
+    let nb = (b / offset.b) * 255;
     const max = Math.max(nr, ng, nb), min = Math.min(nr, ng, nb), chroma = max - min, br = (nr+ng+nb)/3;
     let h = 0;
     if (chroma > 0) {
@@ -123,69 +92,71 @@ function solveColor(r, g, b) {
         else h = (nr - ng) / chroma + 4;
         h *= 60;
     }
-    if (chroma < 18) {
-        if (br < 45) return "Preto";
-        if (br > 210) return "Branco";
+
+    // AJUSTE DE SENSIBILIDADE ESPECTRAL v9.0
+    if (chroma < 20) {
+        if (br < 40) return "Preto";
+        if (br > 215) return "Branco";
         return "Cinza";
     }
-    if (h < 22 || h > 338) return (nb > nr * 0.52) ? "Rosa" : (br < 85 ? "Vermelho Escuro" : "Vermelho");
-    if (h >= 22 && h < 46) return (nb > ng * 1.1) ? "Rosa" : (br < 75 ? "Marrom" : "Laranja");
-    if (h >= 46 && h < 65) return "Amarelo";
-    if (h >= 65 && h < 158) return (br < 82) ? "Verde Escuro" : "Verde";
-    if (h >= 158 && h < 258) return "Azul";
-    if (h >= 258 && h < 325) return "Roxo";
+
+    if (h < 20 || h > 340) return (nb > nr * 0.55) ? "Rosa" : (br < 80 ? "Vermelho Escuro" : "Vermelho");
+    if (h >= 20 && h < 48) return (br < 70) ? "Marrom" : "Laranja";
+    if (h >= 48 && h < 68) return "Amarelo";
+    if (h >= 68 && h < 165) return (br < 80) ? "Verde Escuro" : "Verde";
+    if (h >= 165 && h < 265) return "Azul";
+    if (h >= 265 && h < 320) return "Roxo";
     return "Rosa";
 }
 
 function mainLoop() {
-    if(video.videoWidth > 0) {
-        const centerX = video.videoWidth / 2, centerY = video.videoHeight / 2;
-        const gaugeSize = (window.innerWidth * 0.35) * (video.videoWidth / window.innerWidth);
-        const radius = isLocked ? gaugeSize / 2 : 15;
-        const center = getPixelData(centerX, centerY);
+    if(video.videoWidth > 0 && isUniv) {
+        const cX = video.videoWidth / 2, cY = video.videoHeight / 2;
+        const gSize = (window.innerWidth * 0.40) * (video.videoWidth / window.innerWidth);
+        const radius = gSize / 2;
 
-        if (isLocked) {
-            const t = getPixelData(centerX, centerY - radius), b = getPixelData(centerX, centerY + radius);
-            const l = getPixelData(centerX - radius, centerY), r = getPixelData(centerX + radius, centerY);
-            const diff = (c1, c2) => Math.abs(c1.r - c2.r) + Math.abs(c1.g - c2.g) + Math.abs(c1.b - c2.b);
-            const isFilled = [t, b, l, r].every(p => diff(center, p) < 45);
+        const center = getPixelData(cX, cY, 20);
+        
+        // Validação mais tolerante (Amostragem em Cruz)
+        const pts = [
+            getPixelData(cX, cY - radius, 10), getPixelData(cX, cY + radius, 10),
+            getPixelData(cX - radius, cY, 10), getPixelData(cX + radius, cY, 10)
+        ];
 
-            if (!isFilled) {
-                statusBar.innerText = "COBRA O CÍRCULO COM A COR";
-                statusBar.style.color = "#ff3366";
-                display.innerText = "AGUARDANDO";
-                cross.classList.remove("cross-valid");
-                requestAnimationFrame(mainLoop);
-                return;
-            }
+        const diff = (c1, c2) => Math.abs(c1.r - c2.r) + Math.abs(c1.g - c2.g) + Math.abs(c1.b - c2.b);
+        // Aumentei a tolerância de 45 para 75 para aceitar sombras em tecidos
+        const isFilled = pts.every(p => diff(center, p) < 75);
+
+        if (!isFilled) {
+            statusBar.innerText = "COBRA O CÍRCULO TOTALMENTE";
+            display.innerText = "AGUARDANDO";
+            display.classList.remove("display-valid");
+            cross.classList.remove("cross-valid");
+            stableCount = 0;
+            requestAnimationFrame(mainLoop);
+            return;
         }
 
         const colorName = solveColor(center.r, center.g, center.b);
-        statusBar.innerText = isLocked ? "FOCO ESTÁVEL" : "MODO LIVRE";
-        statusBar.style.color = "#00ffcc";
         cross.classList.add("cross-valid");
+        statusBar.innerText = "FOCO CONFIRMADO";
 
-        if(isUniv) {
-            history.push(colorName);
-            if (history.length > 15) history.shift();
-            
-            const stableColor = history.sort((a,b) =>
-                history.filter(v => v===a).length - history.filter(v => v===b).length
-            ).pop();
+        // Buffer reduzido para 8 para resposta instantânea
+        history.push(colorName);
+        if (history.length > 8) history.shift();
+        
+        const stableColor = history.sort((a,b) =>
+            history.filter(v => v===a).length - history.filter(v => v===b).length
+        ).pop();
 
-            display.innerText = stableColor;
-            display.classList.add("display-valid");
-            
-            // Lógica de áudio corrigida
-            if(stableColor === lastColor) {
-                stableCount++;
-                if(stableCount === 20) { // Dispara após estabilizar por ~20 frames
-                    speak(stableColor);
-                }
-            } else { 
-                lastColor = stableColor; 
-                stableCount = 0; 
-            }
+        display.innerText = stableColor;
+        display.classList.add("display-valid");
+        
+        if(stableColor === lastSpeech) {
+            stableCount = 0;
+        } else {
+            stableCount++;
+            if(stableCount >= 5) speak(stableColor); // Fala após 5 frames de estabilidade
         }
     }
     requestAnimationFrame(mainLoop);
@@ -194,11 +165,21 @@ function mainLoop() {
 function toggleUniv() { 
     isUniv = !isUniv; 
     document.getElementById('btnU').classList.toggle('active');
-    btnU.innerText = isUniv ? "SISTEMA: ON" : "SISTEMA: OFF";
-    if(isUniv) {
-        speak("Sistema iniciado");
-        resetSystem();
+    document.getElementById('btnU').innerText = isUniv ? "SISTEMA: ON" : "SISTEMA: OFF";
+    if(!isUniv) { 
+        display.innerText = "---"; 
+        statusBar.innerText = "SISTEMA DESLIGADO";
+        cross.classList.remove("cross-valid");
+    } else {
+        lastSpeech = "";
+        speak("Iniciado");
     }
+}
+
+function calibrate() {
+    const data = getPixelData(video.videoWidth/2, video.videoHeight/2, 30);
+    offset = {r: data.r, g: data.g, b: data.b};
+    speak("Calibrado");
 }
 
 function toggleVoice() { 
