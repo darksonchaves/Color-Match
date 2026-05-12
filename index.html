@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - v8.9 Standard Gauge</title>
+<title>ColorMatch Pro - v8.9.1 Audio Fix</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
   #header{ padding: 12px; background: #0a0a0a; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid #1a1a1a; }
@@ -17,24 +17,11 @@
     position:absolute; top:50%; left:50%; 
     transform:translate(-50%,-50%); 
     border-radius: 50%; pointer-events:none; z-index: 10;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.3s ease;
   }
-  /* PADRONIZAÇÃO FÍSICA: 35% da largura da tela independente do dispositivo */
-  .cross-locked { 
-    width: 35vw; 
-    height: 35vw; 
-    border: 5px dashed rgba(255,255,255,0.4); 
-  }
-  .cross-free { 
-    width: 8vw; 
-    height: 8vw; 
-    border: 2px solid #00ffcc; 
-  }
-  .cross-valid { 
-    border: 6px solid #00ffcc !important; 
-    box-shadow: 0 0 50px #00ffcc; 
-    background: rgba(0,255,204,0.15); 
-  }
+  .cross-locked { width: 35vw; height: 35vw; border: 5px dashed rgba(255,255,255,0.4); }
+  .cross-free { width: 8vw; height: 8vw; border: 2px solid #00ffcc; }
+  .cross-valid { border: 6px solid #00ffcc !important; box-shadow: 0 0 50px #00ffcc; background: rgba(0,255,204,0.15); }
 
   #display{ font-size: 48px; font-weight: 900; color: #444; margin: 15px 0; height: 60px; text-transform: uppercase; }
   .display-valid { color: #00ffcc !important; text-shadow: 0 0 10px rgba(0,255,204,0.5); }
@@ -75,19 +62,24 @@ navigator.mediaDevices.getUserMedia({
     video:{ facingMode:"environment", width: {ideal: 1280} }
 }).then(s => { video.srcObject = s; });
 
+// Função de fala otimizada para evitar travamentos
 function speak(t) {
-    if(!isVoice || !isUniv) return;
-    window.speechSynthesis.cancel();
+    if(!isVoice || !isUniv || !t || t === "---" || t === "AGUARDANDO") return;
+    
+    window.speechSynthesis.cancel(); // Limpa fila anterior
     const msg = new SpeechSynthesisUtterance(t);
-    msg.lang = 'pt-BR'; msg.rate = 1.7;
+    msg.lang = 'pt-BR';
+    msg.rate = 1.7;
+    msg.volume = 1.0;
+    
+    // Forçar inicialização do motor de voz
     window.speechSynthesis.speak(msg);
 }
 
 function toggleLock() {
     isLocked = !isLocked;
-    const btn = document.getElementById('btnL');
-    btn.classList.toggle('lock-active');
-    btn.innerText = isLocked ? "TRAVA 12CM: ON" : "TRAVA 12CM: OFF";
+    document.getElementById('btnL').innerText = isLocked ? "TRAVA 12CM: ON" : "TRAVA 12CM: OFF";
+    document.getElementById('btnL').classList.toggle('lock-active');
     cross.className = isLocked ? "cross-locked" : "cross-free";
     resetSystem();
     speak(isLocked ? "Modo aproximação" : "Modo livre");
@@ -95,6 +87,8 @@ function toggleLock() {
 
 function resetSystem() {
     history = [];
+    lastColor = "";
+    stableCount = 0;
     display.innerText = "STANDBY";
     display.classList.remove("display-valid");
     cross.classList.remove("cross-valid");
@@ -114,20 +108,14 @@ function getPixelData(x, y) {
     const d = ctx.getImageData(x - 5, y - 5, 10, 10).data;
     let r=0, g=0, b=0;
     for(let i=0; i<d.length; i+=4){ r += d[i]; g += d[i+1]; b += d[i+2]; }
-    const total = d.length/4;
-    return { r: r/total, g: g/total, b: b/total };
+    return { r: r/(d.length/4), g: g/(d.length/4), b: b/(d.length/4) };
 }
 
 function solveColor(r, g, b) {
     let nr = (r / (offset.r || 255)) * 255;
     let ng = (g / (offset.g || 255)) * 255;
     let nb = (b / (offset.b || 255)) * 255;
-
-    const max = Math.max(nr, ng, nb);
-    const min = Math.min(nr, ng, nb);
-    const chroma = max - min;
-    const brightness = (nr + ng + nb) / 3;
-
+    const max = Math.max(nr, ng, nb), min = Math.min(nr, ng, nb), chroma = max - min, br = (nr+ng+nb)/3;
     let h = 0;
     if (chroma > 0) {
         if (max === nr) h = (ng - nb) / chroma + (ng < nb ? 6 : 0);
@@ -135,23 +123,15 @@ function solveColor(r, g, b) {
         else h = (nr - ng) / chroma + 4;
         h *= 60;
     }
-
     if (chroma < 18) {
-        if (brightness < 45) return "Preto";
-        if (brightness > 210) return "Branco";
+        if (br < 45) return "Preto";
+        if (br > 210) return "Branco";
         return "Cinza";
     }
-
-    if (h < 22 || h > 338) {
-        if (nb > nr * 0.52) return "Rosa"; 
-        return (brightness < 85) ? "Vermelho Escuro" : "Vermelho";
-    }
-    if (h >= 22 && h < 46) {
-        if (nb > ng * 1.1) return "Rosa";
-        return (brightness < 75) ? "Marrom" : "Laranja";
-    }
+    if (h < 22 || h > 338) return (nb > nr * 0.52) ? "Rosa" : (br < 85 ? "Vermelho Escuro" : "Vermelho");
+    if (h >= 22 && h < 46) return (nb > ng * 1.1) ? "Rosa" : (br < 75 ? "Marrom" : "Laranja");
     if (h >= 46 && h < 65) return "Amarelo";
-    if (h >= 65 && h < 158) return (brightness < 82) ? "Verde Escuro" : "Verde";
+    if (h >= 65 && h < 158) return (br < 82) ? "Verde Escuro" : "Verde";
     if (h >= 158 && h < 258) return "Azul";
     if (h >= 258 && h < 325) return "Roxo";
     return "Rosa";
@@ -159,24 +139,15 @@ function solveColor(r, g, b) {
 
 function mainLoop() {
     if(video.videoWidth > 0) {
-        const centerX = video.videoWidth / 2;
-        const centerY = video.videoHeight / 2;
-        
-        // Calculamos o raio baseado no tamanho proporcional da mira (vw)
+        const centerX = video.videoWidth / 2, centerY = video.videoHeight / 2;
         const gaugeSize = (window.innerWidth * 0.35) * (video.videoWidth / window.innerWidth);
         const radius = isLocked ? gaugeSize / 2 : 15;
-
         const center = getPixelData(centerX, centerY);
 
         if (isLocked) {
-            // Checagem de 4 pontos cardeais na borda da mira proporcional
-            const t = getPixelData(centerX, centerY - radius);
-            const b = getPixelData(centerX, centerY + radius);
-            const l = getPixelData(centerX - radius, centerY);
-            const r = getPixelData(centerX + radius, centerY);
-
+            const t = getPixelData(centerX, centerY - radius), b = getPixelData(centerX, centerY + radius);
+            const l = getPixelData(centerX - radius, centerY), r = getPixelData(centerX + radius, centerY);
             const diff = (c1, c2) => Math.abs(c1.r - c2.r) + Math.abs(c1.g - c2.g) + Math.abs(c1.b - c2.b);
-            // Tolerância de similaridade de cor para validar preenchimento
             const isFilled = [t, b, l, r].every(p => diff(center, p) < 45);
 
             if (!isFilled) {
@@ -196,7 +167,8 @@ function mainLoop() {
 
         if(isUniv) {
             history.push(colorName);
-            if (history.length > 20) history.shift();
+            if (history.length > 15) history.shift();
+            
             const stableColor = history.sort((a,b) =>
                 history.filter(v => v===a).length - history.filter(v => v===b).length
             ).pop();
@@ -204,13 +176,34 @@ function mainLoop() {
             display.innerText = stableColor;
             display.classList.add("display-valid");
             
+            // Lógica de áudio corrigida
             if(stableColor === lastColor) {
                 stableCount++;
-                if(stableCount === 25) speak(stableColor);
-            } else { lastColor = stableColor; stableCount = 0; }
+                if(stableCount === 20) { // Dispara após estabilizar por ~20 frames
+                    speak(stableColor);
+                }
+            } else { 
+                lastColor = stableColor; 
+                stableCount = 0; 
+            }
         }
     }
     requestAnimationFrame(mainLoop);
+}
+
+function toggleUniv() { 
+    isUniv = !isUniv; 
+    document.getElementById('btnU').classList.toggle('active');
+    btnU.innerText = isUniv ? "SISTEMA: ON" : "SISTEMA: OFF";
+    if(isUniv) {
+        speak("Sistema iniciado");
+        resetSystem();
+    }
+}
+
+function toggleVoice() { 
+    isVoice = !isVoice; 
+    document.getElementById('btnV').classList.toggle('active');
 }
 
 requestAnimationFrame(mainLoop);
