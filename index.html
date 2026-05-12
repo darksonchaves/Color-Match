@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - v8.4 Integral Core</title>
+<title>ColorMatch Pro - v8.5 Optic Precision</title>
 <style>
   body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
   #header{ padding: 12px; background: #0a0a0a; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; border-bottom: 2px solid #1a1a1a; }
@@ -13,18 +13,23 @@
   .active{ background:#00ffcc !important; color:#000 !important; border: 1px solid #00ffcc; }
   .lock-active { background:#ff3366 !important; color:#fff !important; border: 1px solid #ff3366; }
   
+  /* MIRA DINÂMICA */
   #cross{ 
-    position:absolute; top:50%; left:50%; width:100px; height:100px; 
-    transform:translate(-50%,-50%); border:3px double rgba(255,255,255,0.3); 
+    position:absolute; top:50%; left:50%; 
+    transform:translate(-50%,-50%); 
+    border:2px solid rgba(255,255,255,0.4); 
     border-radius: 50%; pointer-events:none; z-index: 10;
-    transition: 0.3s;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
-  .cross-valid { border: 4px solid #00ffcc !important; box-shadow: 0 0 25px rgba(0,255,204,0.6); background: rgba(0,255,204,0.05); }
+  /* Estilo da Mira: Travada (Grande) vs Livre (Pequena) */
+  .cross-locked { width: 110px; height: 110px; border-style: double; }
+  .cross-free { width: 30px; height: 30px; border-style: solid; border-color: #00ffcc; }
+  
+  .cross-valid { border: 4px solid #00ffcc !important; box-shadow: 0 0 30px #00ffcc; background: rgba(0,255,204,0.1); }
 
-  #display{ font-size: 44px; font-weight: 900; color: #444; margin: 15px 0; height: 55px; text-transform: uppercase; letter-spacing: -1px; }
+  #display{ font-size: 44px; font-weight: 900; color: #444; margin: 15px 0; height: 55px; text-transform: uppercase; }
   .display-valid { color: #00ffcc !important; }
   #status-bar { font-size: 11px; color: #ff3366; font-weight: bold; height: 20px; text-transform: uppercase; letter-spacing: 1px; }
-  .info { color: #444; font-size: 10px; }
 </style>
 </head>
 <body>
@@ -38,12 +43,11 @@
 
 <div id="video-container">
   <video id="v" autoplay playsinline muted></video>
-  <div id="cross"></div>
+  <div id="cross" class="cross-locked"></div>
 </div>
 
 <div id="status-bar">SISTEMA EM STANDBY</div>
 <div id="display">PRONTO</div>
-<div id="stats" class="info">V8.4 | MOTOR ESPECTRAL INTEGRAL</div>
 
 <canvas id="c" style="display:none;"></canvas>
 
@@ -59,10 +63,9 @@ let isUniv = false, isVoice = true, isLocked = true, lastColor = "", stableCount
 let offset = {r:255, g:255, b:255}, colorHistory = []; 
 
 navigator.mediaDevices.getUserMedia({
-    video:{ facingMode:"environment", width: {ideal: 1280}, frameRate: {ideal: 60} }
+    video:{ facingMode:"environment", width: {ideal: 1280} }
 }).then(s => { video.srcObject = s; });
 
-// --- FUNÇÕES DE COMANDO E FEEDBACK ---
 function speak(t) {
     if(!isVoice || !isUniv) return;
     window.speechSynthesis.cancel();
@@ -76,8 +79,12 @@ function toggleLock() {
     const btn = document.getElementById('btnL');
     btn.classList.toggle('lock-active');
     btn.innerText = isLocked ? "TRAVA 12CM: ON" : "TRAVA 12CM: OFF";
+    
+    // Atualiza Visual da Mira
+    cross.className = isLocked ? "cross-locked" : "cross-free";
+    
     resetSystem();
-    speak(isLocked ? "Trava de doze centímetros ativa" : "Modo de leitura livre");
+    speak(isLocked ? "Trava de doze centímetros" : "Modo livre ativado");
 }
 
 function resetSystem() {
@@ -90,16 +97,16 @@ function resetSystem() {
 function calibrate() {
     const data = getCenterColor();
     offset = {r: data.r, g: data.g, b: data.b};
-    speak("Padrão de branco calibrado");
+    speak("Calibrado");
 }
 
-// --- MOTOR DE CAPTAÇÃO ---
 function getCenterColor() {
     if (canvas.width !== video.videoWidth) {
         canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     }
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const x = canvas.width / 2, y = canvas.height / 2;
+    // Captura central otimizada
     const d = ctx.getImageData(x - 10, y - 10, 20, 20).data;
     let r=0, g=0, b=0, v=0;
     for(let i=0; i<d.length; i+=4){
@@ -108,36 +115,38 @@ function getCenterColor() {
     return { r: r/v, g: g/v, b: b/v };
 }
 
-// --- MOTOR DE INTERPRETAÇÃO (O CORAÇÃO DO SISTEMA) ---
 function solveColor(r, g, b) {
-    let nr = (r / (offset.r || 255)) * 255;
-    let ng = (g / (offset.g || 255)) * 255;
-    let nb = (b / (offset.b || 255)) * 255;
+    let nr = (r / offset.r) * 255;
+    let ng = (g / offset.g) * 255;
+    let nb = (b / offset.b) * 255;
 
     const max = Math.max(nr, ng, nb);
     const min = Math.min(nr, ng, nb);
     const chroma = max - min;
     const brightness = (nr + ng + nb) / 3;
 
-    // LÓGICA DE DISTÂNCIA PADRONIZADA (RIGOR MÁXIMO)
+    // --- NOVA LÓGICA DE DISTÂNCIA RESTRITA (v8.5) ---
     if (isLocked) {
-        if (chroma < 75) { // O seu limite de "unidade"
+        // Correção para o Preto: Se for muito escuro E estável, permite.
+        // Se for colorido, exige Chroma alto (>85 agora para mais rigor).
+        const isBlackReady = (brightness < 35 && chroma < 15);
+        const isColorReady = (chroma > 85);
+
+        if (!isBlackReady && !isColorReady) {
             statusBar.innerText = "SINAL FRACO - APROXIME ATÉ 12CM";
             statusBar.style.color = "#ff3366";
             cross.classList.remove("cross-valid");
             return "BLOQUEADO";
         } else {
-            statusBar.innerText = "DISTÂNCIA PADRONIZADA";
+            statusBar.innerText = "DISTÂNCIA IDEAL";
             statusBar.style.color = "#00ffcc";
             cross.classList.add("cross-valid");
         }
     } else {
-        statusBar.innerText = "MODO LIVRE - SEM REFERÊNCIA";
-        statusBar.style.color = "#888";
-        cross.classList.remove("cross-valid");
+        statusBar.innerText = "MODO LIVRE - FOCO DE PRECISÃO";
+        statusBar.style.color = "#00ffcc";
     }
 
-    // INTERPRETAÇÃO DO ESPECTRO
     let h = 0;
     if (chroma > 0) {
         if (max === nr) h = (ng - nb) / chroma + (ng < nb ? 6 : 0);
@@ -146,14 +155,14 @@ function solveColor(r, g, b) {
         h *= 60;
     }
 
-    if (chroma < 18) {
+    if (chroma < 22) {
         if (brightness < 45) return "Preto";
-        if (brightness > 210) return "Branco";
+        if (brightness > 215) return "Branco";
         return "Cinza";
     }
 
     if (h < 18 || h > 342) {
-        if (nb > nr * 0.45 || (brightness > 120 && ng > 75)) return "Rosa";
+        if (nb > nr * 0.5 || (brightness > 120 && ng > 75)) return "Rosa";
         return (brightness < 80) ? "Vermelho Escuro" : "Vermelho";
     }
     if (h >= 18 && h < 48) return (brightness < 90) ? "Marrom" : "Laranja";
@@ -161,7 +170,6 @@ function solveColor(r, g, b) {
     if (h >= 65 && h < 165) return (brightness < 80) ? "Verde Escuro" : "Verde";
     if (h >= 165 && h < 265) return "Azul";
     if (h >= 265 && h < 320) return "Roxo";
-    
     return "Rosa";
 }
 
@@ -177,13 +185,11 @@ function getStableColor(newColor) {
 function mainLoop() {
     if(video.videoWidth > 0) {
         const rgb = getCenterColor();
-        const colorResult = solveColor(rgb.r, rgb.g, rgb.b);
-        const colorName = getStableColor(colorResult);
+        const colorName = getStableColor(solveColor(rgb.r, rgb.g, rgb.b));
 
         if(isUniv) {
             display.innerText = colorName;
             display.classList.toggle("display-valid", colorName !== "BLOQUEADO");
-            
             if(colorName !== "BLOQUEADO" && colorName === lastColor) {
                 stableCount++;
                 if(stableCount === 25) speak(colorName);
@@ -197,10 +203,9 @@ function mainLoop() {
 
 function toggleUniv() { 
     isUniv = !isUniv; 
-    const btn = document.getElementById('btnU');
-    btn.classList.toggle('active');
-    btn.innerText = isUniv ? "SISTEMA: ON" : "SISTEMA: OFF";
-    if(isUniv) { speak("Sistema ativo"); resetSystem(); }
+    document.getElementById('btnU').classList.toggle('active');
+    btnU.innerText = isUniv ? "SISTEMA: ON" : "SISTEMA: OFF";
+    if(isUniv) { speak("Sistema iniciado"); resetSystem(); }
 }
 
 function toggleVoice() { 
