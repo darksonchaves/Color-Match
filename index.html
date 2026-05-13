@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v15.0 Precision</title>
+    <title>ColorMatch Pro - v16.0 Iris Engine</title>
     <style>
         body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -27,24 +27,24 @@
             position: absolute; border: 2px dashed rgba(255,255,255,0.4); border-radius: 50%;
             pointer-events: none; transition: all 0.2s; z-index: 10;
         }
-        .mira-livre { width: 40px; height: 40px; border-style: solid !important; }
-        .mira-padrao { width: 30vw; height: 30vw; }
+        .mira-livre { width: 45px; height: 45px; border-style: solid !important; }
+        .mira-padrao { width: 32vw; height: 32vw; }
         .locked { border-color: #00ffcc !important; background: rgba(0,255,204,0.1); box-shadow: 0 0 25px #00ffcc; }
 
         #ui-overlay { 
             position: absolute; bottom: 0; width: 100%; padding: 40px 0;
             background: linear-gradient(transparent, rgba(0,0,0,0.98)); z-index: 20;
         }
-        #color-name { font-size: 44px; font-weight: 900; text-transform: uppercase; color: #222; }
-        .active-text { color: #00ffcc !important; }
-        #debug { font-size: 11px; color: #555; margin-top: 10px; font-family: monospace; }
+        #color-name { font-size: 44px; font-weight: 900; text-transform: uppercase; color: #222; min-height: 50px; }
+        .active-text { color: #00ffcc !important; text-shadow: 0 0 20px rgba(0,255,204,0.5); }
+        #debug { font-size: 10px; color: #555; margin-top: 10px; font-family: monospace; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
 <div id="header">
     <button onclick="toggleSystem()" id="btnPower">SISTEMA: OFF</button>
-    <button onclick="calibrate()" id="btnCalib">CALIBRAR BRANCO</button>
+    <button onclick="calibrate()" id="btnCalib">CALIBRAR IRIS (SULFITE)</button>
     <button onclick="setMode('LIVRE')" id="btnLivre">LIVRE</button>
     <button onclick="setMode('PADRAO')" id="btnPadrao">PADRÃO</button>
     <button onclick="toggleUniv()" id="btnUniv">UNIVERSAL: OFF</button>
@@ -57,7 +57,7 @@
 
 <div id="ui-overlay">
     <div id="color-name">DISJUNTOR OFF</div>
-    <div id="debug">LIGUE O SISTEMA PARA INICIAR</div>
+    <div id="debug">Aguardando ativação do sistema...</div>
 </div>
 
 <canvas id="c" style="display:none;"></canvas>
@@ -67,7 +67,9 @@
     const colorTxt = document.getElementById('color-name'), debugTxt = document.getElementById('debug'), cross = document.getElementById('crosshair');
 
     let mode = 'LIVRE', active = false, isUniv = false, lastSpeach = "", isSpeaking = false;
-    let white = { r: 255, g: 255, b: 255 }, history = [];
+    // Iris Coefficients (Multiplicadores de correção)
+    let iris = { r: 1, g: 1, b: 1 }; 
+    let history = [];
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
 
@@ -76,15 +78,14 @@
         const btn = document.getElementById('btnPower');
         btn.classList.toggle('active', active);
         btn.innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
-        if(!active) resetUI(); else speak("Sistema Iniciado");
+        if(!active) resetUI(); else speak("Sistema Online");
     }
 
     function toggleUniv() {
         isUniv = !isUniv;
-        const btn = document.getElementById('btnUniv');
-        btn.classList.toggle('univ-active', isUniv);
-        btn.innerText = `UNIVERSAL: ${isUniv ? 'ON' : 'OFF'}`;
-        speak(isUniv ? "Modo Universal" : "Modo Normal");
+        document.getElementById('btnUniv').classList.toggle('univ-active', isUniv);
+        document.getElementById('btnUniv').innerText = `UNIVERSAL: ${isUniv ? 'ON' : 'OFF'}`;
+        speak(isUniv ? "Modo Universal Ativo" : "Modo Normal");
     }
 
     function setMode(m) {
@@ -98,60 +99,79 @@
     function calibrate() {
         if(!active) return;
         const d = sample(v.videoWidth/2, v.videoHeight/2, 60);
-        // Proteção para não calibrar no escuro total
-        if((d.r + d.g + d.b) / 3 < 30) {
-            speak("Luz insuficiente para calibrar");
+        const avg = (d.r + d.g + d.b) / 3;
+        
+        if(avg < 30) {
+            speak("Ambiente muito escuro");
             return;
         }
-        white = { r: d.r, g: d.g, b: d.b };
-        speak("Branco Calibrado");
+
+        // MEMÓRIA DA IRIS: Calcula quanto cada canal precisa ser multiplicado para chegar ao branco puro (255)
+        // Isso "abate" a influência da cor da lâmpada.
+        iris.r = avg / d.r;
+        iris.g = avg / d.g;
+        iris.b = avg / d.b;
+
+        speak("Iris Calibrada");
     }
 
     function sample(x, y, s) {
         c.width = v.videoWidth; c.height = v.videoHeight;
         ctx.drawImage(v, 0, 0);
-        const data = ctx.getImageData(x - s/2, y - s/2, s, s).data;
+        const data = ctx.getImageData(Math.max(0, x - s/2), Math.max(0, y - s/2), s, s).data;
         let r=0, g=0, b=0;
         for(let i=0; i<data.length; i+=4) { r += data[i]; g += data[i+1]; b += data[i+2]; }
         const total = data.length/4;
         return { r: r/total, g: g/total, b: b/total };
     }
 
-    function rgbToHsl(r, g, b) {
-        // Aplicação do Offset de Calibragem
-        r = Math.min(255, (r / white.r) * 255);
-        g = Math.min(255, (g / white.g) * 255);
-        b = Math.min(255, (b / white.b) * 255);
+    function processColor(rawR, rawG, rawB) {
+        // Aplica correção da Iris (Abatimento da luz ambiente)
+        let r = rawR * iris.r;
+        let g = rawG * iris.g;
+        let b = rawB * iris.b;
+
+        // Limite de segurança
+        r = Math.min(255, r); g = Math.min(255, g); b = Math.min(255, b);
 
         const bri = (r + g + b) / 3;
-        r/=255; g/=255; b/=255;
-        const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+        
+        // Conversão para HSL para análise de Matiz
+        const rNorm = r/255, gNorm = g/255, bNorm = b/255;
+        const max=Math.max(rNorm,gNorm,bNorm), min=Math.min(rNorm,gNorm,bNorm), d=max-min;
         let h, s, l=(max+min)/2;
+
         if(d===0) h=s=0;
         else {
             s = l>0.5 ? d/(2-max-min) : d/(max+min);
-            if(max===r) h=(g-b)/d+(g<b?6:0); else if(max===g) h=(b-r)/d+2; else h=(r-g)/d+4;
+            if(max===rNorm) h=(gNorm-bNorm)/d+(gNorm<bNorm?6:0); 
+            else if(max===gNorm) h=(bNorm-rNorm)/d+2; 
+            else h=(rNorm-gNorm)/d+4;
             h/=6;
         }
         return { h: h*360, s: s*100, l: l*100, bri: bri };
     }
 
     function getColorName(h, s, l, bri) {
-        // AJUSTE PONTO 3: Filtro de Escuridão Real (Evita o Verde Escuro falso ao tapar a lente)
-        if (bri < 20) return "Preto"; 
+        // REGRA DA IRIS PARA PRETO: Se o brilho caiu muito abaixo da referência calibrada
+        if (bri < 25) return "Preto"; 
         
-        if (s < 15) {
-            if (bri < 45) return "Preto";
-            if (bri > 200) return "Branco";
+        // REGRA PARA CINZA E BRANCO (Baixa saturação)
+        if (s < 18) {
+            if (bri < 65) return "Preto"; // Ajuste para preto fiel
+            if (bri > 185) return "Branco";
             return "Cinza";
         }
 
-        // Diagnóstico de Espectro Primário (Refinado)
-        if (h < 15 || h > 345) return bri < 70 ? "Vermelho Escuro" : "Vermelho";
-        if (h < 42) return bri < 60 ? "Marrom" : "Laranja";
-        if (h < 65) return "Amarelo";
-        if (h < 165) return bri < 75 ? "Verde Escuro" : "Verde";
-        if (h < 260) return "Azul";
+        // Ajustes finos para evitar confusão Laranja/Amarelo
+        if (h < 15 || h > 348) return bri < 80 ? "Vermelho Escuro" : "Vermelho";
+        if (h < 44) {
+            if (s > 70 && bri > 170) return "Laranja"; // Laranja vibrante
+            return bri < 75 ? "Marrom" : "Laranja";
+        }
+        if (h < 68) return "Amarelo";
+        if (h < 165) return bri < 85 ? "Verde Escuro" : "Verde";
+        if (h < 258) return "Azul";
         if (h < 305) return "Roxo";
         return "Rosa";
     }
@@ -159,43 +179,44 @@
     function loop() {
         if (v.videoWidth > 0 && active) {
             const x = v.videoWidth/2, y = v.videoHeight/2;
-            const core = sample(x, y, 20);
-            const hsl = rgbToHsl(core.r, core.g, core.b);
+            const raw = sample(x, y, 22);
+            const data = processColor(raw.r, raw.g, raw.b);
 
-            let ready = true;
+            let canShow = true;
             if (mode === 'PADRAO') {
-                const dist = (v.videoWidth * 0.12);
-                const pts = [sample(x, y-dist, 8), sample(x, y+dist, 8), sample(x-dist, y, 8), sample(x+dist, y, 8)];
+                const step = (v.videoWidth * 0.13);
+                const check = [sample(x, y-step, 8), sample(x, y+step, 8), sample(x-step, y, 8), sample(x+step, y, 8)];
                 
-                // Validação de cor consistente
-                const valid = pts.filter(p => {
-                    const pH = rgbToHsl(p.r, p.g, p.b);
-                    return Math.abs(pH.h - hsl.h) < 20 || (hsl.s < 15 && pH.s < 15);
+                const valid = check.filter(p => {
+                    const pD = processColor(p.r, p.g, p.b);
+                    return Math.abs(pD.h - data.h) < 22 || (data.s < 15 && pD.s < 15);
                 }).length;
 
                 if (valid < 3) {
-                    ready = false;
+                    canShow = false;
                     colorTxt.innerText = "ALINHANDO...";
                     colorTxt.className = "";
                     cross.classList.remove('locked');
                 }
             }
 
-            if (ready) {
-                const name = getColorName(hsl.h, hsl.s, hsl.l, hsl.bri);
+            if (canShow) {
+                const currentName = getColorName(data.h, data.s, data.l, data.bri);
                 
-                // Modo Universal força a estabilidade máxima
-                const historySize = isUniv ? 12 : 6;
-                history.push(name); if(history.length > historySize) history.shift();
+                // Estabilização por "Moda" (mais frames no modo universal)
+                const depth = isUniv ? 15 : 7;
+                history.push(currentName);
+                if(history.length > depth) history.shift();
                 
-                const stable = history.sort((a,b) => history.filter(v=>v===a).length - history.filter(v=>v===b).length).pop();
+                const stableName = history.sort((a,b) => history.filter(v=>v===a).length - history.filter(v=>v===b).length).pop();
                 
-                colorTxt.innerText = stable;
+                colorTxt.innerText = stableName;
                 colorTxt.className = "active-text";
                 cross.classList.add('locked');
-                debugTxt.innerText = `MODO: ${isUniv?'UNIVERSAL':'NORMAL'} | H:${Math.round(hsl.h)} S:${Math.round(hsl.s)} B:${Math.round(hsl.bri)}`;
                 
-                if(stable !== lastSpeach) speak(stable);
+                debugTxt.innerText = `H:${Math.round(data.h)}° S:${Math.round(data.s)}% B:${Math.round(data.bri)} | IRIS: OK`;
+                
+                if(stableName !== lastSpeach) speak(stableName);
             }
         }
         requestAnimationFrame(loop);
@@ -213,7 +234,7 @@
     function resetUI() {
         colorTxt.innerText = "DISJUNTOR OFF"; colorTxt.className = "";
         cross.classList.remove('locked');
-        debugTxt.innerText = "LIGUE O SISTEMA PARA INICIAR";
+        debugTxt.innerText = "SISTEMA EM STANDBY";
         history = []; lastSpeach = "";
     }
 
