@@ -3,163 +3,172 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - v10 Enterprise</title>
+<title>ColorMatch Pro - v11.0 Stable</title>
 <style>
-  body{ margin:0; font-family: 'Segoe UI', sans-serif; background:#000; color:#fff; text-align:center; overflow:hidden; }
-  #header{ padding: 10px; background: #0a0a0a; display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; border-bottom: 2px solid #1a1a1a; }
-  #video-container { position: relative; width: 100%; height: 55vh; background: #000; }
-  video{ width: 100%; height: 100%; object-fit: contain; }
+  body{ margin:0; font-family: Arial; background:#111; color:#fff; text-align:center; }
+  #header { padding: 10px; background: #000; border-bottom: 2px solid #333; display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; }
   
-  button{ padding:8px 6px; border-radius:4px; border:1px solid #444; background:#111; color:#aaa; font-weight:bold; font-size: 9px; cursor:pointer; min-width: 80px; }
-  .active-btn{ background:#00ffcc !important; color:#000 !important; border-color:#00ffcc; }
-  .univ-on{ background: #ffaa00 !important; color: #000 !important; border-color: #ffaa00; }
+  /* BOTOES ESTILO OEM STABLE */
+  button{ padding:12px; border:none; border-radius:8px; cursor:pointer; background:#222; color:#fff; font-weight: bold; font-size: 11px; }
+  .activeMode { background: #00695c !important; border: 1px solid #00ffcc; }
+  .univActive { background: #ffaa00 !important; color: #000 !important; }
 
+  video{ width:92%; margin-top: 15px; border-radius:12px; border:2px solid #333; object-fit:cover; height: 50vh; }
+  
   #cross{ 
-    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); 
-    border-radius: 50%; pointer-events:none; z-index: 10;
-    transition: all 0.2s ease;
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); 
+    border-radius:50%; pointer-events:none; z-index:999;
+    transition: 0.2s;
   }
-  .cross-livre { width: 40px; height: 40px; border: 2px solid #00ffcc; box-shadow: 0 0 10px #00ffcc; }
-  .cross-padrao { width: 45vw; height: 45vw; border: 3px dashed rgba(255,255,255,0.5); }
-  .is-valid { border: 6px solid #00ffcc !important; background: rgba(0,255,204,0.1); }
+  .cross-livre { width: 26px; height: 26px; border: 2px solid #00ffcc; }
+  .cross-padrao { width: 40vw; height: 40vw; border: 3px dashed rgba(255,255,255,0.4); }
+  .valid { border-color: #00ffcc !important; box-shadow: 0 0 20px #00ffcc; }
 
-  #display{ font-size: 48px; font-weight: 900; color: #333; margin: 10px 0; height: 60px; text-transform: uppercase; letter-spacing: 2px; }
-  .active-text { color: #00ffcc !important; text-shadow: 0 0 15px rgba(0,255,204,0.6); }
-  #status{ font-size: 10px; color: #ff3366; font-weight: bold; height: 15px; letter-spacing: 1px; }
+  #txt{ margin: 20px; font-size: 24px; font-weight: bold; min-height: 40px; color: #aaa; text-transform: uppercase; }
+  #status-info { font-size: 12px; color: #00ffcc; margin-bottom: 10px; }
 </style>
 </head>
 <body>
 
 <div id="header">
-  <button id="btnUniv" onclick="toggleUniv()">UNIVERSAL: OFF</button>
-  <button id="btnLivre" onclick="setMode('LIVRE')" class="active-btn">MOV. LIVRE</button>
+  <button id="btnUniv" onclick="toggleUniversal()">UNIVERSAL: OFF</button>
+  <button id="btnLivre" onclick="setMode('LIVRE')" class="activeMode">MOV. LIVRE</button>
   <button id="btnPadrao" onclick="setMode('PADRAO')">MOV. PADRÃO</button>
-  <button onclick="calibrate()">CALIBRAR</button>
+  <button onclick="toggleFlash()">⚡ FLASH</button>
 </div>
 
-<div id="video-container">
-  <video id="v" autoplay playsinline muted></video>
-  <div id="cross" class="cross-livre"></div>
-</div>
+<video id="video" autoplay playsinline muted></video>
+<div id="cross" class="cross-livre"></div>
 
-<div id="status">SISTEMA ATIVO</div>
-<div id="display">---</div>
+<div id="txt">AGUARDANDO...</div>
+<div id="status-info">SISTEMA ESTÁVEL</div>
 
-<canvas id="c" style="display:none;"></canvas>
+<canvas id="canvasA" style="display:none;"></canvas>
 
 <script>
-const video = document.getElementById('v');
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d', {willReadFrequently: true});
-const display = document.getElementById('display');
-const status = document.getElementById('status');
-const cross = document.getElementById('cross');
+const video = document.getElementById("video");
+const canvasA = document.getElementById("canvasA");
+const ctxA = canvasA.getContext("2d", {willReadFrequently:true});
+const cross = document.getElementById("cross");
+const txt = document.getElementById("txt");
 
-let mode = 'LIVRE', isUniv = false, lastAnnounced = "", history = [];
-let offset = {r:255, g:255, b:255};
+let currentMode = 'LIVRE';
+let universalMode = false;
+let currentSpokenColor = "";
+let isSpeaking = false;
+let streamTrack = null;
+let flashOn = false;
 
-navigator.mediaDevices.getUserMedia({video:{facingMode:"environment", width:1280}}).then(s => video.srcObject = s);
+// INICIALIZAÇÃO DE CÂMERA (ESTILO OEM)
+navigator.mediaDevices.getUserMedia({ video:{ facingMode:"environment" } })
+.then(s => { video.srcObject = s; streamTrack = s.getVideoTracks()[0]; });
+
+function speak(text){
+    if(!text || text === currentSpokenColor || isSpeaking) return;
+    currentSpokenColor = text;
+    isSpeaking = true;
+    speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.lang = "pt-BR"; msg.rate = 1.2;
+    msg.onend = () => isSpeaking = false;
+    speechSynthesis.speak(msg);
+}
+
+function toggleUniversal() {
+    universalMode = !universalMode;
+    const btn = document.getElementById("btnUniv");
+    btn.classList.toggle("univActive", universalMode);
+    btn.innerText = `UNIVERSAL: ${universalMode ? 'ON' : 'OFF'}`;
+    speak(universalMode ? "Universal Ativado" : "Universal Desativado");
+}
 
 function setMode(m) {
-    mode = m;
-    document.getElementById('btnLivre').className = (m==='LIVRE'?'active-btn':'');
-    document.getElementById('btnPadrao').className = (m==='PADRAO'?'active-btn':'');
-    cross.className = (m==='LIVRE'?'cross-livre':'cross-padrao');
-    announce(m === 'LIVRE' ? "Modo Livre" : "Modo Padrão");
+    currentMode = m;
+    document.getElementById("btnLivre").className = (m === 'LIVRE' ? 'activeMode' : '');
+    document.getElementById("btnPadrao").className = (m === 'PADRAO' ? 'activeMode' : '');
+    cross.className = (m === 'LIVRE' ? 'cross-livre' : 'cross-padrao');
+    speak(m === 'LIVRE' ? "Livre" : "Padrão");
 }
 
-function toggleUniv() {
-    isUniv = !isUniv;
-    document.getElementById('btnUniv').className = (isUniv?'univ-on':'');
-    document.getElementById('btnUniv').innerText = `UNIVERSAL: ${isUniv?'ON':'OFF'}`;
-    announce(isUniv ? "Universal Ativado" : "Universal Desativado");
-}
-
-function announce(t) {
-    if(t === lastAnnounced || !t) return;
-    window.speechSynthesis.cancel();
-    const msg = new SpeechSynthesisUtterance(t);
-    msg.lang = 'pt-BR'; msg.rate = 1.7;
-    window.speechSynthesis.speak(msg);
-    lastAnnounced = t;
-}
-
-function getColor(x, y, s=15) {
-    if (canvas.width !== video.videoWidth) { canvas.width = video.videoWidth; canvas.height = video.videoHeight; }
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const d = ctx.getImageData(x-(s/2), y-(s/2), s, s).data;
-    let r=0, g=0, b=0;
-    for(let i=0; i<d.length; i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; }
-    return { r: r/(d.length/4), g: g/(d.length/4), b: b/(d.length/4) };
-}
-
-function processColor(rgb) {
-    let r = rgb.r, g = rgb.g, b = rgb.b;
-    if(isUniv) { r=(r/offset.r)*255; g=(g/offset.g)*255; b=(b/offset.b)*255; }
-    
-    const max = Math.max(r,g,b), min = Math.min(r,g,b), chroma = max-min, bri = (r+g+b)/3;
-    let h = 0;
-    if(chroma > 5) {
-        if(max===r) h=(g-b)/chroma+(g<b?6:0); else if(max===g) h=(b-r)/chroma+2; else h=(r-g)/chroma+4;
-        h*=60;
+function rgbToHsl(r,g,b){
+    r/=255; g/=255; b/=255;
+    const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+    let h=0, s=0, l=(max+min)/2;
+    if(d!==0){
+        s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+        if(max===r) h=(g-b)/d+(g<b?6:0); else if(max===g) h=(b-r)/d+2; else h=(r-g)/d+4;
+        h/=6;
     }
-
-    if (chroma < 12) {
-        if (bri < 30) return "Preto";
-        if (bri > 210) return "Branco";
-        return "Cinza";
-    }
-
-    if (h < 25 || h > 335) return (b > r * 0.6) ? "Rosa" : (bri < 75 ? "Vermelho Escuro" : "Vermelho");
-    if (h >= 25 && h < 50) return (bri < 65) ? "Marrom" : "Laranja";
-    if (h >= 50 && h < 70) return "Amarelo";
-    if (h >= 70 && h < 165) return (bri < 80) ? "Verde Escuro" : "Verde";
-    if (h >= 165 && h < 260) return "Azul";
-    if (h >= 260 && h < 315) return "Roxo";
-    return "Rosa";
+    return { h:h*360, s:s*100, l:l*100 };
 }
 
-function loop() {
-    if(video.videoWidth > 0) {
+// LOGICA DE RECONHECIMENTO PURO (O QUE FUNCIONA)
+function detectColorName(r,g,b){
+    const hsl = rgbToHsl(r,g,b);
+    const {h, s, l} = hsl;
+    if(s <= 12 && l >= 80) return "Branco";
+    if(s <= 15 && l <= 18) return "Preto";
+    if(s <= 15) return "Cinza";
+    if((h >= 0 && h <= 12) || (h >= 345 && h <= 360)) return "Vermelho";
+    if(h >= 13 && h <= 38) return "Laranja";
+    if(h >= 39 && h <= 68) return "Amarelo";
+    if(h >= 69 && h <= 165) return "Verde";
+    if(h >= 166 && h < 260) return "Azul";
+    if(h >= 260 && h <= 315) return "Roxo";
+    if(h >= 316 && h <= 344) return "Rosa";
+    return "";
+}
+
+function mainLoop(){
+    if(video.videoWidth > 0){
+        canvasA.width = video.videoWidth; canvasA.height = video.videoHeight;
+        ctxA.drawImage(video, 0, 0);
+        
         const cX = video.videoWidth/2, cY = video.videoHeight/2;
-        const mainRGB = getColor(cX, cY, 20);
+        const p = ctxA.getImageData(cX-5, cY-5, 10, 10).data;
+        let r=0, g=0, b=0;
+        for(let i=0; i<p.length; i+=4){ r+=p[i]; g+=p[i+1]; b+=p[i+2]; }
+        r/=(p.length/4); g/=(p.length/4); b/=(p.length/4);
 
-        if (mode === 'PADRAO') {
-            const rad = (window.innerWidth * 0.45) * (video.videoWidth/window.innerWidth) / 2;
-            const samples = [getColor(cX, cY-rad, 10), getColor(cX, cY+rad, 10), getColor(cX-rad, cY, 10), getColor(cX+rad, cY, 10)];
-            const diff = (c) => Math.abs(c.r-mainRGB.r) + Math.abs(c.g-mainRGB.g) + Math.abs(c.b-mainRGB.b);
-            const score = samples.filter(s => diff(s) < 120).length; // Média estatística (3 de 4 pontos)
-
-            if (score < 3) {
-                status.innerText = "ALINHE O OBJETO"; status.style.color = "#ff3366";
-                display.innerText = "AGUARDANDO"; display.className = "";
-                cross.classList.remove("is-valid");
-                requestAnimationFrame(loop); return;
+        if(currentMode === 'PADRAO'){
+            const rad = (window.innerWidth * 0.40) * (video.videoWidth / window.innerWidth) / 2;
+            const samples = [
+                ctxA.getImageData(cX, cY-rad, 1, 1).data,
+                ctxA.getImageData(cX, cY+rad, 1, 1).data,
+                ctxA.getImageData(cX-rad, cY, 1, 1).data,
+                ctxA.getImageData(cX+rad, cY, 1, 1).data
+            ];
+            // Tolerância alta para não travar no aguardando (estilo OEM)
+            const isFilled = samples.every(s => Math.abs(s[0]-r) + Math.abs(s[1]-g) + Math.abs(s[2]-b) < 110);
+            
+            if(!isFilled){
+                txt.innerText = "AGUARDANDO"; txt.style.color = "#555";
+                cross.classList.remove("valid");
+                requestAnimationFrame(mainLoop); return;
             }
         }
 
-        const res = processColor(mainRGB);
-        display.innerText = res;
-        display.className = "active-text";
-        status.innerText = (mode==='LIVRE'?"LEITURA DINÂMICA":"PADRÃO 12CM");
-        status.style.color = "#00ffcc";
-        cross.classList.add("is-valid");
-
-        history.push(res);
-        if(history.length > 6) history.shift();
-        const stable = history.sort((a,b) => history.filter(v=>v===a).length - history.filter(v=>v===b).length).pop();
-        if(stable === res) announce(res);
+        cross.classList.add("valid");
+        if(universalMode){
+            const name = detectColorName(r,g,b);
+            txt.innerText = name || "ANALISANDO...";
+            txt.style.color = "#00ffcc";
+            if(name) speak(name);
+        } else {
+            txt.innerText = `RGB: ${Math.round(r)},${Math.round(g)},${Math.round(b)}`;
+            txt.style.color = "#fff";
+        }
     }
-    requestAnimationFrame(loop);
+    requestAnimationFrame(mainLoop);
 }
 
-function calibrate() {
-    const d = getColor(video.videoWidth/2, video.videoHeight/2, 40);
-    offset = {r:d.r||255, g:d.g||255, b:d.b||255};
-    announce("Calibrado");
+async function toggleFlash(){
+    if(!streamTrack) return;
+    flashOn = !flashOn;
+    await streamTrack.applyConstraints({ advanced:[{ torch:flashOn }] });
 }
 
-loop();
+mainLoop();
 </script>
 </body>
 </html>
