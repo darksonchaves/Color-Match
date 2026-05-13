@@ -3,91 +3,94 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMatch Pro - v11.0 Stable</title>
+<title>ColorMatch Pro - v12.0 High Performance</title>
 <style>
-  body{ margin:0; font-family: Arial; background:#111; color:#fff; text-align:center; }
-  #header { padding: 10px; background: #000; border-bottom: 2px solid #333; display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; }
+  body{ margin:0; font-family: Arial, sans-serif; background:#0a0a0a; color:#fff; text-align:center; overflow-x:hidden; }
+  #header{ padding: 12px; background: #111; border-bottom: 2px solid #333; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; position: sticky; top: 0; z-index: 1000; }
   
-  /* BOTOES ESTILO OEM STABLE */
-  button{ padding:12px; border:none; border-radius:8px; cursor:pointer; background:#222; color:#fff; font-weight: bold; font-size: 11px; }
-  .activeMode { background: #00695c !important; border: 1px solid #00ffcc; }
+  button{ padding:12px 15px; border:none; border-radius:8px; cursor:pointer; background:#222; color:#fff; font-weight: bold; font-size: 11px; transition: 0.2s; }
+  .activeMode { background: #00695c !important; box-shadow: 0 0 10px #00ffcc; }
   .univActive { background: #ffaa00 !important; color: #000 !important; }
 
-  video{ width:92%; margin-top: 15px; border-radius:12px; border:2px solid #333; object-fit:cover; height: 50vh; }
+  #video-wrap { position: relative; width: 94%; margin: 15px auto; border-radius: 15px; border: 3px solid #333; overflow: hidden; height: 50vh; }
+  video{ width: 100%; height: 100%; object-fit: cover; }
   
   #cross{ 
-    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); 
-    border-radius:50%; pointer-events:none; z-index:999;
-    transition: 0.2s;
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); 
+    border-radius:50%; pointer-events:none; z-index:10;
   }
-  .cross-livre { width: 26px; height: 26px; border: 2px solid #00ffcc; }
-  .cross-padrao { width: 40vw; height: 40vw; border: 3px dashed rgba(255,255,255,0.4); }
-  .valid { border-color: #00ffcc !important; box-shadow: 0 0 20px #00ffcc; }
+  .cross-livre { width: 30px; height: 30px; border: 2px solid #00ffcc; }
+  .cross-padrao { width: 42vw; height: 42vw; border: 3px dashed rgba(255,255,255,0.5); }
+  .locked { border-color: #00ffcc !important; background: rgba(0,255,204,0.1); box-shadow: 0 0 25px #00ffcc; }
 
-  #txt{ margin: 20px; font-size: 24px; font-weight: bold; min-height: 40px; color: #aaa; text-transform: uppercase; }
-  #status-info { font-size: 12px; color: #00ffcc; margin-bottom: 10px; }
+  #display-box { margin: 20px auto; width: 90%; }
+  #txt{ font-size: 32px; font-weight: 900; color: #444; text-transform: uppercase; letter-spacing: 1px; min-height: 45px; }
+  .txt-active { color: #00ffcc !important; }
+  #status-bar { font-size: 12px; color: #666; margin-top: 5px; font-weight: bold; }
 </style>
 </head>
 <body>
 
 <div id="header">
-  <button id="btnUniv" onclick="toggleUniversal()">UNIVERSAL: OFF</button>
+  <button id="btnUniv" onclick="toggleUniv()">MODO UNIVERSAL: OFF</button>
   <button id="btnLivre" onclick="setMode('LIVRE')" class="activeMode">MOV. LIVRE</button>
   <button id="btnPadrao" onclick="setMode('PADRAO')">MOV. PADRÃO</button>
   <button onclick="toggleFlash()">⚡ FLASH</button>
 </div>
 
-<video id="video" autoplay playsinline muted></video>
-<div id="cross" class="cross-livre"></div>
+<div id="video-wrap">
+  <video id="v" autoplay playsinline muted></video>
+  <div id="cross" class="cross-livre"></div>
+</div>
 
-<div id="txt">AGUARDANDO...</div>
-<div id="status-info">SISTEMA ESTÁVEL</div>
+<div id="display-box">
+  <div id="txt">---</div>
+  <div id="status-bar">SISTEMA AGUARDANDO COMANDO</div>
+</div>
 
-<canvas id="canvasA" style="display:none;"></canvas>
+<canvas id="c" style="display:none;"></canvas>
 
 <script>
-const video = document.getElementById("video");
-const canvasA = document.getElementById("canvasA");
-const ctxA = canvasA.getContext("2d", {willReadFrequently:true});
+const v = document.getElementById("v");
+const c = document.getElementById("c");
+const ctx = c.getContext("2d", {willReadFrequently:true});
 const cross = document.getElementById("cross");
 const txt = document.getElementById("txt");
+const statusBar = document.getElementById("status-bar");
 
-let currentMode = 'LIVRE';
-let universalMode = false;
-let currentSpokenColor = "";
-let isSpeaking = false;
-let streamTrack = null;
-let flashOn = false;
+let currentMode = 'LIVRE', isUniv = false, lastAnnounced = "", isSpeaking = false;
+let track = null, flash = false;
 
-// INICIALIZAÇÃO DE CÂMERA (ESTILO OEM)
-navigator.mediaDevices.getUserMedia({ video:{ facingMode:"environment" } })
-.then(s => { video.srcObject = s; streamTrack = s.getVideoTracks()[0]; });
+navigator.mediaDevices.getUserMedia({ video:{ facingMode:"environment", width:1280 } })
+.then(s => { v.srcObject = s; track = s.getVideoTracks()[0]; });
 
-function speak(text){
-    if(!text || text === currentSpokenColor || isSpeaking) return;
-    currentSpokenColor = text;
+function speak(t) {
+    if(!t || t === lastAnnounced || isSpeaking) return;
+    lastAnnounced = t;
     isSpeaking = true;
     speechSynthesis.cancel();
-    const msg = new SpeechSynthesisUtterance(text);
-    msg.lang = "pt-BR"; msg.rate = 1.2;
-    msg.onend = () => isSpeaking = false;
-    speechSynthesis.speak(msg);
-}
-
-function toggleUniversal() {
-    universalMode = !universalMode;
-    const btn = document.getElementById("btnUniv");
-    btn.classList.toggle("univActive", universalMode);
-    btn.innerText = `UNIVERSAL: ${universalMode ? 'ON' : 'OFF'}`;
-    speak(universalMode ? "Universal Ativado" : "Universal Desativado");
+    const m = new SpeechSynthesisUtterance(t);
+    m.lang = "pt-BR"; m.rate = 1.3;
+    m.onend = () => isSpeaking = false;
+    speechSynthesis.speak(m);
 }
 
 function setMode(m) {
     currentMode = m;
-    document.getElementById("btnLivre").className = (m === 'LIVRE' ? 'activeMode' : '');
-    document.getElementById("btnPadrao").className = (m === 'PADRAO' ? 'activeMode' : '');
-    cross.className = (m === 'LIVRE' ? 'cross-livre' : 'cross-padrao');
+    document.getElementById("btnLivre").className = (m==='LIVRE'?'activeMode':'');
+    document.getElementById("btnPadrao").className = (m==='PADRAO'?'activeMode':'');
+    cross.className = (m==='LIVRE'?'cross-livre':'cross-padrao');
+    lastAnnounced = "";
     speak(m === 'LIVRE' ? "Livre" : "Padrão");
+}
+
+function toggleUniv() {
+    isUniv = !isUniv;
+    const b = document.getElementById("btnUniv");
+    b.className = (isUniv?'univActive':'');
+    b.innerText = `MODO UNIVERSAL: ${isUniv?'ON':'OFF'}`;
+    lastAnnounced = "";
+    speak(isUniv ? "Espectro Universal" : "RGB");
 }
 
 function rgbToHsl(r,g,b){
@@ -102,73 +105,77 @@ function rgbToHsl(r,g,b){
     return { h:h*360, s:s*100, l:l*100 };
 }
 
-// LOGICA DE RECONHECIMENTO PURO (O QUE FUNCIONA)
-function detectColorName(r,g,b){
+function getBaseColor(r,g,b){
     const hsl = rgbToHsl(r,g,b);
     const {h, s, l} = hsl;
-    if(s <= 12 && l >= 80) return "Branco";
-    if(s <= 15 && l <= 18) return "Preto";
-    if(s <= 15) return "Cinza";
+    // Calibragem OEM extraída do seu resgate estável
+    if(s <= 14 && l >= 80) return "Branco";
+    if(s <= 16 && l <= 18) return "Preto";
+    if(s <= 16) return "Cinza";
     if((h >= 0 && h <= 12) || (h >= 345 && h <= 360)) return "Vermelho";
     if(h >= 13 && h <= 38) return "Laranja";
     if(h >= 39 && h <= 68) return "Amarelo";
     if(h >= 69 && h <= 165) return "Verde";
     if(h >= 166 && h < 260) return "Azul";
-    if(h >= 260 && h <= 315) return "Roxo";
-    if(h >= 316 && h <= 344) return "Rosa";
-    return "";
+    if(h >= 260 && h <= 312) return "Roxo";
+    if(h >= 313 && h <= 344) return "Rosa";
+    return "Indefinido";
 }
 
-function mainLoop(){
-    if(video.videoWidth > 0){
-        canvasA.width = video.videoWidth; canvasA.height = video.videoHeight;
-        ctxA.drawImage(video, 0, 0);
+function engine() {
+    if(v.videoWidth > 0){
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        ctx.drawImage(v, 0, 0);
+        const cX = v.videoWidth/2, cY = v.videoHeight/2;
         
-        const cX = video.videoWidth/2, cY = video.videoHeight/2;
-        const p = ctxA.getImageData(cX-5, cY-5, 10, 10).data;
+        // Amostragem Central
+        const p = ctx.getImageData(cX-8, cY-8, 16, 16).data;
         let r=0, g=0, b=0;
         for(let i=0; i<p.length; i+=4){ r+=p[i]; g+=p[i+1]; b+=p[i+2]; }
         r/=(p.length/4); g/=(p.length/4); b/=(p.length/4);
 
         if(currentMode === 'PADRAO'){
-            const rad = (window.innerWidth * 0.40) * (video.videoWidth / window.innerWidth) / 2;
-            const samples = [
-                ctxA.getImageData(cX, cY-rad, 1, 1).data,
-                ctxA.getImageData(cX, cY+rad, 1, 1).data,
-                ctxA.getImageData(cX-rad, cY, 1, 1).data,
-                ctxA.getImageData(cX+rad, cY, 1, 1).data
+            const rad = (window.innerWidth * 0.42) * (v.videoWidth / window.innerWidth) / 2;
+            const pts = [
+                ctx.getImageData(cX, cY-rad, 1, 1).data,
+                ctx.getImageData(cX, cY+rad, 1, 1).data,
+                ctx.getImageData(cX-rad, cY, 1, 1).data,
+                ctx.getImageData(cX+rad, cY, 1, 1).data
             ];
-            // Tolerância alta para não travar no aguardando (estilo OEM)
-            const isFilled = samples.every(s => Math.abs(s[0]-r) + Math.abs(s[1]-g) + Math.abs(s[2]-b) < 110);
+            // Validação Estatística: Se 3 dos 4 pontos forem coerentes com o centro, libera.
+            const matches = pts.filter(pt => Math.abs(pt[0]-r) + Math.abs(pt[1]-g) + Math.abs(pt[2]-b) < 120).length;
             
-            if(!isFilled){
-                txt.innerText = "AGUARDANDO"; txt.style.color = "#555";
-                cross.classList.remove("valid");
-                requestAnimationFrame(mainLoop); return;
+            if(matches < 3){
+                txt.innerText = "AGUARDANDO"; txt.className = "";
+                statusBar.innerText = "ALINHE O OBJETO NO CÍRCULO";
+                cross.classList.remove("locked");
+                requestAnimationFrame(engine); return;
             }
         }
 
-        cross.classList.add("valid");
-        if(universalMode){
-            const name = detectColorName(r,g,b);
-            txt.innerText = name || "ANALISANDO...";
-            txt.style.color = "#00ffcc";
-            if(name) speak(name);
+        cross.classList.add("locked");
+        if(isUniv){
+            const result = getBaseColor(r,g,b);
+            txt.innerText = result;
+            txt.className = "txt-active";
+            statusBar.innerText = "MODO UNIVERSAL ATIVO";
+            speak(result);
         } else {
             txt.innerText = `RGB: ${Math.round(r)},${Math.round(g)},${Math.round(b)}`;
-            txt.style.color = "#fff";
+            txt.className = "";
+            statusBar.innerText = "LEITURA DE DADOS BRUTOS";
         }
     }
-    requestAnimationFrame(mainLoop);
+    requestAnimationFrame(engine);
 }
 
 async function toggleFlash(){
-    if(!streamTrack) return;
-    flashOn = !flashOn;
-    await streamTrack.applyConstraints({ advanced:[{ torch:flashOn }] });
+    if(!track) return;
+    flash = !flash;
+    await track.applyConstraints({ advanced:[{ torch:flash }] });
 }
 
-mainLoop();
+engine();
 </script>
 </body>
 </html>
