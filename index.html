@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v19.2 Restoration</title>
+    <title>ColorMatch Pro - v19.3 Absolute Precision</title>
     <style>
         body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -82,7 +82,6 @@
     function toggleUniv() {
         isUniv = !isUniv;
         document.getElementById('btnUniv').classList.toggle('univ-active', isUniv);
-        document.getElementById('btnUniv').innerText = `UNIVERSAL: ${isUniv ? 'ON' : 'OFF'}`;
     }
 
     function setMode(m) {
@@ -104,7 +103,7 @@
     function sample(x, y, s) {
         c.width = v.videoWidth; c.height = v.videoHeight;
         ctx.drawImage(v, 0, 0);
-        const data = ctx.getImageData(x - s/2, y - s/2, s, s).data;
+        const data = ctx.getImageData(Math.max(0, x - s/2), Math.max(0, y - s/2), s, s).data;
         let r=0, g=0, b=0;
         for(let i=0; i<data.length; i+=4) { r += data[i]; g += data[i+1]; b += data[i+2]; }
         const t = data.length/4;
@@ -132,38 +131,72 @@
         let h = Math.atan2(b, a) * (180 / Math.PI);
         if (h < 0) h += 360;
 
+        // ACROMÁTICOS (Preto, Branco, Cinza) - Lógica de Confiança
         if (chroma < 12) {
-            if (l > (iris.baseL * 0.85)) return "Branco";
-            if (l < 30) return "Preto";
+            if (l > (iris.baseL * 0.82)) return "Branco";
+            if (l < 26) return "Preto";
             return "Cinza";
         }
 
-        // Correção específica baseada no vídeo: Amarelo (h próximo de 90-100 no Lab)
-        if (h > 345 || h < 20) return (l < 45) ? "Vermelho Escuro" : "Vermelho";
-        if (h >= 20 && h < 50) return (l < 55) ? "Marrom" : "Laranja";
-        if (h >= 50 && h < 105) return "Amarelo"; // Expandido para não cair no verde
-        if (h >= 105 && h < 175) return (l < 50) ? "Verde Escuro" : "Verde";
-        if (h >= 175 && h < 265) return "Azul";
-        if (h >= 265 && h < 305) return "Roxo";
-        if (h >= 305 && h < 345) return "Rosa";
+        // MAPEAMENTO BLINDADO DE TODAS AS CORES (Baseado em Percepção Humana Real)
+        
+        // VERMELHO: Fim e Início do espectro
+        if (h > 350 || h < 18) {
+            if (l < 38) return "Vermelho Escuro";
+            return "Vermelho";
+        }
+        
+        // LARANJA E MARROM: Transição crucial
+        if (h >= 18 && h < 48) {
+            if (l < 45) return "Marrom";
+            return "Laranja";
+        }
+        
+        // AMARELO: Proteção contra o Verde falso (Aumentada a margem)
+        if (h >= 48 && h < 102) {
+            return "Amarelo";
+        }
+        
+        // VERDE: Margem ajustada para captar tons reais
+        if (h >= 102 && h < 172) {
+            if (l < 48) return "Verde Escuro";
+            return "Verde";
+        }
+        
+        // AZUL: Zona estável
+        if (h >= 172 && h < 262) {
+            return "Azul";
+        }
+        
+        // ROXO: Transição Azul -> Rosa
+        if (h >= 262 && h < 302) {
+            return "Roxo";
+        }
+        
+        // ROSA: Alta Saturação no final do espectro
+        if (h >= 302 && h < 350) {
+            return "Rosa";
+        }
         
         return "Indefinido";
     }
 
     function loop() {
         if (v.videoWidth > 0 && active) {
-            const raw = sample(v.videoWidth/2, v.videoHeight/2, 25);
+            const raw = sample(v.videoWidth/2, v.videoHeight/2, 28);
             const lab = rgbToLab(Math.min(255, raw.r * iris.r), Math.min(255, raw.g * iris.g), Math.min(255, raw.b * iris.b));
             const name = getColorName(lab);
             
+            // BUFFER DE ESTABILIZAÇÃO (18 frames para máxima assertividade)
             history.push(name);
-            if(history.length > 15) history.shift();
+            if(history.length > 18) history.shift();
             
             const counts = {};
             history.forEach(n => counts[n] = (counts[n] || 0) + 1);
             const winner = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
             
-            if (counts[winner] >= 11) {
+            // Regra de Ouro: Só fala se houver consenso de 14/18 (77% de certeza)
+            if (counts[winner] >= 14) {
                 colorTxt.innerText = winner;
                 colorTxt.className = "active-text";
                 cross.classList.add('locked');
@@ -173,7 +206,7 @@
                 colorTxt.className = "";
                 cross.classList.remove('locked');
             }
-            debugTxt.innerText = `L:${Math.round(lab.l)} Chroma:${Math.round(Math.sqrt(lab.a*lab.a + lab.b*lab.b))} H:${Math.round(Math.atan2(lab.b, lab.a)*(180/Math.PI))}`;
+            debugTxt.innerText = `L:${Math.round(lab.l)} Chroma:${Math.round(Math.sqrt(lab.a*lab.a + lab.b*lab.b))} H:${Math.round(Math.atan2(lab.b, lab.a)*(180/Math.PI))}°`;
         }
         requestAnimationFrame(loop);
     }
