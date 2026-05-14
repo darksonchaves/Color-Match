@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v17.0 Precision Peak</title>
+    <title>ColorMatch Pro - v18.0 Hard Reset</title>
     <style>
         body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -25,19 +25,19 @@
 
         #crosshair { 
             position: absolute; border: 2px dashed rgba(255,255,255,0.4); border-radius: 50%;
-            pointer-events: none; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 10;
+            pointer-events: none; transition: all 0.2s; z-index: 10;
         }
         .mira-livre { width: 45px; height: 45px; border-style: solid !important; }
         .mira-padrao { width: 34vw; height: 34vw; }
-        .locked { border-color: #00ffcc !important; background: rgba(0,255,204,0.12); box-shadow: 0 0 30px #00ffcc; }
+        .locked { border-color: #00ffcc !important; background: rgba(0,255,204,0.15); box-shadow: 0 0 30px #00ffcc; }
 
         #ui-overlay { 
             position: absolute; bottom: 0; width: 100%; padding: 45px 0;
             background: linear-gradient(transparent, rgba(0,0,0,0.98) 40%); z-index: 20;
         }
-        #color-name { font-size: 46px; font-weight: 900; text-transform: uppercase; color: #222; min-height: 60px; letter-spacing: -1px; }
+        #color-name { font-size: 48px; font-weight: 900; text-transform: uppercase; color: #222; min-height: 65px; }
         .active-text { color: #00ffcc !important; text-shadow: 0 0 25px rgba(0,255,204,0.5); }
-        #debug { font-size: 10px; color: #666; margin-top: 12px; font-family: 'Courier New', monospace; font-weight: bold; }
+        #debug { font-size: 10px; color: #666; margin-top: 12px; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -67,25 +67,23 @@
     const colorTxt = document.getElementById('color-name'), debugTxt = document.getElementById('debug'), cross = document.getElementById('crosshair');
 
     let mode = 'LIVRE', active = false, isUniv = false, lastSpeach = "", isSpeaking = false;
-    let iris = { r: 1, g: 1, b: 1 }; 
-    let history = [], lastRawColor = {h:0, s:0, l:0};
+    let iris = { r: 1, g: 1, b: 1, refBri: 200 }; 
+    let history = [];
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", focusMode: "continuous" } }).then(s => v.srcObject = s);
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
 
     function toggleSystem() { 
         active = !active; 
-        const btn = document.getElementById('btnPower');
-        btn.classList.toggle('active', active);
-        btn.innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
-        if(!active) resetUI(); else speak("Sistema Pronto");
+        document.getElementById('btnPower').classList.toggle('active', active);
+        document.getElementById('btnPower').innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
+        if(!active) resetUI(); else speak("Sistema Online");
     }
 
     function toggleUniv() {
         isUniv = !isUniv;
-        const btn = document.getElementById('btnUniv');
-        btn.classList.toggle('univ-active', isUniv);
-        btn.innerText = `UNIVERSAL: ${isUniv ? 'ON' : 'OFF'}`;
-        speak(isUniv ? "Modo Universal" : "Modo Normal");
+        document.getElementById('btnUniv').classList.toggle('univ-active', isUniv);
+        document.getElementById('btnUniv').innerText = `UNIVERSAL: ${isUniv ? 'ON' : 'OFF'}`;
+        speak(isUniv ? "Universal" : "Normal");
     }
 
     function setMode(m) {
@@ -98,17 +96,17 @@
 
     function calibrate() {
         if(!active) return;
-        const d = sample(v.videoWidth/2, v.videoHeight/2, 70);
+        const d = sample(v.videoWidth/2, v.videoHeight/2, 80);
         const avg = (d.r + d.g + d.b) / 3;
         
-        if(avg < 25) {
-            speak("Erro: Pouca luz");
-            return;
-        }
+        if(avg < 30) { speak("Luz insuficiente"); return; }
 
-        iris.r = avg / d.r;
-        iris.g = avg / d.g;
-        iris.b = avg / d.b;
+        // HARD RESET: Define o alvo como BRANCO PURO
+        iris.r = 255 / d.r;
+        iris.g = 255 / d.g;
+        iris.b = 255 / d.b;
+        iris.refBri = avg; // Guarda o brilho real do papel
+
         speak("Íris Calibrada");
     }
 
@@ -144,28 +142,26 @@
     }
 
     function getColorName(h, s, l, bri) {
-        // Trava de escuridão absoluta
-        if (bri < 22) return "Preto"; 
-
-        // Estabilização de cores neutras
-        if (s < 18) {
-            if (bri < 60) return "Preto";
-            if (bri > 190) return "Branco";
+        // Lógica de Brilho Relativo à Calibração
+        if (bri < 25) return "Preto"; 
+        
+        // Se a saturação for baixa, comparamos com a referência de calibração
+        if (s < 15) {
+            if (bri > 180) return "Branco";
+            if (bri < 70) return "Preto";
             return "Cinza";
         }
 
-        // Lógica de Espectro Primário para Modo Universal (Âncoras de Matiz)
-        if (h < 15 || h > 348) return bri < 75 ? "Vermelho Escuro" : "Vermelho";
-        if (h < 45) return bri < 70 ? "Marrom" : "Laranja";
+        if (h < 15 || h > 348) return bri < 80 ? "Vermelho Escuro" : "Vermelho";
+        if (h < 45) {
+            // Ajuste para evitar laranja fantasma no amarelo
+            if (h > 35 && s < 75) return "Amarelo"; 
+            return bri < 75 ? "Marrom" : "Laranja";
+        }
         if (h < 68) return "Amarelo";
-        
-        // ZONA DO VERDE: Ajustada para evitar confusão com azul desbotado
-        if (h < 160) return bri < 80 ? "Verde Escuro" : "Verde";
-        
-        // ZONA DO AZUL: Alargada para capturar todos os tons de azul no Modo Universal
+        if (h < 158) return bri < 85 ? "Verde Escuro" : "Verde";
         if (h < 262) return "Azul"; 
-        
-        if (h < 310) return "Roxo";
+        if (h < 305) return "Roxo";
         return "Rosa";
     }
 
@@ -175,46 +171,42 @@
             const raw = sample(x, y, 25);
             const data = processColor(raw.r, raw.g, raw.b);
 
-            // FILTRO DE HISTERESE: Só processa se a mudança for significativa
-            const diff = Math.abs(data.h - lastRawColor.h) + Math.abs(data.s - lastRawColor.s);
-            if (diff < 1.5) { // Estabiliza o sensor parado
-                requestAnimationFrame(loop);
-                return;
-            }
-            lastRawColor = data;
-
             let canShow = true;
             if (mode === 'PADRAO') {
                 const step = (v.videoWidth * 0.14);
                 const check = [sample(x, y-step, 10), sample(x, y+step, 10), sample(x-step, y, 10), sample(x+step, y, 10)];
                 const valid = check.filter(p => {
                     const pD = processColor(p.r, p.g, p.b);
-                    return Math.abs(pD.h - data.h) < 25 || (data.s < 15 && pD.s < 15);
+                    return Math.abs(pD.h - data.h) < 22 || (data.s < 15 && pD.s < 15);
                 }).length;
-
-                if (valid < 3) {
-                    canShow = false;
-                    colorTxt.innerText = "ALINHANDO...";
-                    colorTxt.className = "";
-                    cross.classList.remove('locked');
-                }
+                if (valid < 3) canShow = false;
             }
 
             if (canShow) {
                 const currentName = getColorName(data.h, data.s, data.l, data.bri);
-                const depth = isUniv ? 18 : 8; // Mais frames no Universal para 100% de precisão
+                const depth = isUniv ? 12 : 6; 
                 history.push(currentName);
                 if(history.length > depth) history.shift();
                 
-                const stableName = history.sort((a,b) => history.filter(v=>v===a).length - history.filter(v=>v===b).length).pop();
+                // Pega a cor mais frequente (Moda)
+                const counts = {};
+                history.forEach(n => counts[n] = (counts[n] || 0) + 1);
+                const stableName = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
                 
                 colorTxt.innerText = stableName;
                 colorTxt.className = "active-text";
                 cross.classList.add('locked');
                 
-                debugTxt.innerText = `H:${Math.round(data.h)} S:${Math.round(data.s)} B:${Math.round(data.bri)} | UNV:${isUniv?'ON':'OFF'}`;
+                debugTxt.innerText = `H:${Math.round(data.h)}° S:${Math.round(data.s)}% B:${Math.round(data.bri)} | IRIS: SET`;
                 
-                if(stableName !== lastSpeach) speak(stableName);
+                // Sincronismo rígido: Só fala se a cor estiver na tela
+                if(stableName !== lastSpeach && colorTxt.innerText === stableName) {
+                    speak(stableName);
+                }
+            } else {
+                colorTxt.innerText = "ALINHANDO...";
+                colorTxt.className = "";
+                cross.classList.remove('locked');
             }
         }
         requestAnimationFrame(loop);
@@ -224,7 +216,7 @@
         if(!t || isSpeaking) return;
         speechSynthesis.cancel();
         const m = new SpeechSynthesisUtterance(t);
-        m.lang='pt-BR'; m.rate=1.5;
+        m.lang='pt-BR'; m.rate=1.6;
         m.onstart=()=>isSpeaking=true; m.onend=()=>isSpeaking=false;
         speechSynthesis.speak(m); lastSpeach=t;
     }
