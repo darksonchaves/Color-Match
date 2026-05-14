@@ -3,147 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v19.4 Final Stability</title>
+    <title>ColorMatch Pro - v19.5 True Fidelity</title>
     <style>
-        body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
+        body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
             position: absolute; top: 0; width: 100%; z-index: 20;
-            background: rgba(0, 0, 0, 0.9); display: flex; justify-content: center; padding: 10px 0; gap: 5px;
-            border-bottom: 1px solid #333;
+            background: rgba(10, 10, 10, 0.98); backdrop-filter: blur(15px);
+            display: flex; justify-content: center; padding: 12px 0; gap: 8px;
+            border-bottom: 1px solid #333; flex-wrap: wrap;
         }
         button { 
-            background: #222; color: #fff; border: 1px solid #444;
-            padding: 8px 12px; border-radius: 5px; font-size: 10px; font-weight: bold;
+            background: #1a1a1a; color: #888; border: 1px solid #444;
+            padding: 10px 14px; border-radius: 8px; font-weight: bold; font-size: 9px;
+            text-transform: uppercase; transition: 0.2s;
         }
-        .active { background: #007bff !important; border-color: #007bff; }
-        #video-container { position: relative; width: 100vw; height: 100vh; }
+        .active { background: #007bff !important; color: #fff !important; border-color: #007bff; }
+        .univ-active { background: #007bff !important; color: #fff !important; border-color: #007bff; }
+
+        #video-container { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
         video { width: 100%; height: 100%; object-fit: cover; }
+
         #crosshair { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            border: 2px solid #fff; border-radius: 50%; width: 50px; height: 50px; pointer-events: none; z-index: 10;
+            position: absolute; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;
+            pointer-events: none; z-index: 10; transition: 0.1s;
         }
-        .locked { border-color: #00ffcc !important; box-shadow: 0 0 15px #00ffcc; }
-        #ui-overlay { position: absolute; bottom: 50px; width: 100%; z-index: 20; }
-        #color-name { font-size: 50px; font-weight: bold; color: #fff; text-shadow: 2px 2px 10px #000; }
+        .mira-livre { width: 45px; height: 45px; }
+        .mira-padrao { width: 34vw; height: 34vw; border: 2px dashed rgba(255,255,255,0.4); }
+        .locked { border-color: #00ffcc !important; background: rgba(0,255,204,0.1); box-shadow: 0 0 25px #00ffcc; }
+
+        #ui-overlay { 
+            position: absolute; bottom: 0; width: 100%; padding: 50px 0;
+            background: linear-gradient(transparent, rgba(0,0,0,1) 50%); z-index: 20;
+        }
+        #color-name { font-size: 52px; font-weight: 900; text-transform: uppercase; color: #333; min-height: 70px; }
+        .active-text { color: #00ffcc !important; text-shadow: 0 0 30px rgba(0,255,204,0.6); }
+        #debug { font-size: 11px; color: #555; margin-top: 15px; font-family: monospace; }
     </style>
 </head>
 <body>
 
 <div id="header">
     <button onclick="toggleSystem()" id="btnPower">SISTEMA: OFF</button>
-    <button onclick="calibrate()" id="btnCalib">CALIBRAR</button>
+    <button onclick="calibrate()" id="btnCalib">CALIBRAR MARCO ZERO</button>
+    <button onclick="setMode('LIVRE')" id="btnLivre">MOVIMENTO LIVRE</button>
+    <button onclick="setMode('PADRAO')" id="btnPadrao">MOVIMENTO PADRÃO</button>
     <button onclick="toggleUniv()" id="btnUniv">UNIVERSAL: OFF</button>
 </div>
 
 <div id="video-container">
     <video id="v" autoplay playsinline muted></video>
-    <div id="crosshair"></div>
+    <div id="crosshair" class="mira-livre"></div>
 </div>
 
 <div id="ui-overlay">
     <div id="color-name">STANDBY</div>
+    <div id="debug">Aguardando Calibração</div>
 </div>
 
 <canvas id="c" style="display:none;"></canvas>
 
 <script>
-    const v = document.getElementById('v'), c = document.getElementById('c'), ctx = c.getContext('2d');
-    const colorTxt = document.getElementById('color-name'), cross = document.getElementById('crosshair');
+    const v = document.getElementById('v'), c = document.getElementById('c'), ctx = c.getContext('2d', {willReadFrequently:true});
+    const colorTxt = document.getElementById('color-name'), debugTxt = document.getElementById('debug'), cross = document.getElementById('crosshair');
 
-    let active = false, isUniv = false, lastSpeach = "", history = [];
-    let iris = { r: 1, g: 1, b: 1 };
+    let mode = 'LIVRE', active = false, isUniv = false, lastSpeach = "", isSpeaking = false;
+    let iris = { r: 1, g: 1, b: 1 }; 
+    let history = []; 
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
 
-    function toggleSystem() {
-        active = !active;
+    function toggleSystem() { 
+        active = !active; 
         document.getElementById('btnPower').classList.toggle('active', active);
         document.getElementById('btnPower').innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
+        if(!active) resetUI();
     }
 
     function toggleUniv() {
         isUniv = !isUniv;
-        document.getElementById('btnUniv').classList.toggle('active', isUniv);
+        document.getElementById('btnUniv').classList.toggle('univ-active', isUniv);
         document.getElementById('btnUniv').innerText = `UNIVERSAL: ${isUniv ? 'ON' : 'OFF'}`;
+    }
+
+    function setMode(m) {
+        mode = m;
+        document.getElementById('btnLivre').classList.toggle('active', m === 'LIVRE');
+        document.getElementById('btnPadrao').classList.toggle('active', m === 'PADRAO');
+        cross.className = (m === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
     }
 
     function calibrate() {
         if(!active) return;
-        c.width = v.videoWidth; c.height = v.videoHeight;
-        ctx.drawImage(v, 0, 0);
-        const p = ctx.getImageData(v.videoWidth/2, v.videoHeight/2, 1, 1).data;
-        iris.r = 255 / p[0]; iris.g = 255 / p[1]; iris.b = 255 / d[2];
+        const d = sample(v.videoWidth/2, v.videoHeight/2, 50);
+        iris.r = 255 / d.r; iris.g = 255 / d.g; iris.b = 255 / d.b;
         speak("Calibrado");
     }
 
-    function rgbToHsl(r, g, b) {
+    function sample(x, y, s) {
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        ctx.drawImage(v, 0, 0);
+        const data = ctx.getImageData(x - s/2, y - s/2, s, s).data;
+        let r=0, g=0, b=0;
+        for(let i=0; i<data.length; i+=4) { r += data[i]; g += data[i+1]; b += data[i+2]; }
+        const t = data.length/4;
+        return { r: r/t, g: g/t, b: b/t };
+    }
+
+    function getHSL(r, g, b) {
         r /= 255; g /= 255; b /= 255;
         const max = Math.max(r, g, b), min = Math.min(r, g, b);
         let h, s, l = (max + min) / 2;
-        if (max === min) h = s = 0;
+        if(max === min) h = s = 0;
         else {
             const d = max - min;
             s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch (max) {
-                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                case g: h = (b - r) / d + 2; break;
-                case b: h = (r - g) / d + 4; break;
-            }
+            if(max === r) h = (g - b) / d + (g < b ? 6 : 0);
+            else if(max === g) h = (b - r) / d + 2;
+            else h = (r - g) / d + 4;
             h /= 6;
         }
-        return [h * 360, s * 100, l * 100];
+        return { h: h * 360, s: s * 100, l: l * 100 };
     }
 
-    function getName(r, g, b) {
-        const [h, s, l] = rgbToHsl(r * iris.r, g * iris.g, b * iris.b);
+    function getColorName(r, g, b) {
+        const { h, s, l } = getHSL(r * iris.r, g * iris.g, b * iris.b);
+
+        if (l < 22) return "Preto";
+        if (l > 88 && s < 20) return "Branco";
+        if (s < 18) return "Cinza";
+
+        // VERMELHO vs ROSA (Ajuste Fino)
+        if (h > 348 || h < 12) {
+            if (s > 40 && l > 45 && h > 300) return "Rosa"; // Captura o Rosa pela saturação e matiz final
+            return l < 40 ? "Vermelho Escuro" : "Vermelho";
+        }
         
-        if (l < 18) return "Preto";
-        if (l > 85 && s < 15) return "Branco";
-        if (s < 15) return "Cinza";
-
-        if (h < 15 || h > 345) return l < 40 ? "Vermelho Escuro" : "Vermelho";
-        if (h >= 15 && h < 45) return l < 40 ? "Marrom" : "Laranja";
-        if (h >= 45 && h < 68) return "Amarelo"; // Faixa de Amarelo PROTEGIDA
-        if (h >= 68 && h < 165) return l < 40 ? "Verde Escuro" : "Verde";
-        if (h >= 165 && h < 260) return "Azul";
-        if (h >= 260 && h < 300) return "Roxo";
-        if (h >= 300 && h < 345) return "Rosa";
-
+        if (h >= 12 && h < 48) return l < 40 ? "Marrom" : "Laranja";
+        if (h >= 48 && h < 67) return "Amarelo"; 
+        if (h >= 67 && h < 165) return l < 45 ? "Verde Escuro" : "Verde";
+        if (h >= 165 && h < 255) return "Azul";
+        
+        // ROXO vs ROSA
+        if (h >= 255 && h < 305) return "Roxo"; // Faixa do isqueiro roxo
+        if (h >= 305 && h < 348) return "Rosa"; // Faixa da camisa rosa
+        
         return "Indefinido";
     }
 
     function loop() {
         if (active && v.videoWidth > 0) {
-            c.width = v.videoWidth; c.height = v.videoHeight;
-            ctx.drawImage(v, 0, 0);
-            const p = ctx.getImageData(v.videoWidth/2, v.videoHeight/2, 1, 1).data;
-            const name = getName(p[0], p[1], p[2]);
-
+            const raw = sample(v.videoWidth/2, v.videoHeight/2, 30);
+            const name = getColorName(raw.r, raw.g, raw.b);
+            
             history.push(name);
-            if(history.length > 25) history.shift();
+            if(history.length > 20) history.shift();
             
             const counts = {};
-            history.forEach(x => counts[x] = (counts[x] || 0) + 1);
+            history.forEach(n => counts[n] = (counts[n] || 0) + 1);
             const winner = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
-
-            if (counts[winner] > 20) {
+            
+            if (counts[winner] >= 16) {
                 colorTxt.innerText = winner;
+                colorTxt.className = "active-text";
                 cross.classList.add('locked');
-                if (winner !== lastSpeach) { speak(winner); lastSpeach = winner; }
+                if(winner !== lastSpeach && winner !== "Indefinido") speak(winner);
             } else {
-                colorTxt.innerText = "ANALISANDO...";
+                colorTxt.innerText = "ALINHANDO";
+                colorTxt.className = "";
                 cross.classList.remove('locked');
             }
+            debugTxt.innerText = `H:${Math.round(getHSL(raw.r*iris.r, raw.g*iris.g, raw.b*iris.b).h)} S:${Math.round(getHSL(raw.r*iris.r, raw.g*iris.g, raw.b*iris.b).s)} L:${Math.round(getHSL(raw.r*iris.r, raw.g*iris.g, raw.b*iris.b).l)}`;
         }
         requestAnimationFrame(loop);
     }
 
     function speak(t) {
-        const u = new SpeechSynthesisUtterance(t);
-        u.lang = 'pt-BR'; u.rate = 1.5;
-        window.speechSynthesis.speak(u);
+        if(!t || isSpeaking) return;
+        speechSynthesis.cancel();
+        const m = new SpeechSynthesisUtterance(t);
+        m.lang='pt-BR'; m.rate=1.6;
+        m.onstart = () => isSpeaking = true;
+        m.onend = () => isSpeaking = false;
+        speechSynthesis.speak(m);
+        lastSpeach = t;
     }
 
+    function resetUI() {
+        colorTxt.innerText = "STANDBY"; colorTxt.className = "";
+        cross.classList.remove('locked');
+        history = []; lastSpeach = "";
+    }
     loop();
 </script>
 </body>
