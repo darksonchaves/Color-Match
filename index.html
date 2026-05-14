@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v18.4 Ultra Precision</title>
+    <title>ColorMatch Pro - v18.5 Maximum Precision</title>
     <style>
         body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -67,8 +67,8 @@
     const colorTxt = document.getElementById('color-name'), debugTxt = document.getElementById('debug'), cross = document.getElementById('crosshair');
 
     let mode = 'LIVRE', active = false, isUniv = false, lastSpeach = "", isSpeaking = false;
-    let iris = { r: 1, g: 1, b: 1 }; 
-    let history = []; // Armazena os últimos 15 nomes para média de confiança
+    let iris = { r: 1, g: 1, b: 1, baseLumi: 200 }; 
+    let history = []; 
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
 
@@ -91,19 +91,19 @@
         document.getElementById('btnLivre').classList.toggle('active', m === 'LIVRE');
         document.getElementById('btnPadrao').classList.toggle('active', m === 'PADRAO');
         cross.className = (m === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
-        speak(m === 'LIVRE' ? "Modo Livre" : "Modo Padrão");
+        speak(m === 'LIVRE' ? "Livre" : "Padrão");
     }
 
     function calibrate() {
         if(!active) return;
         const d = sample(v.videoWidth/2, v.videoHeight/2, 90);
         const avg = (d.r + d.g + d.b) / 3;
-        if(avg < 40) { speak("Luz muito baixa"); return; }
+        if(avg < 30) { speak("Luz insuficiente"); return; }
         
-        // Marco Zero Real: Alinha o RGB ao Branco do Sulfite
         iris.r = 255 / d.r;
         iris.g = 255 / d.g;
         iris.b = 255 / d.b;
+        iris.baseLumi = avg; // Grava a luminosidade do papel como referência
         
         speak("Marco Zero Definido");
     }
@@ -136,16 +136,17 @@
     }
 
     function getColorName(h, s, l, bri) {
-        // LIMITE TÉCNICO REAL (14%): O ponto exato onde a cor deixa de ser ruído neutro.
+        // FILTRO DE SATURAÇÃO REAL (14%)
         if (s < 14) {
-            if (bri > 165) return "Branco";
-            if (bri < 55) return "Preto";
+            // Se o brilho atual for significativamente menor que o do Marco Zero, é Cinza.
+            if (bri > (iris.baseLumi * 0.75)) return "Branco";
+            if (bri < 50) return "Preto";
             return "Cinza";
         }
 
-        // Mapeamento condizente com o espectro visível
+        // MODO UNIVERSAL: Delimitação rígida de espectro
         if (h < 15 || h > 348) return bri < 80 ? "Vermelho Escuro" : "Vermelho";
-        if (h < 45) {
+        if (h < 44) {
             if (h > 36 && s < 70) return "Amarelo"; 
             return bri < 75 ? "Marrom" : "Laranja";
         }
@@ -168,7 +169,7 @@
                 const check = [sample(x, y-step, 10), sample(x, y+step, 10), sample(x-step, y, 10), sample(x+step, y, 10)];
                 const valid = check.filter(p => {
                     const pD = processColor(p.r, p.g, p.b);
-                    return Math.abs(pD.h - data.h) < 22 || (data.s < 14 && pD.s < 14);
+                    return Math.abs(pD.h - data.h) < 20 || (data.s < 14 && pD.s < 14);
                 }).length;
                 if (valid < 3) canShow = false;
             }
@@ -176,16 +177,17 @@
             if (canShow) {
                 const currentName = getColorName(data.h, data.s, data.l, data.bri);
                 
-                // MOTOR DE ESTABILIDADE: Analisa 15 amostras para limpar ruído sem travar a cor
+                // FILTRO DE VARIÂNCIA TEMPORAL (Anti-Flicker)
+                // Analisa 18 frames para ignorar oscilações de telas e luzes artificiais
                 history.push(currentName);
-                if(history.length > 15) history.shift();
+                if(history.length > 18) history.shift();
                 
                 const counts = {};
                 history.forEach(n => counts[n] = (counts[n] || 0) + 1);
                 const stableName = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
                 
-                // Exibe apenas com 70% de consenso no buffer
-                if (counts[stableName] >= 10) {
+                // Consenso de 80% para evitar "pulos" de cor por impureza
+                if (counts[stableName] >= 14) {
                     colorTxt.innerText = stableName;
                     colorTxt.className = "active-text";
                     cross.classList.add('locked');
