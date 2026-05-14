@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v18.3 Precision Anchor</title>
+    <title>ColorMatch Pro - v18.4 Ultra Precision</title>
     <style>
         body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
             position: absolute; top: 0; width: 100%; z-index: 20;
-            background: rgba(10, 10, 10, 0.96); backdrop-filter: blur(12px);
+            background: rgba(10, 10, 10, 0.98); backdrop-filter: blur(15px);
             display: flex; justify-content: center; padding: 12px 0; gap: 8px;
             border-bottom: 1px solid #333; flex-wrap: wrap;
         }
         button { 
             background: #1a1a1a; color: #888; border: 1px solid #444;
             padding: 10px 14px; border-radius: 8px; font-weight: bold; font-size: 9px;
-            text-transform: uppercase; transition: 0.2s; letter-spacing: 0.5px;
+            text-transform: uppercase; transition: 0.2s;
         }
         .active { background: #00ffcc !important; color: #000 !important; border-color: #00ffcc; }
         .univ-active { background: #ffaa00 !important; color: #000 !important; border-color: #ffaa00; }
@@ -24,27 +24,27 @@
         video { width: 100%; height: 100%; object-fit: cover; }
 
         #crosshair { 
-            position: absolute; border: 2px dashed rgba(255,255,255,0.4); border-radius: 50%;
-            pointer-events: none; transition: all 0.2s; z-index: 10;
+            position: absolute; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;
+            pointer-events: none; z-index: 10; transition: 0.1s;
         }
-        .mira-livre { width: 45px; height: 45px; border-style: solid !important; }
-        .mira-padrao { width: 34vw; height: 34vw; }
-        .locked { border-color: #00ffcc !important; background: rgba(0,255,204,0.15); box-shadow: 0 0 30px #00ffcc; }
+        .mira-livre { width: 45px; height: 45px; }
+        .mira-padrao { width: 34vw; height: 34vw; border: 2px dashed rgba(255,255,255,0.4); }
+        .locked { border-color: #00ffcc !important; background: rgba(0,255,204,0.1); box-shadow: 0 0 25px #00ffcc; }
 
         #ui-overlay { 
-            position: absolute; bottom: 0; width: 100%; padding: 45px 0;
-            background: linear-gradient(transparent, rgba(0,0,0,0.98) 40%); z-index: 20;
+            position: absolute; bottom: 0; width: 100%; padding: 50px 0;
+            background: linear-gradient(transparent, rgba(0,0,0,1) 50%); z-index: 20;
         }
-        #color-name { font-size: 48px; font-weight: 900; text-transform: uppercase; color: #222; min-height: 65px; letter-spacing: -1px; }
-        .active-text { color: #00ffcc !important; text-shadow: 0 0 25px rgba(0,255,204,0.5); }
-        #debug { font-size: 10px; color: #666; margin-top: 12px; font-family: monospace; font-weight: bold; }
+        #color-name { font-size: 52px; font-weight: 900; text-transform: uppercase; color: #333; min-height: 70px; }
+        .active-text { color: #00ffcc !important; text-shadow: 0 0 30px rgba(0,255,204,0.6); }
+        #debug { font-size: 11px; color: #555; margin-top: 15px; font-family: monospace; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
 <div id="header">
     <button onclick="toggleSystem()" id="btnPower">SISTEMA: OFF</button>
-    <button onclick="calibrate()" id="btnCalib">CALIBRAR ÍRIS</button>
+    <button onclick="calibrate()" id="btnCalib">CALIBRAR MARCO ZERO</button>
     <button onclick="setMode('LIVRE')" id="btnLivre">MOVIMENTO LIVRE</button>
     <button onclick="setMode('PADRAO')" id="btnPadrao">MOVIMENTO PADRÃO</button>
     <button onclick="toggleUniv()" id="btnUniv">UNIVERSAL: OFF</button>
@@ -56,8 +56,8 @@
 </div>
 
 <div id="ui-overlay">
-    <div id="color-name">DISJUNTOR OFF</div>
-    <div id="debug">SISTEMA EM STANDBY</div>
+    <div id="color-name">STANDBY</div>
+    <div id="debug">Aguardando Calibração no Sulfite</div>
 </div>
 
 <canvas id="c" style="display:none;"></canvas>
@@ -68,24 +68,22 @@
 
     let mode = 'LIVRE', active = false, isUniv = false, lastSpeach = "", isSpeaking = false;
     let iris = { r: 1, g: 1, b: 1 }; 
-    let history = [];
+    let history = []; // Armazena os últimos 15 nomes para média de confiança
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
 
     function toggleSystem() { 
         active = !active; 
-        const btn = document.getElementById('btnPower');
-        btn.classList.toggle('active', active);
-        btn.innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
+        document.getElementById('btnPower').classList.toggle('active', active);
+        document.getElementById('btnPower').innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
         if(!active) resetUI(); else speak("Sistema Pronto");
     }
 
     function toggleUniv() {
         isUniv = !isUniv;
-        const btn = document.getElementById('btnUniv');
-        btn.classList.toggle('univ-active', isUniv);
-        btn.innerText = `UNIVERSAL: ${isUniv ? 'ON' : 'OFF'}`;
-        speak(isUniv ? "Modo Universal" : "Modo Normal");
+        document.getElementById('btnUniv').classList.toggle('univ-active', isUniv);
+        document.getElementById('btnUniv').innerText = `UNIVERSAL: ${isUniv ? 'ON' : 'OFF'}`;
+        speak(isUniv ? "Universal" : "Normal");
     }
 
     function setMode(m) {
@@ -93,21 +91,21 @@
         document.getElementById('btnLivre').classList.toggle('active', m === 'LIVRE');
         document.getElementById('btnPadrao').classList.toggle('active', m === 'PADRAO');
         cross.className = (m === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
-        speak(m === 'LIVRE' ? "Livre" : "Padrão");
+        speak(m === 'LIVRE' ? "Modo Livre" : "Modo Padrão");
     }
 
     function calibrate() {
         if(!active) return;
-        const d = sample(v.videoWidth/2, v.videoHeight/2, 85);
+        const d = sample(v.videoWidth/2, v.videoHeight/2, 90);
         const avg = (d.r + d.g + d.b) / 3;
-        if(avg < 30) { speak("Erro: Pouca luz"); return; }
+        if(avg < 40) { speak("Luz muito baixa"); return; }
         
-        // Marco Zero Absoluto: Força o sulfite a ser o teto RGB
+        // Marco Zero Real: Alinha o RGB ao Branco do Sulfite
         iris.r = 255 / d.r;
         iris.g = 255 / d.g;
         iris.b = 255 / d.b;
         
-        speak("Íris Calibrada");
+        speak("Marco Zero Definido");
     }
 
     function sample(x, y, s) {
@@ -121,15 +119,11 @@
     }
 
     function processColor(rawR, rawG, rawB) {
-        let r = Math.min(255, rawR * iris.r);
-        let g = Math.min(255, rawG * iris.g);
-        let b = Math.min(255, rawB * iris.b);
-
+        let r = Math.min(255, rawR * iris.r), g = Math.min(255, rawG * iris.g), b = Math.min(255, rawB * iris.b);
         const bri = (r + g + b) / 3;
         const rN = r/255, gN = g/255, bN = b/255;
         const max = Math.max(rN, gN, bN), min = Math.min(rN, gN, bN), d = max - min;
         let h, s, l = (max + min) / 2;
-
         if (d === 0) h = s = 0;
         else {
             s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -142,18 +136,17 @@
     }
 
     function getColorName(h, s, l, bri) {
-        // CADEADO DE SATURAÇÃO (MARCO ZERO): 
-        // Aumentado para 25% para garantir que o Sulfite nunca saia do Branco/Cinza/Preto
-        if (s < 25) {
-            if (bri > 160) return "Branco";
-            if (bri < 65) return "Preto";
+        // LIMITE TÉCNICO REAL (14%): O ponto exato onde a cor deixa de ser ruído neutro.
+        if (s < 14) {
+            if (bri > 165) return "Branco";
+            if (bri < 55) return "Preto";
             return "Cinza";
         }
 
-        // Espectro Primário com Filtro de Vizinhos
+        // Mapeamento condizente com o espectro visível
         if (h < 15 || h > 348) return bri < 80 ? "Vermelho Escuro" : "Vermelho";
         if (h < 45) {
-            if (h > 36 && s < 72) return "Amarelo"; // Proteção contra Laranja Fantasma
+            if (h > 36 && s < 70) return "Amarelo"; 
             return bri < 75 ? "Marrom" : "Laranja";
         }
         if (h < 68) return "Amarelo";
@@ -175,31 +168,33 @@
                 const check = [sample(x, y-step, 10), sample(x, y+step, 10), sample(x-step, y, 10), sample(x+step, y, 10)];
                 const valid = check.filter(p => {
                     const pD = processColor(p.r, p.g, p.b);
-                    // Histerese de 25% para evitar tremor entre cores e branco
-                    return Math.abs(pD.h - data.h) < 25 || (data.s < 25 && pD.s < 25);
+                    return Math.abs(pD.h - data.h) < 22 || (data.s < 14 && pD.s < 14);
                 }).length;
                 if (valid < 3) canShow = false;
             }
 
             if (canShow) {
                 const currentName = getColorName(data.h, data.s, data.l, data.bri);
-                const depth = isUniv ? 15 : 8; 
-                history.push(currentName);
-                if(history.length > depth) history.shift();
                 
-                // Cálculo de Moda (Estabilidade)
+                // MOTOR DE ESTABILIDADE: Analisa 15 amostras para limpar ruído sem travar a cor
+                history.push(currentName);
+                if(history.length > 15) history.shift();
+                
                 const counts = {};
                 history.forEach(n => counts[n] = (counts[n] || 0) + 1);
                 const stableName = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
                 
-                colorTxt.innerText = stableName;
-                colorTxt.className = "active-text";
-                cross.classList.add('locked');
-                debugTxt.innerText = `H:${Math.round(data.h)} S:${Math.round(data.s)}% B:${Math.round(data.bri)}`;
+                // Exibe apenas com 70% de consenso no buffer
+                if (counts[stableName] >= 10) {
+                    colorTxt.innerText = stableName;
+                    colorTxt.className = "active-text";
+                    cross.classList.add('locked');
+                    if(stableName !== lastSpeach) speak(stableName);
+                }
                 
-                if(stableName !== lastSpeach) speak(stableName);
+                debugTxt.innerText = `HSB: ${Math.round(data.h)}° | ${Math.round(data.s)}% | ${Math.round(data.bri)}`;
             } else {
-                colorTxt.innerText = "ALINHANDO...";
+                colorTxt.innerText = "ALINHANDO";
                 colorTxt.className = "";
                 cross.classList.remove('locked');
             }
@@ -212,16 +207,16 @@
         speechSynthesis.cancel();
         const m = new SpeechSynthesisUtterance(t);
         m.lang='pt-BR'; m.rate=1.6;
-        m.onstart = () => { isSpeaking = true; };
-        m.onend = () => { isSpeaking = false; };
+        m.onstart = () => isSpeaking = true;
+        m.onend = () => isSpeaking = false;
         speechSynthesis.speak(m);
         lastSpeach = t;
     }
 
     function resetUI() {
-        colorTxt.innerText = "DISJUNTOR OFF"; colorTxt.className = "";
+        colorTxt.innerText = "STANDBY"; colorTxt.className = "";
         cross.classList.remove('locked');
-        debugTxt.innerText = "SISTEMA EM STANDBY";
+        debugTxt.innerText = "Aguardando Calibração no Sulfite";
         history = []; lastSpeach = "";
     }
     loop();
