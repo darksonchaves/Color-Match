@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v18.5 Maximum Precision</title>
+    <title>ColorMatch Pro - v18.6 Absolute Fidelity</title>
     <style>
         body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -35,7 +35,7 @@
             position: absolute; bottom: 0; width: 100%; padding: 50px 0;
             background: linear-gradient(transparent, rgba(0,0,0,1) 50%); z-index: 20;
         }
-        #color-name { font-size: 52px; font-weight: 900; text-transform: uppercase; color: #333; min-height: 70px; }
+        #color-name { font-size: 52px; font-weight: 900; text-transform: uppercase; color: #333; min-height: 70px; letter-spacing: -1px; }
         .active-text { color: #00ffcc !important; text-shadow: 0 0 30px rgba(0,255,204,0.6); }
         #debug { font-size: 11px; color: #555; margin-top: 15px; font-family: monospace; letter-spacing: 1px; }
     </style>
@@ -103,7 +103,7 @@
         iris.r = 255 / d.r;
         iris.g = 255 / d.g;
         iris.b = 255 / d.b;
-        iris.baseLumi = avg; // Grava a luminosidade do papel como referência
+        iris.baseLumi = avg; 
         
         speak("Marco Zero Definido");
     }
@@ -121,9 +121,15 @@
     function processColor(rawR, rawG, rawB) {
         let r = Math.min(255, rawR * iris.r), g = Math.min(255, rawG * iris.g), b = Math.min(255, rawB * iris.b);
         const bri = (r + g + b) / 3;
+        
+        // --- ALGORITMO DE COMPENSAÇÃO DE SOMBRA ---
+        // Se a luminosidade cai, aumentamos a sensibilidade cromática proporcionalmente
+        let shadowFactor = Math.max(1, iris.baseLumi / Math.max(bri, 1));
+        
         const rN = r/255, gN = g/255, bN = b/255;
         const max = Math.max(rN, gN, bN), min = Math.min(rN, gN, bN), d = max - min;
         let h, s, l = (max + min) / 2;
+        
         if (d === 0) h = s = 0;
         else {
             s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -132,35 +138,38 @@
             else h = (rN - gN) / d + 4;
             h /= 6;
         }
-        return { h: h * 360, s: s * 100, l: l * 100, bri: bri };
+        
+        return { h: h * 360, s: s * 100, l: l * 100, bri: bri, factor: shadowFactor };
     }
 
-    function getColorName(h, s, l, bri) {
-        // FILTRO DE SATURAÇÃO REAL (14%)
-        if (s < 14) {
-            // Se o brilho atual for significativamente menor que o do Marco Zero, é Cinza.
-            if (bri > (iris.baseLumi * 0.75)) return "Branco";
-            if (bri < 50) return "Preto";
+    function getColorName(h, s, l, bri, factor) {
+        // LIMITE DE SATURAÇÃO COM COMPENSAÇÃO (14% base)
+        // Se estiver na sombra (factor > 1), o limite de saturação diminui para captar a cor degradada
+        let dynamicThreshold = 14 / Math.sqrt(factor); 
+
+        if (s < dynamicThreshold) {
+            if (bri > (iris.baseLumi * 0.8)) return "Branco";
+            if (bri < 45) return "Preto";
             return "Cinza";
         }
 
-        // MODO UNIVERSAL: Delimitação rígida de espectro
-        if (h < 15 || h > 348) return bri < 80 ? "Vermelho Escuro" : "Vermelho";
+        // --- MAPEAMENTO UNIVERSAL REFINADO ---
+        if (h < 15 || h > 348) return (bri * factor) < 70 ? "Vermelho Escuro" : "Vermelho";
         if (h < 44) {
             if (h > 36 && s < 70) return "Amarelo"; 
-            return bri < 75 ? "Marrom" : "Laranja";
+            return (bri * factor) < 65 ? "Marrom" : "Laranja";
         }
         if (h < 68) return "Amarelo";
-        if (h < 158) return bri < 85 ? "Verde Escuro" : "Verde";
-        if (h < 262) return "Azul"; 
-        if (h < 305) return "Roxo";
+        if (h < 156) return (bri * factor) < 80 ? "Verde Escuro" : "Verde";
+        if (h < 265) return "Azul"; 
+        if (h < 302) return "Roxo";
         return "Rosa";
     }
 
     function loop() {
         if (v.videoWidth > 0 && active) {
             const x = v.videoWidth/2, y = v.videoHeight/2;
-            const raw = sample(x, y, 22);
+            const raw = sample(x, y, 24);
             const data = processColor(raw.r, raw.g, raw.b);
 
             let canShow = true;
@@ -169,32 +178,30 @@
                 const check = [sample(x, y-step, 10), sample(x, y+step, 10), sample(x-step, y, 10), sample(x+step, y, 10)];
                 const valid = check.filter(p => {
                     const pD = processColor(p.r, p.g, p.b);
-                    return Math.abs(pD.h - data.h) < 20 || (data.s < 14 && pD.s < 14);
+                    return Math.abs(pD.h - data.h) < 18 || (data.s < 14 && pD.s < 14);
                 }).length;
                 if (valid < 3) canShow = false;
             }
 
             if (canShow) {
-                const currentName = getColorName(data.h, data.s, data.l, data.bri);
+                const currentName = getColorName(data.h, data.s, data.l, data.bri, data.factor);
                 
-                // FILTRO DE VARIÂNCIA TEMPORAL (Anti-Flicker)
-                // Analisa 18 frames para ignorar oscilações de telas e luzes artificiais
+                // ANTI-FLICKER (Filtro de impurezas temporal)
                 history.push(currentName);
-                if(history.length > 18) history.shift();
+                if(history.length > 15) history.shift();
                 
                 const counts = {};
                 history.forEach(n => counts[n] = (counts[n] || 0) + 1);
                 const stableName = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
                 
-                // Consenso de 80% para evitar "pulos" de cor por impureza
-                if (counts[stableName] >= 14) {
+                if (counts[stableName] >= 11) {
                     colorTxt.innerText = stableName;
                     colorTxt.className = "active-text";
                     cross.classList.add('locked');
                     if(stableName !== lastSpeach) speak(stableName);
                 }
                 
-                debugTxt.innerText = `HSB: ${Math.round(data.h)}° | ${Math.round(data.s)}% | ${Math.round(data.bri)}`;
+                debugTxt.innerText = `FATOR: ${data.factor.toFixed(1)}x | S:${Math.round(data.s)}% | BRI:${Math.round(data.bri)}`;
             } else {
                 colorTxt.innerText = "ALINHANDO";
                 colorTxt.className = "";
@@ -208,7 +215,7 @@
         if(!t || isSpeaking) return;
         speechSynthesis.cancel();
         const m = new SpeechSynthesisUtterance(t);
-        m.lang='pt-BR'; m.rate=1.6;
+        m.lang='pt-BR'; m.rate=1.7;
         m.onstart = () => isSpeaking = true;
         m.onend = () => isSpeaking = false;
         speechSynthesis.speak(m);
@@ -218,7 +225,7 @@
     function resetUI() {
         colorTxt.innerText = "STANDBY"; colorTxt.className = "";
         cross.classList.remove('locked');
-        debugTxt.innerText = "Aguardando Calibração no Sulfite";
+        debugTxt.innerText = "Aguardando Calibração";
         history = []; lastSpeach = "";
     }
     loop();
