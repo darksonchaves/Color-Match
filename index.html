@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v16.0 Iris Engine</title>
+    <title>ColorMatch Pro - v17.0 Precision Peak</title>
     <style>
         body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
             position: absolute; top: 0; width: 100%; z-index: 20;
-            background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(10px);
-            display: flex; justify-content: center; padding: 12px 0; gap: 6px;
+            background: rgba(10, 10, 10, 0.96); backdrop-filter: blur(12px);
+            display: flex; justify-content: center; padding: 12px 0; gap: 8px;
             border-bottom: 1px solid #333; flex-wrap: wrap;
         }
         button { 
-            background: #1a1a1a; color: #777; border: 1px solid #444;
-            padding: 10px 12px; border-radius: 8px; font-weight: bold; font-size: 9px;
-            text-transform: uppercase; transition: 0.2s;
+            background: #1a1a1a; color: #888; border: 1px solid #444;
+            padding: 10px 14px; border-radius: 8px; font-weight: bold; font-size: 9px;
+            text-transform: uppercase; transition: 0.2s; letter-spacing: 0.5px;
         }
         .active { background: #00ffcc !important; color: #000 !important; border-color: #00ffcc; box-shadow: 0 0 15px rgba(0,255,204,0.4); }
         .univ-active { background: #ffaa00 !important; color: #000 !important; border-color: #ffaa00; }
@@ -25,28 +25,28 @@
 
         #crosshair { 
             position: absolute; border: 2px dashed rgba(255,255,255,0.4); border-radius: 50%;
-            pointer-events: none; transition: all 0.2s; z-index: 10;
+            pointer-events: none; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 10;
         }
         .mira-livre { width: 45px; height: 45px; border-style: solid !important; }
-        .mira-padrao { width: 32vw; height: 32vw; }
-        .locked { border-color: #00ffcc !important; background: rgba(0,255,204,0.1); box-shadow: 0 0 25px #00ffcc; }
+        .mira-padrao { width: 34vw; height: 34vw; }
+        .locked { border-color: #00ffcc !important; background: rgba(0,255,204,0.12); box-shadow: 0 0 30px #00ffcc; }
 
         #ui-overlay { 
-            position: absolute; bottom: 0; width: 100%; padding: 40px 0;
-            background: linear-gradient(transparent, rgba(0,0,0,0.98)); z-index: 20;
+            position: absolute; bottom: 0; width: 100%; padding: 45px 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.98) 40%); z-index: 20;
         }
-        #color-name { font-size: 44px; font-weight: 900; text-transform: uppercase; color: #222; min-height: 50px; }
-        .active-text { color: #00ffcc !important; text-shadow: 0 0 20px rgba(0,255,204,0.5); }
-        #debug { font-size: 10px; color: #555; margin-top: 10px; font-family: monospace; text-transform: uppercase; }
+        #color-name { font-size: 46px; font-weight: 900; text-transform: uppercase; color: #222; min-height: 60px; letter-spacing: -1px; }
+        .active-text { color: #00ffcc !important; text-shadow: 0 0 25px rgba(0,255,204,0.5); }
+        #debug { font-size: 10px; color: #666; margin-top: 12px; font-family: 'Courier New', monospace; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="header">
     <button onclick="toggleSystem()" id="btnPower">SISTEMA: OFF</button>
-    <button onclick="calibrate()" id="btnCalib">CALIBRAR IRIS (SULFITE)</button>
-    <button onclick="setMode('LIVRE')" id="btnLivre">LIVRE</button>
-    <button onclick="setMode('PADRAO')" id="btnPadrao">PADRÃO</button>
+    <button onclick="calibrate()" id="btnCalib">CALIBRAR ÍRIS</button>
+    <button onclick="setMode('LIVRE')" id="btnLivre">MOVIMENTO LIVRE</button>
+    <button onclick="setMode('PADRAO')" id="btnPadrao">MOVIMENTO PADRÃO</button>
     <button onclick="toggleUniv()" id="btnUniv">UNIVERSAL: OFF</button>
 </div>
 
@@ -57,7 +57,7 @@
 
 <div id="ui-overlay">
     <div id="color-name">DISJUNTOR OFF</div>
-    <div id="debug">Aguardando ativação do sistema...</div>
+    <div id="debug">SISTEMA EM STANDBY</div>
 </div>
 
 <canvas id="c" style="display:none;"></canvas>
@@ -67,25 +67,25 @@
     const colorTxt = document.getElementById('color-name'), debugTxt = document.getElementById('debug'), cross = document.getElementById('crosshair');
 
     let mode = 'LIVRE', active = false, isUniv = false, lastSpeach = "", isSpeaking = false;
-    // Iris Coefficients (Multiplicadores de correção)
     let iris = { r: 1, g: 1, b: 1 }; 
-    let history = [];
+    let history = [], lastRawColor = {h:0, s:0, l:0};
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", focusMode: "continuous" } }).then(s => v.srcObject = s);
 
     function toggleSystem() { 
         active = !active; 
         const btn = document.getElementById('btnPower');
         btn.classList.toggle('active', active);
         btn.innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
-        if(!active) resetUI(); else speak("Sistema Online");
+        if(!active) resetUI(); else speak("Sistema Pronto");
     }
 
     function toggleUniv() {
         isUniv = !isUniv;
-        document.getElementById('btnUniv').classList.toggle('univ-active', isUniv);
-        document.getElementById('btnUniv').innerText = `UNIVERSAL: ${isUniv ? 'ON' : 'OFF'}`;
-        speak(isUniv ? "Modo Universal Ativo" : "Modo Normal");
+        const btn = document.getElementById('btnUniv');
+        btn.classList.toggle('univ-active', isUniv);
+        btn.innerText = `UNIVERSAL: ${isUniv ? 'ON' : 'OFF'}`;
+        speak(isUniv ? "Modo Universal" : "Modo Normal");
     }
 
     function setMode(m) {
@@ -93,26 +93,23 @@
         document.getElementById('btnLivre').classList.toggle('active', m === 'LIVRE');
         document.getElementById('btnPadrao').classList.toggle('active', m === 'PADRAO');
         cross.className = (m === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
-        speak(m);
+        speak(m === 'LIVRE' ? "Livre" : "Padrão");
     }
 
     function calibrate() {
         if(!active) return;
-        const d = sample(v.videoWidth/2, v.videoHeight/2, 60);
+        const d = sample(v.videoWidth/2, v.videoHeight/2, 70);
         const avg = (d.r + d.g + d.b) / 3;
         
-        if(avg < 30) {
-            speak("Ambiente muito escuro");
+        if(avg < 25) {
+            speak("Erro: Pouca luz");
             return;
         }
 
-        // MEMÓRIA DA IRIS: Calcula quanto cada canal precisa ser multiplicado para chegar ao branco puro (255)
-        // Isso "abate" a influência da cor da lâmpada.
         iris.r = avg / d.r;
         iris.g = avg / d.g;
         iris.b = avg / d.b;
-
-        speak("Iris Calibrada");
+        speak("Íris Calibrada");
     }
 
     function sample(x, y, s) {
@@ -126,70 +123,73 @@
     }
 
     function processColor(rawR, rawG, rawB) {
-        // Aplica correção da Iris (Abatimento da luz ambiente)
-        let r = rawR * iris.r;
-        let g = rawG * iris.g;
-        let b = rawB * iris.b;
-
-        // Limite de segurança
-        r = Math.min(255, r); g = Math.min(255, g); b = Math.min(255, b);
+        let r = Math.min(255, rawR * iris.r);
+        let g = Math.min(255, rawG * iris.g);
+        let b = Math.min(255, rawB * iris.b);
 
         const bri = (r + g + b) / 3;
-        
-        // Conversão para HSL para análise de Matiz
-        const rNorm = r/255, gNorm = g/255, bNorm = b/255;
-        const max=Math.max(rNorm,gNorm,bNorm), min=Math.min(rNorm,gNorm,bNorm), d=max-min;
-        let h, s, l=(max+min)/2;
+        const rN = r/255, gN = g/255, bN = b/255;
+        const max = Math.max(rN, gN, bN), min = Math.min(rN, gN, bN), d = max - min;
+        let h, s, l = (max + min) / 2;
 
-        if(d===0) h=s=0;
+        if (d === 0) h = s = 0;
         else {
-            s = l>0.5 ? d/(2-max-min) : d/(max+min);
-            if(max===rNorm) h=(gNorm-bNorm)/d+(gNorm<bNorm?6:0); 
-            else if(max===gNorm) h=(bNorm-rNorm)/d+2; 
-            else h=(rNorm-gNorm)/d+4;
-            h/=6;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            if (max === rN) h = (gN - bN) / d + (gN < bN ? 6 : 0);
+            else if (max === gN) h = (bN - rN) / d + 2;
+            else h = (rN - gN) / d + 4;
+            h /= 6;
         }
-        return { h: h*360, s: s*100, l: l*100, bri: bri };
+        return { h: h * 360, s: s * 100, l: l * 100, bri: bri };
     }
 
     function getColorName(h, s, l, bri) {
-        // REGRA DA IRIS PARA PRETO: Se o brilho caiu muito abaixo da referência calibrada
-        if (bri < 25) return "Preto"; 
-        
-        // REGRA PARA CINZA E BRANCO (Baixa saturação)
+        // Trava de escuridão absoluta
+        if (bri < 22) return "Preto"; 
+
+        // Estabilização de cores neutras
         if (s < 18) {
-            if (bri < 65) return "Preto"; // Ajuste para preto fiel
-            if (bri > 185) return "Branco";
+            if (bri < 60) return "Preto";
+            if (bri > 190) return "Branco";
             return "Cinza";
         }
 
-        // Ajustes finos para evitar confusão Laranja/Amarelo
-        if (h < 15 || h > 348) return bri < 80 ? "Vermelho Escuro" : "Vermelho";
-        if (h < 44) {
-            if (s > 70 && bri > 170) return "Laranja"; // Laranja vibrante
-            return bri < 75 ? "Marrom" : "Laranja";
-        }
+        // Lógica de Espectro Primário para Modo Universal (Âncoras de Matiz)
+        if (h < 15 || h > 348) return bri < 75 ? "Vermelho Escuro" : "Vermelho";
+        if (h < 45) return bri < 70 ? "Marrom" : "Laranja";
         if (h < 68) return "Amarelo";
-        if (h < 165) return bri < 85 ? "Verde Escuro" : "Verde";
-        if (h < 258) return "Azul";
-        if (h < 305) return "Roxo";
+        
+        // ZONA DO VERDE: Ajustada para evitar confusão com azul desbotado
+        if (h < 160) return bri < 80 ? "Verde Escuro" : "Verde";
+        
+        // ZONA DO AZUL: Alargada para capturar todos os tons de azul no Modo Universal
+        if (h < 262) return "Azul"; 
+        
+        if (h < 310) return "Roxo";
         return "Rosa";
     }
 
     function loop() {
         if (v.videoWidth > 0 && active) {
             const x = v.videoWidth/2, y = v.videoHeight/2;
-            const raw = sample(x, y, 22);
+            const raw = sample(x, y, 25);
             const data = processColor(raw.r, raw.g, raw.b);
+
+            // FILTRO DE HISTERESE: Só processa se a mudança for significativa
+            const diff = Math.abs(data.h - lastRawColor.h) + Math.abs(data.s - lastRawColor.s);
+            if (diff < 1.5) { // Estabiliza o sensor parado
+                requestAnimationFrame(loop);
+                return;
+            }
+            lastRawColor = data;
 
             let canShow = true;
             if (mode === 'PADRAO') {
-                const step = (v.videoWidth * 0.13);
-                const check = [sample(x, y-step, 8), sample(x, y+step, 8), sample(x-step, y, 8), sample(x+step, y, 8)];
-                
+                const step = (v.videoWidth * 0.14);
+                const check = [sample(x, y-step, 10), sample(x, y+step, 10), sample(x-step, y, 10), sample(x+step, y, 10)];
                 const valid = check.filter(p => {
                     const pD = processColor(p.r, p.g, p.b);
-                    return Math.abs(pD.h - data.h) < 22 || (data.s < 15 && pD.s < 15);
+                    return Math.abs(pD.h - data.h) < 25 || (data.s < 15 && pD.s < 15);
                 }).length;
 
                 if (valid < 3) {
@@ -202,9 +202,7 @@
 
             if (canShow) {
                 const currentName = getColorName(data.h, data.s, data.l, data.bri);
-                
-                // Estabilização por "Moda" (mais frames no modo universal)
-                const depth = isUniv ? 15 : 7;
+                const depth = isUniv ? 18 : 8; // Mais frames no Universal para 100% de precisão
                 history.push(currentName);
                 if(history.length > depth) history.shift();
                 
@@ -214,7 +212,7 @@
                 colorTxt.className = "active-text";
                 cross.classList.add('locked');
                 
-                debugTxt.innerText = `H:${Math.round(data.h)}° S:${Math.round(data.s)}% B:${Math.round(data.bri)} | IRIS: OK`;
+                debugTxt.innerText = `H:${Math.round(data.h)} S:${Math.round(data.s)} B:${Math.round(data.bri)} | UNV:${isUniv?'ON':'OFF'}`;
                 
                 if(stableName !== lastSpeach) speak(stableName);
             }
@@ -226,7 +224,7 @@
         if(!t || isSpeaking) return;
         speechSynthesis.cancel();
         const m = new SpeechSynthesisUtterance(t);
-        m.lang='pt-BR'; m.rate=1.4;
+        m.lang='pt-BR'; m.rate=1.5;
         m.onstart=()=>isSpeaking=true; m.onend=()=>isSpeaking=false;
         speechSynthesis.speak(m); lastSpeach=t;
     }
