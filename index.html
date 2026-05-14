@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v19.0 Precision Engine</title>
+    <title>ColorMatch Pro - v19.1 Recon-Fidelity</title>
     <style>
         body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -12,22 +12,18 @@
             border-bottom: 1px solid #333; flex-wrap: wrap;
         }
         button { 
-            background: #111; color: #666; border: 1px solid #444;
+            background: #111; color: #888; border: 1px solid #444;
             padding: 10px 14px; border-radius: 8px; font-weight: bold; font-size: 10px;
             text-transform: uppercase; transition: 0.2s;
         }
         .active { background: #00ffcc !important; color: #000 !important; border-color: #00ffcc; }
-        .univ-active { background: #ffaa00 !important; color: #000 !important; border-color: #ffaa00; }
-
         #video-container { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
         video { width: 100%; height: 100%; object-fit: cover; }
-
         #crosshair { 
             position: absolute; border: 2px solid rgba(0,255,204,0.3); border-radius: 50%;
-            pointer-events: none; z-index: 10; width: 50px; height: 50px;
+            pointer-events: none; z-index: 10; width: 45px; height: 45px;
         }
         .locked { border-color: #00ffcc !important; box-shadow: 0 0 30px #00ffcc; background: rgba(0,255,204,0.05); }
-
         #ui-overlay { 
             position: absolute; bottom: 0; width: 100%; padding: 60px 0;
             background: linear-gradient(transparent, rgba(0,0,0,1) 70%); z-index: 20;
@@ -42,7 +38,6 @@
 <div id="header">
     <button onclick="toggleSystem()" id="btnPower">SISTEMA: OFF</button>
     <button onclick="calibrate()" id="btnCalib">CALIBRAR MARCO ZERO</button>
-    <button onclick="toggleUniv()" id="btnUniv">MODO UNIVERSAL: OFF</button>
 </div>
 
 <div id="video-container">
@@ -51,8 +46,8 @@
 </div>
 
 <div id="ui-overlay">
-    <div id="color-name">ANALISANDO</div>
-    <div id="debug">Aguardando calibração densa...</div>
+    <div id="color-name">STANDBY</div>
+    <div id="debug">Aguardando calibração...</div>
 </div>
 
 <canvas id="c" style="display:none;"></canvas>
@@ -61,24 +56,17 @@
     const v = document.getElementById('v'), c = document.getElementById('c'), ctx = c.getContext('2d', {willReadFrequently:true});
     const colorTxt = document.getElementById('color-name'), debugTxt = document.getElementById('debug'), cross = document.getElementById('crosshair');
 
-    let active = false, isUniv = false, lastSpeach = "", isSpeaking = false;
+    let active = false, lastSpeach = "", isSpeaking = false;
     let iris = { r: 1, g: 1, b: 1, baseL: 100 }; 
     let history = []; 
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", focusMode: "continuous" } }).then(s => v.srcObject = s);
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
 
     function toggleSystem() { 
         active = !active; 
         document.getElementById('btnPower').classList.toggle('active', active);
         document.getElementById('btnPower').innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
-        if(!active) resetUI(); else speak("Sistema de Precisão Ativado");
-    }
-
-    function toggleUniv() {
-        isUniv = !isUniv;
-        document.getElementById('btnUniv').classList.toggle('univ-active', isUniv);
-        document.getElementById('btnUniv').innerText = `UNIVERSAL: ${isUniv ? 'ON' : 'OFF'}`;
-        speak(isUniv ? "Modo Universal" : "Modo Normal");
+        if(!active) resetUI(); else speak("Calibrando sensores");
     }
 
     function calibrate() {
@@ -87,27 +75,16 @@
         iris.r = 255 / d.r; iris.g = 255 / d.g; iris.b = 255 / d.b;
         const lab = rgbToLab(d.r * iris.r, d.g * iris.g, d.b * iris.b);
         iris.baseL = lab.l;
-        speak("Calibração Densa Concluída");
+        speak("Fidelidade Calibrada");
     }
 
-    // LEITURA EM MATRIZ DE 9 PONTOS PARA CONFIANÇA TOTAL
     function getMultiSample(x, y) {
         c.width = v.videoWidth; c.height = v.videoHeight;
         ctx.drawImage(v, 0, 0);
-        const offset = 15;
-        const points = [
-            [x,y], [x-offset,y], [x+offset,y], [x,y-offset], [x,y+offset],
-            [x-offset,y-offset], [x+offset,y-offset], [x-offset,y+offset], [x+offset,y+offset]
-        ];
-        let r=0, g=0, b=0;
-        points.forEach(p => {
-            const pix = ctx.getImageData(p[0], p[1], 1, 1).data;
-            r += pix[0]; g += pix[1]; b += pix[2];
-        });
-        return { r: r/9, g: g/9, b: b/9 };
+        const pix = ctx.getImageData(x, y, 1, 1).data;
+        return { r: pix[0], g: pix[1], b: pix[2] };
     }
 
-    // CONVERSÃO CIENTÍFICA CIE LAB (O estado de arte da percepção)
     function rgbToLab(r, g, b) {
         r /= 255; g /= 255; b /= 255;
         r = (r > 0.04045) ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
@@ -123,63 +100,53 @@
         return { l: (116 * y) - 16, a: 500 * (x - y), b: 200 * (y - z) };
     }
 
-    function getColorName(lab, rawR, rawG, rawB) {
+    function getColorName(lab) {
         const { l, a, b } = lab;
         const chroma = Math.sqrt(a*a + b*b);
-        let hue = Math.atan2(b, a) * (180 / Math.PI);
-        if (hue < 0) hue += 360;
+        let h = Math.atan2(b, a) * (180 / Math.PI);
+        if (h < 0) h += 360;
 
-        // Regra de Ouro: Baixa saturação (chroma) vira escala de cinza
-        if (chroma < 12) {
-            if (l > (iris.baseL * 0.85)) return "Branco";
-            if (l < 25) return "Preto";
+        // RETORNO DAS REGRAS QUE FUNCIONAVAM (Ajustadas para CIE Lab)
+        if (chroma < 11) {
+            if (l > (iris.baseL * 0.8)) return "Branco";
+            if (l < 28) return "Preto";
             return "Cinza";
         }
 
-        // Mapeamento Universal por Eixo de Matiz Perceptual
-        if (hue >= 330 || hue < 25) return l < 40 ? "Vermelho Escuro" : "Vermelho";
-        if (hue >= 25 && hue < 50) return l < 50 ? "Marrom" : "Laranja";
-        if (hue >= 50 && hue < 95) return "Amarelo";
-        if (hue >= 95 && hue < 175) return l < 50 ? "Verde Escuro" : "Verde";
-        if (hue >= 175 && hue < 260) return "Azul";
-        if (hue >= 260 && hue < 300) return "Roxo";
-        return "Rosa";
+        // MAPEAMENTO EXPERIMENTAL BASEADO NO SEU VÍDEO
+        if (h > 345 || h < 22) return (l < 45) ? "Vermelho Escuro" : "Vermelho";
+        if (h >= 22 && h < 48) return (l < 55) ? "Marrom" : "Laranja";
+        if (h >= 48 && h < 95) return "Amarelo"; // Alargado para evitar o "Verde" falso
+        if (h >= 95 && h < 170) return (l < 50) ? "Verde Escuro" : "Verde";
+        if (h >= 170 && h < 265) return "Azul";
+        if (h >= 265 && h < 315) return (l > 60 && chroma > 40) ? "Rosa" : "Roxo";
+        if (h >= 315 && h < 345) return "Rosa";
+        
+        return "Indefinido";
     }
 
     function loop() {
         if (v.videoWidth > 0 && active) {
             const raw = getMultiSample(v.videoWidth/2, v.videoHeight/2);
+            const lab = rgbToLab(Math.min(255, raw.r * iris.r), Math.min(255, raw.g * iris.g), Math.min(255, raw.b * iris.b));
             
-            // Aplica Marco Zero e converte para Lab
-            const lab = rgbToLab(
-                Math.min(255, raw.r * iris.r), 
-                Math.min(255, raw.g * iris.g), 
-                Math.min(255, raw.b * iris.b)
-            );
-
-            const name = getColorName(lab, raw.r, raw.g, raw.b);
+            const name = getColorName(lab);
             
-            // BUFFER DE CONFIANÇA (20 frames de análise para 100% de certeza)
             history.push(name);
-            if(history.length > 20) history.shift();
+            if(history.length > 10) history.shift(); // Reduzi para 10 para ser mais esperto
             
             const counts = {};
             history.forEach(n => counts[n] = (counts[n] || 0) + 1);
             const winner = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
             
-            // Exige 85% de consenso no histórico para falar
-            if (counts[winner] >= 17) {
+            if (counts[winner] >= 7) { // 70% de certeza já libera a voz
                 colorTxt.innerText = winner;
                 colorTxt.className = "active-text";
                 cross.classList.add('locked');
-                if(winner !== lastSpeach) speak(winner);
-            } else {
-                colorTxt.innerText = "CALCULANDO...";
-                colorTxt.className = "";
-                cross.classList.remove('locked');
+                if(winner !== lastSpeach && winner !== "Indefinido") speak(winner);
             }
             
-            debugTxt.innerText = `CIE Lab: L:${Math.round(lab.l)} a:${Math.round(lab.a)} b:${Math.round(lab.b)}`;
+            debugTxt.innerText = `L:${Math.round(lab.l)} Chroma:${Math.round(chroma)} H:${Math.round(h)}°`;
         }
         requestAnimationFrame(loop);
     }
@@ -188,7 +155,7 @@
         if(!t || isSpeaking) return;
         speechSynthesis.cancel();
         const m = new SpeechSynthesisUtterance(t);
-        m.lang='pt-BR'; m.rate=1.5;
+        m.lang='pt-BR'; m.rate=1.7;
         m.onstart = () => isSpeaking = true;
         m.onend = () => isSpeaking = false;
         speechSynthesis.speak(m);
@@ -196,7 +163,7 @@
     }
 
     function resetUI() {
-        colorTxt.innerText = "SISTEMA OFF"; colorTxt.className = "";
+        colorTxt.innerText = "STANDBY"; colorTxt.className = "";
         cross.classList.remove('locked');
         history = []; lastSpeach = "";
     }
