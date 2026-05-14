@@ -3,34 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v19.1 Recon-Fidelity</title>
+    <title>ColorMatch Pro - v19.2 Restoration</title>
     <style>
         body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
             position: absolute; top: 0; width: 100%; z-index: 20;
-            background: rgba(0, 0, 0, 0.95); display: flex; justify-content: center; padding: 12px 0; gap: 8px;
+            background: rgba(10, 10, 10, 0.98); backdrop-filter: blur(15px);
+            display: flex; justify-content: center; padding: 12px 0; gap: 8px;
             border-bottom: 1px solid #333; flex-wrap: wrap;
         }
         button { 
-            background: #111; color: #888; border: 1px solid #444;
-            padding: 10px 14px; border-radius: 8px; font-weight: bold; font-size: 10px;
+            background: #1a1a1a; color: #888; border: 1px solid #444;
+            padding: 10px 14px; border-radius: 8px; font-weight: bold; font-size: 9px;
             text-transform: uppercase; transition: 0.2s;
         }
         .active { background: #00ffcc !important; color: #000 !important; border-color: #00ffcc; }
+        .univ-active { background: #ffaa00 !important; color: #000 !important; border-color: #ffaa00; }
+
         #video-container { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
         video { width: 100%; height: 100%; object-fit: cover; }
+
         #crosshair { 
-            position: absolute; border: 2px solid rgba(0,255,204,0.3); border-radius: 50%;
-            pointer-events: none; z-index: 10; width: 45px; height: 45px;
+            position: absolute; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;
+            pointer-events: none; z-index: 10; transition: 0.1s;
         }
-        .locked { border-color: #00ffcc !important; box-shadow: 0 0 30px #00ffcc; background: rgba(0,255,204,0.05); }
+        .mira-livre { width: 45px; height: 45px; }
+        .mira-padrao { width: 34vw; height: 34vw; border: 2px dashed rgba(255,255,255,0.4); }
+        .locked { border-color: #00ffcc !important; background: rgba(0,255,204,0.1); box-shadow: 0 0 25px #00ffcc; }
+
         #ui-overlay { 
-            position: absolute; bottom: 0; width: 100%; padding: 60px 0;
-            background: linear-gradient(transparent, rgba(0,0,0,1) 70%); z-index: 20;
+            position: absolute; bottom: 0; width: 100%; padding: 50px 0;
+            background: linear-gradient(transparent, rgba(0,0,0,1) 50%); z-index: 20;
         }
-        #color-name { font-size: 58px; font-weight: 900; text-transform: uppercase; color: #222; min-height: 80px; }
-        .active-text { color: #00ffcc !important; text-shadow: 0 0 40px rgba(0,255,204,0.8); }
-        #debug { font-size: 10px; color: #444; margin-top: 15px; font-family: monospace; }
+        #color-name { font-size: 52px; font-weight: 900; text-transform: uppercase; color: #333; min-height: 70px; }
+        .active-text { color: #00ffcc !important; text-shadow: 0 0 30px rgba(0,255,204,0.6); }
+        #debug { font-size: 11px; color: #555; margin-top: 15px; font-family: monospace; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -38,16 +45,19 @@
 <div id="header">
     <button onclick="toggleSystem()" id="btnPower">SISTEMA: OFF</button>
     <button onclick="calibrate()" id="btnCalib">CALIBRAR MARCO ZERO</button>
+    <button onclick="setMode('LIVRE')" id="btnLivre">MOVIMENTO LIVRE</button>
+    <button onclick="setMode('PADRAO')" id="btnPadrao">MOVIMENTO PADRÃO</button>
+    <button onclick="toggleUniv()" id="btnUniv">UNIVERSAL: OFF</button>
 </div>
 
 <div id="video-container">
     <video id="v" autoplay playsinline muted></video>
-    <div id="crosshair"></div>
+    <div id="crosshair" class="mira-livre"></div>
 </div>
 
 <div id="ui-overlay">
     <div id="color-name">STANDBY</div>
-    <div id="debug">Aguardando calibração...</div>
+    <div id="debug">Aguardando Calibração no Sulfite</div>
 </div>
 
 <canvas id="c" style="display:none;"></canvas>
@@ -56,7 +66,7 @@
     const v = document.getElementById('v'), c = document.getElementById('c'), ctx = c.getContext('2d', {willReadFrequently:true});
     const colorTxt = document.getElementById('color-name'), debugTxt = document.getElementById('debug'), cross = document.getElementById('crosshair');
 
-    let active = false, lastSpeach = "", isSpeaking = false;
+    let mode = 'LIVRE', active = false, isUniv = false, lastSpeach = "", isSpeaking = false;
     let iris = { r: 1, g: 1, b: 1, baseL: 100 }; 
     let history = []; 
 
@@ -66,23 +76,39 @@
         active = !active; 
         document.getElementById('btnPower').classList.toggle('active', active);
         document.getElementById('btnPower').innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
-        if(!active) resetUI(); else speak("Calibrando sensores");
+        if(!active) resetUI(); else speak("Sistema Pronto");
+    }
+
+    function toggleUniv() {
+        isUniv = !isUniv;
+        document.getElementById('btnUniv').classList.toggle('univ-active', isUniv);
+        document.getElementById('btnUniv').innerText = `UNIVERSAL: ${isUniv ? 'ON' : 'OFF'}`;
+    }
+
+    function setMode(m) {
+        mode = m;
+        document.getElementById('btnLivre').classList.toggle('active', m === 'LIVRE');
+        document.getElementById('btnPadrao').classList.toggle('active', m === 'PADRAO');
+        cross.className = (m === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
     }
 
     function calibrate() {
         if(!active) return;
-        const d = getMultiSample(v.videoWidth/2, v.videoHeight/2);
+        const d = sample(v.videoWidth/2, v.videoHeight/2, 60);
         iris.r = 255 / d.r; iris.g = 255 / d.g; iris.b = 255 / d.b;
-        const lab = rgbToLab(d.r * iris.r, d.g * iris.g, d.b * iris.b);
+        const lab = rgbToLab(255, 255, 255);
         iris.baseL = lab.l;
-        speak("Fidelidade Calibrada");
+        speak("Marco Zero Definido");
     }
 
-    function getMultiSample(x, y) {
+    function sample(x, y, s) {
         c.width = v.videoWidth; c.height = v.videoHeight;
         ctx.drawImage(v, 0, 0);
-        const pix = ctx.getImageData(x, y, 1, 1).data;
-        return { r: pix[0], g: pix[1], b: pix[2] };
+        const data = ctx.getImageData(x - s/2, y - s/2, s, s).data;
+        let r=0, g=0, b=0;
+        for(let i=0; i<data.length; i+=4) { r += data[i]; g += data[i+1]; b += data[i+2]; }
+        const t = data.length/4;
+        return { r: r/t, g: g/t, b: b/t };
     }
 
     function rgbToLab(r, g, b) {
@@ -106,47 +132,48 @@
         let h = Math.atan2(b, a) * (180 / Math.PI);
         if (h < 0) h += 360;
 
-        // RETORNO DAS REGRAS QUE FUNCIONAVAM (Ajustadas para CIE Lab)
-        if (chroma < 11) {
-            if (l > (iris.baseL * 0.8)) return "Branco";
-            if (l < 28) return "Preto";
+        if (chroma < 12) {
+            if (l > (iris.baseL * 0.85)) return "Branco";
+            if (l < 30) return "Preto";
             return "Cinza";
         }
 
-        // MAPEAMENTO EXPERIMENTAL BASEADO NO SEU VÍDEO
-        if (h > 345 || h < 22) return (l < 45) ? "Vermelho Escuro" : "Vermelho";
-        if (h >= 22 && h < 48) return (l < 55) ? "Marrom" : "Laranja";
-        if (h >= 48 && h < 95) return "Amarelo"; // Alargado para evitar o "Verde" falso
-        if (h >= 95 && h < 170) return (l < 50) ? "Verde Escuro" : "Verde";
-        if (h >= 170 && h < 265) return "Azul";
-        if (h >= 265 && h < 315) return (l > 60 && chroma > 40) ? "Rosa" : "Roxo";
-        if (h >= 315 && h < 345) return "Rosa";
+        // Correção específica baseada no vídeo: Amarelo (h próximo de 90-100 no Lab)
+        if (h > 345 || h < 20) return (l < 45) ? "Vermelho Escuro" : "Vermelho";
+        if (h >= 20 && h < 50) return (l < 55) ? "Marrom" : "Laranja";
+        if (h >= 50 && h < 105) return "Amarelo"; // Expandido para não cair no verde
+        if (h >= 105 && h < 175) return (l < 50) ? "Verde Escuro" : "Verde";
+        if (h >= 175 && h < 265) return "Azul";
+        if (h >= 265 && h < 305) return "Roxo";
+        if (h >= 305 && h < 345) return "Rosa";
         
         return "Indefinido";
     }
 
     function loop() {
         if (v.videoWidth > 0 && active) {
-            const raw = getMultiSample(v.videoWidth/2, v.videoHeight/2);
+            const raw = sample(v.videoWidth/2, v.videoHeight/2, 25);
             const lab = rgbToLab(Math.min(255, raw.r * iris.r), Math.min(255, raw.g * iris.g), Math.min(255, raw.b * iris.b));
-            
             const name = getColorName(lab);
             
             history.push(name);
-            if(history.length > 10) history.shift(); // Reduzi para 10 para ser mais esperto
+            if(history.length > 15) history.shift();
             
             const counts = {};
             history.forEach(n => counts[n] = (counts[n] || 0) + 1);
             const winner = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
             
-            if (counts[winner] >= 7) { // 70% de certeza já libera a voz
+            if (counts[winner] >= 11) {
                 colorTxt.innerText = winner;
                 colorTxt.className = "active-text";
                 cross.classList.add('locked');
                 if(winner !== lastSpeach && winner !== "Indefinido") speak(winner);
+            } else {
+                colorTxt.innerText = "ALINHANDO";
+                colorTxt.className = "";
+                cross.classList.remove('locked');
             }
-            
-            debugTxt.innerText = `L:${Math.round(lab.l)} Chroma:${Math.round(chroma)} H:${Math.round(h)}°`;
+            debugTxt.innerText = `L:${Math.round(lab.l)} Chroma:${Math.round(Math.sqrt(lab.a*lab.a + lab.b*lab.b))} H:${Math.round(Math.atan2(lab.b, lab.a)*(180/Math.PI))}`;
         }
         requestAnimationFrame(loop);
     }
@@ -155,7 +182,7 @@
         if(!t || isSpeaking) return;
         speechSynthesis.cancel();
         const m = new SpeechSynthesisUtterance(t);
-        m.lang='pt-BR'; m.rate=1.7;
+        m.lang='pt-BR'; m.rate=1.6;
         m.onstart = () => isSpeaking = true;
         m.onend = () => isSpeaking = false;
         speechSynthesis.speak(m);
