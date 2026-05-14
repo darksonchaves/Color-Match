@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v18.0 Hard Reset</title>
+    <title>ColorMatch Pro - v18.2 Zero Anchor</title>
     <style>
         body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -15,18 +15,15 @@
         button { 
             background: #1a1a1a; color: #888; border: 1px solid #444;
             padding: 10px 14px; border-radius: 8px; font-weight: bold; font-size: 9px;
-            text-transform: uppercase; transition: 0.2s; letter-spacing: 0.5px;
+            text-transform: uppercase; transition: 0.2s;
         }
-        .active { background: #00ffcc !important; color: #000 !important; border-color: #00ffcc; box-shadow: 0 0 15px rgba(0,255,204,0.4); }
+        .active { background: #00ffcc !important; color: #000 !important; border-color: #00ffcc; }
         .univ-active { background: #ffaa00 !important; color: #000 !important; border-color: #ffaa00; }
 
         #video-container { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
         video { width: 100%; height: 100%; object-fit: cover; }
 
-        #crosshair { 
-            position: absolute; border: 2px dashed rgba(255,255,255,0.4); border-radius: 50%;
-            pointer-events: none; transition: all 0.2s; z-index: 10;
-        }
+        #crosshair { position: absolute; border: 2px dashed rgba(255,255,255,0.4); border-radius: 50%; pointer-events: none; z-index: 10; }
         .mira-livre { width: 45px; height: 45px; border-style: solid !important; }
         .mira-padrao { width: 34vw; height: 34vw; }
         .locked { border-color: #00ffcc !important; background: rgba(0,255,204,0.15); box-shadow: 0 0 30px #00ffcc; }
@@ -67,7 +64,7 @@
     const colorTxt = document.getElementById('color-name'), debugTxt = document.getElementById('debug'), cross = document.getElementById('crosshair');
 
     let mode = 'LIVRE', active = false, isUniv = false, lastSpeach = "", isSpeaking = false;
-    let iris = { r: 1, g: 1, b: 1, refBri: 200 }; 
+    let iris = { r: 1, g: 1, b: 1, satThreshold: 18 }; 
     let history = [];
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
@@ -76,7 +73,7 @@
         active = !active; 
         document.getElementById('btnPower').classList.toggle('active', active);
         document.getElementById('btnPower').innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
-        if(!active) resetUI(); else speak("Sistema Online");
+        if(!active) resetUI(); else speak("Sistema Pronto");
     }
 
     function toggleUniv() {
@@ -98,15 +95,14 @@
         if(!active) return;
         const d = sample(v.videoWidth/2, v.videoHeight/2, 80);
         const avg = (d.r + d.g + d.b) / 3;
-        
         if(avg < 30) { speak("Luz insuficiente"); return; }
-
-        // HARD RESET: Define o alvo como BRANCO PURO
+        
+        // Marco Zero Absoluto
         iris.r = 255 / d.r;
         iris.g = 255 / d.g;
         iris.b = 255 / d.b;
-        iris.refBri = avg; // Guarda o brilho real do papel
-
+        
+        // Bloqueia ruído cromático: Se o papel tem cor, essa cor vira o novo "zero"
         speak("Íris Calibrada");
     }
 
@@ -121,15 +117,11 @@
     }
 
     function processColor(rawR, rawG, rawB) {
-        let r = Math.min(255, rawR * iris.r);
-        let g = Math.min(255, rawG * iris.g);
-        let b = Math.min(255, rawB * iris.b);
-
+        let r = Math.min(255, rawR * iris.r), g = Math.min(255, rawG * iris.g), b = Math.min(255, rawB * iris.b);
         const bri = (r + g + b) / 3;
         const rN = r/255, gN = g/255, bN = b/255;
         const max = Math.max(rN, gN, bN), min = Math.min(rN, gN, bN), d = max - min;
         let h, s, l = (max + min) / 2;
-
         if (d === 0) h = s = 0;
         else {
             s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -142,20 +134,17 @@
     }
 
     function getColorName(h, s, l, bri) {
-        // Lógica de Brilho Relativo à Calibração
-        if (bri < 25) return "Preto"; 
-        
-        // Se a saturação for baixa, comparamos com a referência de calibração
-        if (s < 15) {
-            if (bri > 180) return "Branco";
-            if (bri < 70) return "Preto";
+        // REGRA DE OURO DO MARCO ZERO
+        // Se a saturação estiver abaixo de 20%, ignoramos o Matiz (H) para não "inventar" cores vizinhas
+        if (s < 20) {
+            if (bri > 165) return "Branco";
+            if (bri < 65) return "Preto";
             return "Cinza";
         }
 
         if (h < 15 || h > 348) return bri < 80 ? "Vermelho Escuro" : "Vermelho";
         if (h < 45) {
-            // Ajuste para evitar laranja fantasma no amarelo
-            if (h > 35 && s < 75) return "Amarelo"; 
+            if (h > 37 && s < 75) return "Amarelo"; 
             return bri < 75 ? "Marrom" : "Laranja";
         }
         if (h < 68) return "Amarelo";
@@ -168,7 +157,7 @@
     function loop() {
         if (v.videoWidth > 0 && active) {
             const x = v.videoWidth/2, y = v.videoHeight/2;
-            const raw = sample(x, y, 25);
+            const raw = sample(x, y, 22);
             const data = processColor(raw.r, raw.g, raw.b);
 
             let canShow = true;
@@ -177,18 +166,17 @@
                 const check = [sample(x, y-step, 10), sample(x, y+step, 10), sample(x-step, y, 10), sample(x+step, y, 10)];
                 const valid = check.filter(p => {
                     const pD = processColor(p.r, p.g, p.b);
-                    return Math.abs(pD.h - data.h) < 22 || (data.s < 15 && pD.s < 15);
+                    return Math.abs(pD.h - data.h) < 25 || (data.s < 20 && pD.s < 20);
                 }).length;
                 if (valid < 3) canShow = false;
             }
 
             if (canShow) {
                 const currentName = getColorName(data.h, data.s, data.l, data.bri);
-                const depth = isUniv ? 12 : 6; 
+                const depth = 12; // Buffer para evitar trocas rápidas
                 history.push(currentName);
                 if(history.length > depth) history.shift();
                 
-                // Pega a cor mais frequente (Moda)
                 const counts = {};
                 history.forEach(n => counts[n] = (counts[n] || 0) + 1);
                 const stableName = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
@@ -196,13 +184,9 @@
                 colorTxt.innerText = stableName;
                 colorTxt.className = "active-text";
                 cross.classList.add('locked');
+                debugTxt.innerText = `H:${Math.round(data.h)} S:${Math.round(data.s)}% B:${Math.round(data.bri)}`;
                 
-                debugTxt.innerText = `H:${Math.round(data.h)}° S:${Math.round(data.s)}% B:${Math.round(data.bri)} | IRIS: SET`;
-                
-                // Sincronismo rígido: Só fala se a cor estiver na tela
-                if(stableName !== lastSpeach && colorTxt.innerText === stableName) {
-                    speak(stableName);
-                }
+                if(stableName !== lastSpeach) speak(stableName);
             } else {
                 colorTxt.innerText = "ALINHANDO...";
                 colorTxt.className = "";
@@ -217,8 +201,10 @@
         speechSynthesis.cancel();
         const m = new SpeechSynthesisUtterance(t);
         m.lang='pt-BR'; m.rate=1.6;
-        m.onstart=()=>isSpeaking=true; m.onend=()=>isSpeaking=false;
-        speechSynthesis.speak(m); lastSpeach=t;
+        m.onstart = () => isSpeaking = true;
+        m.onend = () => isSpeaking = false;
+        speechSynthesis.speak(m);
+        lastSpeach = t;
     }
 
     function resetUI() {
@@ -227,7 +213,6 @@
         debugTxt.innerText = "SISTEMA EM STANDBY";
         history = []; lastSpeach = "";
     }
-
     loop();
 </script>
 </body>
