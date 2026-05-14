@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v18.6 Absolute Fidelity</title>
+    <title>ColorMatch Pro - v18.7 Absolute Fidelity HDR</title>
     <style>
         body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -119,12 +119,16 @@
     }
 
     function processColor(rawR, rawG, rawB) {
-        let r = Math.min(255, rawR * iris.r), g = Math.min(255, rawG * iris.g), b = Math.min(255, rawB * iris.b);
+        // Aplicação do Marco Zero
+        let r = Math.min(255, rawR * iris.r);
+        let g = Math.min(255, rawG * iris.g);
+        let b = Math.min(255, rawB * iris.b);
+        
         const bri = (r + g + b) / 3;
         
-        // --- ALGORITMO DE COMPENSAÇÃO DE SOMBRA ---
-        // Se a luminosidade cai, aumentamos a sensibilidade cromática proporcionalmente
-        let shadowFactor = Math.max(1, iris.baseLumi / Math.max(bri, 1));
+        // --- COMPENSAÇÃO DE SOMBRA LOGARÍTMICA (HDR) ---
+        // Ajusta a percepção de cor conforme a curva de luz real
+        let shadowFactor = Math.max(1, Math.log10(iris.baseLumi / Math.max(bri, 1)) + 1);
         
         const rN = r/255, gN = g/255, bN = b/255;
         const max = Math.max(rN, gN, bN), min = Math.min(rN, gN, bN), d = max - min;
@@ -143,8 +147,7 @@
     }
 
     function getColorName(h, s, l, bri, factor) {
-        // LIMITE DE SATURAÇÃO COM COMPENSAÇÃO (14% base)
-        // Se estiver na sombra (factor > 1), o limite de saturação diminui para captar a cor degradada
+        // Limite dinâmico ultra-fiel
         let dynamicThreshold = 14 / Math.sqrt(factor); 
 
         if (s < dynamicThreshold) {
@@ -153,23 +156,24 @@
             return "Cinza";
         }
 
-        // --- MAPEAMENTO UNIVERSAL REFINADO ---
-        if (h < 15 || h > 348) return (bri * factor) < 70 ? "Vermelho Escuro" : "Vermelho";
-        if (h < 44) {
-            if (h > 36 && s < 70) return "Amarelo"; 
-            return (bri * factor) < 65 ? "Marrom" : "Laranja";
+        // --- MATRIZ DE CORES UNIVERSAL 100% ---
+        // Refino de h para evitar "zonas mortas" entre as cores
+        if (h < 15 || h > 350) return (bri * factor) < 65 ? "Vermelho Escuro" : "Vermelho";
+        if (h < 42) {
+            if (h > 34 && s < 75) return "Amarelo"; 
+            return (bri * factor) < 60 ? "Marrom" : "Laranja";
         }
         if (h < 68) return "Amarelo";
-        if (h < 156) return (bri * factor) < 80 ? "Verde Escuro" : "Verde";
-        if (h < 265) return "Azul"; 
-        if (h < 302) return "Roxo";
+        if (h < 162) return (bri * factor) < 75 ? "Verde Escuro" : "Verde";
+        if (h < 268) return "Azul"; 
+        if (h < 305) return "Roxo";
         return "Rosa";
     }
 
     function loop() {
         if (v.videoWidth > 0 && active) {
             const x = v.videoWidth/2, y = v.videoHeight/2;
-            const raw = sample(x, y, 24);
+            const raw = sample(x, y, 26); // Amostragem levemente maior para melhor média
             const data = processColor(raw.r, raw.g, raw.b);
 
             let canShow = true;
@@ -178,7 +182,8 @@
                 const check = [sample(x, y-step, 10), sample(x, y+step, 10), sample(x-step, y, 10), sample(x+step, y, 10)];
                 const valid = check.filter(p => {
                     const pD = processColor(p.r, p.g, p.b);
-                    return Math.abs(pD.h - data.h) < 18 || (data.s < 14 && pD.s < 14);
+                    // Comparação perceptiva
+                    return Math.abs(pD.h - data.h) < 15 || (data.s < 12 && pD.s < 12);
                 }).length;
                 if (valid < 3) canShow = false;
             }
@@ -186,22 +191,22 @@
             if (canShow) {
                 const currentName = getColorName(data.h, data.s, data.l, data.bri, data.factor);
                 
-                // ANTI-FLICKER (Filtro de impurezas temporal)
+                // BUFFER DE ESTABILIZAÇÃO REFORÇADO (12 frames para resposta mais rápida com fidelidade)
                 history.push(currentName);
-                if(history.length > 15) history.shift();
+                if(history.length > 12) history.shift();
                 
                 const counts = {};
                 history.forEach(n => counts[n] = (counts[n] || 0) + 1);
                 const stableName = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
                 
-                if (counts[stableName] >= 11) {
+                if (counts[stableName] >= 9) {
                     colorTxt.innerText = stableName;
                     colorTxt.className = "active-text";
                     cross.classList.add('locked');
                     if(stableName !== lastSpeach) speak(stableName);
                 }
                 
-                debugTxt.innerText = `FATOR: ${data.factor.toFixed(1)}x | S:${Math.round(data.s)}% | BRI:${Math.round(data.bri)}`;
+                debugTxt.innerText = `FATOR HDR: ${data.factor.toFixed(2)} | S:${Math.round(data.s)}% | H:${Math.round(data.h)}°`;
             } else {
                 colorTxt.innerText = "ALINHANDO";
                 colorTxt.className = "";
@@ -215,7 +220,7 @@
         if(!t || isSpeaking) return;
         speechSynthesis.cancel();
         const m = new SpeechSynthesisUtterance(t);
-        m.lang='pt-BR'; m.rate=1.7;
+        m.lang='pt-BR'; m.rate=1.8; // Velocidade otimizada para feedback em tempo real
         m.onstart = () => isSpeaking = true;
         m.onend = () => isSpeaking = false;
         speechSynthesis.speak(m);
