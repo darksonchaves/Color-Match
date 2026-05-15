@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v19.8 Full Restoration</title>
+    <title>ColorMatch Pro - v19.9 Primary Rigor</title>
     <style>
         body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -68,24 +68,19 @@
     let iris = { r: 1, g: 1, b: 1 }; 
     let history = []; 
 
+    // TABELA FUNDAMENTAL (Espectro Primário Puro)
     const colorTable = [
         { name: "Preto", r: 0, g: 0, b: 0, type: "acromatic" },
         { name: "Branco", r: 255, g: 255, b: 255, type: "acromatic" },
         { name: "Cinza", r: 128, g: 128, b: 128, type: "acromatic" },
         { name: "Vermelho", r: 255, g: 0, b: 0 },
-        { name: "Vermelho Escuro", r: 139, g: 0, b: 0 },
-        { name: "Laranja", r: 255, g: 165, b: 0 },
-        { name: "Marrom", r: 139, g: 69, b: 19 },
+        { name: "Laranja", r: 255, g: 128, b: 0 },
+        { name: "Marrom", r: 100, g: 50, b: 0 },
         { name: "Amarelo", r: 255, g: 255, b: 0 },
         { name: "Verde", r: 0, g: 255, b: 0 },
-        { name: "Verde Escuro", r: 0, g: 100, b: 0 },
-        { name: "Verde Água", r: 0, g: 255, b: 255 },
         { name: "Azul", r: 0, g: 0, b: 255 },
-        { name: "Azul Escuro", r: 0, g: 0, b: 139 },
         { name: "Roxo", r: 128, g: 0, b: 128 },
-        { name: "Rosa", r: 255, g: 192, b: 203 },
-        { name: "Rosa Shock", r: 255, g: 20, b: 147 },
-        { name: "Vinho", r: 128, g: 0, b: 0 }
+        { name: "Rosa", r: 255, g: 100, b: 200 }
     ];
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
@@ -132,9 +127,11 @@
         const saturation = Math.sqrt(Math.pow(r-avg,2) + Math.pow(g-avg,2) + Math.pow(b-avg,2));
 
         for (const color of colorTable) {
-            if (saturation < 18 && color.type !== "acromatic") continue;
-            if (saturation >= 18 && color.type === "acromatic") continue;
+            // Regra Acromática Rigorosa
+            if (saturation < 15 && color.type !== "acromatic") continue;
+            if (saturation >= 15 && color.type === "acromatic") continue;
 
+            // Distância Euclidiana 3D
             const d = Math.sqrt(Math.pow(r-color.r,2) + Math.pow(g-color.g,2) + Math.pow(b-color.b,2));
             if (d < minDistance) { minDistance = d; bestMatch = color.name; }
         }
