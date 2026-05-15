@@ -3,36 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v24.0 LAB Engine</title>
+    <title>ColorMatch Pro - v25.0 Final Engine</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
             position: absolute; top: 0; width: 100%; z-index: 20;
-            background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(10px);
-            display: flex; justify-content: center; padding: 10px 0; gap: 5px; border-bottom: 1px solid #333; flex-wrap: wrap;
+            background: rgba(15, 15, 15, 0.98); backdrop-filter: blur(10px);
+            display: flex; justify-content: center; padding: 12px 0; gap: 8px; border-bottom: 1px solid #444; flex-wrap: wrap;
         }
         button { 
-            background: #1a1a1a; color: #aaa; border: 1px solid #444; padding: 8px 12px; 
-            border-radius: 6px; font-weight: bold; font-size: 10px; text-transform: uppercase; cursor: pointer;
+            background: #222; color: #eee; border: 1px solid #555; padding: 10px 15px; 
+            border-radius: 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; cursor: pointer;
         }
-        .active { background: #007bff !important; color: #fff !important; border-color: #007bff; }
-        .audio-on { background: #28a745 !important; color: #fff !important; border-color: #28a745; }
+        .active { background: #007bff !important; border-color: #007bff; }
+        .audio-on { background: #28a745 !important; border-color: #28a745; }
         
         #video-container { position: relative; width: 100vw; height: 100vh; }
         video { width: 100%; height: 100%; object-fit: cover; }
         
         #crosshair { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; pointer-events: none; z-index: 10;
-            transition: all 0.2s;
+            border: 2px solid rgba(255,255,255,0.6); border-radius: 50%; pointer-events: none; z-index: 10;
         }
-        .mira-livre { width: 40px; height: 40px; }
-        .mira-padrao { width: 35vw; height: 35vw; border: 2px dashed rgba(255,255,255,0.4); }
-        .locked { border-color: #00ffcc !important; box-shadow: 0 0 30px #00ffcc; background: rgba(0,255,204,0.1); }
+        .mira-livre { width: 45px; height: 45px; }
+        .mira-padrao { width: 35vw; height: 35vw; border: 3px dashed rgba(255,255,255,0.5); }
+        .locked { border-color: #00ffcc !important; box-shadow: 0 0 30px #00ffcc; background: rgba(0,255,204,0.15); }
 
-        #ui-overlay { position: absolute; bottom: 0; width: 100%; padding: 45px 0; background: linear-gradient(transparent, #000 85%); z-index: 20; }
-        #color-name { font-size: 55px; font-weight: 900; text-transform: uppercase; color: #444; min-height: 70px; letter-spacing: 2px; }
-        .active-text { color: #00ffcc !important; text-shadow: 0 0 30px rgba(0,255,204,0.7); }
+        #ui-overlay { position: absolute; bottom: 0; width: 100%; padding: 50px 0; background: linear-gradient(transparent, #000 80%); z-index: 20; }
+        #color-name { font-size: 60px; font-weight: 900; text-transform: uppercase; color: #555; min-height: 75px; letter-spacing: 3px; }
+        .active-text { color: #00ffcc !important; text-shadow: 0 0 35px rgba(0,255,204,0.8); }
     </style>
 </head>
 <body>
@@ -40,7 +39,7 @@
 <div id="header">
     <button onclick="toggleSystem()" id="btnPower">SISTEMA: OFF</button>
     <button onclick="toggleAudio()" id="btnAudio">ÁUDIO: OFF</button>
-    <button onclick="calibrate()" id="btnCalib">MARCO ZERO</button>
+    <button onclick="calibrate()" id="btnCalib">MODO CALIBRAR</button>
     <button onclick="setMode('LIVRE')" id="btnLivre">LIVRE</button>
     <button onclick="setMode('PADRAO')" id="btnPadrao">PADRÃO</button>
 </div>
@@ -51,7 +50,7 @@
 </div>
 
 <div id="ui-overlay">
-    <div id="color-name">AGUARDANDO</div>
+    <div id="color-name">INATIVO</div>
 </div>
 
 <canvas id="c" style="display:none;"></canvas>
@@ -61,23 +60,8 @@
     const colorTxt = document.getElementById('color-name'), cross = document.getElementById('crosshair');
 
     let active = false, audioActive = false, mode = 'LIVRE';
-    let iris = { r: 1, g: 1, b: 1 };
+    let balance = { r: 1, g: 1, b: 1 }; // Ganhos de Calibração
     let history = [], lastSpeach = "", isSpeaking = false;
-
-    // ALVOS EM ESPAÇO LAB (L: Luminosidade, A: Verde-Vermelho, B: Azul-Amarelo)
-    const TARGETS_LAB = [
-        { name: "Preto", l: 0, a: 0, b: 0, neutral: true },
-        { name: "Branco", l: 100, a: 0, b: 0, neutral: true },
-        { name: "Cinza", l: 50, a: 0, b: 0, neutral: true },
-        { name: "Vermelho", l: 53, a: 80, b: 67 },
-        { name: "Laranja", l: 67, a: 43, b: 74 },
-        { name: "Amarelo", l: 97, a: -21, b: 94 },
-        { name: "Verde", l: 87, a: -86, b: 83 },
-        { name: "Azul", l: 32, a: 79, b: -107 },
-        { name: "Roxo", l: 29, a: 68, b: -89 },
-        { name: "Rosa", l: 70, a: 70, b: -15 },
-        { name: "Marrom", l: 25, a: 15, b: 20 }
-    ];
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", focusMode: "continuous" } }).then(s => v.srcObject = s);
 
@@ -85,7 +69,7 @@
         active = !active; 
         document.getElementById('btnPower').classList.toggle('active', active);
         document.getElementById('btnPower').innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
-        if(!active) { colorTxt.innerText = "AGUARDANDO"; colorTxt.className = ""; history = []; }
+        if(!active) { colorTxt.innerText = "INATIVO"; colorTxt.className = ""; history = []; }
     }
 
     function toggleAudio() {
@@ -93,8 +77,7 @@
         const btn = document.getElementById('btnAudio');
         btn.classList.toggle('audio-on', audioActive);
         btn.innerText = `ÁUDIO: ${audioActive ? 'ON' : 'OFF'}`;
-        if(audioActive) speak("Áudio ligado");
-        else speechSynthesis.cancel();
+        if(audioActive) speak("Áudio Ativado");
     }
 
     function setMode(m) {
@@ -110,62 +93,85 @@
         c.width = v.videoWidth; c.height = v.videoHeight;
         ctx.drawImage(v, 0, 0);
         const p = ctx.getImageData(v.videoWidth/2, v.videoHeight/2, 1, 1).data;
-        iris.r = 255 / Math.max(p[0], 1);
-        iris.g = 255 / Math.max(p[1], 1);
-        iris.b = 255 / Math.max(p[2], 1);
-        if(audioActive) speak("Calibração concluída");
+        // Calcula o multiplicador para forçar o branco/neutro na luz atual
+        const avg = (p[0] + p[1] + p[2]) / 3;
+        balance.r = avg / Math.max(p[0], 1);
+        balance.g = avg / Math.max(p[1], 1);
+        balance.b = avg / Math.max(p[2], 1);
+        if(audioActive) speak("Ambiente Calibrado");
     }
 
-    function rgbToLab(r, g, b) {
+    function getFinalColor(r, g, b) {
+        // 1. Aplicação do Ganho de Calibração (Filtro de Luz Ambiente)
+        r = Math.min(255, r * balance.r);
+        g = Math.min(255, g * balance.g);
+        b = Math.min(255, b * balance.b);
+
+        // 2. Conversão para HSL (Hue, Saturation, Lightness)
         r /= 255; g /= 255; b /= 255;
-        r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
-        g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
-        b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
-        let x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
-        let y = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 1.00000;
-        let z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
-        x = x > 0.008856 ? Math.pow(x, 1/3) : (7.787 * x) + 16/116;
-        y = y > 0.008856 ? Math.pow(y, 1/3) : (7.787 * y) + 16/116;
-        z = z > 0.008856 ? Math.pow(z, 1/3) : (7.787 * z) + 16/116;
-        return { l: (116 * y) - 16, a: 500 * (x - y), b: 200 * (y - z) };
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h, s, l = (max + min) / 2;
+
+        if (max === min) { h = s = 0; } 
+        else {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h *= 60;
+        }
+
+        // 3. Lógica de Decisão Universal
+        if (l < 0.15) return "Preto";
+        if (l > 0.85 && s < 0.2) return "Branco";
+        if (s < 0.15) return "Cinza";
+
+        // Setores do Círculo Cromático (Estabilidade Total)
+        if (h < 15 || h >= 345) return "Vermelho";
+        if (h >= 15 && h < 45) return "Laranja";
+        if (h >= 45 && h < 75) return "Amarelo";
+        if (h >= 75 && h < 160) return "Verde";
+        if (h >= 160 && h < 255) return "Azul";
+        if (h >= 255 && h < 300) return "Roxo";
+        if (h >= 300 && h < 345) return "Rosa";
+
+        // Refinamento para Marrom (Laranja de baixa luminosidade)
+        if (h >= 15 && h < 45 && l < 0.4) return "Marrom";
+
+        return "Indefinido";
     }
 
     function loop() {
         if (active && v.videoWidth > 0) {
             c.width = v.videoWidth; c.height = v.videoHeight;
             ctx.drawImage(v, 0, 0);
-            let sSize = (mode === 'LIVRE' ? 8 : 60);
-            const p = ctx.getImageData(v.videoWidth/2 - sSize/2, v.videoHeight/2 - sSize/2, sSize, sSize).data;
-            let r=0, g=0, b=0, totalP=p.length/4;
+            
+            let size = (mode === 'LIVRE' ? 10 : 80);
+            const p = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
+            let r=0, g=0, b=0, count=p.length/4;
             for(let i=0; i<p.length; i+=4) { r+=p[i]; g+=p[i+1]; b+=p[i+2]; }
             
-            const lab = rgbToLab((r/totalP)*iris.r, (g/totalP)*iris.g, (b/totalP)*iris.b);
-            const chroma = Math.sqrt(lab.a * lab.a + lab.b * lab.b);
-
-            let minD = Infinity, winner = "Indefinido";
-            for (const t of TARGETS_LAB) {
-                if (chroma < 12 && !t.neutral) continue;
-                if (chroma >= 12 && t.neutral) continue;
-                
-                const d = Math.sqrt(Math.pow(lab.l-t.l,2) + Math.pow(lab.a-t.a,2) + Math.pow(lab.b-t.b,2));
-                if (d < minD) { minD = d; winner = t.name; }
-            }
-
-            history.push(winner);
+            const result = getFinalColor(r/count, g/count, b/count);
+            
+            history.push(result);
             if(history.length > 15) history.shift();
-            const counts = {};
-            history.forEach(n => counts[n] = (counts[n] || 0) + 1);
-            const top = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+            
+            const votes = {};
+            history.forEach(v => votes[v] = (votes[v] || 0) + 1);
+            const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
 
-            if (counts[top] >= 12) {
-                if (colorTxt.innerText !== top) {
-                    colorTxt.innerText = top;
+            if (votes[winner] >= 12) {
+                if (colorTxt.innerText !== winner) {
+                    colorTxt.innerText = winner;
                     colorTxt.className = "active-text";
                     cross.classList.add('locked');
-                    if (audioActive && top !== lastSpeach) speak(top);
+                    if (audioActive && winner !== lastSpeach) speak(winner);
                 }
             } else {
-                colorTxt.innerText = "ALINHANDO";
+                colorTxt.innerText = "CALCULANDO";
                 colorTxt.className = "";
                 cross.classList.remove('locked');
             }
@@ -174,11 +180,10 @@
     }
 
     function speak(t) {
-        if(!audioActive || isSpeaking || !t || t === "ALINHANDO") return;
+        if(!audioActive || isSpeaking || !t || t === "CALCULANDO") return;
         speechSynthesis.cancel();
         const m = new SpeechSynthesisUtterance(t);
-        m.lang = 'pt-BR';
-        m.rate = 1.8;
+        m.lang = 'pt-BR'; m.rate = 1.7;
         m.onstart = () => isSpeaking = true;
         m.onend = () => isSpeaking = false;
         speechSynthesis.speak(m);
