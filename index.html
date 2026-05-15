@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v23.0 Biometric Engine</title>
+    <title>ColorMatch Pro - v24.0 LAB Engine</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -24,14 +24,15 @@
         #crosshair { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; pointer-events: none; z-index: 10;
+            transition: all 0.2s;
         }
         .mira-livre { width: 40px; height: 40px; }
-        .mira-padrao { width: 32vw; height: 32vw; border: 2px dashed rgba(255,255,255,0.4); }
-        .locked { border-color: #00ffcc !important; box-shadow: 0 0 20px #00ffcc; background: rgba(0,255,204,0.1); }
+        .mira-padrao { width: 35vw; height: 35vw; border: 2px dashed rgba(255,255,255,0.4); }
+        .locked { border-color: #00ffcc !important; box-shadow: 0 0 30px #00ffcc; background: rgba(0,255,204,0.1); }
 
-        #ui-overlay { position: absolute; bottom: 0; width: 100%; padding: 40px 0; background: linear-gradient(transparent, #000 80%); z-index: 20; }
-        #color-name { font-size: 50px; font-weight: 900; text-transform: uppercase; color: #444; min-height: 65px; }
-        .active-text { color: #00ffcc !important; text-shadow: 0 0 25px rgba(0,255,204,0.6); }
+        #ui-overlay { position: absolute; bottom: 0; width: 100%; padding: 45px 0; background: linear-gradient(transparent, #000 85%); z-index: 20; }
+        #color-name { font-size: 55px; font-weight: 900; text-transform: uppercase; color: #444; min-height: 70px; letter-spacing: 2px; }
+        .active-text { color: #00ffcc !important; text-shadow: 0 0 30px rgba(0,255,204,0.7); }
     </style>
 </head>
 <body>
@@ -50,7 +51,7 @@
 </div>
 
 <div id="ui-overlay">
-    <div id="color-name">STANDBY</div>
+    <div id="color-name">AGUARDANDO</div>
 </div>
 
 <canvas id="c" style="display:none;"></canvas>
@@ -63,28 +64,28 @@
     let iris = { r: 1, g: 1, b: 1 };
     let history = [], lastSpeach = "", isSpeaking = false;
 
-    // ALVOS PRIMÁRIOS COM COORDENADAS DE ALTA FIDELIDADE
-    const TARGETS = [
-        { name: "Preto", r: 0, g: 0, b: 0, type: 'n' },
-        { name: "Branco", r: 255, g: 255, b: 255, type: 'n' },
-        { name: "Cinza", r: 120, g: 120, b: 120, type: 'n' },
-        { name: "Vermelho", r: 255, g: 0, b: 0 },
-        { name: "Laranja", r: 255, g: 110, b: 0 },
-        { name: "Amarelo", r: 255, g: 240, b: 0 },
-        { name: "Verde", r: 0, g: 255, b: 0 },
-        { name: "Azul", r: 0, g: 60, b: 255 },
-        { name: "Roxo", r: 130, g: 0, b: 230 },
-        { name: "Rosa", r: 255, g: 90, b: 160 },
-        { name: "Marrom", r: 100, g: 50, b: 20 }
+    // ALVOS EM ESPAÇO LAB (L: Luminosidade, A: Verde-Vermelho, B: Azul-Amarelo)
+    const TARGETS_LAB = [
+        { name: "Preto", l: 0, a: 0, b: 0, neutral: true },
+        { name: "Branco", l: 100, a: 0, b: 0, neutral: true },
+        { name: "Cinza", l: 50, a: 0, b: 0, neutral: true },
+        { name: "Vermelho", l: 53, a: 80, b: 67 },
+        { name: "Laranja", l: 67, a: 43, b: 74 },
+        { name: "Amarelo", l: 97, a: -21, b: 94 },
+        { name: "Verde", l: 87, a: -86, b: 83 },
+        { name: "Azul", l: 32, a: 79, b: -107 },
+        { name: "Roxo", l: 29, a: 68, b: -89 },
+        { name: "Rosa", l: 70, a: 70, b: -15 },
+        { name: "Marrom", l: 25, a: 15, b: 20 }
     ];
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", focusMode: "continuous" } }).then(s => v.srcObject = s);
 
     function toggleSystem() { 
         active = !active; 
         document.getElementById('btnPower').classList.toggle('active', active);
         document.getElementById('btnPower').innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
-        if(!active) { colorTxt.innerText = "STANDBY"; colorTxt.className = ""; history = []; }
+        if(!active) { colorTxt.innerText = "AGUARDANDO"; colorTxt.className = ""; history = []; }
     }
 
     function toggleAudio() {
@@ -92,7 +93,8 @@
         const btn = document.getElementById('btnAudio');
         btn.classList.toggle('audio-on', audioActive);
         btn.innerText = `ÁUDIO: ${audioActive ? 'ON' : 'OFF'}`;
-        if(audioActive) speak("Áudio ativado");
+        if(audioActive) speak("Áudio ligado");
+        else speechSynthesis.cancel();
     }
 
     function setMode(m) {
@@ -111,56 +113,51 @@
         iris.r = 255 / Math.max(p[0], 1);
         iris.g = 255 / Math.max(p[1], 1);
         iris.b = 255 / Math.max(p[2], 1);
-        if(audioActive) speak("Calibrado");
+        if(audioActive) speak("Calibração concluída");
     }
 
-    function getBiometricMatch(r, g, b) {
-        // Normalização de Hardware
-        r = Math.min(255, r * iris.r);
-        g = Math.min(255, g * iris.g);
-        b = Math.min(255, b * iris.b);
-
-        let minD = Infinity;
-        let winner = "Indefinido";
-        const avg = (r + g + b) / 3;
-        const sat = Math.sqrt(Math.pow(r-avg,2) + Math.pow(g-avg,2) + Math.pow(b-avg,2));
-
-        for (const t of TARGETS) {
-            if (sat < 18 && t.type !== 'n') continue;
-            if (sat >= 18 && t.type === 'n') continue;
-
-            // PESO BIOMÉTRICO (Olho Humano ITU-R 601)
-            // d = sqrt( 0.299*dR² + 0.587*dG² + 0.114*dB² )
-            const d = Math.sqrt(
-                0.299 * Math.pow(r - t.r, 2) + 
-                0.587 * Math.pow(g - t.g, 2) + 
-                0.114 * Math.pow(b - t.b, 2)
-            );
-
-            if (d < minD) { minD = d; winner = t.name; }
-        }
-        return winner;
+    function rgbToLab(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+        g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+        b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+        let x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
+        let y = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 1.00000;
+        let z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
+        x = x > 0.008856 ? Math.pow(x, 1/3) : (7.787 * x) + 16/116;
+        y = y > 0.008856 ? Math.pow(y, 1/3) : (7.787 * y) + 16/116;
+        z = z > 0.008856 ? Math.pow(z, 1/3) : (7.787 * z) + 16/116;
+        return { l: (116 * y) - 16, a: 500 * (x - y), b: 200 * (y - z) };
     }
 
     function loop() {
         if (active && v.videoWidth > 0) {
             c.width = v.videoWidth; c.height = v.videoHeight;
             ctx.drawImage(v, 0, 0);
-            
-            let s = (mode === 'LIVRE' ? 6 : 45);
-            const p = ctx.getImageData(v.videoWidth/2 - s/2, v.videoHeight/2 - s/2, s, s).data;
-            let r=0, g=0, b=0, t=p.length/4;
+            let sSize = (mode === 'LIVRE' ? 8 : 60);
+            const p = ctx.getImageData(v.videoWidth/2 - sSize/2, v.videoHeight/2 - sSize/2, sSize, sSize).data;
+            let r=0, g=0, b=0, totalP=p.length/4;
             for(let i=0; i<p.length; i+=4) { r+=p[i]; g+=p[i+1]; b+=p[i+2]; }
             
-            const currentName = getBiometricMatch(r/t, g/t, b/t);
-            history.push(currentName);
-            if(history.length > 20) history.shift();
-            
+            const lab = rgbToLab((r/totalP)*iris.r, (g/totalP)*iris.g, (b/totalP)*iris.b);
+            const chroma = Math.sqrt(lab.a * lab.a + lab.b * lab.b);
+
+            let minD = Infinity, winner = "Indefinido";
+            for (const t of TARGETS_LAB) {
+                if (chroma < 12 && !t.neutral) continue;
+                if (chroma >= 12 && t.neutral) continue;
+                
+                const d = Math.sqrt(Math.pow(lab.l-t.l,2) + Math.pow(lab.a-t.a,2) + Math.pow(lab.b-t.b,2));
+                if (d < minD) { minD = d; winner = t.name; }
+            }
+
+            history.push(winner);
+            if(history.length > 15) history.shift();
             const counts = {};
             history.forEach(n => counts[n] = (counts[n] || 0) + 1);
             const top = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
 
-            if (counts[top] >= 16) {
+            if (counts[top] >= 12) {
                 if (colorTxt.innerText !== top) {
                     colorTxt.innerText = top;
                     colorTxt.className = "active-text";
@@ -168,7 +165,7 @@
                     if (audioActive && top !== lastSpeach) speak(top);
                 }
             } else {
-                colorTxt.innerText = "AJUSTANDO";
+                colorTxt.innerText = "ALINHANDO";
                 colorTxt.className = "";
                 cross.classList.remove('locked');
             }
@@ -177,11 +174,11 @@
     }
 
     function speak(t) {
-        if(!audioActive || isSpeaking || !t || t === "AJUSTANDO") return;
+        if(!audioActive || isSpeaking || !t || t === "ALINHANDO") return;
         speechSynthesis.cancel();
         const m = new SpeechSynthesisUtterance(t);
         m.lang = 'pt-BR';
-        m.rate = 1.7;
+        m.rate = 1.8;
         m.onstart = () => isSpeaking = true;
         m.onend = () => isSpeaking = false;
         speechSynthesis.speak(m);
