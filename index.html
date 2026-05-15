@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v19.7 Vector Engine</title>
+    <title>ColorMatch Pro - v19.8 Full Restoration</title>
     <style>
         body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -18,14 +18,17 @@
             text-transform: uppercase; transition: 0.2s;
         }
         .active { background: #007bff !important; color: #fff !important; border-color: #007bff; }
-        
+        .univ-active { background: #007bff !important; color: #fff !important; border-color: #007bff; }
+
         #video-container { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
         video { width: 100%; height: 100%; object-fit: cover; }
 
         #crosshair { 
             position: absolute; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;
-            pointer-events: none; z-index: 10; transition: 0.1s; width: 45px; height: 45px;
+            pointer-events: none; z-index: 10; transition: 0.1s;
         }
+        .mira-livre { width: 45px; height: 45px; }
+        .mira-padrao { width: 34vw; height: 34vw; border: 2px dashed rgba(255,255,255,0.4); }
         .locked { border-color: #00ffcc !important; background: rgba(0,255,204,0.1); box-shadow: 0 0 25px #00ffcc; }
 
         #ui-overlay { 
@@ -41,12 +44,14 @@
 <div id="header">
     <button onclick="toggleSystem()" id="btnPower">SISTEMA: OFF</button>
     <button onclick="calibrate()" id="btnCalib">CALIBRAR MARCO ZERO</button>
+    <button onclick="setMode('LIVRE')" id="btnLivre">MOVIMENTO LIVRE</button>
+    <button onclick="setMode('PADRAO')" id="btnPadrao">MOVIMENTO PADRÃO</button>
     <button onclick="toggleUniv()" id="btnUniv">UNIVERSAL: OFF</button>
 </div>
 
 <div id="video-container">
     <video id="v" autoplay playsinline muted></video>
-    <div id="crosshair"></div>
+    <div id="crosshair" class="mira-livre"></div>
 </div>
 
 <div id="ui-overlay">
@@ -59,11 +64,10 @@
     const v = document.getElementById('v'), c = document.getElementById('c'), ctx = c.getContext('2d', {willReadFrequently:true});
     const colorTxt = document.getElementById('color-name'), cross = document.getElementById('crosshair');
 
-    let active = false, isUniv = false, lastSpeach = "", isSpeaking = false;
+    let mode = 'LIVRE', active = false, isUniv = false, lastSpeach = "", isSpeaking = false;
     let iris = { r: 1, g: 1, b: 1 }; 
     let history = []; 
 
-    // TABELA VETORIAL DE REFERÊNCIA (Todas as cores do espectro)
     const colorTable = [
         { name: "Preto", r: 0, g: 0, b: 0, type: "acromatic" },
         { name: "Branco", r: 255, g: 255, b: 255, type: "acromatic" },
@@ -71,21 +75,16 @@
         { name: "Vermelho", r: 255, g: 0, b: 0 },
         { name: "Vermelho Escuro", r: 139, g: 0, b: 0 },
         { name: "Laranja", r: 255, g: 165, b: 0 },
-        { name: "Laranja Escuro", r: 255, g: 140, b: 0 },
         { name: "Marrom", r: 139, g: 69, b: 19 },
         { name: "Amarelo", r: 255, g: 255, b: 0 },
-        { name: "Amarelo Claro", r: 255, g: 255, b: 224 },
         { name: "Verde", r: 0, g: 255, b: 0 },
         { name: "Verde Escuro", r: 0, g: 100, b: 0 },
         { name: "Verde Água", r: 0, g: 255, b: 255 },
         { name: "Azul", r: 0, g: 0, b: 255 },
         { name: "Azul Escuro", r: 0, g: 0, b: 139 },
-        { name: "Azul Claro", r: 173, g: 216, b: 230 },
         { name: "Roxo", r: 128, g: 0, b: 128 },
-        { name: "Roxo Escuro", r: 75, g: 0, b: 130 },
         { name: "Rosa", r: 255, g: 192, b: 203 },
         { name: "Rosa Shock", r: 255, g: 20, b: 147 },
-        { name: "Magenta", r: 255, g: 0, b: 255 },
         { name: "Vinho", r: 128, g: 0, b: 0 }
     ];
 
@@ -95,13 +94,20 @@
         active = !active; 
         document.getElementById('btnPower').classList.toggle('active', active);
         document.getElementById('btnPower').innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
-        if(!active) { colorTxt.innerText = "STANDBY"; history = []; }
+        if(!active) resetUI();
     }
 
     function toggleUniv() {
         isUniv = !isUniv;
-        document.getElementById('btnUniv').classList.toggle('active', isUniv);
+        document.getElementById('btnUniv').classList.toggle('univ-active', isUniv);
         document.getElementById('btnUniv').innerText = `UNIVERSAL: ${isUniv ? 'ON' : 'OFF'}`;
+    }
+
+    function setMode(m) {
+        mode = m;
+        document.getElementById('btnLivre').classList.toggle('active', m === 'LIVRE');
+        document.getElementById('btnPadrao').classList.toggle('active', m === 'PADRAO');
+        cross.className = (m === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
     }
 
     function calibrate() {
@@ -112,33 +118,25 @@
         iris.r = 255 / Math.max(p[0], 1);
         iris.g = 255 / Math.max(p[1], 1);
         iris.b = 255 / Math.max(p[2], 1);
-        speak("Marco Zero Calibrado");
+        speak("Calibrado");
     }
 
     function getColorNameVector(r, g, b) {
-        // Aplica correção da calibração
         r = Math.min(255, r * iris.r);
         g = Math.min(255, g * iris.g);
         b = Math.min(255, b * iris.b);
 
         let minDistance = Infinity;
         let bestMatch = "Indefinido";
-
-        // Trava de Saturação para Acromáticos (Igualitária para todos)
         const avg = (r + g + b) / 3;
-        const saturationFactor = Math.sqrt(Math.pow(r - avg, 2) + Math.pow(g - avg, 2) + Math.pow(b - avg, 2));
+        const saturation = Math.sqrt(Math.pow(r-avg,2) + Math.pow(g-avg,2) + Math.pow(b-avg,2));
 
         for (const color of colorTable) {
-            // Se a saturação for baixa, ignora cores cromáticas
-            if (saturationFactor < 15 && color.type !== "acromatic") continue;
-            // Se a saturação for alta, ignora acromáticos
-            if (saturationFactor >= 15 && color.type === "acromatic") continue;
+            if (saturation < 18 && color.type !== "acromatic") continue;
+            if (saturation >= 18 && color.type === "acromatic") continue;
 
-            const distance = Math.sqrt(Math.pow(r - color.r, 2) + Math.pow(g - color.g, 2) + Math.pow(b - color.b, 2));
-            if (distance < minDistance) {
-                minDistance = distance;
-                bestMatch = color.name;
-            }
+            const d = Math.sqrt(Math.pow(r-color.r,2) + Math.pow(g-color.g,2) + Math.pow(b-color.b,2));
+            if (d < minDistance) { minDistance = d; bestMatch = color.name; }
         }
         return bestMatch;
     }
@@ -148,20 +146,20 @@
             c.width = v.videoWidth; c.height = v.videoHeight;
             ctx.drawImage(v, 0, 0);
             
-            // Leitura de área maior para estabilidade vetorial (5x5 pixels)
-            const p = ctx.getImageData(v.videoWidth/2 - 2, v.videoHeight/2 - 2, 5, 5).data;
-            let r=0, g=0, b=0, t = p.length/4;
-            for(let i=0; i<p.length; i+=4) { r += p[i]; g += p[i+1]; b += p[i+2]; }
+            let size = (mode === 'LIVRE' ? 5 : 40);
+            const p = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
+            let r=0, g=0, b=0, t=p.length/4;
+            for(let i=0; i<p.length; i+=4) { r+=p[i]; g+=p[i+1]; b+=p[i+2]; }
             
             const name = getColorNameVector(r/t, g/t, b/t);
-
             history.push(name);
-            if(history.length > 20) history.shift();
+            if(history.length > 15) history.shift();
+            
             const counts = {};
             history.forEach(n => counts[n] = (counts[n] || 0) + 1);
             const winner = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
 
-            if (counts[winner] >= 16) {
+            if (counts[winner] >= 12) {
                 colorTxt.innerText = winner;
                 colorTxt.className = "active-text";
                 cross.classList.add('locked');
@@ -184,6 +182,13 @@
         m.onend = () => isSpeaking = false;
         speechSynthesis.speak(m);
         lastSpeach = t;
+    }
+
+    function resetUI() {
+        colorTxt.innerText = "STANDBY";
+        colorTxt.className = "";
+        cross.classList.remove('locked');
+        history = []; lastSpeach = "";
     }
     loop();
 </script>
