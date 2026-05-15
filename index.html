@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v19.6 Absolute Spectrum</title>
+    <title>ColorMatch Pro - v19.7 Vector Engine</title>
     <style>
         body { margin: 0; background: #000; font-family: 'Segoe UI', sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -63,6 +63,32 @@
     let iris = { r: 1, g: 1, b: 1 }; 
     let history = []; 
 
+    // TABELA VETORIAL DE REFERÊNCIA (Todas as cores do espectro)
+    const colorTable = [
+        { name: "Preto", r: 0, g: 0, b: 0, type: "acromatic" },
+        { name: "Branco", r: 255, g: 255, b: 255, type: "acromatic" },
+        { name: "Cinza", r: 128, g: 128, b: 128, type: "acromatic" },
+        { name: "Vermelho", r: 255, g: 0, b: 0 },
+        { name: "Vermelho Escuro", r: 139, g: 0, b: 0 },
+        { name: "Laranja", r: 255, g: 165, b: 0 },
+        { name: "Laranja Escuro", r: 255, g: 140, b: 0 },
+        { name: "Marrom", r: 139, g: 69, b: 19 },
+        { name: "Amarelo", r: 255, g: 255, b: 0 },
+        { name: "Amarelo Claro", r: 255, g: 255, b: 224 },
+        { name: "Verde", r: 0, g: 255, b: 0 },
+        { name: "Verde Escuro", r: 0, g: 100, b: 0 },
+        { name: "Verde Água", r: 0, g: 255, b: 255 },
+        { name: "Azul", r: 0, g: 0, b: 255 },
+        { name: "Azul Escuro", r: 0, g: 0, b: 139 },
+        { name: "Azul Claro", r: 173, g: 216, b: 230 },
+        { name: "Roxo", r: 128, g: 0, b: 128 },
+        { name: "Roxo Escuro", r: 75, g: 0, b: 130 },
+        { name: "Rosa", r: 255, g: 192, b: 203 },
+        { name: "Rosa Shock", r: 255, g: 20, b: 147 },
+        { name: "Magenta", r: 255, g: 0, b: 255 },
+        { name: "Vinho", r: 128, g: 0, b: 0 }
+    ];
+
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
 
     function toggleSystem() { 
@@ -86,68 +112,60 @@
         iris.r = 255 / Math.max(p[0], 1);
         iris.g = 255 / Math.max(p[1], 1);
         iris.b = 255 / Math.max(p[2], 1);
-        speak("Calibrado");
+        speak("Marco Zero Calibrado");
     }
 
-    function getDetailedColor(r, g, b) {
+    function getColorNameVector(r, g, b) {
         // Aplica correção da calibração
         r = Math.min(255, r * iris.r);
         g = Math.min(255, g * iris.g);
         b = Math.min(255, b * iris.b);
 
-        const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
-        let h, s = (max === 0 ? 0 : d / max), v = max / 255;
+        let minDistance = Infinity;
+        let bestMatch = "Indefinido";
 
-        if (max === min) h = 0;
-        else {
-            switch (max) {
-                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                case g: h = (b - r) / d + 2; break;
-                case b: h = (r - g) / d + 4; break;
+        // Trava de Saturação para Acromáticos (Igualitária para todos)
+        const avg = (r + g + b) / 3;
+        const saturationFactor = Math.sqrt(Math.pow(r - avg, 2) + Math.pow(g - avg, 2) + Math.pow(b - avg, 2));
+
+        for (const color of colorTable) {
+            // Se a saturação for baixa, ignora cores cromáticas
+            if (saturationFactor < 15 && color.type !== "acromatic") continue;
+            // Se a saturação for alta, ignora acromáticos
+            if (saturationFactor >= 15 && color.type === "acromatic") continue;
+
+            const distance = Math.sqrt(Math.pow(r - color.r, 2) + Math.pow(g - color.g, 2) + Math.pow(b - color.b, 2));
+            if (distance < minDistance) {
+                minDistance = distance;
+                bestMatch = color.name;
             }
-            h /= 6;
         }
-
-        const H = h * 360, S = s * 100, V = v * 100;
-
-        // 1. CRITÉRIO ACROMÁTICO (Igual para todas as cores)
-        if (V < 18) return "Preto";
-        if (V > 85 && S < 12) return "Branco";
-        if (S < 15) return "Cinza";
-
-        // 2. MAPEAMENTO CROMÁTICO CIRCULAR (360 Graus sem lacunas)
-        if (H < 15 || H >= 345) {
-            if (S > 35 && V > 45 && H > 300) return "Rosa"; 
-            return V < 45 ? "Vermelho Escuro" : "Vermelho";
-        }
-        if (H >= 15 && H < 45) return V < 45 ? "Marrom" : "Laranja";
-        if (H >= 45 && H < 68) return "Amarelo"; 
-        if (H >= 68 && H < 162) return V < 45 ? "Verde Escuro" : "Verde";
-        if (H >= 162 && H < 255) return V < 45 ? "Azul Escuro" : "Azul";
-        if (H >= 255 && H < 300) return "Roxo";
-        if (H >= 300 && H < 345) return "Rosa";
-
-        return "Indefinido";
+        return bestMatch;
     }
 
     function loop() {
         if (active && v.videoWidth > 0) {
             c.width = v.videoWidth; c.height = v.videoHeight;
             ctx.drawImage(v, 0, 0);
-            const p = ctx.getImageData(v.videoWidth/2, v.videoHeight/2, 1, 1).data;
-            const name = getDetailedColor(p[0], p[1], p[2]);
+            
+            // Leitura de área maior para estabilidade vetorial (5x5 pixels)
+            const p = ctx.getImageData(v.videoWidth/2 - 2, v.videoHeight/2 - 2, 5, 5).data;
+            let r=0, g=0, b=0, t = p.length/4;
+            for(let i=0; i<p.length; i+=4) { r += p[i]; g += p[i+1]; b += p[i+2]; }
+            
+            const name = getColorNameVector(r/t, g/t, b/t);
 
             history.push(name);
-            if(history.length > 15) history.shift();
+            if(history.length > 20) history.shift();
             const counts = {};
             history.forEach(n => counts[n] = (counts[n] || 0) + 1);
             const winner = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
 
-            if (counts[winner] >= 12) {
+            if (counts[winner] >= 16) {
                 colorTxt.innerText = winner;
                 colorTxt.className = "active-text";
                 cross.classList.add('locked');
-                if(winner !== lastSpeach) speak(winner);
+                if(winner !== lastSpeach && winner !== "Indefinido") speak(winner);
             } else {
                 colorTxt.innerText = "ALINHANDO";
                 colorTxt.className = "";
