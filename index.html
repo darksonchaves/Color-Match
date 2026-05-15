@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v26.0 Universal</title>
+    <title>ColorMatch Pro - v27.0 Final</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -16,7 +16,8 @@
             border-radius: 5px; font-size: 10px; font-weight: bold; cursor: pointer;
         }
         .active { background: #007bff !important; }
-        .univ-on { background: #ffc107 !important; color: #000; } /* Cor destaque para Modo Universal */
+        .univ-on { background: #ffc107 !important; color: #000; }
+        .audio-on { background: #28a745 !important; }
         
         #video-container { position: relative; width: 100vw; height: 100vh; }
         video { width: 100%; height: 100%; object-fit: cover; }
@@ -25,17 +26,18 @@
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             border: 2px solid #fff; border-radius: 50%; pointer-events: none; z-index: 10;
         }
-        .mira-livre { width: 40px; height: 40px; }
-        .mira-padrao { width: 30vw; height: 30vw; border: 3px dashed #fff; }
+        .mira-livre { width: 45px; height: 45px; }
+        .mira-padrao { width: 35vw; height: 35vw; border: 3px dashed #fff; }
 
-        #ui-overlay { position: absolute; bottom: 30px; width: 100%; z-index: 20; }
-        #color-name { font-size: 50px; font-weight: 900; text-shadow: 2px 2px 10px #000; }
+        #ui-overlay { position: absolute; bottom: 40px; width: 100%; z-index: 20; }
+        #color-name { font-size: 55px; font-weight: 900; text-shadow: 2px 2px 15px #000; color: #00ffcc; }
     </style>
 </head>
 <body>
 
 <div id="header">
     <button onclick="toggleSystem()" id="btnPower">SISTEMA: OFF</button>
+    <button onclick="toggleAudio()" id="btnAudio">ÁUDIO: OFF</button>
     <button onclick="toggleUniversal()" id="btnUniv">MODO UNIVERSAL: OFF</button>
     <button onclick="calibrate()" id="btnCalib">CALIBRAR</button>
     <button onclick="setMode('LIVRE')" id="btnLivre">MODO LIVRE</button>
@@ -54,19 +56,27 @@
 <canvas id="c" style="display:none;"></canvas>
 
 <script>
-    const v = document.getElementById('v'), c = document.getElementById('c'), ctx = c.getContext('2d');
+    const v = document.getElementById('v'), c = document.getElementById('c'), ctx = c.getContext('2d', {willReadFrequently:true});
     const colorTxt = document.getElementById('color-name'), cross = document.getElementById('crosshair');
 
-    let active = false, universalMode = false, mode = 'LIVRE';
+    let active = false, audioActive = false, universalMode = false, mode = 'LIVRE';
     let balance = { r: 1, g: 1, b: 1 };
-    let history = [];
+    let history = [], lastSpeach = "", isSpeaking = false;
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", focusMode: "continuous" } }).then(s => v.srcObject = s);
 
     function toggleSystem() { 
         active = !active; 
         document.getElementById('btnPower').classList.toggle('active', active);
         document.getElementById('btnPower').innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
+        if(!active) { colorTxt.innerText = "STANDBY"; history = []; }
+    }
+
+    function toggleAudio() {
+        audioActive = !audioActive;
+        document.getElementById('btnAudio').classList.toggle('audio-on', audioActive);
+        document.getElementById('btnAudio').innerText = `ÁUDIO: ${audioActive ? 'ON' : 'OFF'}`;
+        if(audioActive) speak("Áudio ligado");
     }
 
     function toggleUniversal() {
@@ -74,6 +84,7 @@
         const btn = document.getElementById('btnUniv');
         btn.classList.toggle('univ-on', universalMode);
         btn.innerText = `MODO UNIVERSAL: ${universalMode ? 'ON' : 'OFF'}`;
+        if(audioActive) speak("Universal " + (universalMode ? "Ligado" : "Desligado"));
     }
 
     function setMode(m) {
@@ -81,6 +92,7 @@
         document.getElementById('btnLivre').classList.toggle('active', m === 'LIVRE');
         document.getElementById('btnPadrao').classList.toggle('active', m === 'PADRAO');
         cross.className = (m === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
+        if(audioActive) speak("Modo " + m);
     }
 
     function calibrate() {
@@ -88,22 +100,18 @@
         c.width = v.videoWidth; c.height = v.videoHeight;
         ctx.drawImage(v, 0, 0);
         const p = ctx.getImageData(v.videoWidth/2, v.videoHeight/2, 1, 1).data;
-        const brightness = (p[0] + p[1] + p[2]) / 3;
-        // Força o ponto central a ser o novo "branco/neutro"
-        balance.r = brightness / Math.max(p[0], 1);
-        balance.g = brightness / Math.max(p[1], 1);
-        balance.b = brightness / Math.max(p[2], 1);
+        const avg = (p[0] + p[1] + p[2]) / 3;
+        balance.r = avg / Math.max(p[0], 1);
+        balance.g = avg / Math.max(p[1], 1);
+        balance.b = avg / Math.max(p[2], 1);
+        if(audioActive) speak("Calibrado");
     }
 
     function getFinalColor(r, g, b) {
-        // Aplica Calibração de Luz Ambiente
         r *= balance.r; g *= balance.g; b *= balance.b;
-
-        // Conversão para HSL para precisão de matiz
         let r1 = r/255, g1 = g/255, b1 = b/255;
         let max = Math.max(r1, g1, b1), min = Math.min(r1, g1, b1);
         let h, s, l = (max + min) / 2;
-
         if(max === min) h = s = 0;
         else {
             let d = max - min;
@@ -114,42 +122,59 @@
             h *= 60;
         }
 
-        // LÓGICA MODO UNIVERSAL (ESPECTRO PRIMÁRIO)
         if (universalMode) {
-            if (l < 0.1) return "PRETO";
-            if (s < 0.15) return "BRANCO"; // Corrigido: Neutros agora são Branco na base
-            
-            if (h < 20 || h >= 330) return "VERMELHO";
+            if (l < 0.12) return "PRETO";
+            if (s < 0.18) return "BRANCO"; 
+            if (h < 20 || h >= 335) return "VERMELHO";
             if (h >= 20 && h < 50) return "LARANJA";
-            if (h >= 50 && h < 70) return "AMARELO";
-            if (h >= 70 && h < 160) return "VERDE";
-            if (h >= 160 && h < 260) return "AZUL";
-            if (h >= 260 && h < 330) return "ROXO";
+            if (h >= 50 && h < 75) return "AMARELO";
+            if (h >= 75 && h < 165) return "VERDE";
+            if (h >= 165 && h < 255) return "AZUL";
+            if (h >= 255 && h < 300) return "ROXO";
+            if (h >= 300 && h < 335) return "ROSA";
             return "ESPECTRO";
         }
-
-        // MODO NORMAL (Interpretação padrão)
-        if (l < 0.1) return "PRETO";
-        if (l > 0.8 && s < 0.2) return "BRANCO";
-        if (s < 0.1) return "CINZA";
-        return "AJUSTANDO";
+        return (l < 0.15) ? "PRETO" : (s < 0.15) ? "NEUTRO" : "ANALISANDO";
     }
 
     function loop() {
         if (active && v.videoWidth > 0) {
             c.width = v.videoWidth; c.height = v.videoHeight;
             ctx.drawImage(v, 0, 0);
-            let s = (mode === 'LIVRE' ? 10 : 100);
-            const p = ctx.getImageData(v.videoWidth/2 - s/2, v.videoHeight/2 - s/2, s, s).data;
-            let r=0, g=0, b=0;
+            let size = (mode === 'LIVRE' ? 12 : 100);
+            const p = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
+            let r=0, g=0, b=0, count=p.length/4;
             for(let i=0; i<p.length; i+=4) { r+=p[i]; g+=p[i+1]; b+=p[i+2]; }
-            let res = getFinalColor(r/(p.length/4), g/(p.length/4), b/(p.length/4));
+            let res = getFinalColor(r/count, g/count, b/count);
             
             history.push(res);
-            if(history.length > 10) history.shift();
-            colorTxt.innerText = history.every(v => v === res) ? res : "ALINHANDO";
+            if(history.length > 12) history.shift();
+            
+            const votes = {};
+            history.forEach(x => votes[x] = (votes[x] || 0) + 1);
+            const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
+
+            if (votes[winner] >= 9) {
+                if (colorTxt.innerText !== winner) {
+                    colorTxt.innerText = winner;
+                    if (audioActive && winner !== lastSpeach) speak(winner);
+                }
+            } else {
+                colorTxt.innerText = "ALINHANDO";
+            }
         }
         requestAnimationFrame(loop);
+    }
+
+    function speak(t) {
+        if(!audioActive || isSpeaking || !t || t === "ALINHANDO" || t === "ANALISANDO") return;
+        speechSynthesis.cancel();
+        const m = new SpeechSynthesisUtterance(t);
+        m.lang = 'pt-BR'; m.rate = 1.8;
+        m.onstart = () => isSpeaking = true;
+        m.onend = () => isSpeaking = false;
+        speechSynthesis.speak(m);
+        lastSpeach = t;
     }
     loop();
 </script>
