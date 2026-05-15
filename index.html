@@ -1,1361 +1,193 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ColorMatch Pro - v23.0 Biometric Engine</title>
+    <style>
+        body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
+        #header { 
+            position: absolute; top: 0; width: 100%; z-index: 20;
+            background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(10px);
+            display: flex; justify-content: center; padding: 10px 0; gap: 5px; border-bottom: 1px solid #333; flex-wrap: wrap;
+        }
+        button { 
+            background: #1a1a1a; color: #aaa; border: 1px solid #444; padding: 8px 12px; 
+            border-radius: 6px; font-weight: bold; font-size: 10px; text-transform: uppercase; cursor: pointer;
+        }
+        .active { background: #007bff !important; color: #fff !important; border-color: #007bff; }
+        .audio-on { background: #28a745 !important; color: #fff !important; border-color: #28a745; }
+        
+        #video-container { position: relative; width: 100vw; height: 100vh; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        
+        #crosshair { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; pointer-events: none; z-index: 10;
+        }
+        .mira-livre { width: 40px; height: 40px; }
+        .mira-padrao { width: 32vw; height: 32vw; border: 2px dashed rgba(255,255,255,0.4); }
+        .locked { border-color: #00ffcc !important; box-shadow: 0 0 20px #00ffcc; background: rgba(0,255,204,0.1); }
 
-<meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>
-ColorMatch Pro – OEM MultiBrand Edition
-</title>
-
-<style>
-
-body{
-  margin:0;
-  font-family:Arial;
-  background:#111;
-  color:#fff;
-  text-align:center;
-}
-
-h2{
-  margin-top:15px;
-}
-
-video{
-  width:92%;
-  border-radius:12px;
-  border:2px solid #333;
-  object-fit:cover;
-}
-
-button{
-  padding:10px;
-  margin:5px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  background:#222;
-  color:#fff;
-}
-
-button:hover{
-  background:#333;
-}
-
-.activeMode{
-  background:#00695c !important;
-}
-
-input,select{
-  padding:10px;
-  border-radius:8px;
-  border:none;
-  margin:5px;
-  width:90%;
-  max-width:420px;
-}
-
-#panel{
-  display:flex;
-  justify-content:space-around;
-  flex-wrap:wrap;
-  margin-top:15px;
-}
-
-.box{
-  width:45%;
-  min-width:160px;
-}
-
-canvas{
-  width:100%;
-  border-radius:10px;
-  background:#222;
-}
-
-#cross{
-  position:fixed;
-  top:50%;
-  left:50%;
-  width:26px;
-  height:26px;
-  transform:translate(-50%,-50%);
-  border:2px solid #00ffcc;
-  border-radius:50%;
-  display:none;
-  pointer-events:none;
-  z-index:999;
-}
-
-#databasePanel{
-  margin-top:20px;
-  padding:15px;
-  background:#181818;
-  border-top:2px solid #333;
-}
-
-#resultList{
-  margin-top:10px;
-  text-align:left;
-  width:90%;
-  max-width:700px;
-  margin-left:auto;
-  margin-right:auto;
-  background:#1f1f1f;
-  border-radius:10px;
-  padding:10px;
-}
-
-.item{
-  padding:10px;
-  border-bottom:1px solid #333;
-  cursor:pointer;
-}
-
-.item:hover{
-  background:#2c2c2c;
-}
-
-.colorBox{
-  width:18px;
-  height:18px;
-  display:inline-block;
-  border-radius:50%;
-  margin-right:8px;
-  border:1px solid #fff;
-  vertical-align:middle;
-}
-
-#txt{
-  margin-top:15px;
-  font-size:18px;
-  padding:10px;
-}
-
-#universalPanel{
-  margin-top:15px;
-  padding:10px;
-  background:#181818;
-  border-top:2px solid #333;
-}
-
-</style>
-
+        #ui-overlay { position: absolute; bottom: 0; width: 100%; padding: 40px 0; background: linear-gradient(transparent, #000 80%); z-index: 20; }
+        #color-name { font-size: 50px; font-weight: 900; text-transform: uppercase; color: #444; min-height: 65px; }
+        .active-text { color: #00ffcc !important; text-shadow: 0 0 25px rgba(0,255,204,0.6); }
+    </style>
 </head>
-
 <body>
 
-<h2>
-ColorMatch Pro – OEM MultiBrand Edition
-</h2>
-
-<button onclick="setMode('static')">
-Estático
-</button>
-
-<button onclick="setMode('move')">
-Movimento
-</button>
-
-<button onclick="setMode('comparePoint')">
-Comparar Ponto a Ponto
-</button>
-
-<button onclick="setMode('compareDatabase')">
-Comparar Base de Dados
-</button>
-
-<button onclick="analyzeOEM()">
-🎨 OEM Scan
-</button>
-
-<button onclick="toggleFlash()">
-⚡ Flash
-</button>
-
-<button onclick="toggleVoice()">
-🔊 Áudio
-</button>
-
-<br><br>
-
-<div id="universalPanel">
-
-<h3>
-Modo Universal
-</h3>
-
-<button id="universalBtn" onclick="toggleUniversalMode()">
-Universal OFF
-</button>
-
-<p style="font-size:14px;color:#aaa;">
-Reconhecimento puro baseado na leitura real da câmera
-</p>
-
+<div id="header">
+    <button onclick="toggleSystem()" id="btnPower">SISTEMA: OFF</button>
+    <button onclick="toggleAudio()" id="btnAudio">ÁUDIO: OFF</button>
+    <button onclick="calibrate()" id="btnCalib">MARCO ZERO</button>
+    <button onclick="setMode('LIVRE')" id="btnLivre">LIVRE</button>
+    <button onclick="setMode('PADRAO')" id="btnPadrao">PADRÃO</button>
 </div>
 
-<video id="video" autoplay playsinline muted></video>
-
-<div id="cross"></div>
-
-<div id="panel">
-
-<div class="box">
-<canvas id="canvasA"></canvas>
-<div>Referência</div>
+<div id="video-container">
+    <video id="v" autoplay playsinline muted></video>
+    <div id="crosshair" class="mira-livre"></div>
 </div>
 
-<div class="box">
-<canvas id="canvasB"></canvas>
-<div>Comparação</div>
+<div id="ui-overlay">
+    <div id="color-name">STANDBY</div>
 </div>
 
-</div>
-
-<div id="databasePanel">
-
-<h3>
-Pesquisa OEM
-</h3>
-
-<input
-type="text"
-id="brandSearch"
-placeholder="Digite a montadora..."
-oninput="searchBrand()"
->
-
-<br>
-
-<select id="modelSelect" onchange="showModelColors()">
-
-<option value="">
-Selecione o modelo
-</option>
-
-</select>
-
-<div id="resultList"></div>
-
-</div>
-
-<p id="txt">
-Inicializando...
-</p>
+<canvas id="c" style="display:none;"></canvas>
 
 <script>
-
-/* ================= ELEMENTOS ================= */
-
-const video =
-document.getElementById("video");
-
-const canvasA =
-document.getElementById("canvasA");
-
-const canvasB =
-document.getElementById("canvasB");
-
-const ctxA =
-canvasA.getContext(
-"2d",
-{willReadFrequently:true}
-);
-
-const ctxB =
-canvasB.getContext(
-"2d",
-{willReadFrequently:true}
-);
-
-const cross =
-document.getElementById("cross");
-
-const txt =
-document.getElementById("txt");
-
-/* ================= CONTROLE ================= */
-
-let mode = "static";
-
-let voice = true;
-
-let universalMode = false;
-
-let moveRunning = false;
-
-let compareA = null;
-
-let compareALab = null;
-
-let compareStep = 0;
-
-let selectedDatabaseColor = null;
-
-/* ================= AUDIO ================= */
-
-/*
-CORREÇÃO DEFINITIVA:
-
-A cor fala:
-- SOMENTE UMA VEZ
-- SOMENTE quando TROCAR
-- NÃO repete continuamente
-- NÃO reinicia enquanto continuar igual
-*/
-
-let currentSpokenColor = "";
-
-let isSpeaking = false;
-
-/* ===== estabilidade ===== */
-
-let detectedColor = "";
-
-let stableFrames = 0;
-
-const MIN_STABLE_FRAMES = 8;
-
-/* ================= FLASH ================= */
-
-let streamTrack = null;
-
-let flashOn = false;
-
-let flashBusy = false;
-
-let processingPaused = false;
-
-/* ================= CAMERA ================= */
-
-navigator.mediaDevices.getUserMedia({
-
-  video:{
-    facingMode:{
-      ideal:"environment"
-    }
-  },
-
-  audio:false
-
-})
-
-.then(stream=>{
-
-  video.srcObject = stream;
-
-  streamTrack =
-  stream.getVideoTracks()[0];
-
-})
-
-.catch(()=>{
-
-  alert("Erro ao acessar câmera");
-
-});
-
-/* ================= VOZ ================= */
-
-function speak(text){
-
-  if(!voice) return;
-
-  if(!text) return;
-
-/* ===== NÃO fala repetido ===== */
-
-  if(text === currentSpokenColor){
-    return;
-  }
-
-/* ===== trava enquanto fala ===== */
-
-  if(isSpeaking){
-    return;
-  }
-
-  currentSpokenColor = text;
-
-  isSpeaking = true;
-
-  speechSynthesis.cancel();
-
-  const msg =
-  new SpeechSynthesisUtterance(text);
-
-  msg.lang = "pt-BR";
-
-  msg.rate = 1.10;
-
-  msg.pitch = 1;
-
-  msg.volume = 1;
-
-  msg.onend = ()=>{
-
-    isSpeaking = false;
-  };
-
-  msg.onerror = ()=>{
-
-    isSpeaking = false;
-  };
-
-  speechSynthesis.speak(msg);
-}
-
-/* ================= TOGGLE AUDIO ================= */
-
-function toggleVoice(){
-
-  voice = !voice;
-
-  speechSynthesis.cancel();
-
-  isSpeaking = false;
-
-  currentSpokenColor = "";
-
-  alert(
-    "Áudio: " +
-    (voice ? "ON" : "OFF")
-  );
-}
-
-/* ================= UNIVERSAL ================= */
-
-function toggleUniversalMode(){
-
-  universalMode = !universalMode;
-
-  const btn =
-  document.getElementById("universalBtn");
-
-  currentSpokenColor = "";
-
-  stableFrames = 0;
-
-  detectedColor = "";
-
-  if(universalMode){
-
-    btn.innerText =
-    "Universal ON";
-
-    btn.classList.add("activeMode");
-
-    txt.innerText =
-    "Modo universal ativado";
-
-    speak(
-      "Modo universal ativado"
-    );
-
-  }else{
-
-    btn.innerText =
-    "Universal OFF";
-
-    btn.classList.remove("activeMode");
-
-    txt.innerText =
-    "Modo universal desativado";
-
-    speak(
-      "Modo universal desativado"
-    );
-  }
-}
-
-/* ================= FLASH ================= */
-
-async function toggleFlash(){
-
-  if(flashBusy) return;
-
-  if(!streamTrack){
-
-    alert("Câmera não iniciada");
-    return;
-  }
-
-  flashBusy = true;
-
-  processingPaused = true;
-
-  try{
-
-    const capabilities =
-    streamTrack.getCapabilities();
-
-    if(!capabilities.torch){
-
-      alert("Flash não suportado");
-
-      processingPaused = false;
-
-      flashBusy = false;
-
-      return;
+    const v = document.getElementById('v'), c = document.getElementById('c'), ctx = c.getContext('2d', {willReadFrequently:true});
+    const colorTxt = document.getElementById('color-name'), cross = document.getElementById('crosshair');
+
+    let active = false, audioActive = false, mode = 'LIVRE';
+    let iris = { r: 1, g: 1, b: 1 };
+    let history = [], lastSpeach = "", isSpeaking = false;
+
+    // ALVOS PRIMÁRIOS COM COORDENADAS DE ALTA FIDELIDADE
+    const TARGETS = [
+        { name: "Preto", r: 0, g: 0, b: 0, type: 'n' },
+        { name: "Branco", r: 255, g: 255, b: 255, type: 'n' },
+        { name: "Cinza", r: 120, g: 120, b: 120, type: 'n' },
+        { name: "Vermelho", r: 255, g: 0, b: 0 },
+        { name: "Laranja", r: 255, g: 110, b: 0 },
+        { name: "Amarelo", r: 255, g: 240, b: 0 },
+        { name: "Verde", r: 0, g: 255, b: 0 },
+        { name: "Azul", r: 0, g: 60, b: 255 },
+        { name: "Roxo", r: 130, g: 0, b: 230 },
+        { name: "Rosa", r: 255, g: 90, b: 160 },
+        { name: "Marrom", r: 100, g: 50, b: 20 }
+    ];
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
+
+    function toggleSystem() { 
+        active = !active; 
+        document.getElementById('btnPower').classList.toggle('active', active);
+        document.getElementById('btnPower').innerText = `SISTEMA: ${active ? 'ON' : 'OFF'}`;
+        if(!active) { colorTxt.innerText = "STANDBY"; colorTxt.className = ""; history = []; }
     }
 
-    flashOn = !flashOn;
+    function toggleAudio() {
+        audioActive = !audioActive;
+        const btn = document.getElementById('btnAudio');
+        btn.classList.toggle('audio-on', audioActive);
+        btn.innerText = `ÁUDIO: ${audioActive ? 'ON' : 'OFF'}`;
+        if(audioActive) speak("Áudio ativado");
+    }
 
-    await streamTrack.applyConstraints({
+    function setMode(m) {
+        mode = m;
+        document.getElementById('btnLivre').classList.toggle('active', m === 'LIVRE');
+        document.getElementById('btnPadrao').classList.toggle('active', m === 'PADRAO');
+        cross.className = (m === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
+        if(audioActive) speak("Modo " + m);
+    }
 
-      advanced:[
-        {
-          torch:flashOn
+    function calibrate() {
+        if(!active) return;
+        c.width = v.videoWidth; c.height = v.videoHeight;
+        ctx.drawImage(v, 0, 0);
+        const p = ctx.getImageData(v.videoWidth/2, v.videoHeight/2, 1, 1).data;
+        iris.r = 255 / Math.max(p[0], 1);
+        iris.g = 255 / Math.max(p[1], 1);
+        iris.b = 255 / Math.max(p[2], 1);
+        if(audioActive) speak("Calibrado");
+    }
+
+    function getBiometricMatch(r, g, b) {
+        // Normalização de Hardware
+        r = Math.min(255, r * iris.r);
+        g = Math.min(255, g * iris.g);
+        b = Math.min(255, b * iris.b);
+
+        let minD = Infinity;
+        let winner = "Indefinido";
+        const avg = (r + g + b) / 3;
+        const sat = Math.sqrt(Math.pow(r-avg,2) + Math.pow(g-avg,2) + Math.pow(b-avg,2));
+
+        for (const t of TARGETS) {
+            if (sat < 18 && t.type !== 'n') continue;
+            if (sat >= 18 && t.type === 'n') continue;
+
+            // PESO BIOMÉTRICO (Olho Humano ITU-R 601)
+            // d = sqrt( 0.299*dR² + 0.587*dG² + 0.114*dB² )
+            const d = Math.sqrt(
+                0.299 * Math.pow(r - t.r, 2) + 
+                0.587 * Math.pow(g - t.g, 2) + 
+                0.114 * Math.pow(b - t.b, 2)
+            );
+
+            if (d < minD) { minD = d; winner = t.name; }
         }
-      ]
-
-    });
-
-    await new Promise(resolve=>
-      setTimeout(resolve,300)
-    );
-
-  }catch(e){
-
-    flashOn = false;
-
-    alert("Falha no flash");
-  }
-
-  processingPaused = false;
-
-  setTimeout(()=>{
-
-    flashBusy = false;
-
-  },250);
-}
-
-/* ================= RGB -> HSL ================= */
-
-function rgbToHsl(r,g,b){
-
-  r /= 255;
-  g /= 255;
-  b /= 255;
-
-  const max =
-  Math.max(r,g,b);
-
-  const min =
-  Math.min(r,g,b);
-
-  let h,s,l;
-
-  l = (max + min) / 2;
-
-  if(max === min){
-
-    h = 0;
-    s = 0;
-
-  }else{
-
-    const d = max - min;
-
-    s =
-    l > 0.5
-    ? d / (2 - max - min)
-    : d / (max + min);
-
-    switch(max){
-
-      case r:
-      h =
-      (g - b) / d +
-      (g < b ? 6 : 0);
-      break;
-
-      case g:
-      h =
-      (b - r) / d + 2;
-      break;
-
-      case b:
-      h =
-      (r - g) / d + 4;
-      break;
+        return winner;
     }
 
-    h /= 6;
-  }
-
-  return{
-
-    h:h * 360,
-    s:s * 100,
-    l:l * 100
-  };
-}
-
-/* ================= RGB -> LAB ================= */
-
-function rgbToLab(r,g,b){
-
-  r/=255;
-  g/=255;
-  b/=255;
-
-  [r,g,b]=[r,g,b].map(v=>
-
-    v>0.04045
-    ? Math.pow((v+0.055)/1.055,2.4)
-    : v/12.92
-
-  );
-
-  let x =
-  r*0.4124 +
-  g*0.3576 +
-  b*0.1805;
-
-  let y =
-  r*0.2126 +
-  g*0.7152 +
-  b*0.0722;
-
-  let z =
-  r*0.0193 +
-  g*0.1192 +
-  b*0.9505;
-
-  x/=0.95047;
-  y/=1;
-  z/=1.08883;
-
-  [x,y,z]=[x,y,z].map(v=>
-
-    v>0.008856
-    ? Math.cbrt(v)
-    : (7.787*v)+(16/116)
-
-  );
-
-  return{
-
-    L:(116*y)-16,
-    a:500*(x-y),
-    b:200*(y-z)
-
-  };
-}
-
-/* ================= DELTA E ================= */
-
-function deltaE(a,b){
-
-  return Math.sqrt(
-
-    (a.L-b.L)**2 +
-    (a.a-b.a)**2 +
-    (a.b-b.b)**2
-
-  );
-}
-
-/* ================= DATABASE ================= */
-
-const oemDatabase = [
-
-{
-  brand:"Toyota",
-  model:"Corolla",
-  year:"2024",
-  code:"040",
-  name:"Super White II",
-  rgb:{r:244,g:244,b:241}
-},
-
-{
-  brand:"Toyota",
-  model:"Corolla",
-  year:"2024",
-  code:"1F7",
-  name:"Classic Silver Metallic",
-  rgb:{r:169,g:173,b:177}
-},
-
-{
-  brand:"Toyota",
-  model:"Corolla",
-  year:"2024",
-  code:"218",
-  name:"Midnight Black Metallic",
-  rgb:{r:27,g:27,b:27}
-},
-
-{
-  brand:"Toyota",
-  model:"Corolla",
-  year:"2024",
-  code:"3U5",
-  name:"Emotional Red",
-  rgb:{r:126,g:31,b:36}
-}
-
-];
-
-/* ================= PREPARA LAB ================= */
-
-oemDatabase.forEach(item=>{
-
-  item.lab = rgbToLab(
-    item.rgb.r,
-    item.rgb.g,
-    item.rgb.b
-  );
-
-});
-
-/* ================= CAPTURA ================= */
-
-function captureRaw(x,y){
-
-  if(
-    !video.videoWidth ||
-    processingPaused
-  ){
-    return {r:0,g:0,b:0};
-  }
-
-  canvasA.width =
-  video.videoWidth;
-
-  canvasA.height =
-  video.videoHeight;
-
-  ctxA.drawImage(video,0,0);
-
-  const s = 12;
-
-  const data = ctxA.getImageData(
-
-    x-s,
-    y-s,
-    s*2,
-    s*2
-
-  ).data;
-
-  let r=0,g=0,b=0,c=0;
-
-  for(let i=0;i<data.length;i+=4){
-
-    r += data[i];
-    g += data[i+1];
-    b += data[i+2];
-
-    c++;
-  }
-
-  return{
-
-    r:Math.round(r/c),
-    g:Math.round(g/c),
-    b:Math.round(b/c)
-
-  };
-}
-
-/* ================= DETECTOR UNIVERSAL ================= */
-
-function detectUniversalColor(r,g,b){
-
-  const hsl =
-  rgbToHsl(r,g,b);
-
-  const h = hsl.h;
-
-  const s = hsl.s;
-
-  const l = hsl.l;
-
-  if(
-    s <= 12 &&
-    l >= 84
-  ){
-    return "Branco";
-  }
-
-  if(
-    s <= 15 &&
-    l <= 16
-  ){
-    return "Preto";
-  }
-
-  if(
-    s <= 15
-  ){
-    return "Cinza";
-  }
-
-  if(
-    (h >= 0 && h <= 12) ||
-    (h >= 345 && h <= 360)
-  ){
-    return "Vermelho";
-  }
-
-  if(
-    h >= 312 &&
-    h <= 344
-  ){
-    return "Rosa";
-  }
-
-  if(
-    h >= 13 &&
-    h <= 38
-  ){
-    return "Laranja";
-  }
-
-  if(
-    h >= 39 &&
-    h <= 68
-  ){
-    return "Amarelo";
-  }
-
-  if(
-    h >= 69 &&
-    h <= 165
-  ){
-    return "Verde";
-  }
-
-  if(
-    h >= 166 &&
-    h <= 260
-  ){
-    return "Azul";
-  }
-
-  if(
-    h >= 261 &&
-    h <= 311
-  ){
-    return "Roxo";
-  }
-
-  return "";
-}
-
-/* ================= OEM MATCH ================= */
-
-function detectOEM(sig){
-
-  const targetLab =
-  rgbToLab(sig.r,sig.g,sig.b);
-
-  let best = null;
-
-  let bestDelta = 999;
-
-  for(const color of oemDatabase){
-
-    const d =
-    deltaE(targetLab,color.lab);
-
-    if(d < bestDelta){
-
-      bestDelta = d;
-
-      best = color;
-    }
-  }
-
-  return{
-    match:best,
-    delta:bestDelta
-  };
-}
-
-/* ================= ANALYZER ================= */
-
-function analyzeOEM(){
-
-  const sig = captureRaw(
-    video.videoWidth/2,
-    video.videoHeight/2
-  );
-
-  const result =
-  detectOEM(sig);
-
-  const similarity =
-  Math.max(
-    0,
-    100 - result.delta
-  ).toFixed(1);
-
-  const text =
-
-  result.match.brand
-  + " | "
-  + result.match.model
-  + " | "
-  + result.match.year
-  + " | "
-  + result.match.code
-  + " | "
-  + result.match.name
-  + " | "
-  + similarity
-  + "%";
-
-  txt.innerText = text;
-
-  speak(result.match.name);
-}
-
-/* ================= MOVIMENTO ================= */
-
-function moveLoop(){
-
-  if(mode !== "move"){
-
-    moveRunning = false;
-    return;
-  }
-
-  if(processingPaused){
-
-    requestAnimationFrame(moveLoop);
-    return;
-  }
-
-  const sig = captureRaw(
-
-    video.videoWidth/2,
-    video.videoHeight/2
-
-  );
-
-  if(universalMode){
-
-    const colorName =
-    detectUniversalColor(
-      sig.r,
-      sig.g,
-      sig.b
-    );
-
-    txt.innerText =
-    colorName === ""
-    ? "Movimento: analisando..."
-    : "Movimento: " + colorName;
-
-/* ===== fala SOMENTE na troca ===== */
-
-    if(colorName !== ""){
-
-      if(colorName === detectedColor){
-
-        stableFrames++;
-
-      }else{
-
-        detectedColor = colorName;
-
-        stableFrames = 0;
-      }
-
-      if(
-        stableFrames >=
-        MIN_STABLE_FRAMES
-      ){
-
-        if(colorName !== currentSpokenColor){
-
-          speak(colorName);
+    function loop() {
+        if (active && v.videoWidth > 0) {
+            c.width = v.videoWidth; c.height = v.videoHeight;
+            ctx.drawImage(v, 0, 0);
+            
+            let s = (mode === 'LIVRE' ? 6 : 45);
+            const p = ctx.getImageData(v.videoWidth/2 - s/2, v.videoHeight/2 - s/2, s, s).data;
+            let r=0, g=0, b=0, t=p.length/4;
+            for(let i=0; i<p.length; i+=4) { r+=p[i]; g+=p[i+1]; b+=p[i+2]; }
+            
+            const currentName = getBiometricMatch(r/t, g/t, b/t);
+            history.push(currentName);
+            if(history.length > 20) history.shift();
+            
+            const counts = {};
+            history.forEach(n => counts[n] = (counts[n] || 0) + 1);
+            const top = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+
+            if (counts[top] >= 16) {
+                if (colorTxt.innerText !== top) {
+                    colorTxt.innerText = top;
+                    colorTxt.className = "active-text";
+                    cross.classList.add('locked');
+                    if (audioActive && top !== lastSpeach) speak(top);
+                }
+            } else {
+                colorTxt.innerText = "AJUSTANDO";
+                colorTxt.className = "";
+                cross.classList.remove('locked');
+            }
         }
-
-        stableFrames = 0;
-      }
+        requestAnimationFrame(loop);
     }
 
-  }else{
-
-    txt.innerText =
-    `RGB: ${sig.r}, ${sig.g}, ${sig.b}`;
-  }
-
-  requestAnimationFrame(moveLoop);
-}
-
-/* ================= MODOS ================= */
-
-function setMode(m){
-
-  mode = m;
-
-  compareStep = 0;
-
-  compareA = null;
-
-  compareALab = null;
-
-  currentSpokenColor = "";
-
-  detectedColor = "";
-
-  stableFrames = 0;
-
-  speechSynthesis.cancel();
-
-  isSpeaking = false;
-
-  cross.style.display =
-
-  (
-    m === "move" ||
-    m === "comparePoint" ||
-    m === "compareDatabase"
-  )
-
-  ? "block"
-  : "none";
-
-  if(m === "comparePoint"){
-
-    txt.innerText =
-    "Modo: COMPARAR PONTO A PONTO";
-  }
-
-  else if(m === "compareDatabase"){
-
-    txt.innerText =
-    "Modo: COMPARAR COM BASE DE DADOS";
-  }
-
-  else{
-
-    txt.innerText =
-    "Modo: " + m.toUpperCase();
-  }
-
-  if(
-    m === "move" &&
-    !moveRunning
-  ){
-
-    moveRunning = true;
-
-    moveLoop();
-  }
-}
-
-/* ================= PESQUISA ================= */
-
-function searchBrand(){
-
-  const brand =
-
-  document.getElementById("brandSearch")
-  .value
-  .trim()
-  .toLowerCase();
-
-  const models =
-
-  [...new Set(
-
-    oemDatabase
-
-    .filter(item=>
-
-      item.brand.toLowerCase()
-      .includes(brand)
-
-    )
-
-    .map(item=>item.model)
-
-  )]
-
-  .sort();
-
-  const select =
-  document.getElementById("modelSelect");
-
-  select.innerHTML =
-
-  `<option value="">
-  Selecione o modelo
-  </option>`;
-
-  models.forEach(model=>{
-
-    select.innerHTML +=
-
-    `<option value="${model}">
-      ${model}
-    </option>`;
-
-  });
-
-  document.getElementById("resultList")
-  .innerHTML = "";
-}
-
-/* ================= MOSTRAR CORES ================= */
-
-function showModelColors(){
-
-  const model =
-  document.getElementById("modelSelect")
-  .value;
-
-  const resultList =
-  document.getElementById("resultList");
-
-  resultList.innerHTML = "";
-
-  const colors =
-
-  oemDatabase
-
-  .filter(item=>item.model===model)
-
-  .sort((a,b)=>
-    a.name.localeCompare(b.name)
-  );
-
-  colors.forEach((item,index)=>{
-
-    resultList.innerHTML +=
-
-    `<div
-    class="item"
-    onclick="selectDatabaseColor(${index},'${item.name}')">
-
-      <span
-      class="colorBox"
-      style="
-      background:rgb(
-      ${item.rgb.r},
-      ${item.rgb.g},
-      ${item.rgb.b}
-      )">
-      </span>
-
-      <strong>${item.name}</strong>
-
-      <br>
-
-      Código:
-      ${item.code}
-
-      <br>
-
-      Ano:
-      ${item.year}
-
-      <br>
-
-      Modelo:
-      ${item.model}
-
-      <br>
-
-      Montadora:
-      ${item.brand}
-
-    </div>`;
-
-  });
-}
-
-/* ================= SELECIONA DATABASE ================= */
-
-function selectDatabaseColor(index,colorName){
-
-  const model =
-  document.getElementById("modelSelect")
-  .value;
-
-  const colors =
-
-  oemDatabase
-
-  .filter(item=>item.model===model)
-
-  .sort((a,b)=>
-    a.name.localeCompare(b.name)
-  );
-
-  selectedDatabaseColor =
-  colors[index];
-
-  txt.innerText =
-
-  "Cor de referência selecionada: "
-  + colorName;
-
-  speak(colorName);
-}
-
-/* ================= COMPARAR DATABASE ================= */
-
-function compareWithDatabase(sig){
-
-  if(!selectedDatabaseColor){
-
-    alert(
-      "Selecione uma cor da base de dados primeiro"
-    );
-
-    return;
-  }
-
-  const targetLab =
-  rgbToLab(sig.r,sig.g,sig.b);
-
-  const similarity =
-
-  Math.max(
-    0,
-    100 -
-    deltaE(
-      targetLab,
-      selectedDatabaseColor.lab
-    )
-  )
-
-  .toFixed(1);
-
-  const result =
-
-  "BASE OEM: "
-  + selectedDatabaseColor.name
-
-  + " | NOVA AMOSTRA: "
-
-  + similarity
-  + "% similar";
-
-  txt.innerText =
-  result;
-
-  speak(
-    similarity
-    + " porcento similar"
-  );
-}
-
-/* ================= CLIQUE ================= */
-
-video.addEventListener("click",(e)=>{
-
-  if(processingPaused) return;
-
-  const rect =
-  video.getBoundingClientRect();
-
-  const x =
-
-  (e.clientX - rect.left)
-  *
-  (video.videoWidth / rect.width);
-
-  const y =
-
-  (e.clientY - rect.top)
-  *
-  (video.videoHeight / rect.height);
-
-  const sig =
-  captureRaw(x,y);
-
-  if(mode === "static"){
-
-    analyzeOEM();
-  }
-
-  if(mode === "comparePoint"){
-
-    if(compareStep === 0){
-
-      compareA = sig;
-
-      compareALab =
-
-      rgbToLab(
-        sig.r,
-        sig.g,
-        sig.b
-      );
-
-      compareStep = 1;
-
-      txt.innerText =
-      "Primeiro ponto capturado";
-
-      speak(
-        "Primeiro ponto capturado"
-      );
-
+    function speak(t) {
+        if(!audioActive || isSpeaking || !t || t === "AJUSTANDO") return;
+        speechSynthesis.cancel();
+        const m = new SpeechSynthesisUtterance(t);
+        m.lang = 'pt-BR';
+        m.rate = 1.7;
+        m.onstart = () => isSpeaking = true;
+        m.onend = () => isSpeaking = false;
+        speechSynthesis.speak(m);
+        lastSpeach = t;
     }
-
-    else{
-
-      const compareBLab =
-
-      rgbToLab(
-        sig.r,
-        sig.g,
-        sig.b
-      );
-
-      const similarity =
-
-      Math.max(
-        0,
-        100 -
-        deltaE(
-          compareALab,
-          compareBLab
-        )
-      );
-
-      txt.innerText =
-
-      "Similaridade entre pontos: "
-      +
-      similarity.toFixed(1)
-      +
-      "%";
-
-      speak(
-        similarity.toFixed(1)
-        + " porcento similar"
-      );
-
-      compareStep = 0;
-    }
-  }
-
-  if(mode === "compareDatabase"){
-
-    compareWithDatabase(sig);
-  }
-
-});
-
+    loop();
 </script>
-
 </body>
 </html>
