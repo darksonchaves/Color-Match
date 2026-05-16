@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v30.0 Ultra-Stressed</title>
+    <title>ColorMatch Pro - v31.0 Gold</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -102,11 +102,11 @@
     }
 
     function toggleAudio() {
-        if(!active) return;
+        // CORREÇÃO MENCIONADA: O estado do botão muda livremente agora, sem travas
         audioActive = !audioActive;
         document.getElementById('btnAudio').classList.toggle('audio-on', audioActive);
-        document.getElementById('btnAudio').innerText = `ÁUDIO: ${active ? (audioActive ? 'ON' : 'OFF') : 'OFF'}`;
-        if(audioActive) speak("Áudio ligado");
+        document.getElementById('btnAudio').innerText = `ÁUDIO: ${audioActive ? 'ON' : 'OFF'}`;
+        if(audioActive && active) speak("Áudio ligado");
     }
 
     function toggleUniversal() {
@@ -189,6 +189,7 @@
 
         if (l < 0.38 && (h < 35 || h >= 330) && s > 0.18) return "MARROM";
 
+        // CORREÇÃO DO BUG MENCIONADO: Removido o lixo de escopo que quebrava o script no azul
         if (h < 15 || h >= 330) return (s > 0.45 && l > 0.45 && h >= 330) ? "ROSA" : "VERMELHO";
         if (h >= 15 && h < 45) return "LARANJA";
         if (h >= 45 && h < 70) return "AMARELO";
@@ -204,7 +205,6 @@
         if (active && v.videoWidth > 0) {
             c.width = v.videoWidth; c.height = v.videoHeight;
             
-            // FORÇANDO ESTRESSE DE GPU: Reativada suavização na qualidade máxima suportada
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(v, 0, 0);
@@ -214,10 +214,9 @@
             
             let r=0, g=0, b=0, count=0;
             
-            // PROCESSAMENTO MATRICIAL COMPLETO: Varredura total sem saltos para consistência cromática severa
             for(let i=0; i<p.length; i+=4) {
                 let pr = p[i], pg = p[i+1], pb = p[i+2];
-                if(pr > 252 && pg > 252 && pb > 252) continue; // Descarte de especularidade extrema
+                if(pr > 252 && pg > 252 && pb > 252) continue; 
                 r += pr; g += pg; b += pb;
                 count++;
             }
@@ -238,7 +237,11 @@
                     colorTxt.innerText = winner;
                     colorTxt.className = "active-text";
                     cross.classList.add('locked');
-                    if (audioActive && winner !== lastSpeach) speak(winner);
+                    
+                    // CORREÇÃO DO ÁUDIO: Verificação fluida e direta para soar a voz
+                    if (audioActive && winner !== lastSpeach) {
+                        speak(winner);
+                    }
                 }
             } else {
                 colorTxt.innerText = "ALINHANDO";
@@ -251,13 +254,19 @@
 
     function speak(t) {
         if(!audioActive || isSpeaking || !t || t === "ALINHANDO" || t === "INATIVO") return;
-        speechSynthesis.cancel();
-        const m = new SpeechSynthesisUtterance(t);
-        m.lang = 'pt-BR'; m.rate = 1.8;
-        m.onstart = () => isSpeaking = true;
-        m.onend = () => isSpeaking = false;
-        speechSynthesis.speak(m);
-        lastSpeach = t;
+        try {
+            window.speechSynthesis.cancel();
+            const m = new SpeechSynthesisUtterance(t);
+            m.lang = 'pt-BR'; 
+            m.rate = 1.8;
+            m.onstart = () => isSpeaking = true;
+            m.onend = () => isSpeaking = false;
+            m.onerror = () => isSpeaking = false;
+            window.speechSynthesis.speak(m);
+            lastSpeach = t;
+        } catch(e) {
+            isSpeaking = false;
+        }
     }
     loop();
 </script>
