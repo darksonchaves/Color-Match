@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v28.0 Estável</title>
+    <title>ColorMatch Pro - v28.1 Estável</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -27,8 +27,8 @@
             border: 2px solid rgba(255,255,255,0.7); border-radius: 50%; pointer-events: none; z-index: 10;
             transition: all 0.2s;
         }
-        .mira-livre { width: 45px; height: 45px; }
-        .mira-padrao { width: 35vw; height: 35vw; border: 3px dashed rgba(255,255,255,0.5); }
+        .mira-livre { width: 30px; height: 30px; }
+        .mira-padrao { width: 20vw; height: 20vw; border: 3px dashed rgba(255,255,255,0.5); }
         .locked { border-color: #00ffcc !important; box-shadow: 0 0 30px #00ffcc; background: rgba(0,255,204,0.1); }
 
         #ui-overlay { position: absolute; bottom: 0; width: 100%; padding: 45px 0; background: linear-gradient(transparent, #000 85%); z-index: 20; }
@@ -42,7 +42,7 @@
     <button onclick="toggleSystem()" id="btnPower">SISTEMA: OFF</button>
     <button onclick="toggleAudio()" id="btnAudio">ÁUDIO: OFF</button>
     <button onclick="toggleUniversal()" id="btnUniv">MODO UNIVERSAL: OFF</button>
-    <button onclick="calibrate()" id="btnCalib">MODO CALIBRAR</button>
+    <button onclick="calibrate()" id="btnCalib">CALIBRAR</button>
     <button onclick="setMode('LIVRE')" id="btnLivre">MODO LIVRE</button>
     <button onclick="setMode('PADRAO')" id="btnPadrao">MODO PADRÃO</button>
 </div>
@@ -110,7 +110,10 @@
     }
 
     function getFinalColor(r, g, b) {
-        r *= balance.r; g *= balance.g; b *= balance.b;
+        r = Math.min(255, Math.max(0, r * balance.r));
+        g = Math.min(255, Math.max(0, g * balance.g));
+        b = Math.min(255, Math.max(0, b * balance.b));
+
         let r1 = r/255, g1 = g/255, b1 = b/255;
         let max = Math.max(r1, g1, b1), min = Math.min(r1, g1, b1);
         let h, s, l = (max + min) / 2;
@@ -125,39 +128,59 @@
             h *= 60;
         }
 
-        if (universalMode) {
-            if (l < 0.15) return "PRETO";
-            if (s < 0.20) return "BRANCO"; 
-            if (h < 20 || h >= 335) return "VERMELHO";
-            if (h >= 20 && h < 50) return "LARANJA";
-            if (h >= 50 && h < 75) return "AMARELO";
-            if (h >= 75 && h < 165) return "VERDE";
-            if (h >= 165 && h < 255) return "AZUL";
-            if (h >= 255 && h < 300) return "ROXO";
-            if (h >= 300 && h < 335) return "ROSA";
-            return "ESPECTRO";
+        // Condições globais para Extremos de Luminosidade
+        if (l < 0.12) return "PRETO";
+        if (l > 0.88 && s < 0.20) return "BRANCO";
+
+        // Modo Neutro/Universal unificado para evitar conflitos de saturação
+        if (s < 0.15) {
+            if (l > 0.75) return "BRANCO";
+            if (l < 0.30) return "PRETO";
+            return "CINZA";
         }
-        return (l < 0.2) ? "PRETO" : (s < 0.15) ? "NEUTRO" : "ANALISANDO";
+
+        // Tratamento para tons escuros específicos (Marrom)
+        if (l < 0.40 && (h < 30 || h >= 330) && s > 0.20) {
+            return "MARROM";
+        }
+
+        // Mapeamento preciso do Espectro de Cores por Matiz (Hue)
+        if (h < 15 || h >= 330) {
+            return (s > 0.45 && l > 0.45 && h >= 330) ? "ROSA" : "VERMELHO";
+        }
+        if (h >= 15 && h < 45) return "LARANJA";
+        if (h >= 45 && h < 70) return "AMARELO";
+        if (h >= 70 && h < 160) return "VERDE";
+        if (h >= 160 && h < 255) return "AZUL";
+        if (h >= 255 && h < 295) return "ROXO";
+        if (h >= 295 && h < 330) return "ROSA";
+
+        return "ANALISANDO";
     }
 
     function loop() {
         if (active && v.videoWidth > 0) {
             c.width = v.videoWidth; c.height = v.videoHeight;
             ctx.drawImage(v, 0, 0);
-            let size = (mode === 'LIVRE' ? 12 : 100);
+            
+            // Reduzido o bloco de captura no modo padrão para evitar misturar cores do cenário de fundo
+            let size = (mode === 'LIVRE' ? 10 : 40); 
+            
             const p = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
             let r=0, g=0, b=0, count=p.length/4;
             for(let i=0; i<p.length; i+=4) { r+=p[i]; g+=p[i+1]; b+=p[i+2]; }
+            
             let res = getFinalColor(r/count, g/count, b/count);
             
             history.push(res);
-            if(history.length > 12) history.shift();
+            if(history.length > 15) history.shift(); // Aumentado histórico para maior estabilidade
             
             const votes = {};
             history.forEach(x => votes[x] = (votes[x] || 0) + 1);
             const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
 
-            if (votes[winner] >= 10) {
+            // Sistema de votação mais rígido para evitar alternância rápida de nomes na tela
+            if (votes[winner] >= 11) { 
                 if (colorTxt.innerText !== winner) {
                     colorTxt.innerText = winner;
                     colorTxt.className = "active-text";
