@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v28.2 Estável</title>
+    <title>ColorMatch Pro - v30.0 Ultra-Stressed</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -14,6 +14,7 @@
         button { 
             background: #1a1a1a; color: #aaa; border: 1px solid #444; padding: 8px 12px; 
             border-radius: 6px; font-weight: bold; font-size: 10px; text-transform: uppercase; cursor: pointer;
+            transition: all 0.1s ease;
         }
         .active { background: #007bff !important; color: #fff !important; }
         .audio-on { background: #28a745 !important; color: #fff !important; }
@@ -59,14 +60,39 @@
 <canvas id="c" style="display:none;"></canvas>
 
 <script>
-    const v = document.getElementById('v'), c = document.getElementById('c'), ctx = c.getContext('2d', {willReadFrequently:true});
+    const v = document.getElementById('v'), c = document.getElementById('c');
+    const ctx = c.getContext('2d', {willReadFrequently: true, alpha: false});
     const colorTxt = document.getElementById('color-name'), cross = document.getElementById('crosshair');
 
     let active = false, audioActive = false, universalMode = false, mode = 'LIVRE';
     let balance = { r: 1, g: 1, b: 1 };
     let history = [], lastSpeach = "", isSpeaking = false;
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", focusMode: "continuous" } }).then(s => v.srcObject = s);
+    const constraints = {
+        video: {
+            facingMode: "environment",
+            width: { ideal: 4096, max: 7680 }, 
+            height: { ideal: 2160, max: 4320 },
+            frameRate: { ideal: 60, max: 120 },  
+            whiteBalanceMode: "manual",          
+            exposureMode: "manual"
+        }
+    };
+
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then(s => { 
+            v.srcObject = s;
+            setTimeout(() => {
+                const track = s.getVideoTracks()[0];
+                const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+                const settings = {};
+                if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) settings.focusMode = 'continuous';
+                if (track.applyConstraints) track.applyConstraints(settings).catch(e => console.log(e));
+            }, 1000);
+        })
+        .catch(err => {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", focusMode: "continuous" } }).then(s => v.srcObject = s);
+        });
 
     function toggleSystem() { 
         active = !active; 
@@ -76,9 +102,10 @@
     }
 
     function toggleAudio() {
+        if(!active) return;
         audioActive = !audioActive;
         document.getElementById('btnAudio').classList.toggle('audio-on', audioActive);
-        document.getElementById('btnAudio').innerText = `ÁUDIO: ${audioActive ? 'ON' : 'OFF'}`;
+        document.getElementById('btnAudio').innerText = `ÁUDIO: ${active ? (audioActive ? 'ON' : 'OFF') : 'OFF'}`;
         if(audioActive) speak("Áudio ligado");
     }
 
@@ -106,18 +133,20 @@
         balance.r = avg / Math.max(p[0], 1);
         balance.g = avg / Math.max(p[1], 1);
         balance.b = avg / Math.max(p[2], 1);
-        
-        // CORREÇÃO 1: Limpa o histórico de votação antigo no ato da calibração para forçar nova leitura instantânea
         history = []; 
-        
         if(audioActive) speak("Calibrado");
     }
 
     function getFinalColor(r, g, b) {
-        // Aplicação do balanço calibrado
         r = Math.min(255, Math.max(0, r * balance.r));
         g = Math.min(255, Math.max(0, g * balance.g));
         b = Math.min(255, Math.max(0, b * balance.b));
+
+        let currentAvg = (r + g + b) / 3;
+        if (currentAvg < 35 && currentAvg > 5) { 
+            let factor = 35 / currentAvg;
+            r = Math.min(255, r * factor); g = Math.min(255, g * factor); b = Math.min(255, b * factor);
+        }
 
         let r1 = r/255, g1 = g/255, b1 = b/255;
         let max = Math.max(r1, g1, b1), min = Math.min(r1, g1, b1);
@@ -133,31 +162,34 @@
             h *= 60;
         }
 
-        // CORREÇÃO 2: Tolerância expandida para o Branco pós-calibração. 
-        // Se a luminância for alta e a diferença entre os canais for mínima (perfeitamente balanceado pela calibragem), obriga a ler BRANCO.
         let rgbDiff = Math.max(r, g, b) - Math.min(r, g, b);
-        if (l > 0.45 && rgbDiff < 15) return "BRANCO";
+        if (l > 0.40 && rgbDiff < 12) return "BRANCO";
 
-        // Condições globais para Extremos de Luminosidade
-        if (l < 0.12) return "PRETO";
-        if (l > 0.85 && s < 0.22) return "BRANCO";
+        if (l < 0.10) return "PRETO";
+        if (l > 0.88 && s < 0.18) return "BRANCO";
 
-        // Modo Neutro/Universal unificado para evitar conflitos de saturação
-        if (s < 0.15) {
-            if (l > 0.70) return "BRANCO";
-            if (l < 0.30) return "PRETO";
+        if (universalMode) {
+            if (l < 0.14) return "PRETO";
+            if (s < 0.18) return "BRANCO"; 
+            if (h < 20 || h >= 335) return "VERMELHO";
+            if (h >= 20 && h < 50) return "LARANJA";
+            if (h >= 50 && h < 75) return "AMARELO";
+            if (h >= 75 && h < 165) return "VERDE";
+            if (h >= 165 && h < 255) return "AZUL";
+            if (h >= 255 && h < 300) return "ROXO";
+            if (h >= 300 && h < 335) return "ROSA";
+            return "ESPECTRO";
+        }
+
+        if (s < 0.14) {
+            if (l > 0.68) return "BRANCO";
+            if (l < 0.28) return "PRETO";
             return "CINZA";
         }
 
-        // Tratamento para tons escuros específicos (Marrom)
-        if (l < 0.40 && (h < 30 || h >= 330) && s > 0.20) {
-            return "MARROM";
-        }
+        if (l < 0.38 && (h < 35 || h >= 330) && s > 0.18) return "MARROM";
 
-        // Mapeamento preciso do Espectro de Cores por Matiz (Hue)
-        if (h < 15 || h >= 330) {
-            return (s > 0.45 && l > 0.45 && h >= 330) ? "ROSA" : "VERMELHO";
-        }
+        if (h < 15 || h >= 330) return (s > 0.45 && l > 0.45 && h >= 330) ? "ROSA" : "VERMELHO";
         if (h >= 15 && h < 45) return "LARANJA";
         if (h >= 45 && h < 70) return "AMARELO";
         if (h >= 70 && h < 160) return "VERDE";
@@ -171,13 +203,26 @@
     function loop() {
         if (active && v.videoWidth > 0) {
             c.width = v.videoWidth; c.height = v.videoHeight;
+            
+            // FORÇANDO ESTRESSE DE GPU: Reativada suavização na qualidade máxima suportada
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(v, 0, 0);
             
-            let size = (mode === 'LIVRE' ? 10 : 40); 
-            
+            let size = (mode === 'LIVRE' ? 10 : 35); 
             const p = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
-            let r=0, g=0, b=0, count=p.length/4;
-            for(let i=0; i<p.length; i+=4) { r+=p[i]; g+=p[i+1]; b+=p[i+2]; }
+            
+            let r=0, g=0, b=0, count=0;
+            
+            // PROCESSAMENTO MATRICIAL COMPLETO: Varredura total sem saltos para consistência cromática severa
+            for(let i=0; i<p.length; i+=4) {
+                let pr = p[i], pg = p[i+1], pb = p[i+2];
+                if(pr > 252 && pg > 252 && pb > 252) continue; // Descarte de especularidade extrema
+                r += pr; g += pg; b += pb;
+                count++;
+            }
+            
+            if(count === 0) { r=255; g=255; b=255; count=1; }
             
             let res = getFinalColor(r/count, g/count, b/count);
             
