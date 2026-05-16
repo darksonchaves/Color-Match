@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v28.1 Estável</title>
+    <title>ColorMatch Pro - v28.2 Estável</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -106,10 +106,15 @@
         balance.r = avg / Math.max(p[0], 1);
         balance.g = avg / Math.max(p[1], 1);
         balance.b = avg / Math.max(p[2], 1);
+        
+        // CORREÇÃO 1: Limpa o histórico de votação antigo no ato da calibração para forçar nova leitura instantânea
+        history = []; 
+        
         if(audioActive) speak("Calibrado");
     }
 
     function getFinalColor(r, g, b) {
+        // Aplicação do balanço calibrado
         r = Math.min(255, Math.max(0, r * balance.r));
         g = Math.min(255, Math.max(0, g * balance.g));
         b = Math.min(255, Math.max(0, b * balance.b));
@@ -128,13 +133,18 @@
             h *= 60;
         }
 
+        // CORREÇÃO 2: Tolerância expandida para o Branco pós-calibração. 
+        // Se a luminância for alta e a diferença entre os canais for mínima (perfeitamente balanceado pela calibragem), obriga a ler BRANCO.
+        let rgbDiff = Math.max(r, g, b) - Math.min(r, g, b);
+        if (l > 0.45 && rgbDiff < 15) return "BRANCO";
+
         // Condições globais para Extremos de Luminosidade
         if (l < 0.12) return "PRETO";
-        if (l > 0.88 && s < 0.20) return "BRANCO";
+        if (l > 0.85 && s < 0.22) return "BRANCO";
 
         // Modo Neutro/Universal unificado para evitar conflitos de saturação
         if (s < 0.15) {
-            if (l > 0.75) return "BRANCO";
+            if (l > 0.70) return "BRANCO";
             if (l < 0.30) return "PRETO";
             return "CINZA";
         }
@@ -163,7 +173,6 @@
             c.width = v.videoWidth; c.height = v.videoHeight;
             ctx.drawImage(v, 0, 0);
             
-            // Reduzido o bloco de captura no modo padrão para evitar misturar cores do cenário de fundo
             let size = (mode === 'LIVRE' ? 10 : 40); 
             
             const p = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
@@ -173,13 +182,12 @@
             let res = getFinalColor(r/count, g/count, b/count);
             
             history.push(res);
-            if(history.length > 15) history.shift(); // Aumentado histórico para maior estabilidade
+            if(history.length > 15) history.shift(); 
             
             const votes = {};
             history.forEach(x => votes[x] = (votes[x] || 0) + 1);
             const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
 
-            // Sistema de votação mais rígido para evitar alternância rápida de nomes na tela
             if (votes[winner] >= 11) { 
                 if (colorTxt.innerText !== winner) {
                     colorTxt.innerText = winner;
