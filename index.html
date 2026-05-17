@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v32.0 Gold Premium</title>
+    <title>ColorMatch Pro - v33.0 Ultra Gold</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -26,11 +26,11 @@
         #crosshair { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             border: 2px solid rgba(255,255,255,0.7); border-radius: 50%; pointer-events: none; z-index: 10;
-            transition: all 0.2s;
+            transition: all 0.1s;
         }
-        .mira-livre { width: 20px; height: 20px; }
-        .mira-padrao { width: 18vw; height: 18vw; border: 3px dashed rgba(255,255,255,0.6); }
-        .locked { border-color: #00ffcc !important; box-shadow: 0 0 30px #00ffcc; background: rgba(0,255,204,0.1); }
+        .mira-livre { width: 16px; height: 16px; }
+        .mira-padrao { width: 15vw; height: 15vw; border: 2px dashed rgba(255,255,255,0.6); }
+        .locked { border-color: #00ffcc !important; box-shadow: 0 0 20px #00ffcc; background: rgba(0,255,204,0.05); }
 
         #ui-overlay { position: absolute; bottom: 0; width: 100%; padding: 45px 0; background: linear-gradient(transparent, #000 85%); z-index: 20; }
         #color-name { font-size: 55px; font-weight: 900; text-transform: uppercase; color: #444; min-height: 70px; letter-spacing: 2px; }
@@ -65,22 +65,24 @@
     const colorTxt = document.getElementById('color-name'), cross = document.getElementById('crosshair');
 
     let active = false, audioActive = false, universalMode = false, mode = 'LIVRE';
-    // Nova estrutura de calibração adaptativa (Offset e Ganho equilibrados)
-    let calibRef = { r: 128, g: 128, b: 128, isCalibrated: false };
+    
+    // Balanceamento de ganhos por canal com base em matriz de iluminação ideal
+    let balance = { r: 1.0, g: 1.0, b: 1.0, calibrated: false };
     let history = [], lastSpeach = "", isSpeaking = false;
 
+    // Configurações focadas em estabilização de amostragem nativa da câmera
     const constraints = {
         video: {
             facingMode: "environment",
-            width: { ideal: 1920 }, 
-            height: { ideal: 1080 },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
             frameRate: { ideal: 60 }
         }
     };
 
     navigator.mediaDevices.getUserMedia(constraints)
         .then(s => { v.srcObject = s; })
-        .catch(err => {
+        .catch(() => {
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
         });
 
@@ -117,112 +119,114 @@
         if(!active) return;
         c.width = v.videoWidth; c.height = v.videoHeight;
         ctx.drawImage(v, 0, 0);
-        // Coleta uma área central média de 10x10 para evitar ruído de um único pixel na calibração
-        const sample = ctx.getImageData(v.videoWidth/2 - 5, v.videoHeight/2 - 5, 10, 10).data;
+        
+        // Coleta uma matriz de amostragem maior (16x16) para diluir ruídos cromáticos locais do papel
+        const size = 16;
+        const sample = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
         let r=0, g=0, b=0, total=0;
+        
         for(let i=0; i<sample.length; i+=4) {
             r+=sample[i]; g+=sample[i+1]; b+=sample[i+2]; total++;
         }
-        calibRef.r = r/total; calibRef.g = g/total; calibRef.b = b/total;
-        calibRef.isCalibrated = true;
+        
+        let avgR = r/total, avgG = g/total, avgB = b/total;
+        let target = (avgR + avgG + avgB) / 3;
+        
+        // Aplicação matemática do vetor Von Kries para ajuste do iluminante padrão
+        balance.r = target / Math.max(avgR, 1);
+        balance.g = target / Math.max(avgG, 1);
+        balance.b = target / Math.max(avgB, 1);
+        balance.calibrated = true;
+        
         history = []; 
         if(audioActive) speak("Calibrado");
     }
 
-    function getFinalColor(rawR, rawG, rawB) {
-        let r = rawR, g = rawG, b = rawB;
+    // Tabela de Centroides de Cor no espaço RGB Normalizado (Evita erros de fronteira de ângulos)
+    const COLOR_CENTROIDS = [
+        { name: "VERMELHO",  r: 0.75, g: 0.12, b: 0.13 },
+        { name: "LARANJA",   r: 0.72, g: 0.33, b: 0.10 },
+        { name: "AMARELO",   r: 0.60, g: 0.58, b: 0.12 },
+        { name: "VERDE",     r: 0.15, g: 0.58, b: 0.25 },
+        { name: "AZUL",      r: 0.12, g: 0.35, b: 0.70 },
+        { name: "ROXO",      r: 0.38, g: 0.15, b: 0.55 },
+        { name: "ROSA",      r: 0.70, g: 0.25, b: 0.52 },
+        { name: "MARROM",    r: 0.42, g: 0.24, b: 0.15 }
+    ];
 
-        // COMPENSAÇÃO DE ILUMINAÇÃO AVANÇADA (Matriz de Adaptação Cromática Simplificada)
-        if (calibRef.isCalibrated) {
-            const targetMax = Math.max(calibRef.r, calibRef.g, calibRef.b);
-            if (targetMax > 10) {
-                r = r * (targetMax / calibRef.r);
-                g = g * (targetMax / calibRef.g);
-                b = b * (targetMax / calibRef.b);
+    function getFinalColor(rawR, rawG, rawB) {
+        // 1. Aplicação Rígida dos Ganhos de Calibração
+        let r = Math.min(255, Math.max(0, rawR * balance.r));
+        let g = Math.min(255, Math.max(0, rawG * balance.g));
+        let b = Math.min(255, Math.max(0, rawB * balance.b));
+
+        let sum = r + g + b;
+        let max = Math.max(r, g, b);
+        let min = Math.min(r, g, b);
+        let rgbDiff = max - min;
+
+        // 2. Extração Absoluta de Tons Neutros (Preto, Branco, Cinza) baseada em Delta Cromático
+        if (sum < 50 || (max < 42 && rgbDiff < 18)) return "PRETO";
+        if (min > 185 && rgbDiff < 22) return "BRANCO";
+        if (rgbDiff < 14 && max > 42 && min < 185) return "CINZA";
+
+        // 3. Normalização Vetorial de Proximidade (Anula variações bruscas de luminosidade)
+        let normR = r / (sum || 1);
+        let normG = g / (sum || 1);
+        let normB = b / (sum || 1);
+
+        // 4. Modo Universal (Redução de Escopo Cromático Direto)
+        if (universalMode) {
+            if (normR > 0.45 && normG > 0.42) return "AMARELO";
+            if (normR > 0.48 && normG > 0.22) return "VERMELHO";
+            if (normG > 0.42) return "VERDE";
+            if (normB > 0.42) return "AZUL";
+            if (normR > 0.38 && normB > 0.35) return "ROXO";
+            if (normR > 0.42 && normB > 0.28) return "ROSA";
+        }
+
+        // 5. Cálculo da Distância Euclidiana Mínima para os Centroides Estabilizados
+        let minDistance = Infinity;
+        let matchedColor = "ANALISANDO";
+
+        for (let centroid of COLOR_CENTROIDS) {
+            let dr = normR - centroid.r;
+            let dg = normG - centroid.g;
+            let db = normB - centroid.b;
+            let distance = Math.sqrt(dr*dr + dg*dg + db*db);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                matchedColor = centroid.name;
             }
         }
 
-        // Limitadores rígidos de segurança pós-compensação
-        r = Math.min(255, Math.max(0, r));
-        g = Math.min(255, Math.max(0, g));
-        b = Math.min(255, Math.max(0, b));
-
-        // Conversão robusta para HSL
-        let r1 = r/255, g1 = g/255, b1 = b/255;
-        let max = Math.max(r1, g1, b1), min = Math.min(r1, g1, b1);
-        let h, s, l = (max + min) / 2;
-
-        if(max === min) h = s = 0;
-        else {
-            let d = max - min;
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            if(max === r1) h = (g1 - b1) / d + (g1 < b1 ? 6 : 0);
-            else if(max === g1) h = (b1 - r1) / d + 2;
-            else h = (r1 - g1) / d + 4;
-            h *= 60;
+        // 6. Salvaguardas Matemáticas para Isqueiro Amarelo vs Laranja e Rosa vs Vermelho
+        if (matchedColor === "LARANJA" && normG > 0.41) {
+            return "AMARELO"; 
+        }
+        if (matchedColor === "VERMELHO" && normB > 0.24 && rawR > 130) {
+            return "ROSA";
         }
 
-        // Delta estrito para isolar cinzas e brancos verdadeiros
-        let rgbDiff = Math.max(r, g, b) - Math.min(r, g, b);
-
-        // REGRA DE OURO PARA PRETO E CORES ESCURAS (Evita que o preto vire amarelo)
-        if (l < 0.12 || (l < 0.18 && rgbDiff < 15)) return "PRETO";
-        if (l > 0.82 && s < 0.15) return "BRANCO";
-        if (s < 0.12 && l >= 0.18 && l <= 0.82) return "CINZA";
-
-        // MODO UNIVERSAL SELETIVO
-        if (universalMode) {
-            if (h < 20 || h >= 335) return "VERMELHO";
-            if (h >= 20 && h < 52) return "LARANJA";
-            if (h >= 52 && h < 78) return "AMARELO";
-            if (h >= 78 && h < 165) return "VERDE";
-            if (h >= 165 && h < 255) return "AZUL";
-            if (h >= 255 && h < 300) return "ROXO";
-            if (h >= 300 && h < 335) return "ROSA";
-            return "ESPECTRO";
-        }
-
-        // TRATAMENTO DO MARROM (Cores quentes com baixa luminosidade)
-        if (l < 0.38 && (h < 38 || h >= 330) && s > 0.15) return "MARROM";
-
-        // FRONTEIRAS DE COR CORRIGIDAS (Foco: Isqueiro Amarelo e Rosa Real)
-        if (h < 15 || h >= 330) {
-            // Condição rígida para Rosa: Saturação alta, brilho intermediário/alto e matiz deslocado
-            if (h >= 305 || (h < 15 && r > 200 && b > 130 && g < 150)) return "ROSA";
-            return "VERMELHO";
-        }
-        
-        if (h >= 15 && h < 48) return "LARANJA";
-        
-        // Ajuste fino do Amarelo para não ser engolido pelo Branco ou Laranja
-        if (h >= 48 && h < 68) {
-            if (l > 0.40 && s > 0.25) return "AMARELO";
-            return "CINZA";
-        }
-        
-        if (h >= 68 && h < 160) return "VERDE";
-        if (h >= 160 && h < 250) return "AZUL";
-        if (h >= 250 && h < 295) return "ROXO";
-        if (h >= 295 && h < 330) return "ROSA";
-
-        return "ANALISANDO";
+        return matchedColor;
     }
 
     function loop() {
         if (active && v.videoWidth > 0) {
             c.width = v.videoWidth; c.height = v.videoHeight;
             
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
+            ctx.imageSmoothingEnabled = false; // Desativado para evitar borrão de interpolação nas bordas
             ctx.drawImage(v, 0, 0);
             
-            let size = (mode === 'LIVRE' ? 8 : 30); 
+            // Tamanho dinâmico e otimizado da janela de leitura central
+            let size = (mode === 'LIVRE' ? 6 : 24); 
             const p = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
             
             let r=0, g=0, b=0, count=0;
             for(let i=0; i<p.length; i+=4) {
-                // Descartar estouros puros de branco de reflexos diretos de lâmpadas
-                if(p[i] > 254 && p[i+1] > 254 && p[i+2] > 254) continue; 
+                // Descarta pixels saturados por reflexo especular direto (brilho do plástico)
+                if(p[i] > 252 && p[i+1] > 252 && p[i+2] > 252) continue; 
                 r += p[i]; g += p[i+1]; b += p[i+2];
                 count++;
             }
@@ -231,15 +235,16 @@
             
             let res = getFinalColor(r/count, g/count, b/count);
             
+            // Histograma Inteligente Amortecido: Reduz o delay da v32 de forma drástica
             history.push(res);
-            if(history.length > 20) history.shift(); // Histograma de 20 frames para maior estabilidade
+            if(history.length > 10) history.shift(); 
             
             const votes = {};
             history.forEach(x => votes[x] = (votes[x] || 0) + 1);
             const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
 
-            // Subiu a régua: Exige 14 frames idênticos para travar a resposta (Fim do pisca-pisca)
-            if (votes[winner] >= 14) { 
+            // Confiança de transição rápida: Exige 60% de dominância no buffer curto (Fim do travamento no ALINHANDO)
+            if (votes[winner] >= 6) { 
                 if (colorTxt.innerText !== winner) {
                     colorTxt.innerText = winner;
                     colorTxt.className = "active-text";
@@ -264,7 +269,7 @@
             window.speechSynthesis.cancel();
             const m = new SpeechSynthesisUtterance(t);
             m.lang = 'pt-BR'; 
-            m.rate = 1.9;
+            m.rate = 2.0; // Voz mais rápida e responsiva ao operador
             m.onstart = () => isSpeaking = true;
             m.onend = () => isSpeaking = false;
             m.onerror = () => isSpeaking = false;
