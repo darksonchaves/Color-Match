@@ -6,22 +6,29 @@
     <title>ColorMatch Pro - Fixed Matrix v1.1</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
+        
+        /* Menu Superior de Controle */
         #header { 
             position: absolute; top: 0; width: 100%; z-index: 20;
             background: rgba(10, 10, 10, 0.95); display: flex; justify-content: center; 
             padding: 10px 0; gap: 8px; border-bottom: 1px solid #333; flex-wrap: wrap;
         }
+        
         button { 
             background: #1a1a1a; color: #aaa; border: 1px solid #444; padding: 10px 14px; 
             border-radius: 6px; font-weight: bold; font-size: 11px; text-transform: uppercase; cursor: pointer;
             transition: all 0.1s ease; -webkit-tap-highlight-color: transparent;
         }
+        
+        /* Estados dos Botões */
         .active { background: #007bff !important; color: #fff !important; }
         .audio-on { background: #28a745 !important; color: #fff !important; }
 
+        /* Container do Feed de Vídeo */
         #video-container { position: relative; width: 100vw; height: 100vh; }
         video { width: 100%; height: 100%; object-fit: cover; }
         
+        /* Retículo de Escaneamento (Mira) */
         #crosshair { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             border: 2px solid rgba(255,255,255,0.7); border-radius: 50%; pointer-events: none; z-index: 10;
@@ -31,6 +38,7 @@
         .mira-padrao { width: 16vw; height: 16vw; border: 2px dashed rgba(255,255,255,0.6); }
         .locked { border-color: #00ffcc !important; box-shadow: 0 0 20px #00ffcc; background: rgba(0,255,204,0.05); }
 
+        /* Overlay Inferior de Exibição de Texto */
         #ui-overlay { position: absolute; bottom: 0; width: 100%; padding: 45px 0; background: linear-gradient(transparent, #000 85%); z-index: 20; }
         #color-name { font-size: 55px; font-weight: 900; text-transform: uppercase; color: #444; min-height: 70px; letter-spacing: 2px; }
         .active-text { color: #00ffcc !important; text-shadow: 0 0 30px rgba(0,255,204,0.7); }
@@ -64,10 +72,12 @@
 
     let active = false, audioActive = false, mode = 'LIVRE';
     
+    // Parâmetros de Balanço de Branco
     let calibR = 255, calibG = 255, calibB = 255; 
     let isCalibrated = false;
     let history = [], lastSpeech = "", isSpeaking = false;
 
+    // Inicialização segura da câmera traseira
     const constraints = {
         video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }
     };
@@ -75,17 +85,23 @@
     navigator.mediaDevices.getUserMedia(constraints)
         .then(s => { 
             v.srcObject = s; 
-            v.play().catch(e => console.log("Aguardando ativação"));
+            v.play().catch(e => console.log("Aguardando ativação pelo usuário."));
         })
         .catch(() => {
             navigator.mediaDevices.getUserMedia({ video: true }).then(s => { v.srcObject = s; });
         });
 
+    // Alternador do Sistema (Modo Universal)
     function toggleSystem() { 
         active = !active; 
         document.getElementById('btnPower').classList.toggle('active', active);
         document.getElementById('btnPower').innerText = 'SISTEMA: ' + (active ? 'ON' : 'OFF');
-        if(!active) { colorTxt.innerText = "INATIVO"; colorTxt.className = ""; history = []; }
+        if(!active) { 
+            colorTxt.innerText = "INATIVO"; 
+            colorTxt.className = ""; 
+            cross.classList.remove('locked');
+            history = []; 
+        }
         if(active && v.paused) { v.play(); }
     }
 
@@ -101,9 +117,10 @@
         document.getElementById('btnLivre').classList.toggle('active', m === 'LIVRE');
         document.getElementById('btnPadrao').classList.toggle('active', m === 'PADRAO');
         cross.className = (m === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
-        if(audioActive) speak("Modo " + m);
+        if(audioActive && active) speak("Modo " + m);
     }
 
+    // Processamento do Ganho Multiplicador (Balanço de Branco)
     function calibrate() {
         if(!active || v.videoWidth === 0) return;
         c.width = v.videoWidth; c.height = v.videoHeight;
@@ -129,6 +146,7 @@
         if(audioActive) speak("Calibrado");
     }
 
+    // Conversor Matemático Espacial RGB -> CIE XYZ -> CIE L*a*b*
     function rgbToLab(r, g, b) {
         r /= 255; g /= 255; b /= 255;
         r = (r > 0.04045) ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
@@ -147,7 +165,7 @@
         return { L: (116 * y) - 16, a: 500 * (x - y), b: 200 * (y - z) };
     }
 
-    // Centroides calibrados com maior espaçamento angular para o Rosa da camiseta
+    // Âncoras Colorimétricas Oficiais (Lista Estrita de 11 Cores Regulamentadas)
     const LAB_CENTROIDS = [
         { name: "VERMELHO", L: 40,  a: 65,  b: 38 },
         { name: "LARANJA",  L: 58,  a: 35,  b: 55 },
@@ -173,8 +191,7 @@
         let min = Math.min(r, g, b);
         let rgbDiff = max - min;
 
-        // FILTRO DE BARREIRA NEUTRA CRÍTICO (Ajustado pós-vídeo 23.mp4)
-        // Se a luminância bruta ou normalizada for extremamente baixa, força PRETO independente do Lab deltaE
+        // FILTRO DE BARREIRA NEUTRA CRÍTICA (Aprendizados do Vídeo 23.mp4 - Anti-Flutuação de Preto)
         if (rawR <= 42 && rawG <= 42 && rawB <= 42) return "PRETO";
         if (r < 48 && g < 48 && b < 48 && rgbDiff < 20) return "PRETO";
 
@@ -192,23 +209,18 @@
 
         let currentLab = rgbToLab(r, g, b);
 
-        // ISOLAMENTO DO ROSA DA CAMISETA VS VERMELHO/ROXO (Filtro Dinâmico de Cromaticidade)
+        // ISOLAMENTO DO ROSA DA CAMISETA (Filtro de Cromaticidade contra vazamento para Vermelho/Roxo)
         if (currentLab.a > 22) { 
-            // Se o eixo 'a' (vermelho) for predominante e 'b' tender ao azul/neutro
             if (currentLab.b < -12) return "ROXO";
             if (currentLab.b >= -12 && currentLab.b <= 12) {
                 if (currentLab.L > 38 && currentLab.a > 30) return "ROSA";
             }
         }
 
-        // Filtro para impedir que Marrom/Madeira vire Laranja se a iluminação cair
-        if (matchedName === "LARANJA" && currentLab.L < 35) {
-            return "MARROM";
-        }
-
         let minDeltaE = Infinity;
         let matchedName = "CINZA";
 
+        // Cálculo de Proximidade Euclidiana Delta E no Espaço LAB
         for (let target of LAB_CENTROIDS) {
             let dL = currentLab.L - target.L;
             let da = currentLab.a - target.a;
@@ -221,6 +233,11 @@
             }
         }
 
+        // CORREÇÃO DE SINTAXE: Filtro dinâmico movido para após a definição segura de 'matchedName'
+        if (matchedName === "LARANJA" && currentLab.L < 35) {
+            return "MARROM";
+        }
+
         if (matchedName === "LARANJA" && r > g && g > 135 && (g / r > 0.75)) {
             return "AMARELO";
         }
@@ -228,6 +245,7 @@
         return matchedName;
     }
 
+    // Laço Principal de Captura de Sinais
     function loop() {
         if (active && v.videoWidth > 0) {
             c.width = v.videoWidth; c.height = v.videoHeight;
@@ -239,7 +257,7 @@
             
             let r=0, g=0, b=0, count=0;
             for(let i=0; i<p.length; i+=4) {
-                // Filtro Especular de reflexo de plástico polido
+                // Filtro de Reflexão Especular (Ignora brilhos plásticos estourados)
                 if(p[i] > 248 && p[i+1] > 248 && p[i+2] > 248) continue; 
                 r += p[i]; g += p[i+1]; b += p[i+2];
                 count++;
@@ -250,14 +268,14 @@
             let res = getFinalColor(r/count, g/count, b/count);
             
             history.push(res);
-            // Buffer expandido para 15 para amortecer oscilações bruscas vistas no vídeo
+            // Estabilização por buffer temporal expandido para 15 amostras
             if(history.length > 15) history.shift(); 
             
             const votes = {};
             history.forEach(x => votes[x] = (votes[x] || 0) + 1);
             const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
 
-            // Exige 9 frames estáveis de aprovação para travar e falar
+            // Regra Estrita da Moda: Exige 9 ou mais votos estáveis para cravar e ditar a cor
             if (votes[winner] >= 9) { 
                 if (colorTxt.innerText !== winner) {
                     colorTxt.innerText = winner;
@@ -275,8 +293,9 @@
         requestAnimationFrame(loop);
     }
 
+    // Mecanismo de Síntese de Voz (TTS acelerado em 1.9x)
     function speak(t) {
-        if(!audioActive || isSpeaking || !t || t === "INATIVO") return;
+        if(!audioActive || isSpeaking || !t || t === "INATIVO" || !active) return;
         try {
             window.speechSynthesis.cancel();
             const m = new SpeechSynthesisUtterance(t);
@@ -291,6 +310,8 @@
             isSpeaking = false;
         }
     }
+    
+    // Inicialização do loop em plano de fundo sem disparar leituras prematuras
     loop();
 </script>
 </body>
