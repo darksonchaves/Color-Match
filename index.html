@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - Matrix v2.0</title>
+    <title>ColorMatch Pro - Matrix v1.9</title>
     <style>
         body { 
             margin: 0; 
@@ -47,6 +47,9 @@
         /* Estados de Ativação Visual */
         .active { background: #007bff !important; color: #fff !important; }
         .audio-on { background: #28a745 !important; color: #fff !important; }
+        
+        /* Botão Mestre Independente: Modo Universal */
+        #btnPower.universal-on { background: #dc3545 !important; color: #fff !important; box-shadow: 0 0 10px #dc3545; }
 
         /* Renderização e Proporções do Vídeo */
         #video-container { position: relative; width: 100vw; height: 100vh; }
@@ -92,7 +95,7 @@
 <body>
 
 <div id="header">
-    <button onclick="toggleSystem()" id="btnPower">SISTEMA: OFF</button>
+    <button onclick="toggleUniversal()" id="btnPower">UNIVERSAL: OFF</button>
     <button onclick="toggleAudio()" id="btnAudio">ÁUDIO: OFF</button>
     <button onclick="calibrate()" id="btnCalib">CALIBRAR</button>
     <button onclick="setMode('LIVRE')" id="btnLivre">MODO LIVRE</button>
@@ -115,9 +118,10 @@
     const ctx = c.getContext('2d', {willReadFrequently: true, alpha: false});
     const colorTxt = document.getElementById('color-name'), cross = document.getElementById('crosshair');
 
-    let active = false, audioActive = false, mode = 'LIVRE';
+    // Inicialização dos Estados de Acordo com as Regras Arquiteturais
+    let universalActive = false, audioActive = false, mode = 'LIVRE';
     
-    // Parâmetros de Balanço de Branco
+    // Parâmetros de Balanço de Branco (Calibração Dinâmica)
     let calibR = 255, calibG = 255, calibB = 255; 
     let isCalibrated = false;
     let history = [], lastSpeech = "", isSpeaking = false;
@@ -148,14 +152,16 @@
             navigator.mediaDevices.getUserMedia({ video: true }).then(s => { v.srcObject = s; });
         });
 
-    function toggleSystem() { 
-        active = !active; 
+    // CONTROLE INDEPENDENTE DO MODO UNIVERSAL (SISTEMA ON/OFF)
+    function toggleUniversal() { 
+        universalActive = !universalActive; 
         
         const btnPower = document.getElementById('btnPower');
-        btnPower.classList.toggle('active', active);
-        btnPower.innerText = 'SISTEMA: ' + (active ? 'ON' : 'OFF');
+        btnPower.classList.toggle('universal-on', universalActive);
+        btnPower.innerText = 'UNIVERSAL: ' + (universalActive ? 'ON' : 'OFF');
         
-        if (active) {
+        if (universalActive) {
+            // Reestabelece submodos visuais sem reescrever o estado Universal mestre
             document.getElementById('btnLivre').classList.toggle('active', mode === 'LIVRE');
             document.getElementById('btnPadrao').classList.toggle('active', mode === 'PADRAO');
             cross.className = (mode === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
@@ -184,7 +190,7 @@
     }
 
     function toggleAudio() {
-        if (!active) return; 
+        if (!universalActive) return; 
         audioActive = !audioActive;
         const btnAudio = document.getElementById('btnAudio');
         btnAudio.classList.toggle('active', audioActive);
@@ -194,7 +200,7 @@
     }
 
     function setMode(m) {
-        if (!active) return; 
+        if (!universalActive) return; 
         mode = m;
         document.getElementById('btnLivre').classList.toggle('active', m === 'LIVRE');
         document.getElementById('btnPadrao').classList.toggle('active', m === 'PADRAO');
@@ -203,7 +209,7 @@
     }
 
     function calibrate() {
-        if (!active || v.videoWidth === 0) return;
+        if (!universalActive || v.videoWidth === 0) return;
         c.width = v.videoWidth; c.height = v.videoHeight;
         ctx.drawImage(v, 0, 0);
         
@@ -212,6 +218,7 @@
         let r=0, g=0, b=0, total=0;
         
         for (let i=0; i<sample.length; i+=4) {
+            // Filtro Especular Ativo na calibração (>248)
             if (sample[i] > 248 && sample[i+1] > 248 && sample[i+2] > 248) continue; 
             r+=sample[i]; g+=sample[i+1]; b+=sample[i+2]; total++;
         }
@@ -246,9 +253,10 @@
     }
 
     function getFinalColor(rawR, rawG, rawB) {
-        // 1. Filtro Antiflutuação Hardcore do Preto Polido (Abaixo de Luma 42)
+        // CORREÇÃO MANDATÓRIA (Vídeo 23.mp4): Flutuação do Preto Polido em Isqueiros/Polímeros
         if (rawR <= 42 && rawG <= 42 && rawB <= 42) return "PRETO";
 
+        // Aplicação do Ganho Dinâmico do Balanço de Branco Adaptativo
         let rNorm = calibR > 0 ? (rawR / calibR) * 255 : rawR;
         let gNorm = calibG > 0 ? (rawG / calibG) * 255 : rawG;
         let bNorm = calibB > 0 ? (rawB / calibB) * 255 : rawB;
@@ -263,7 +271,7 @@
 
         if (r < 48 && g < 48 && b < 48 && rgbDiff < 20) return "PRETO";
 
-        // 2. Classificação Acromática Estrita
+        // Classificação Acromática Estrita
         if (isCalibrated) {
             if (rgbDiff < 25) {
                 if (rawR >= calibR * 0.76) return "BRANCO";
@@ -276,37 +284,41 @@
             if (rgbDiff < 15) return "CINZA";
         }
 
+        // ESPAÇO CIE L*a*b* E CÁLCULO DE CHROMA MOLECULAR (OTIMIZAÇÃO v1.9)
         let currentLab = rgbToLab(r, g, b);
         let chroma = Math.sqrt(currentLab.a * currentLab.a + currentLab.b * currentLab.b);
 
-        // 3. Salvaguarda de Saturação Molecular contra Contaminação de Reflexo Lateral
+        // Salvaguarda de Saturação Molecular contra Contaminação de Reflexo Lateral
         if (chroma < 12) {
             if (currentLab.L > 75) return "BRANCO";
             if (currentLab.L < 30) return "PRETO";
             return "CINZA";
         }
 
-        // 4. Barreira do Verde Claro Superexposto (Mapeamento Estrito Isqueiro Limão)
-        if (g > r && g > b && currentLab.L > 50) {
-            if (currentLab.a < -10) return "VERDE";
+        // CORREÇÃO MANDATÓRIA (Vídeo 25.mp4): Instabilidade de Highlights de Polímeros Verdes Claros (Superexposição)
+        // CORREÇÃO MANDATÓRIA (v1.6): Interceptação de canal e cravagem estrita de Verde com Eixo 'a' fortemente negativo
+        if (g > r && g > b) {
+            if (currentLab.L > 50 && (currentLab.a < -10 || (g / r > 1.15))) return "VERDE";
         }
 
-        // 5. Isolamento Geométrico de Saturação (Rosa Têxtil / Vermelhos Críticos Tubos)
+        // CORREÇÃO MANDATÓRIA (Vídeo 23.mp4 & Atual): Isolamento Geométrico do Rosa Têxtil / Tubos Plásticos
         if (currentLab.a > 18) { 
             if (currentLab.b < -8) return "ROXO";
             if (currentLab.b >= -8 && currentLab.b <= 22) {
                 if (currentLab.L < 42 && r > b * 1.5) return "VERMELHO";
-                if (currentLab.L > 38 && currentLab.a > 22) {
-                    if (b > 60 || (r / b < 2.2)) return "ROSA";
+                if (currentLab.L > 35 && currentLab.a > 20) {
+                    // Barreiras estruturais estáveis baseadas na proporção real de canais e Chroma para evitar desvios
+                    if (b > 55 && (r / b < 2.4) && currentLab.L > 45) return "ROSA";
                     return "VERMELHO";
                 }
             }
         }
 
+        // Declaração antecipada segura para impedir Sintaxe/Travamentos de Variáveis (Vídeo 24.mp4)
         let minDeltaE = Infinity;
         let matchedName = "CINZA";
 
-        // 6. Varredura Euclidiana Delta E sobre Centroides Estabilizados
+        // Varredura Euclidiana Delta E sobre Centroides Estabilizados
         for (let target of LAB_CENTROIDS) {
             let dL = currentLab.L - target.L;
             let da = currentLab.a - target.a;
@@ -319,23 +331,24 @@
             }
         }
 
-        // 7. Sanitização Fina de Transições Dinâmicas de Limiar Bimodal
+        // Sanitização Fina de Transições Dinâmicas e Limiar Bimodal (Laranja-Vermelho / Amarelo-Verde)
         if (matchedName === "LARANJA") {
             if (currentLab.L < 32) return "MARROM";
-            if (r > g && g > 120 && (g / r > 0.82)) return "AMARELO";
-            if (currentLab.a > 42 && currentLab.b < 22) return "VERMELHO"; 
+            if (r > g && g > 115 && (g / r > 0.82)) return "AMARELO";
+            if (currentLab.a > 42 && currentLab.b < 24) return "VERMELHO"; 
         }
 
         if (matchedName === "AMARELO") {
-            if (currentLab.a < -6 && g > r) return "VERDE";
+            if (currentLab.a < -5 && g > r) return "VERDE";
         }
 
         return matchedName;
     }
 
     function loop() {
-        // BLOQUEIO LÓGICO INTERCEPTADOR DO MODO UNIVERSAL (CURTO-CIRCUITO ABSOLUTO)
-        if (!active) {
+        // MANDATÓRIO (v1.7 / v1.9): CURTO-CIRCUITO LÓGICO ABSOLUTO DO MODO UNIVERSAL INTERCEPTADOR
+        // Se o Modo Universal estiver desligado, o processamento congela em tempo de execução
+        if (!universalActive) {
             requestAnimationFrame(loop);
             return;
         }
@@ -345,12 +358,13 @@
             ctx.imageSmoothingEnabled = false;
             ctx.drawImage(v, 0, 0);
             
+            // Submódulos de Amostragem de Área baseados no estado ativo
             let size = (mode === 'LIVRE' ? 6 : 32); 
             const p = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
             
             let r=0, g=0, b=0, count=0;
             for (let i=0; i<p.length; i+=4) {
-                // Filtro de reflexo especular de lâmpadas (>248)
+                // REGRA ARQUITETURAL ABSOLUTA: FILTRO ESPECULAR (Ignorar sub-pixels >248 de reflexo de lâmpadas)
                 if (p[i] > 248 && p[i+1] > 248 && p[i+2] > 248) continue; 
                 r += p[i]; g += p[i+1]; b += p[i+2];
                 count++;
@@ -360,6 +374,7 @@
             
             let res = getFinalColor(r/count, g/count, b/count);
             
+            // REGRA ARQUITETURAL: ESTABILIZAÇÃO TEMPORAL POR MODA DINÂMICA (18 frames)
             history.push(res);
             if (history.length > 18) history.shift(); 
             
@@ -367,8 +382,10 @@
             history.forEach(x => votes[x] = (votes[x] || 0) + 1);
             const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
 
+            // CORREÇÃO MANDATÓRIA: Teto da moda fixado rigorosamente em 10 votos
             if (votes[winner] >= 10) { 
                 if (colorTxt.innerText !== winner) {
+                    // NOMENCLATURA ESTRITA DE 11 CORES EXIBIDA EM TELA
                     colorTxt.innerText = winner;
                     cross.classList.add('locked');
                     
@@ -384,12 +401,12 @@
     }
 
     function speak(t) {
-        if (!audioActive || isSpeaking || !t || t === "INATIVO" || !active) return;
+        if (!audioActive || isSpeaking || !t || t === "INATIVO" || !universalActive) return;
         try {
             window.speechSynthesis.cancel();
             const m = new SpeechSynthesisUtterance(t);
             m.lang = 'pt-BR'; 
-            m.rate = 1.9; 
+            m.rate = 1.9; // VELOCIDADE MANDATÓRIA DE 1.9x
             m.onstart = () => isSpeaking = true;
             m.onend = () => isSpeaking = false;
             m.onerror = () => isSpeaking = false;
@@ -400,6 +417,7 @@
         }
     }
     
+    // Inicialização compulsória do ciclo contínuo
     loop();
 </script>
 </body>
