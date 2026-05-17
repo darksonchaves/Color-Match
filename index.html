@@ -3,21 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - Matrix v1.9</title>
+    <title>ColorMatch Pro - Matrix v2.0</title>
     <style>
-        body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
+        body { 
+            margin: 0; 
+            background: #000; 
+            font-family: sans-serif; 
+            color: #fff; 
+            overflow: hidden; 
+            text-align: center; 
+            user-select: none;
+        }
         
         /* Menu Superior de Controle */
         #header { 
-            position: absolute; top: 0; width: 100%; z-index: 20;
-            background: rgba(10, 10, 10, 0.95); display: flex; justify-content: center; 
-            padding: 10px 0; gap: 8px; border-bottom: 1px solid #333; flex-wrap: wrap;
+            position: absolute; 
+            top: 0; 
+            width: 100%; 
+            z-index: 20;
+            background: rgba(10, 10, 10, 0.95); 
+            display: flex; 
+            justify-content: center; 
+            padding: 10px 0; 
+            gap: 8px; 
+            border-bottom: 1px solid #333; 
+            flex-wrap: wrap;
         }
         
         button { 
-            background: #1a1a1a; color: #aaa; border: 1px solid #444; padding: 10px 14px; 
-            border-radius: 6px; font-weight: bold; font-size: 11px; text-transform: uppercase; cursor: pointer;
-            transition: all 0.1s ease; -webkit-tap-highlight-color: transparent;
+            background: #1a1a1a; 
+            color: #aaa; 
+            border: 1px solid #444; 
+            padding: 10px 14px; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            font-size: 11px; 
+            text-transform: uppercase; 
+            cursor: pointer;
+            transition: all 0.1s ease; 
+            -webkit-tap-highlight-color: transparent;
         }
         
         /* Estados de Ativação Visual */
@@ -30,17 +54,38 @@
         
         /* Elemento de Alvo (Mira Central) */
         #crosshair { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            border: 2px solid transparent; border-radius: 50%; pointer-events: none; z-index: 10;
-            transition: all 0.1s; display: none;
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            border: 2px solid transparent; 
+            border-radius: 50%; 
+            pointer-events: none; 
+            z-index: 10;
+            transition: all 0.1s; 
+            display: none;
         }
         .mira-livre { width: 12px; height: 12px; border-color: rgba(255,255,255,0.7) !important; display: block !important; }
         .mira-padrao { width: 16vw; height: 16vw; border: 2px dashed rgba(255,255,255,0.6) !important; display: block !important; }
         .locked { border-color: #00ffcc !important; box-shadow: 0 0 20px #00ffcc; background: rgba(0,255,204,0.05); }
 
         /* Elementos de Texto do Painel Inferior */
-        #ui-overlay { position: absolute; bottom: 0; width: 100%; padding: 45px 0; background: linear-gradient(transparent, #000 85%); z-index: 20; }
-        #color-name { font-size: 55px; font-weight: 900; text-transform: uppercase; color: #444; min-height: 70px; letter-spacing: 2px; }
+        #ui-overlay { 
+            position: absolute; 
+            bottom: 0; 
+            width: 100%; 
+            padding: 45px 0; 
+            background: linear-gradient(transparent, #000 85%); 
+            z-index: 20; 
+        }
+        #color-name { 
+            font-size: 55px; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            color: #444; 
+            min-height: 70px; 
+            letter-spacing: 2px; 
+        }
         .active-text { color: #00ffcc !important; text-shadow: 0 0 30px rgba(0,255,204,0.7); }
     </style>
 </head>
@@ -77,6 +122,18 @@
     let isCalibrated = false;
     let history = [], lastSpeech = "", isSpeaking = false;
 
+    // Coordenadas Centroidais Estabilizadas no Espaço Matemático CIE L*a*b*
+    const LAB_CENTROIDS = [
+        { name: "VERMELHO", L: 38,  a: 68,  b: 40 },
+        { name: "LARANJA",  L: 56,  a: 38,  b: 58 },
+        { name: "AMARELO",  L: 86,  a: -4,  b: 82 },
+        { name: "VERDE",    L: 48,  a: -48, b: 34 },
+        { name: "AZUL",     L: 26,  a: 8,   b: -52 },
+        { name: "ROXO",     L: 20,  a: 38,  b: -44 }, 
+        { name: "ROSA",     L: 52,  a: 60,  b: -2 },   
+        { name: "MARROM",   L: 24,  a: 16,  b: 16 }
+    ];
+
     // Inicialização da mídia de vídeo integrada (Câmera Traseira)
     const constraints = {
         video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }
@@ -106,11 +163,15 @@
             colorTxt.className = "active-text";
             if (v.paused) { v.play().catch(() => {}); }
         } else { 
+            // CURTO-CIRCUITO DE RETORNO DO MODO UNIVERSAL INTERCEPTADOR
+            audioActive = false;
+            
+            const btnAudio = document.getElementById('btnAudio');
+            btnAudio.classList.remove('active', 'audio-on');
+            btnAudio.innerText = 'ÁUDIO: OFF';
+            
             document.getElementById('btnLivre').classList.remove('active');
             document.getElementById('btnPadrao').classList.remove('active');
-            document.getElementById('btnAudio').classList.remove('audio-on');
-            audioActive = false;
-            document.getElementById('btnAudio').innerText = 'ÁUDIO: OFF';
             
             cross.className = '';
             cross.style.display = 'none';
@@ -125,9 +186,10 @@
     function toggleAudio() {
         if (!active) return; 
         audioActive = !audioActive;
-        document.getElementById('btnAudio').classList.toggle('active', audioActive);
-        document.getElementById('btnAudio').classList.toggle('audio-on', audioActive);
-        document.getElementById('btnAudio').innerText = 'ÁUDIO: ' + (audioActive ? 'ON' : 'OFF');
+        const btnAudio = document.getElementById('btnAudio');
+        btnAudio.classList.toggle('active', audioActive);
+        btnAudio.classList.toggle('audio-on', audioActive);
+        btnAudio.innerText = 'ÁUDIO: ' + (audioActive ? 'ON' : 'OFF');
         if (audioActive) speak("Áudio ligado");
     }
 
@@ -183,19 +245,10 @@
         return { L: (116 * y) - 16, a: 500 * (x - y), b: 200 * (y - z) };
     }
 
-    // Coordenadas Centroidais das Cores Restritas (Mapeadas no Espaço CIE L*a*b*)
-    const LAB_CENTROIDS = [
-        { name: "VERMELHO", L: 38,  a: 68,  b: 40 },
-        { name: "LARANJA",  L: 56,  a: 38,  b: 58 },
-        { name: "AMARELO",  L: 86,  a: -4,  b: 82 },
-        { name: "VERDE",    L: 48,  a: -48, b: 34 },
-        { name: "AZUL",     L: 26,  a: 8,   b: -52 },
-        { name: "ROXO",     L: 20,  a: 38,  b: -44 }, 
-        { name: "ROSA",     L: 52,  a: 60,  b: -2 },   
-        { name: "MARROM",   L: 24,  a: 16,  b: 16 }
-    ];
-
     function getFinalColor(rawR, rawG, rawB) {
+        // 1. Filtro Antiflutuação Hardcore do Preto Polido (Abaixo de Luma 42)
+        if (rawR <= 42 && rawG <= 42 && rawB <= 42) return "PRETO";
+
         let rNorm = calibR > 0 ? (rawR / calibR) * 255 : rawR;
         let gNorm = calibG > 0 ? (rawG / calibG) * 255 : rawG;
         let bNorm = calibB > 0 ? (rawB / calibB) * 255 : rawB;
@@ -208,8 +261,6 @@
         let min = Math.min(r, g, b);
         let rgbDiff = max - min;
 
-        // 1. Filtro Antiflutuação Hardcore do Preto Polido
-        if (rawR <= 42 && rawG <= 42 && rawB <= 42) return "PRETO";
         if (r < 48 && g < 48 && b < 48 && rgbDiff < 20) return "PRETO";
 
         // 2. Classificação Acromática Estrita
@@ -235,17 +286,20 @@
             return "CINZA";
         }
 
-        // 4. BARREIRA DE CRUZA-BORDAS: Isolamento Estrito Anti-Amarelo para Verdes Claros Superexpostos
-        if (currentLab.a < -18 && currentLab.L > 55) {
-            if (g > r) return "VERDE";
+        // 4. Barreira do Verde Claro Superexposto (Mapeamento Estrito Isqueiro Limão)
+        if (g > r && g > b && currentLab.L > 50) {
+            if (currentLab.a < -10) return "VERDE";
         }
 
-        // 5. Isolamento Geométrico de Saturação (Rosa Têxtil / Vermelhos Críticos)
-        if (currentLab.a > 20) { 
+        // 5. Isolamento Geométrico de Saturação (Rosa Têxtil / Vermelhos Críticos Tubos)
+        if (currentLab.a > 18) { 
             if (currentLab.b < -8) return "ROXO";
-            if (currentLab.b >= -8 && currentLab.b <= 18) {
-                if (currentLab.L < 38 && r > b * 1.6) return "VERMELHO";
-                if (currentLab.L > 35 && currentLab.a > 25) return "ROSA";
+            if (currentLab.b >= -8 && currentLab.b <= 22) {
+                if (currentLab.L < 42 && r > b * 1.5) return "VERMELHO";
+                if (currentLab.L > 38 && currentLab.a > 22) {
+                    if (b > 60 || (r / b < 2.2)) return "ROSA";
+                    return "VERMELHO";
+                }
             }
         }
 
@@ -268,19 +322,19 @@
         // 7. Sanitização Fina de Transições Dinâmicas de Limiar Bimodal
         if (matchedName === "LARANJA") {
             if (currentLab.L < 32) return "MARROM";
-            if (r > g && g > 120 && (g / r > 0.80)) return "AMARELO";
+            if (r > g && g > 120 && (g / r > 0.82)) return "AMARELO";
             if (currentLab.a > 42 && currentLab.b < 22) return "VERMELHO"; 
         }
 
-        if (matchedName === "AMARELO" && currentLab.a < -8 && g > r) {
-            return "VERDE";
+        if (matchedName === "AMARELO") {
+            if (currentLab.a < -6 && g > r) return "VERDE";
         }
 
         return matchedName;
     }
 
     function loop() {
-        // Bloqueio Lógico Centralizado Interceptador do Modo Universal
+        // BLOQUEIO LÓGICO INTERCEPTADOR DO MODO UNIVERSAL (CURTO-CIRCUITO ABSOLUTO)
         if (!active) {
             requestAnimationFrame(loop);
             return;
@@ -296,6 +350,7 @@
             
             let r=0, g=0, b=0, count=0;
             for (let i=0; i<p.length; i+=4) {
+                // Filtro de reflexo especular de lâmpadas (>248)
                 if (p[i] > 248 && p[i+1] > 248 && p[i+2] > 248) continue; 
                 r += p[i]; g += p[i+1]; b += p[i+2];
                 count++;
