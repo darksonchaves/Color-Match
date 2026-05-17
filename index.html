@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - Matrix v1.5</title>
+    <title>ColorMatch Pro - Matrix v1.6</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         
@@ -91,7 +91,6 @@
             navigator.mediaDevices.getUserMedia({ video: true }).then(s => { v.srcObject = s; });
         });
 
-    // Manipulador Reativo do Modo Universal (Disjuntor Sincronizado)
     function toggleSystem() { 
         active = !active; 
         
@@ -100,7 +99,6 @@
         btnPower.innerText = 'SISTEMA: ' + (active ? 'ON' : 'OFF');
         
         if (active) {
-            // Reatgasta os seletores visuais do modo atual salvos na memória técnica
             document.getElementById('btnLivre').classList.toggle('active', mode === 'LIVRE');
             document.getElementById('btnPadrao').classList.toggle('active', mode === 'PADRAO');
             cross.className = (mode === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
@@ -108,7 +106,6 @@
             colorTxt.className = "active-text";
             if (v.paused) { v.play().catch(() => {}); }
         } else { 
-            // Apaga de forma estrita toda e qualquer classe ativa do DOM
             document.getElementById('btnLivre').classList.remove('active');
             document.getElementById('btnPadrao').classList.remove('active');
             document.getElementById('btnAudio').classList.remove('audio-on');
@@ -126,7 +123,7 @@
     }
 
     function toggleAudio() {
-        if (!active) return; // Barreira intransponível: impede ativação com sistema OFF
+        if (!active) return; 
         audioActive = !audioActive;
         document.getElementById('btnAudio').classList.toggle('audio-on', audioActive);
         document.getElementById('btnAudio').innerText = 'ÁUDIO: ' + (audioActive ? 'ON' : 'OFF');
@@ -134,7 +131,7 @@
     }
 
     function setMode(m) {
-        if (!active) return; // Barreira intransponível: impede mudança com sistema OFF
+        if (!active) return; 
         mode = m;
         document.getElementById('btnLivre').classList.toggle('active', m === 'LIVRE');
         document.getElementById('btnPadrao').classList.toggle('active', m === 'PADRAO');
@@ -142,7 +139,6 @@
         if (audioActive) speak("Modo " + m);
     }
 
-    // Calibração Dinâmica por Matriz para Balanço de Branco
     function calibrate() {
         if (!active || v.videoWidth === 0) return;
         c.width = v.videoWidth; c.height = v.videoHeight;
@@ -168,7 +164,6 @@
         if (audioActive) speak("Calibrado");
     }
 
-    // Transformação para o Espaço de Cores CIE L*a*b* (D65)
     function rgbToLab(r, g, b) {
         r /= 255; g /= 255; b /= 255;
         r = (r > 0.04045) ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
@@ -187,15 +182,15 @@
         return { L: (116 * y) - 16, a: 500 * (x - y), b: 200 * (y - z) };
     }
 
-    // Coordenadas Centroidais das 11 Cores Restritas
+    // Centroides Calibradas de Acordo com Padrões Cromáticos Industriais
     const LAB_CENTROIDS = [
-        { name: "VERMELHO", L: 40,  a: 65,  b: 38 },
-        { name: "LARANJA",  L: 58,  a: 35,  b: 55 },
-        { name: "AMARELO",  L: 86,  a: -4,  b: 80 },
-        { name: "VERDE",    L: 46,  a: -42, b: 32 },
-        { name: "AZUL",     L: 28,  a: 6,   b: -50 },
-        { name: "ROXO",     L: 22,  a: 36,  b: -42 }, 
-        { name: "ROSA",     L: 50,  a: 58,  b: -4 },  
+        { name: "VERMELHO", L: 40,  a: 66,  b: 39 },
+        { name: "LARANJA",  L: 56,  a: 38,  b: 58 },
+        { name: "AMARELO",  L: 86,  a: -4,  b: 82 },
+        { name: "VERDE",    L: 48,  a: -45, b: 34 },
+        { name: "AZUL",     L: 26,  a: 8,   b: -52 },
+        { name: "ROXO",     L: 20,  a: 38,  b: -44 }, 
+        { name: "ROSA",     L: 52,  a: 60,  b: -2 },   
         { name: "MARROM",   L: 24,  a: 16,  b: 16 }
     ];
 
@@ -212,13 +207,14 @@
         let min = Math.min(r, g, b);
         let rgbDiff = max - min;
 
-        // Filtro Antiflutuação do Preto Polido (Vídeo 23.mp4)
+        // 1. Filtro Antiflutuação Hardcore do Preto Polido
         if (rawR <= 42 && rawG <= 42 && rawB <= 42) return "PRETO";
         if (r < 48 && g < 48 && b < 48 && rgbDiff < 20) return "PRETO";
 
+        // 2. Classificação Acromática Estrita
         if (isCalibrated) {
             if (rgbDiff < 25) {
-                if (rawR >= calibR * 0.75) return "BRANCO";
+                if (rawR >= calibR * 0.76) return "BRANCO";
                 if (rawR <= 45) return "PRETO";
                 return "CINZA";
             }
@@ -230,18 +226,26 @@
 
         let currentLab = rgbToLab(r, g, b);
 
-        // Isolamento de Saturação do Rosa Têxtil (Vídeo 23.mp4)
-        if (currentLab.a > 22) { 
-            if (currentLab.b < -12) return "ROXO";
-            if (currentLab.b >= -12 && currentLab.b <= 12) {
-                if (currentLab.L > 38 && currentLab.a > 30) return "ROSA";
+        // 3. Filtro de Alta Segurança: Isolamento de Verdes Claros / Superexpostos
+        if (g > r && g > b && g > 120 && currentLab.a < -18) {
+            if (currentLab.L > 65 && rgbDiff < 45) return "VERDE";
+        }
+
+        // 4. Isolamento Geométrico Multivariável de Saturação: Rosa vs Vermelho vs Roxo
+        if (currentLab.a > 20) { 
+            if (currentLab.b < -10) return "ROXO";
+            if (currentLab.b >= -10 && currentLab.b <= 15) {
+                // Se a luminância for baixa e o canal vermelho predominar massivamente sobre o azul, força Vermelho
+                if (currentLab.L < 36 && r > b * 1.8) return "VERMELHO";
+                // Margem segura para Rosa Têxtil estruturado
+                if (currentLab.L > 35 && currentLab.a > 28) return "ROSA";
             }
         }
 
         let minDeltaE = Infinity;
         let matchedName = "CINZA";
 
-        // Varredura Euclidiana Delta E
+        // 5. Varredura Euclidiana Delta E
         for (let target of LAB_CENTROIDS) {
             let dL = currentLab.L - target.L;
             let da = currentLab.a - target.a;
@@ -254,18 +258,16 @@
             }
         }
 
-        // Correções de Sintaxe Dinâmica Pós-Busca Segura
-        if (matchedName === "LARANJA" && currentLab.L < 35) {
-            return "MARROM";
-        }
-        if (matchedName === "LARANJA" && r > g && g > 135 && (g / r > 0.75)) {
-            return "AMARELO";
+        // 6. Sanitização de Sintaxe e Intercorrências de Bordas Cromáticas
+        if (matchedName === "LARANJA") {
+            if (currentLab.L < 35) return "MARROM";
+            if (r > g && g > 130 && (g / r > 0.78)) return "AMARELO";
+            if (currentLab.a > 45 && currentLab.b < 18) return "VERMELHO"; // Transição abrupta de Vermelho Vivo
         }
 
         return matchedName;
     }
 
-    // Laço Técnico Crítico de Leitura de Matriz
     function loop() {
         if (active && v.videoWidth > 0) {
             c.width = v.videoWidth; c.height = v.videoHeight;
@@ -277,7 +279,6 @@
             
             let r=0, g=0, b=0, count=0;
             for (let i=0; i<p.length; i+=4) {
-                // Filtro Especular Ativo (>248)
                 if (p[i] > 248 && p[i+1] > 248 && p[i+2] > 248) continue; 
                 r += p[i]; g += p[i+1]; b += p[i+2];
                 count++;
@@ -288,14 +289,14 @@
             let res = getFinalColor(r/count, g/count, b/count);
             
             history.push(res);
-            if (history.length > 15) history.shift(); 
+            if (history.length > 18) history.shift(); // Expansão do buffer temporal para amortecimento térmico
             
-            // Tratamento por Moda Temporal de Estabilização (Corte rigoroso em 9 votos)
             const votes = {};
             history.forEach(x => votes[x] = (votes[x] || 0) + 1);
             const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
 
-            if (votes[winner] >= 9) { 
+            // Corte rigoroso elevado para 10 votos para eliminar oscilações em tecidos/dobras
+            if (votes[winner] >= 10) { 
                 if (colorTxt.innerText !== winner) {
                     colorTxt.innerText = winner;
                     cross.classList.add('locked');
@@ -317,7 +318,7 @@
             window.speechSynthesis.cancel();
             const m = new SpeechSynthesisUtterance(t);
             m.lang = 'pt-BR'; 
-            m.rate = 1.9; // Velocidade mandatória de 1.9x
+            m.rate = 1.9; 
             m.onstart = () => isSpeaking = true;
             m.onend = () => isSpeaking = false;
             m.onerror = () => isSpeaking = false;
