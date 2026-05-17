@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - Matrix v1.7</title>
+    <title>ColorMatch Pro - Matrix v1.8</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         
@@ -182,7 +182,7 @@
         return { L: (116 * y) - 16, a: 500 * (x - y), b: 200 * (y - z) };
     }
 
-    // Coordenadas Centroidais das 11 Cores Restritas (Ajustadas v1.7)
+    // Coordenadas Centroidais das 11 Cores Restritas
     const LAB_CENTROIDS = [
         { name: "VERMELHO", L: 38,  a: 68,  b: 40 },
         { name: "LARANJA",  L: 56,  a: 38,  b: 58 },
@@ -225,26 +225,33 @@
         }
 
         let currentLab = rgbToLab(r, g, b);
+        let chroma = Math.sqrt(currentLab.a * currentLab.a + currentLab.b * currentLab.b);
 
-        // 3. BARREIRA V1.7: Isolamento Rígido Anti-Amarelo para Verdes Claros Superexpostos
-        if (currentLab.a < -20 && currentLab.L > 60) {
-            // Se o eixo 'a' for fortemente negativo (verde) e houver alta luma, ignora Euclidiano e crava Verde.
-            return "VERDE";
+        // 3. Salvaguarda de Saturação para Superfícies Fortes Adjacentes
+        if (chroma < 12) {
+            if (currentLab.L > 75) return "BRANCO";
+            if (currentLab.L < 30) return "PRETO";
+            return "CINZA";
         }
 
-        // 4. Isolamento Geométrico Multivariável de Saturação (Rosa Têxtil)
-        if (currentLab.a > 22) { 
-            if (currentLab.b < -10) return "ROXO";
-            if (currentLab.b >= -10 && currentLab.b <= 15) {
-                if (currentLab.L < 36 && r > b * 1.8) return "VERMELHO";
-                if (currentLab.L > 35 && currentLab.a > 28) return "ROSA";
+        // 4. BARREIRA V1.8: Isolamento Rígido Anti-Amarelo para Verdes Claros Superexpostos
+        if (currentLab.a < -18 && currentLab.L > 55) {
+            if (g > r) return "VERDE";
+        }
+
+        // 5. Isolamento Geométrico de Saturação (Rosa Têxtil / Vermelhos Críticos)
+        if (currentLab.a > 20) { 
+            if (currentLab.b < -8) return "ROXO";
+            if (currentLab.b >= -8 && currentLab.b <= 18) {
+                if (currentLab.L < 38 && r > b * 1.6) return "VERMELHO";
+                if (currentLab.L > 35 && currentLab.a > 25) return "ROSA";
             }
         }
 
         let minDeltaE = Infinity;
         let matchedName = "CINZA";
 
-        // 5. Varredura Euclidiana Delta E
+        // 6. Varredura Euclidiana Delta E
         for (let target of LAB_CENTROIDS) {
             let dL = currentLab.L - target.L;
             let da = currentLab.a - target.a;
@@ -257,18 +264,28 @@
             }
         }
 
-        // 6. Sanitização e Transições Dinâmicas
+        // 7. Sanitização Fina de Transições Dinâmicas
         if (matchedName === "LARANJA") {
-            if (currentLab.L < 35) return "MARROM";
-            if (r > g && g > 130 && (g / r > 0.78)) return "AMARELO";
-            if (currentLab.a > 45 && currentLab.b < 18) return "VERMELHO"; 
+            if (currentLab.L < 32) return "MARROM";
+            if (r > g && g > 120 && (g / r > 0.80)) return "AMARELO";
+            if (currentLab.a > 42 && currentLab.b < 22) return "VERMELHO"; 
+        }
+
+        if (matchedName === "AMARELO" && currentLab.a < -8 && g > r) {
+            return "VERDE";
         }
 
         return matchedName;
     }
 
     function loop() {
-        if (active && v.videoWidth > 0) {
+        // Bloqueio Lógico Centralizado: Se o sistema estiver desligado, interrompe imediatamente a execução
+        if (!active) {
+            requestAnimationFrame(loop);
+            return;
+        }
+
+        if (v.videoWidth > 0) {
             c.width = v.videoWidth; c.height = v.videoHeight;
             ctx.imageSmoothingEnabled = false;
             ctx.drawImage(v, 0, 0);
