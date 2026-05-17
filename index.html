@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v31.0 Gold</title>
+    <title>ColorMatch Pro - v32.0 Gold Premium</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -28,8 +28,8 @@
             border: 2px solid rgba(255,255,255,0.7); border-radius: 50%; pointer-events: none; z-index: 10;
             transition: all 0.2s;
         }
-        .mira-livre { width: 30px; height: 30px; }
-        .mira-padrao { width: 20vw; height: 20vw; border: 3px dashed rgba(255,255,255,0.5); }
+        .mira-livre { width: 20px; height: 20px; }
+        .mira-padrao { width: 18vw; height: 18vw; border: 3px dashed rgba(255,255,255,0.6); }
         .locked { border-color: #00ffcc !important; box-shadow: 0 0 30px #00ffcc; background: rgba(0,255,204,0.1); }
 
         #ui-overlay { position: absolute; bottom: 0; width: 100%; padding: 45px 0; background: linear-gradient(transparent, #000 85%); z-index: 20; }
@@ -43,7 +43,7 @@
     <button onclick="toggleSystem()" id="btnPower">SISTEMA: OFF</button>
     <button onclick="toggleAudio()" id="btnAudio">ÁUDIO: OFF</button>
     <button onclick="toggleUniversal()" id="btnUniv">MODO UNIVERSAL: OFF</button>
-    <button onclick="calibrate()" id="btnCalib">CALIBRAR</button>
+    <button onclick="calibrate()" id="btnCalib">CALIBRAR BRANCO</button>
     <button onclick="setMode('LIVRE')" id="btnLivre">MODO LIVRE</button>
     <button onclick="setMode('PADRAO')" id="btnPadrao">MODO PADRÃO</button>
 </div>
@@ -65,33 +65,23 @@
     const colorTxt = document.getElementById('color-name'), cross = document.getElementById('crosshair');
 
     let active = false, audioActive = false, universalMode = false, mode = 'LIVRE';
-    let balance = { r: 1, g: 1, b: 1 };
+    // Nova estrutura de calibração adaptativa (Offset e Ganho equilibrados)
+    let calibRef = { r: 128, g: 128, b: 128, isCalibrated: false };
     let history = [], lastSpeach = "", isSpeaking = false;
 
     const constraints = {
         video: {
             facingMode: "environment",
-            width: { ideal: 4096, max: 7680 }, 
-            height: { ideal: 2160, max: 4320 },
-            frameRate: { ideal: 60, max: 120 },  
-            whiteBalanceMode: "manual",          
-            exposureMode: "manual"
+            width: { ideal: 1920 }, 
+            height: { ideal: 1080 },
+            frameRate: { ideal: 60 }
         }
     };
 
     navigator.mediaDevices.getUserMedia(constraints)
-        .then(s => { 
-            v.srcObject = s;
-            setTimeout(() => {
-                const track = s.getVideoTracks()[0];
-                const capabilities = track.getCapabilities ? track.getCapabilities() : {};
-                const settings = {};
-                if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) settings.focusMode = 'continuous';
-                if (track.applyConstraints) track.applyConstraints(settings).catch(e => console.log(e));
-            }, 1000);
-        })
+        .then(s => { v.srcObject = s; })
         .catch(err => {
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", focusMode: "continuous" } }).then(s => v.srcObject = s);
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s => v.srcObject = s);
         });
 
     function toggleSystem() { 
@@ -102,7 +92,6 @@
     }
 
     function toggleAudio() {
-        // CORREÇÃO MENCIONADA: O estado do botão muda livremente agora, sem travas
         audioActive = !audioActive;
         document.getElementById('btnAudio').classList.toggle('audio-on', audioActive);
         document.getElementById('btnAudio').innerText = `ÁUDIO: ${audioActive ? 'ON' : 'OFF'}`;
@@ -128,26 +117,37 @@
         if(!active) return;
         c.width = v.videoWidth; c.height = v.videoHeight;
         ctx.drawImage(v, 0, 0);
-        const p = ctx.getImageData(v.videoWidth/2, v.videoHeight/2, 1, 1).data;
-        const avg = (p[0] + p[1] + p[2]) / 3;
-        balance.r = avg / Math.max(p[0], 1);
-        balance.g = avg / Math.max(p[1], 1);
-        balance.b = avg / Math.max(p[2], 1);
+        // Coleta uma área central média de 10x10 para evitar ruído de um único pixel na calibração
+        const sample = ctx.getImageData(v.videoWidth/2 - 5, v.videoHeight/2 - 5, 10, 10).data;
+        let r=0, g=0, b=0, total=0;
+        for(let i=0; i<sample.length; i+=4) {
+            r+=sample[i]; g+=sample[i+1]; b+=sample[i+2]; total++;
+        }
+        calibRef.r = r/total; calibRef.g = g/total; calibRef.b = b/total;
+        calibRef.isCalibrated = true;
         history = []; 
         if(audioActive) speak("Calibrado");
     }
 
-    function getFinalColor(r, g, b) {
-        r = Math.min(255, Math.max(0, r * balance.r));
-        g = Math.min(255, Math.max(0, g * balance.g));
-        b = Math.min(255, Math.max(0, b * balance.b));
+    function getFinalColor(rawR, rawG, rawB) {
+        let r = rawR, g = rawG, b = rawB;
 
-        let currentAvg = (r + g + b) / 3;
-        if (currentAvg < 35 && currentAvg > 5) { 
-            let factor = 35 / currentAvg;
-            r = Math.min(255, r * factor); g = Math.min(255, g * factor); b = Math.min(255, b * factor);
+        // COMPENSAÇÃO DE ILUMINAÇÃO AVANÇADA (Matriz de Adaptação Cromática Simplificada)
+        if (calibRef.isCalibrated) {
+            const targetMax = Math.max(calibRef.r, calibRef.g, calibRef.b);
+            if (targetMax > 10) {
+                r = r * (targetMax / calibRef.r);
+                g = g * (targetMax / calibRef.g);
+                b = b * (targetMax / calibRef.b);
+            }
         }
 
+        // Limitadores rígidos de segurança pós-compensação
+        r = Math.min(255, Math.max(0, r));
+        g = Math.min(255, Math.max(0, g));
+        b = Math.min(255, Math.max(0, b));
+
+        // Conversão robusta para HSL
         let r1 = r/255, g1 = g/255, b1 = b/255;
         let max = Math.max(r1, g1, b1), min = Math.min(r1, g1, b1);
         let h, s, l = (max + min) / 2;
@@ -162,40 +162,47 @@
             h *= 60;
         }
 
+        // Delta estrito para isolar cinzas e brancos verdadeiros
         let rgbDiff = Math.max(r, g, b) - Math.min(r, g, b);
-        if (l > 0.40 && rgbDiff < 12) return "BRANCO";
 
-        if (l < 0.10) return "PRETO";
-        if (l > 0.88 && s < 0.18) return "BRANCO";
+        // REGRA DE OURO PARA PRETO E CORES ESCURAS (Evita que o preto vire amarelo)
+        if (l < 0.12 || (l < 0.18 && rgbDiff < 15)) return "PRETO";
+        if (l > 0.82 && s < 0.15) return "BRANCO";
+        if (s < 0.12 && l >= 0.18 && l <= 0.82) return "CINZA";
 
+        // MODO UNIVERSAL SELETIVO
         if (universalMode) {
-            if (l < 0.14) return "PRETO";
-            if (s < 0.18) return "BRANCO"; 
             if (h < 20 || h >= 335) return "VERMELHO";
-            if (h >= 20 && h < 50) return "LARANJA";
-            if (h >= 50 && h < 75) return "AMARELO";
-            if (h >= 75 && h < 165) return "VERDE";
+            if (h >= 20 && h < 52) return "LARANJA";
+            if (h >= 52 && h < 78) return "AMARELO";
+            if (h >= 78 && h < 165) return "VERDE";
             if (h >= 165 && h < 255) return "AZUL";
             if (h >= 255 && h < 300) return "ROXO";
             if (h >= 300 && h < 335) return "ROSA";
             return "ESPECTRO";
         }
 
-        if (s < 0.14) {
-            if (l > 0.68) return "BRANCO";
-            if (l < 0.28) return "PRETO";
+        // TRATAMENTO DO MARROM (Cores quentes com baixa luminosidade)
+        if (l < 0.38 && (h < 38 || h >= 330) && s > 0.15) return "MARROM";
+
+        // FRONTEIRAS DE COR CORRIGIDAS (Foco: Isqueiro Amarelo e Rosa Real)
+        if (h < 15 || h >= 330) {
+            // Condição rígida para Rosa: Saturação alta, brilho intermediário/alto e matiz deslocado
+            if (h >= 305 || (h < 15 && r > 200 && b > 130 && g < 150)) return "ROSA";
+            return "VERMELHO";
+        }
+        
+        if (h >= 15 && h < 48) return "LARANJA";
+        
+        // Ajuste fino do Amarelo para não ser engolido pelo Branco ou Laranja
+        if (h >= 48 && h < 68) {
+            if (l > 0.40 && s > 0.25) return "AMARELO";
             return "CINZA";
         }
-
-        if (l < 0.38 && (h < 35 || h >= 330) && s > 0.18) return "MARROM";
-
-        // CORREÇÃO DO BUG MENCIONADO: Removido o lixo de escopo que quebrava o script no azul
-        if (h < 15 || h >= 330) return (s > 0.45 && l > 0.45 && h >= 330) ? "ROSA" : "VERMELHO";
-        if (h >= 15 && h < 45) return "LARANJA";
-        if (h >= 45 && h < 70) return "AMARELO";
-        if (h >= 70 && h < 160) return "VERDE";
-        if (h >= 160 && h < 255) return "AZUL";
-        if (h >= 255 && h < 295) return "ROXO";
+        
+        if (h >= 68 && h < 160) return "VERDE";
+        if (h >= 160 && h < 250) return "AZUL";
+        if (h >= 250 && h < 295) return "ROXO";
         if (h >= 295 && h < 330) return "ROSA";
 
         return "ANALISANDO";
@@ -209,15 +216,14 @@
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(v, 0, 0);
             
-            let size = (mode === 'LIVRE' ? 10 : 35); 
+            let size = (mode === 'LIVRE' ? 8 : 30); 
             const p = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
             
             let r=0, g=0, b=0, count=0;
-            
             for(let i=0; i<p.length; i+=4) {
-                let pr = p[i], pg = p[i+1], pb = p[i+2];
-                if(pr > 252 && pg > 252 && pb > 252) continue; 
-                r += pr; g += pg; b += pb;
+                // Descartar estouros puros de branco de reflexos diretos de lâmpadas
+                if(p[i] > 254 && p[i+1] > 254 && p[i+2] > 254) continue; 
+                r += p[i]; g += p[i+1]; b += p[i+2];
                 count++;
             }
             
@@ -226,19 +232,19 @@
             let res = getFinalColor(r/count, g/count, b/count);
             
             history.push(res);
-            if(history.length > 15) history.shift(); 
+            if(history.length > 20) history.shift(); // Histograma de 20 frames para maior estabilidade
             
             const votes = {};
             history.forEach(x => votes[x] = (votes[x] || 0) + 1);
             const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
 
-            if (votes[winner] >= 11) { 
+            // Subiu a régua: Exige 14 frames idênticos para travar a resposta (Fim do pisca-pisca)
+            if (votes[winner] >= 14) { 
                 if (colorTxt.innerText !== winner) {
                     colorTxt.innerText = winner;
                     colorTxt.className = "active-text";
                     cross.classList.add('locked');
                     
-                    // CORREÇÃO DO ÁUDIO: Verificação fluida e direta para soar a voz
                     if (audioActive && winner !== lastSpeach) {
                         speak(winner);
                     }
@@ -258,7 +264,7 @@
             window.speechSynthesis.cancel();
             const m = new SpeechSynthesisUtterance(t);
             m.lang = 'pt-BR'; 
-            m.rate = 1.8;
+            m.rate = 1.9;
             m.onstart = () => isSpeaking = true;
             m.onend = () => isSpeaking = false;
             m.onerror = () => isSpeaking = false;
