@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - Matrix v1.6</title>
+    <title>ColorMatch Pro - Matrix v1.7</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         
@@ -182,12 +182,12 @@
         return { L: (116 * y) - 16, a: 500 * (x - y), b: 200 * (y - z) };
     }
 
-    // Centroides Calibradas de Acordo com Padrões Cromáticos Industriais
+    // Coordenadas Centroidais das 11 Cores Restritas (Ajustadas v1.7)
     const LAB_CENTROIDS = [
-        { name: "VERMELHO", L: 40,  a: 66,  b: 39 },
+        { name: "VERMELHO", L: 38,  a: 68,  b: 40 },
         { name: "LARANJA",  L: 56,  a: 38,  b: 58 },
         { name: "AMARELO",  L: 86,  a: -4,  b: 82 },
-        { name: "VERDE",    L: 48,  a: -45, b: 34 },
+        { name: "VERDE",    L: 48,  a: -48, b: 34 },
         { name: "AZUL",     L: 26,  a: 8,   b: -52 },
         { name: "ROXO",     L: 20,  a: 38,  b: -44 }, 
         { name: "ROSA",     L: 52,  a: 60,  b: -2 },   
@@ -226,18 +226,17 @@
 
         let currentLab = rgbToLab(r, g, b);
 
-        // 3. Filtro de Alta Segurança: Isolamento de Verdes Claros / Superexpostos
-        if (g > r && g > b && g > 120 && currentLab.a < -18) {
-            if (currentLab.L > 65 && rgbDiff < 45) return "VERDE";
+        // 3. BARREIRA V1.7: Isolamento Rígido Anti-Amarelo para Verdes Claros Superexpostos
+        if (currentLab.a < -20 && currentLab.L > 60) {
+            // Se o eixo 'a' for fortemente negativo (verde) e houver alta luma, ignora Euclidiano e crava Verde.
+            return "VERDE";
         }
 
-        // 4. Isolamento Geométrico Multivariável de Saturação: Rosa vs Vermelho vs Roxo
-        if (currentLab.a > 20) { 
+        // 4. Isolamento Geométrico Multivariável de Saturação (Rosa Têxtil)
+        if (currentLab.a > 22) { 
             if (currentLab.b < -10) return "ROXO";
             if (currentLab.b >= -10 && currentLab.b <= 15) {
-                // Se a luminância for baixa e o canal vermelho predominar massivamente sobre o azul, força Vermelho
                 if (currentLab.L < 36 && r > b * 1.8) return "VERMELHO";
-                // Margem segura para Rosa Têxtil estruturado
                 if (currentLab.L > 35 && currentLab.a > 28) return "ROSA";
             }
         }
@@ -258,11 +257,11 @@
             }
         }
 
-        // 6. Sanitização de Sintaxe e Intercorrências de Bordas Cromáticas
+        // 6. Sanitização e Transições Dinâmicas
         if (matchedName === "LARANJA") {
             if (currentLab.L < 35) return "MARROM";
             if (r > g && g > 130 && (g / r > 0.78)) return "AMARELO";
-            if (currentLab.a > 45 && currentLab.b < 18) return "VERMELHO"; // Transição abrupta de Vermelho Vivo
+            if (currentLab.a > 45 && currentLab.b < 18) return "VERMELHO"; 
         }
 
         return matchedName;
@@ -289,13 +288,12 @@
             let res = getFinalColor(r/count, g/count, b/count);
             
             history.push(res);
-            if (history.length > 18) history.shift(); // Expansão do buffer temporal para amortecimento térmico
+            if (history.length > 18) history.shift(); 
             
             const votes = {};
             history.forEach(x => votes[x] = (votes[x] || 0) + 1);
             const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
 
-            // Corte rigoroso elevado para 10 votos para eliminar oscilações em tecidos/dobras
             if (votes[winner] >= 10) { 
                 if (colorTxt.innerText !== winner) {
                     colorTxt.innerText = winner;
