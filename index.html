@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - Matrix v1.1</title>
+    <title>ColorMatch Pro - Matrix v1.5</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         
@@ -28,7 +28,7 @@
         #video-container { position: relative; width: 100vw; height: 100vh; }
         video { width: 100%; height: 100%; object-fit: cover; }
         
-        /* Elemento de Alvo (Mira Central) - Inicializado Oculto e Sem Estilo */
+        /* Elemento de Alvo (Mira Central) */
         #crosshair { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             border: 2px solid transparent; border-radius: 50%; pointer-events: none; z-index: 10;
@@ -85,58 +85,66 @@
     navigator.mediaDevices.getUserMedia(constraints)
         .then(s => { 
             v.srcObject = s; 
-            v.play().catch(e => console.log("Aguardando ativação por clique no botão de energia."));
+            v.play().catch(e => console.log("Aguardando inicialização lógica do sistema."));
         })
         .catch(() => {
             navigator.mediaDevices.getUserMedia({ video: true }).then(s => { v.srcObject = s; });
         });
 
-    // Barreira de Controle Universal (Ligar / Desligar Sistema com reset completo de UI)
+    // Manipulador Reativo do Modo Universal (Disjuntor Sincronizado)
     function toggleSystem() { 
         active = !active; 
-        document.getElementById('btnPower').classList.toggle('active', active);
-        document.getElementById('btnPower').innerText = 'SISTEMA: ' + (active ? 'ON' : 'OFF');
         
-        if(active) {
-            // Sincroniza e exibe os estados visuais corretos apenas ao ligar
+        const btnPower = document.getElementById('btnPower');
+        btnPower.classList.toggle('active', active);
+        btnPower.innerText = 'SISTEMA: ' + (active ? 'ON' : 'OFF');
+        
+        if (active) {
+            // Reatgasta os seletores visuais do modo atual salvos na memória técnica
             document.getElementById('btnLivre').classList.toggle('active', mode === 'LIVRE');
             document.getElementById('btnPadrao').classList.toggle('active', mode === 'PADRAO');
             cross.className = (mode === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
             colorTxt.innerText = "LENDO...";
-            if(v.paused) { v.play(); }
+            colorTxt.className = "active-text";
+            if (v.paused) { v.play().catch(() => {}); }
         } else { 
-            // Reset absoluto quando desligado
+            // Apaga de forma estrita toda e qualquer classe ativa do DOM
             document.getElementById('btnLivre').classList.remove('active');
             document.getElementById('btnPadrao').classList.remove('active');
+            document.getElementById('btnAudio').classList.remove('audio-on');
+            audioActive = false;
+            document.getElementById('btnAudio').innerText = 'ÁUDIO: OFF';
+            
             cross.className = '';
             cross.style.display = 'none';
+            cross.classList.remove('locked');
+            
             colorTxt.innerText = "INATIVO"; 
             colorTxt.className = ""; 
-            cross.classList.remove('locked');
             history = []; 
         }
     }
 
     function toggleAudio() {
-        if(!active) return; // Trava lógica: impede ligar áudio com sistema OFF
+        if (!active) return; // Barreira intransponível: impede ativação com sistema OFF
         audioActive = !audioActive;
         document.getElementById('btnAudio').classList.toggle('audio-on', audioActive);
         document.getElementById('btnAudio').innerText = 'ÁUDIO: ' + (audioActive ? 'ON' : 'OFF');
-        if(audioActive) speak("Áudio ligado");
+        if (audioActive) speak("Áudio ligado");
     }
 
     function setMode(m) {
-        if(!active) return; // Trava lógica: impede alterar modo com sistema OFF
+        if (!active) return; // Barreira intransponível: impede mudança com sistema OFF
         mode = m;
         document.getElementById('btnLivre').classList.toggle('active', m === 'LIVRE');
         document.getElementById('btnPadrao').classList.toggle('active', m === 'PADRAO');
         cross.className = (m === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
-        if(audioActive) speak("Modo " + m);
+        if (audioActive) speak("Modo " + m);
     }
 
-    // Calibração Volátil por Média de Matriz para Balanço de Branco
+    // Calibração Dinâmica por Matriz para Balanço de Branco
     function calibrate() {
-        if(!active || v.videoWidth === 0) return;
+        if (!active || v.videoWidth === 0) return;
         c.width = v.videoWidth; c.height = v.videoHeight;
         ctx.drawImage(v, 0, 0);
         
@@ -144,12 +152,12 @@
         const sample = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
         let r=0, g=0, b=0, total=0;
         
-        for(let i=0; i<sample.length; i+=4) {
-            if(sample[i] > 250 && sample[i+1] > 250 && sample[i+2] > 250) continue; 
+        for (let i=0; i<sample.length; i+=4) {
+            if (sample[i] > 248 && sample[i+1] > 248 && sample[i+2] > 248) continue; 
             r+=sample[i]; g+=sample[i+1]; b+=sample[i+2]; total++;
         }
         
-        if(total > 0) {
+        if (total > 0) {
             calibR = r / total;
             calibG = g / total;
             calibB = b / total;
@@ -157,10 +165,10 @@
         }
         
         history = []; 
-        if(audioActive) speak("Calibrado");
+        if (audioActive) speak("Calibrado");
     }
 
-    // Conversão Espacial RGB Linearizado para Espaço CIE L*a*b* D65
+    // Transformação para o Espaço de Cores CIE L*a*b* (D65)
     function rgbToLab(r, g, b) {
         r /= 255; g /= 255; b /= 255;
         r = (r > 0.04045) ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
@@ -179,7 +187,7 @@
         return { L: (116 * y) - 16, a: 500 * (x - y), b: 200 * (y - z) };
     }
 
-    // Centroides Geométricos das Cores no Espaço Tridimensional LAB
+    // Coordenadas Centroidais das 11 Cores Restritas
     const LAB_CENTROIDS = [
         { name: "VERMELHO", L: 40,  a: 65,  b: 38 },
         { name: "LARANJA",  L: 58,  a: 35,  b: 55 },
@@ -204,7 +212,7 @@
         let min = Math.min(r, g, b);
         let rgbDiff = max - min;
 
-        // FILTRO DE COERCIBILIDADE NEUTRA (Isqueiro Preto - Vídeo 23.mp4)
+        // Filtro Antiflutuação do Preto Polido (Vídeo 23.mp4)
         if (rawR <= 42 && rawG <= 42 && rawB <= 42) return "PRETO";
         if (r < 48 && g < 48 && b < 48 && rgbDiff < 20) return "PRETO";
 
@@ -222,7 +230,7 @@
 
         let currentLab = rgbToLab(r, g, b);
 
-        // ISOLAMENTO DE SATURAÇÃO DO ROSA TEXTIL (Vídeo 23.mp4)
+        // Isolamento de Saturação do Rosa Têxtil (Vídeo 23.mp4)
         if (currentLab.a > 22) { 
             if (currentLab.b < -12) return "ROXO";
             if (currentLab.b >= -12 && currentLab.b <= 12) {
@@ -233,6 +241,7 @@
         let minDeltaE = Infinity;
         let matchedName = "CINZA";
 
+        // Varredura Euclidiana Delta E
         for (let target of LAB_CENTROIDS) {
             let dL = currentLab.L - target.L;
             let da = currentLab.a - target.a;
@@ -245,10 +254,10 @@
             }
         }
 
+        // Correções de Sintaxe Dinâmica Pós-Busca Segura
         if (matchedName === "LARANJA" && currentLab.L < 35) {
             return "MARROM";
         }
-
         if (matchedName === "LARANJA" && r > g && g > 135 && (g / r > 0.75)) {
             return "AMARELO";
         }
@@ -256,7 +265,7 @@
         return matchedName;
     }
 
-    // Laço Técnico e Mapeamento de Pixels via Canvas Desconectado
+    // Laço Técnico Crítico de Leitura de Matriz
     function loop() {
         if (active && v.videoWidth > 0) {
             c.width = v.videoWidth; c.height = v.videoHeight;
@@ -267,19 +276,21 @@
             const p = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
             
             let r=0, g=0, b=0, count=0;
-            for(let i=0; i<p.length; i+=4) {
-                if(p[i] > 248 && p[i+1] > 248 && p[i+2] > 248) continue; 
+            for (let i=0; i<p.length; i+=4) {
+                // Filtro Especular Ativo (>248)
+                if (p[i] > 248 && p[i+1] > 248 && p[i+2] > 248) continue; 
                 r += p[i]; g += p[i+1]; b += p[i+2];
                 count++;
             }
             
-            if(count === 0) { r=255; g=255; b=255; count=1; }
+            if (count === 0) { r=255; g=255; b=255; count=1; }
             
             let res = getFinalColor(r/count, g/count, b/count);
             
             history.push(res);
-            if(history.length > 15) history.shift(); 
+            if (history.length > 15) history.shift(); 
             
+            // Tratamento por Moda Temporal de Estabilização (Corte rigoroso em 9 votos)
             const votes = {};
             history.forEach(x => votes[x] = (votes[x] || 0) + 1);
             const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
@@ -287,7 +298,6 @@
             if (votes[winner] >= 9) { 
                 if (colorTxt.innerText !== winner) {
                     colorTxt.innerText = winner;
-                    colorTxt.className = "active-text";
                     cross.classList.add('locked');
                     
                     if (audioActive && winner !== lastSpeech) {
@@ -302,12 +312,12 @@
     }
 
     function speak(t) {
-        if(!audioActive || isSpeaking || !t || t === "INATIVO" || !active) return;
+        if (!audioActive || isSpeaking || !t || t === "INATIVO" || !active) return;
         try {
             window.speechSynthesis.cancel();
             const m = new SpeechSynthesisUtterance(t);
             m.lang = 'pt-BR'; 
-            m.rate = 1.9;
+            m.rate = 1.9; // Velocidade mandatória de 1.9x
             m.onstart = () => isSpeaking = true;
             m.onend = () => isSpeaking = false;
             m.onerror = () => isSpeaking = false;
