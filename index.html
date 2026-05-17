@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - v33.0 Ultra Gold</title>
+    <title>ColorMatch Pro - v34.0 Apex Matrix</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -28,8 +28,8 @@
             border: 2px solid rgba(255,255,255,0.7); border-radius: 50%; pointer-events: none; z-index: 10;
             transition: all 0.1s;
         }
-        .mira-livre { width: 16px; height: 16px; }
-        .mira-padrao { width: 15vw; height: 15vw; border: 2px dashed rgba(255,255,255,0.6); }
+        .mira-livre { width: 14px; height: 14px; }
+        .mira-padrao { width: 14vw; height: 14vw; border: 2px dashed rgba(255,255,255,0.6); }
         .locked { border-color: #00ffcc !important; box-shadow: 0 0 20px #00ffcc; background: rgba(0,255,204,0.05); }
 
         #ui-overlay { position: absolute; bottom: 0; width: 100%; padding: 45px 0; background: linear-gradient(transparent, #000 85%); z-index: 20; }
@@ -66,11 +66,10 @@
 
     let active = false, audioActive = false, universalMode = false, mode = 'LIVRE';
     
-    // Balanceamento de ganhos por canal com base em matriz de iluminação ideal
-    let balance = { r: 1.0, g: 1.0, b: 1.0, calibrated: false };
+    // Matriz Von Kries pura para adaptação de iluminante em tempo real
+    let calibGains = { r: 1.0, g: 1.0, b: 1.0 };
     let history = [], lastSpeach = "", isSpeaking = false;
 
-    // Configurações focadas em estabilização de amostragem nativa da câmera
     const constraints = {
         video: {
             facingMode: "environment",
@@ -120,7 +119,6 @@
         c.width = v.videoWidth; c.height = v.videoHeight;
         ctx.drawImage(v, 0, 0);
         
-        // Coleta uma matriz de amostragem maior (16x16) para diluir ruídos cromáticos locais do papel
         const size = 16;
         const sample = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
         let r=0, g=0, b=0, total=0;
@@ -130,103 +128,129 @@
         }
         
         let avgR = r/total, avgG = g/total, avgB = b/total;
-        let target = (avgR + avgG + avgB) / 3;
+        let maxChannel = Math.max(avgR, avgG, avgB);
         
-        // Aplicação matemática do vetor Von Kries para ajuste do iluminante padrão
-        balance.r = target / Math.max(avgR, 1);
-        balance.g = target / Math.max(avgG, 1);
-        balance.b = target / Math.max(avgB, 1);
-        balance.calibrated = true;
+        if(maxChannel > 20) {
+            calibGains.r = maxChannel / avgR;
+            calibGains.g = maxChannel / avgG;
+            calibGains.b = maxChannel / avgB;
+        }
         
         history = []; 
         if(audioActive) speak("Calibrado");
     }
 
-    // Tabela de Centroides de Cor no espaço RGB Normalizado (Evita erros de fronteira de ângulos)
-    const COLOR_CENTROIDS = [
-        { name: "VERMELHO",  r: 0.75, g: 0.12, b: 0.13 },
-        { name: "LARANJA",   r: 0.72, g: 0.33, b: 0.10 },
-        { name: "AMARELO",   r: 0.60, g: 0.58, b: 0.12 },
-        { name: "VERDE",     r: 0.15, g: 0.58, b: 0.25 },
-        { name: "AZUL",      r: 0.12, g: 0.35, b: 0.70 },
-        { name: "ROXO",      r: 0.38, g: 0.15, b: 0.55 },
-        { name: "ROSA",      r: 0.70, g: 0.25, b: 0.52 },
-        { name: "MARROM",    r: 0.42, g: 0.24, b: 0.15 }
+    // Conversão matemática para o espaço de cor Lab (Perceptualmente uniforme)
+    function rgbToLab(r, g, b) {
+        // Normalização RGB
+        r /= 255; g /= 255; b /= 255;
+
+        // Conversão para sRGB Linear
+        r = (r > 0.04045) ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+        g = (g > 0.04045) ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+        b = (b > 0.04045) ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+
+        // Conversão para XYZ (Matriz D65)
+        let x = (r * 0.4124 + g * 0.3576 + b * 0.1805) * 100;
+        let y = (r * 0.2126 + g * 0.7152 + b * 0.0722) * 100;
+        let z = (r * 0.0193 + g * 0.1192 + b * 0.9505) * 100;
+
+        // Referência D65
+        x /= 95.047; y /= 100.000; z /= 108.883;
+
+        x = (x > 0.008856) ? Math.pow(x, 1/3) : (7.787 * x) + (16 / 116);
+        y = (y > 0.008856) ? Math.pow(y, 1/3) : (7.787 * y) + (16 / 116);
+        z = (z > 0.008856) ? Math.pow(z, 1/3) : (7.787 * z) + (16 / 116);
+
+        let L = (116 * y) - 16;
+        let a = 500 * (x - y);
+        let bK = 200 * (y - z);
+
+        return { L, a, b: bK };
+    }
+
+    // Centroides Mapeados estritamente no Espaço Lab D65
+    const LAB_CENTROIDS = [
+        { name: "VERMELHO",  L: 53,  a: 80,  b: 67 },
+        { name: "LARANJA",   L: 67,  a: 43,  b: 74 },
+        { name: "AMARELO",   L: 97,  a: -16, b: 93 },
+        { name: "VERDE",     L: 46,  a: -52, b: 50 },
+        { name: "AZUL",      L: 32,  a: 22,  b: -70 },
+        { name: "ROXO",      L: 29,  a: 58,  b: -60 }, // Centroide focado no isqueiro Roxo real do vídeo
+        { name: "ROSA",      L: 65,  a: 75,  b: -25 }, // Centroide focado na camiseta Rosa
+        { name: "MARROM",    L: 30,  a: 20,  b: 25 }
     ];
 
     function getFinalColor(rawR, rawG, rawB) {
-        // 1. Aplicação Rígida dos Ganhos de Calibração
-        let r = Math.min(255, Math.max(0, rawR * balance.r));
-        let g = Math.min(255, Math.max(0, rawG * balance.g));
-        let b = Math.min(255, Math.max(0, rawB * balance.b));
+        // Aplica matriz de ganhos de balanço de branco
+        let r = Math.min(255, Math.max(0, rawR * calibGains.r));
+        let g = Math.min(255, Math.max(0, rawG * calibGains.g));
+        let b = Math.min(255, Math.max(0, rawB * calibGains.b));
 
-        let sum = r + g + b;
         let max = Math.max(r, g, b);
         let min = Math.min(r, g, b);
         let rgbDiff = max - min;
 
-        // 2. Extração Absoluta de Tons Neutros (Preto, Branco, Cinza) baseada em Delta Cromático
-        if (sum < 50 || (max < 42 && rgbDiff < 18)) return "PRETO";
-        if (min > 185 && rgbDiff < 22) return "BRANCO";
-        if (rgbDiff < 14 && max > 42 && min < 185) return "CINZA";
+        // Isoladores absolutos de Tons Neutros
+        if (max < 45 && rgbDiff < 15) return "PRETO";
+        if (min > 195 && rgbDiff < 20) return "BRANCO";
+        if (rgbDiff < 12 && max > 45 && min < 195) return "CINZA";
 
-        // 3. Normalização Vetorial de Proximidade (Anula variações bruscas de luminosidade)
-        let normR = r / (sum || 1);
-        let normG = g / (sum || 1);
-        let normB = b / (sum || 1);
+        // Converte amostragem atual para Lab
+        let currentLab = rgbToLab(r, g, b);
 
-        // 4. Modo Universal (Redução de Escopo Cromático Direto)
+        // Modo Universal Seletivo por quadrantes Lab
         if (universalMode) {
-            if (normR > 0.45 && normG > 0.42) return "AMARELO";
-            if (normR > 0.48 && normG > 0.22) return "VERMELHO";
-            if (normG > 0.42) return "VERDE";
-            if (normB > 0.42) return "AZUL";
-            if (normR > 0.38 && normB > 0.35) return "ROXO";
-            if (normR > 0.42 && normB > 0.28) return "ROSA";
+            if (currentLab.a > 30 && currentLab.b > 30) {
+                return (currentLab.b > currentLab.a * 1.1) ? "AMARELO" : "VERMELHO";
+            }
+            if (currentLab.a < -15) return "VERDE";
+            if (currentLab.b < -25) return "AZUL";
+            if (currentLab.a > 30 && currentLab.b < 0) {
+                return (currentLab.L < 45) ? "ROXO" : "ROSA";
+            }
+            return "ESPECTRO";
         }
 
-        // 5. Cálculo da Distância Euclidiana Mínima para os Centroides Estabilizados
-        let minDistance = Infinity;
-        let matchedColor = "ANALISANDO";
+        // Busca pela menor distância Delta E (CIE76)
+        let minDeltaE = Infinity;
+        let matchedName = "ANALISANDO";
 
-        for (let centroid of COLOR_CENTROIDS) {
-            let dr = normR - centroid.r;
-            let dg = normG - centroid.g;
-            let db = normB - centroid.b;
-            let distance = Math.sqrt(dr*dr + dg*dg + db*db);
+        for (let target of LAB_CENTROIDS) {
+            let dL = currentLab.L - target.L;
+            let da = currentLab.a - target.a;
+            let db = currentLab.b - target.b;
+            
+            // Fórmula da Distância Euclidiana 3D no espaço Lab
+            let deltaE = Math.sqrt(dL*dL + da*da + db*db);
 
-            if (distance < minDistance) {
-                minDistance = distance;
-                matchedColor = centroid.name;
+            if (deltaE < minDeltaE) {
+                minDeltaE = deltaE;
+                matchedName = target.name;
             }
         }
 
-        // 6. Salvaguardas Matemáticas para Isqueiro Amarelo vs Laranja e Rosa vs Vermelho
-        if (matchedColor === "LARANJA" && normG > 0.41) {
-            return "AMARELO"; 
-        }
-        if (matchedColor === "VERMELHO" && normB > 0.24 && rawR > 130) {
-            return "ROSA";
+        // Refinamento cirúrgico para Amarelo Limão vs Laranja baseado no canal 'b' (azul/amarelo)
+        if (matchedName === "LARANJA" && r > g && g > 160 && (g / r > 0.78)) {
+            return "AMARELO";
         }
 
-        return matchedColor;
+        return matchedName;
     }
 
     function loop() {
         if (active && v.videoWidth > 0) {
             c.width = v.videoWidth; c.height = v.videoHeight;
-            
-            ctx.imageSmoothingEnabled = false; // Desativado para evitar borrão de interpolação nas bordas
+            ctx.imageSmoothingEnabled = false;
             ctx.drawImage(v, 0, 0);
             
-            // Tamanho dinâmico e otimizado da janela de leitura central
             let size = (mode === 'LIVRE' ? 6 : 24); 
             const p = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
             
             let r=0, g=0, b=0, count=0;
             for(let i=0; i<p.length; i+=4) {
-                // Descarta pixels saturados por reflexo especular direto (brilho do plástico)
-                if(p[i] > 252 && p[i+1] > 252 && p[i+2] > 252) continue; 
+                // Elimina reflexos especulares brancos (lâmpada refletida no plástico polido)
+                if(p[i] > 250 && p[i+1] > 250 && p[i+2] > 250) continue; 
                 r += p[i]; g += p[i+1]; b += p[i+2];
                 count++;
             }
@@ -235,16 +259,16 @@
             
             let res = getFinalColor(r/count, g/count, b/count);
             
-            // Histograma Inteligente Amortecido: Reduz o delay da v32 de forma drástica
+            // Buffer amortecido estável de 12 frames
             history.push(res);
-            if(history.length > 10) history.shift(); 
+            if(history.length > 12) history.shift(); 
             
             const votes = {};
             history.forEach(x => votes[x] = (votes[x] || 0) + 1);
             const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
 
-            // Confiança de transição rápida: Exige 60% de dominância no buffer curto (Fim do travamento no ALINHANDO)
-            if (votes[winner] >= 6) { 
+            // Resposta imediata: 7 frames idênticos (Cerca de 200ms) travam a resposta
+            if (votes[winner] >= 7) { 
                 if (colorTxt.innerText !== winner) {
                     colorTxt.innerText = winner;
                     colorTxt.className = "active-text";
@@ -269,7 +293,7 @@
             window.speechSynthesis.cancel();
             const m = new SpeechSynthesisUtterance(t);
             m.lang = 'pt-BR'; 
-            m.rate = 2.0; // Voz mais rápida e responsiva ao operador
+            m.rate = 1.9;
             m.onstart = () => isSpeaking = true;
             m.onend = () => isSpeaking = false;
             m.onerror = () => isSpeaking = false;
