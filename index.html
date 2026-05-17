@@ -28,14 +28,14 @@
         #video-container { position: relative; width: 100vw; height: 100vh; }
         video { width: 100%; height: 100%; object-fit: cover; }
         
-        /* Elemento de Alvo (Mira Central) */
+        /* Elemento de Alvo (Mira Central) - Inicializado Oculto e Sem Estilo */
         #crosshair { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            border: 2px solid rgba(255,255,255,0.7); border-radius: 50%; pointer-events: none; z-index: 10;
-            transition: all 0.1s;
+            border: 2px solid transparent; border-radius: 50%; pointer-events: none; z-index: 10;
+            transition: all 0.1s; display: none;
         }
-        .mira-livre { width: 12px; height: 12px; }
-        .mira-padrao { width: 16vw; height: 16vw; border: 2px dashed rgba(255,255,255,0.6); }
+        .mira-livre { width: 12px; height: 12px; border-color: rgba(255,255,255,0.7) !important; display: block !important; }
+        .mira-padrao { width: 16vw; height: 16vw; border: 2px dashed rgba(255,255,255,0.6) !important; display: block !important; }
         .locked { border-color: #00ffcc !important; box-shadow: 0 0 20px #00ffcc; background: rgba(0,255,204,0.05); }
 
         /* Elementos de Texto do Painel Inferior */
@@ -50,13 +50,13 @@
     <button onclick="toggleSystem()" id="btnPower">SISTEMA: OFF</button>
     <button onclick="toggleAudio()" id="btnAudio">ÁUDIO: OFF</button>
     <button onclick="calibrate()" id="btnCalib">CALIBRAR</button>
-    <button onclick="setMode('LIVRE')" id="btnLivre" class="active">MODO LIVRE</button>
+    <button onclick="setMode('LIVRE')" id="btnLivre">MODO LIVRE</button>
     <button onclick="setMode('PADRAO')" id="btnPadrao">MODO PADRÃO</button>
 </div>
 
 <div id="video-container">
     <video id="v" autoplay playsinline webkit-playsinline muted></video>
-    <div id="crosshair" class="mira-livre"></div>
+    <div id="crosshair"></div>
 </div>
 
 <div id="ui-overlay">
@@ -91,33 +91,47 @@
             navigator.mediaDevices.getUserMedia({ video: true }).then(s => { v.srcObject = s; });
         });
 
-    // Barreira de Controle Universal (Ligar / Desligar Sistema)
+    // Barreira de Controle Universal (Ligar / Desligar Sistema com reset completo de UI)
     function toggleSystem() { 
         active = !active; 
         document.getElementById('btnPower').classList.toggle('active', active);
         document.getElementById('btnPower').innerText = 'SISTEMA: ' + (active ? 'ON' : 'OFF');
-        if(!active) { 
+        
+        if(active) {
+            // Sincroniza e exibe os estados visuais corretos apenas ao ligar
+            document.getElementById('btnLivre').classList.toggle('active', mode === 'LIVRE');
+            document.getElementById('btnPadrao').classList.toggle('active', mode === 'PADRAO');
+            cross.className = (mode === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
+            colorTxt.innerText = "LENDO...";
+            if(v.paused) { v.play(); }
+        } else { 
+            // Reset absoluto quando desligado
+            document.getElementById('btnLivre').classList.remove('active');
+            document.getElementById('btnPadrao').classList.remove('active');
+            cross.className = '';
+            cross.style.display = 'none';
             colorTxt.innerText = "INATIVO"; 
             colorTxt.className = ""; 
             cross.classList.remove('locked');
             history = []; 
         }
-        if(active && v.paused) { v.play(); }
     }
 
     function toggleAudio() {
+        if(!active) return; // Trava lógica: impede ligar áudio com sistema OFF
         audioActive = !audioActive;
         document.getElementById('btnAudio').classList.toggle('audio-on', audioActive);
         document.getElementById('btnAudio').innerText = 'ÁUDIO: ' + (audioActive ? 'ON' : 'OFF');
-        if(audioActive && active) speak("Áudio ligado");
+        if(audioActive) speak("Áudio ligado");
     }
 
     function setMode(m) {
+        if(!active) return; // Trava lógica: impede alterar modo com sistema OFF
         mode = m;
         document.getElementById('btnLivre').classList.toggle('active', m === 'LIVRE');
         document.getElementById('btnPadrao').classList.toggle('active', m === 'PADRAO');
         cross.className = (m === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
-        if(audioActive && active) speak("Modo " + m);
+        if(audioActive) speak("Modo " + m);
     }
 
     // Calibração Volátil por Média de Matriz para Balanço de Branco
@@ -178,7 +192,6 @@
     ];
 
     function getFinalColor(rawR, rawG, rawB) {
-        // Aplicação de Ganho Dinâmico Pós-Calibração
         let rNorm = calibR > 0 ? (rawR / calibR) * 255 : rawR;
         let gNorm = calibG > 0 ? (rawG / calibG) * 255 : rawG;
         let bNorm = calibB > 0 ? (rawB / calibB) * 255 : rawB;
@@ -191,7 +204,7 @@
         let min = Math.min(r, g, b);
         let rgbDiff = max - min;
 
-        // FILTRO DE COERCIBILIDADE NEUTRA (Solução Anti-Flutuação do Isqueiro Preto - Vídeo 23.mp4)
+        // FILTRO DE COERCIBILIDADE NEUTRA (Isqueiro Preto - Vídeo 23.mp4)
         if (rawR <= 42 && rawG <= 42 && rawB <= 42) return "PRETO";
         if (r < 48 && g < 48 && b < 48 && rgbDiff < 20) return "PRETO";
 
@@ -209,7 +222,7 @@
 
         let currentLab = rgbToLab(r, g, b);
 
-        // ISOLAMENTO DE SATURAÇÃO DO ROSA TEXTIL (Filtro Cronometrado Antirruído)
+        // ISOLAMENTO DE SATURAÇÃO DO ROSA TEXTIL (Vídeo 23.mp4)
         if (currentLab.a > 22) { 
             if (currentLab.b < -12) return "ROXO";
             if (currentLab.b >= -12 && currentLab.b <= 12) {
@@ -220,7 +233,6 @@
         let minDeltaE = Infinity;
         let matchedName = "CINZA";
 
-        // Busca e Comparação pelo menor vetor Delta E Euclidiano
         for (let target of LAB_CENTROIDS) {
             let dL = currentLab.L - target.L;
             let da = currentLab.a - target.a;
@@ -233,7 +245,6 @@
             }
         }
 
-        // CORREÇÃO DE EXECUÇÃO: Filtros dinâmicos processados pós-definição segura da variável
         if (matchedName === "LARANJA" && currentLab.L < 35) {
             return "MARROM";
         }
@@ -257,7 +268,6 @@
             
             let r=0, g=0, b=0, count=0;
             for(let i=0; i<p.length; i+=4) {
-                // Filtro Especular Ativo: Suprime reflexos brancos de lâmpadas em plásticos polidos (>248)
                 if(p[i] > 248 && p[i+1] > 248 && p[i+2] > 248) continue; 
                 r += p[i]; g += p[i+1]; b += p[i+2];
                 count++;
@@ -270,7 +280,6 @@
             history.push(res);
             if(history.length > 15) history.shift(); 
             
-            // Tratamento Estatístico por Moda Estabilizadora (Filtro contra oscilação térmica de sensores)
             const votes = {};
             history.forEach(x => votes[x] = (votes[x] || 0) + 1);
             const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
@@ -292,7 +301,6 @@
         requestAnimationFrame(loop);
     }
 
-    // Emissão de Sinais de Áudio via SpeechSynthesisUtterance em Alta Velocidade (1.9x)
     function speak(t) {
         if(!audioActive || isSpeaking || !t || t === "INATIVO" || !active) return;
         try {
