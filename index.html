@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - Fixed Matrix</title>
+    <title>ColorMatch Pro - Fixed Matrix v1.1</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; color: #fff; overflow: hidden; text-align: center; }
         #header { 
@@ -147,18 +147,20 @@
         return { L: (116 * y) - 16, a: 500 * (x - y), b: 200 * (y - z) };
     }
 
+    // Centroides calibrados com maior espaçamento angular para o Rosa da camiseta
     const LAB_CENTROIDS = [
-        { name: "VERMELHO", L: 43,  a: 60,  b: 36 },
-        { name: "LARANJA",  L: 56,  a: 38,  b: 54 },
-        { name: "AMARELO",  L: 85,  a: -6,  b: 76 },
-        { name: "VERDE",    L: 48,  a: -40, b: 35 },
-        { name: "AZUL",     L: 30,  a: 5,   b: -48 },
-        { name: "ROXO",     L: 24,  a: 34,  b: -38 }, 
-        { name: "ROSA",     L: 52,  a: 54,  b: -10 }, 
-        { name: "MARROM",   L: 26,  a: 15,  b: 18 }
+        { name: "VERMELHO", L: 40,  a: 65,  b: 38 },
+        { name: "LARANJA",  L: 58,  a: 35,  b: 55 },
+        { name: "AMARELO",  L: 86,  a: -4,  b: 80 },
+        { name: "VERDE",    L: 46,  a: -42, b: 32 },
+        { name: "AZUL",     L: 28,  a: 6,   b: -50 },
+        { name: "ROXO",     L: 22,  a: 36,  b: -42 }, 
+        { name: "ROSA",     L: 50,  a: 58,  b: -4 },  
+        { name: "MARROM",   L: 24,  a: 16,  b: 16 }
     ];
 
     function getFinalColor(rawR, rawG, rawB) {
+        // Aplicação do balanço de branco
         let rNorm = calibR > 0 ? (rawR / calibR) * 255 : rawR;
         let gNorm = calibG > 0 ? (rawG / calibG) * 255 : rawG;
         let bNorm = calibB > 0 ? (rawB / calibB) * 255 : rawB;
@@ -171,24 +173,37 @@
         let min = Math.min(r, g, b);
         let rgbDiff = max - min;
 
+        // FILTRO DE BARREIRA NEUTRA CRÍTICO (Ajustado pós-vídeo 23.mp4)
+        // Se a luminância bruta ou normalizada for extremamente baixa, força PRETO independente do Lab deltaE
+        if (rawR <= 42 && rawG <= 42 && rawB <= 42) return "PRETO";
+        if (r < 48 && g < 48 && b < 48 && rgbDiff < 20) return "PRETO";
+
         if (isCalibrated) {
-            if (rgbDiff < 30) {
+            if (rgbDiff < 25) {
                 if (rawR >= calibR * 0.75) return "BRANCO";
-                if (rawR <= 40) return "PRETO";
+                if (rawR <= 45) return "PRETO";
                 return "CINZA";
             }
         } else {
-            if (max < 45 && rgbDiff < 15) return "PRETO";
-            if (min > 200 && rgbDiff < 20) return "BRANCO";
+            if (max < 48 && rgbDiff < 15) return "PRETO";
+            if (min > 210 && rgbDiff < 18) return "BRANCO";
             if (rgbDiff < 15) return "CINZA";
         }
 
         let currentLab = rgbToLab(r, g, b);
 
-        if (currentLab.a > 15 && currentLab.b < 8) {
-            if (currentLab.b < -15) return "ROXO";
-            if (currentLab.a > Math.abs(currentLab.b) * 1.3) return "ROSA";
-            return "ROXO";
+        // ISOLAMENTO DO ROSA DA CAMISETA VS VERMELHO/ROXO (Filtro Dinâmico de Cromaticidade)
+        if (currentLab.a > 22) { 
+            // Se o eixo 'a' (vermelho) for predominante e 'b' tender ao azul/neutro
+            if (currentLab.b < -12) return "ROXO";
+            if (currentLab.b >= -12 && currentLab.b <= 12) {
+                if (currentLab.L > 38 && currentLab.a > 30) return "ROSA";
+            }
+        }
+
+        // Filtro para impedir que Marrom/Madeira vire Laranja se a iluminação cair
+        if (matchedName === "LARANJA" && currentLab.L < 35) {
+            return "MARROM";
         }
 
         let minDeltaE = Infinity;
@@ -206,7 +221,7 @@
             }
         }
 
-        if (matchedName === "LARANJA" && r > g && g > 140 && (g / r > 0.78)) {
+        if (matchedName === "LARANJA" && r > g && g > 135 && (g / r > 0.75)) {
             return "AMARELO";
         }
 
@@ -224,6 +239,7 @@
             
             let r=0, g=0, b=0, count=0;
             for(let i=0; i<p.length; i+=4) {
+                // Filtro Especular de reflexo de plástico polido
                 if(p[i] > 248 && p[i+1] > 248 && p[i+2] > 248) continue; 
                 r += p[i]; g += p[i+1]; b += p[i+2];
                 count++;
@@ -234,13 +250,15 @@
             let res = getFinalColor(r/count, g/count, b/count);
             
             history.push(res);
-            if(history.length > 12) history.shift(); 
+            // Buffer expandido para 15 para amortecer oscilações bruscas vistas no vídeo
+            if(history.length > 15) history.shift(); 
             
             const votes = {};
             history.forEach(x => votes[x] = (votes[x] || 0) + 1);
             const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
 
-            if (votes[winner] >= 7) { 
+            // Exige 9 frames estáveis de aprovação para travar e falar
+            if (votes[winner] >= 9) { 
                 if (colorTxt.innerText !== winner) {
                     colorTxt.innerText = winner;
                     colorTxt.className = "active-text";
