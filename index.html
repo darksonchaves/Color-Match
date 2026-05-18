@@ -342,12 +342,42 @@
     );
   }
 
+  /**
+   * Classifica a cor usando métricas CIE L*a*b* D65.
+   * Ordem de avaliação: Incolor → Reflexo → Roxo → Azul → Vermelho → Rosa → Amarelo → Indefinido
+   */
   function classifyColor(lab, dE) {
     const { L, a, b } = lab;
-    if (base && dE < DELTA_E_THRESHOLD)          return { name: 'Incolor / Outro',      color: '#778899' };
-    if (a > 20 && L <= 85 && L > 15)            return { name: 'Vermelho Ótimo',        color: '#e03040' };
-    if (a > 8 && a <= 20 && L > (base ? base.L : 40)) return { name: 'Rosa / Transição', color: '#e07090' };
-    if (L > 85)                                  return { name: 'Reflexo / Saturado',    color: '#ccd0e0' };
+
+    // 1. Incolor / Fundo calibrado
+    if (base && dE < DELTA_E_THRESHOLD)
+      return { name: 'Incolor / Outro', color: '#778899' };
+
+    // 2. Reflexo / Saturado (luminosidade muito alta)
+    if (L > 85)
+      return { name: 'Reflexo / Saturado', color: '#ccd0e0' };
+
+    // 3. Roxo / Violeta: a* positivo E b* marcadamente negativo
+    if (a > 10 && b < -10)
+      return { name: 'Roxo / Violeta', color: '#a855f7' };
+
+    // 4. Azul: b* fortemente negativo (independente de a*)
+    if (b < -20)
+      return { name: 'Azul', color: '#3b82f6' };
+
+    // 5. Vermelho Ótimo: a* fortemente positivo e b* moderadamente positivo
+    if (a > 20 && b > 0 && L > 15 && L <= 85)
+      return { name: 'Vermelho Ótimo', color: '#e03040' };
+
+    // 6. Rosa / Transição: a* moderado
+    if (a >= 8 && a <= 20)
+      return { name: 'Rosa / Transição', color: '#e07090' };
+
+    // 7. Amarelo: b* fortemente positivo e a* neutro ou levemente positivo
+    if (b > 25 && a < 20)
+      return { name: 'Amarelo', color: '#facc15' };
+
+    // 8. Indefinido
     return { name: 'Indefinido', color: '#445566' };
   }
 
@@ -369,6 +399,46 @@
       g: Math.round(gSum / count),
       b: Math.round(bSum / count)
     };
+  }
+
+  // ── Feedback de áudio (speechSynthesis) ─────────────────────────────────
+
+  let lastSpokenName  = '';       // último nome falado
+  let pendingName     = '';       // nome candidato aguardando estabilidade
+  let stableTimer     = null;     // timer de debounce
+  const STABLE_MS     = 1500;     // ms que a cor precisa ser estável antes de falar
+
+  function speakColor(name) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();                 // cancela fala anterior
+    const utt = new SpeechSynthesisUtterance(name);
+    utt.lang  = 'pt-BR';
+    utt.rate  = 1.0;
+    utt.pitch = 1.0;
+    window.speechSynthesis.speak(utt);
+  }
+
+  function triggerAudioIfChanged(name) {
+    if (name === lastSpokenName) {
+      // Mesma cor: cancela qualquer timer pendente de outra cor
+      if (pendingName !== name && stableTimer) {
+        clearTimeout(stableTimer);
+        stableTimer  = null;
+        pendingName  = '';
+      }
+      return;
+    }
+    // Cor diferente: inicia ou reinicia o timer de estabilidade
+    if (name !== pendingName) {
+      pendingName = name;
+      if (stableTimer) clearTimeout(stableTimer);
+      stableTimer = setTimeout(() => {
+        // Só fala se a cor ainda for a mesma após o período de estabilidade
+        lastSpokenName = pendingName;
+        speakColor(pendingName);
+        stableTimer = null;
+      }, STABLE_MS);
+    }
   }
 
   // ── Loop de atualização ──────────────────────────────────────────────────
@@ -396,6 +466,9 @@
       document.getElementById('delta-e-display').textContent =
         `ΔE = ${dE.toFixed(2)} (limiar: ${DELTA_E_THRESHOLD})`;
     }
+
+    // Dispara áudio apenas quando a cor muda e se mantém estável
+    triggerAudioIfChanged(cls.name);
 
     requestAnimationFrame(update);
   }
@@ -478,5 +551,4 @@
 </script>
 </body>
 </html>
-
 
