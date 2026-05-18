@@ -201,6 +201,25 @@
     background: linear-gradient(135deg, #3a2a5e, #6a4a9e);
     color: #edf;
   }
+  /* Botão de áudio — estados OFF e ON */
+  #btn-audio {
+    background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
+    color: #556;
+    border: 1px solid rgba(100,100,150,0.2);
+  }
+  #btn-audio:hover {
+    background: linear-gradient(135deg, #252535, #353550);
+    color: #889;
+  }
+  #btn-audio.audio-on {
+    background: linear-gradient(135deg, #163a1e, #1f6030);
+    color: #6effa0;
+    border: 1px solid rgba(60,200,100,0.45);
+    box-shadow: 0 0 8px rgba(60,200,100,0.2);
+  }
+  #btn-audio.audio-on:hover {
+    background: linear-gradient(135deg, #1e4e28, #2a8040);
+  }
 
   /* Overlay de início */
   #start-overlay {
@@ -288,6 +307,7 @@
     <!-- Botões -->
     <button class="btn" id="btn-calibrate" onclick="calibrate()">&#9670; Calibrar Fundo</button>
     <button class="btn" id="btn-camera" onclick="switchCamera()">&#8635; Alternar Câmera</button>
+    <button class="btn" id="btn-audio" onclick="toggleAudio()">&#128263; Áudio: DESLIGADO</button>
   </div>
 </div>
 
@@ -343,41 +363,56 @@
   }
 
   /**
-   * Classifica a cor usando métricas CIE L*a*b* D65.
-   * Ordem de avaliação: Incolor → Reflexo → Roxo → Azul → Vermelho → Rosa → Amarelo → Indefinido
+   * Classifica a cor usando métricas CIE L*a*b* D65 — Modo Universal Blindado.
+   *
+   * Ordem de avaliação (fronteiras rígidas com &&):
+   *   Incolor → Reflexo → Roxo/Violeta → Azul → Verde/Verde-Limão
+   *   → Amarelo → Vermelho Ótimo → Rosa/Transição → Indefinido
+   *
+   * REGRA CRÍTICA: Roxo é avaliado ANTES do Vermelho para evitar
+   * que a* alto com b* negativo seja engolido pelo vermelho.
    */
   function classifyColor(lab, dE) {
     const { L, a, b } = lab;
 
-    // 1. Incolor / Fundo calibrado
+    // 1. Incolor / Fundo calibrado (prioridade máxima)
     if (base && dE < DELTA_E_THRESHOLD)
       return { name: 'Incolor / Outro', color: '#778899' };
 
-    // 2. Reflexo / Saturado (luminosidade muito alta)
+    // 2. Reflexo / Saturado — L* muito alto
     if (L > 85)
       return { name: 'Reflexo / Saturado', color: '#ccd0e0' };
 
-    // 3. Roxo / Violeta: a* positivo E b* marcadamente negativo
+    // 3. Roxo / Violeta — DEVE vir antes do Vermelho
+    //    Trava dupla: a* positivo E b* marcadamente negativo
     if (a > 10 && b < -10)
       return { name: 'Roxo / Violeta', color: '#a855f7' };
 
-    // 4. Azul: b* fortemente negativo (independente de a*)
-    if (b < -20)
+    // 4. Azul — b* fortemente negativo E a* não está no território roxo
+    //    (a* <= 10 garante que não colida com roxo)
+    if (b < -20 && a <= 10)
       return { name: 'Azul', color: '#3b82f6' };
 
-    // 5. Vermelho Ótimo: a* fortemente positivo e b* moderadamente positivo
-    if (a > 20 && b > 0 && L > 15 && L <= 85)
-      return { name: 'Vermelho Ótimo', color: '#e03040' };
+    // 5. Verde / Verde-Limão — a* marcadamente negativo E b* alto
+    //    Impede que verde-limão seja confundido com amarelo
+    if (a < -10 && b > 20)
+      return { name: 'Verde / Verde-Limão', color: '#4ade80' };
 
-    // 6. Rosa / Transição: a* moderado
-    if (a >= 8 && a <= 20)
-      return { name: 'Rosa / Transição', color: '#e07090' };
-
-    // 7. Amarelo: b* fortemente positivo e a* neutro ou levemente positivo
-    if (b > 25 && a < 20)
+    // 6. Amarelo — b* fortemente positivo, a* neutro ou ligeiramente positivo
+    //    Trava: a* >= -10 (não verde) E a* < 12 (não vermelho/rosa)
+    if (b > 30 && a >= -10 && a < 12)
       return { name: 'Amarelo', color: '#facc15' };
 
-    // 8. Indefinido
+    // 7. Vermelho Ótimo — a* muito alto E b* obrigatoriamente positivo
+    //    Limiares endurecidos: a* > 25 e b* > 5 para separar do rosa
+    if (a > 25 && b > 5 && L > 15 && L <= 85)
+      return { name: 'Vermelho Ótimo', color: '#e03040' };
+
+    // 8. Rosa / Transição — a* moderado a alto sem b* confirmar vermelho
+    if (a >= 12 && a <= 25)
+      return { name: 'Rosa / Transição', color: '#e07090' };
+
+    // 9. Indefinido
     return { name: 'Indefinido', color: '#445566' };
   }
 
@@ -401,16 +436,35 @@
     };
   }
 
-  // ── Feedback de áudio (speechSynthesis) ─────────────────────────────────
+  // ── Feedback de áudio (speechSynthesis) — controlado pelo botão toggle ──
 
+  let audioEnabled    = false;    // chave mestre: só fala quando TRUE
   let lastSpokenName  = '';       // último nome falado
   let pendingName     = '';       // nome candidato aguardando estabilidade
   let stableTimer     = null;     // timer de debounce
-  const STABLE_MS     = 1500;     // ms que a cor precisa ser estável antes de falar
+  const STABLE_MS     = 1500;     // ms de estabilidade antes de falar
+
+  /** Liga/desliga o áudio e atualiza o botão visualmente */
+  function toggleAudio() {
+    audioEnabled = !audioEnabled;
+    const btn = document.getElementById('btn-audio');
+    if (audioEnabled) {
+      btn.textContent = '🔊 Áudio: LIGADO';
+      btn.classList.add('audio-on');
+    } else {
+      btn.textContent = '🔇 Áudio: DESLIGADO';
+      btn.classList.remove('audio-on');
+      // Silencia tudo imediatamente
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
+      pendingName    = '';
+      lastSpokenName = '';
+    }
+  }
 
   function speakColor(name) {
     if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();                 // cancela fala anterior
+    window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(name);
     utt.lang  = 'pt-BR';
     utt.rate  = 1.0;
@@ -418,22 +472,26 @@
     window.speechSynthesis.speak(utt);
   }
 
+  /**
+   * Dispara a fala apenas se:
+   *  - A chave de áudio estiver LIGADA
+   *  - A cor mudou em relação à última falada
+   *  - A nova cor se mantiver estável por STABLE_MS ms
+   */
   function triggerAudioIfChanged(name) {
+    if (!audioEnabled) return;          // chave mestre desligada → ignora
     if (name === lastSpokenName) {
-      // Mesma cor: cancela qualquer timer pendente de outra cor
       if (pendingName !== name && stableTimer) {
         clearTimeout(stableTimer);
-        stableTimer  = null;
-        pendingName  = '';
+        stableTimer = null;
+        pendingName = '';
       }
       return;
     }
-    // Cor diferente: inicia ou reinicia o timer de estabilidade
     if (name !== pendingName) {
       pendingName = name;
       if (stableTimer) clearTimeout(stableTimer);
       stableTimer = setTimeout(() => {
-        // Só fala se a cor ainda for a mesma após o período de estabilidade
         lastSpokenName = pendingName;
         speakColor(pendingName);
         stableTimer = null;
@@ -467,7 +525,7 @@
         `ΔE = ${dE.toFixed(2)} (limiar: ${DELTA_E_THRESHOLD})`;
     }
 
-    // Dispara áudio apenas quando a cor muda e se mantém estável
+    // Áudio só dispara se o botão toggle estiver LIGADO
     triggerAudioIfChanged(cls.name);
 
     requestAnimationFrame(update);
