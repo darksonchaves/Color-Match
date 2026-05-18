@@ -1,420 +1,426 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ColorMatch Pro - Matrix v1.9.1</title>
-    <style>
-        body { 
-            margin: 0; 
-            background: #000; 
-            font-family: sans-serif; 
-            color: #fff; 
-            overflow: hidden; 
-            text-align: center; 
-            user-select: none;
-        }
-        
-        /* Menu Superior de Controle */
-        #header { 
-            position: absolute; 
-            top: 0; 
-            width: 100%; 
-            z-index: 20;
-            background: rgba(10, 10, 10, 0.95); 
-            display: flex; 
-            justify-content: center; 
-            padding: 10px 0; 
-            gap: 8px; 
-            border-bottom: 1px solid #333; 
-            flex-wrap: wrap;
-        }
-        
-        button { 
-            background: #1a1a1a; 
-            color: #aaa; 
-            border: 1px solid #444; 
-            padding: 10px 14px; 
-            border-radius: 6px; 
-            font-weight: bold; 
-            font-size: 11px; 
-            text-transform: uppercase; 
-            cursor: pointer;
-            transition: all 0.1s ease; 
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        /* Estados de Ativação Visual */
-        .active { background: #007bff !important; color: #fff !important; }
-        .audio-on { background: #28a745 !important; color: #fff !important; }
-        
-        /* Botão Mestre Independente: Modo Universal */
-        #btnPower { background: #1a1a1a; color: #aaa; }
-        #btnPower.universal-on { background: #dc3545 !important; color: #fff !important; box-shadow: 0 0 10px #dc3545; }
-
-        /* Renderização e Proporções do Vídeo */
-        #video-container { position: relative; width: 100vw; height: 100vh; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        
-        /* Elemento de Alvo (Mira Central) */
-        #crosshair { 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%);
-            border: 2px solid transparent; 
-            border-radius: 50%; 
-            pointer-events: none; 
-            z-index: 10;
-            transition: all 0.1s; 
-            display: none;
-        }
-        .mira-livre { width: 6px; height: 6px; border: 2px solid rgba(255,255,255,0.8) !important; display: block !important; }
-        .mira-padrao { width: 32px; height: 32px; border: 2px dashed rgba(255,255,255,0.7) !important; display: block !important; }
-        .locked { border-color: #00ffcc !important; box-shadow: 0 0 20px #00ffcc; background: rgba(0,255,204,0.05); }
-
-        /* Elementos de Texto do Painel Inferior */
-        #ui-overlay { 
-            position: absolute; 
-            bottom: 0; 
-            width: 100%; 
-            padding: 45px 0; 
-            background: linear-gradient(transparent, #000 85%); 
-            z-index: 20; 
-        }
-        #color-name { 
-            font-size: 55px; 
-            font-weight: 900; 
-            text-transform: uppercase; 
-            color: #444; 
-            min-height: 70px; 
-            letter-spacing: 2px; 
-        }
-        .active-text { color: #00ffcc !important; text-shadow: 0 0 30px rgba(0,255,204,0.7); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análise Colorimétrica em Tempo Real</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0f;
+    color: #e0e0f0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  #header {
+    background: rgba(15,15,30,0.9);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(100,100,255,0.2);
+    z-index: 10;
+  }
+  #header h1 {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: #7b8cde;
+    text-transform: uppercase;
+  }
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+  #camera-container {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+  }
+  #videoEl {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  #canvasEl {
+    display: none;
+  }
+  #reticle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    pointer-events: none;
+  }
+  .reticle-h {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: rgba(120,220,255,0.8);
+    transform: translateY(-50%);
+  }
+  .reticle-v {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    height: 100%;
+    width: 1px;
+    background: rgba(120,220,255,0.8);
+    transform: translateX(-50%);
+  }
+  .reticle-box {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 1px solid rgba(120,220,255,0.6);
+  }
+  #panel {
+    width: 280px;
+    background: rgba(12,12,25,0.97);
+    border-left: 1px solid rgba(100,100,255,0.15);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 16px;
+    gap: 16px;
+    overflow-y: auto;
+  }
+  .panel-section {
+    background: rgba(30,30,60,0.5);
+    border: 1px solid rgba(100,100,255,0.15);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .panel-section h3 {
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #7b8cde;
+    margin-bottom: 10px;
+  }
+  .data-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .data-label {
+    font-size: 0.75rem;
+    color: #888;
+  }
+  .data-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+    color: #dde;
+  }
+  #color-swatch {
+    width: 100%;
+    height: 60px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: background 0.3s ease;
+  }
+  #color-name {
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  #delta-e-display {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 4px;
+  }
+  .btn {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+  }
+  #btn-calibrate {
+    background: linear-gradient(135deg, #2a2a6e, #3a3a9e);
+    color: #aac;
+    border: 1px solid rgba(100,100,255,0.3);
+  }
+  #btn-calibrate:hover {
+    background: linear-gradient(135deg, #3a3a8e, #5a5abe);
+    color: #eef;
+  }
+  #btn-calibrate.calibrated {
+    background: linear-gradient(135deg, #1a4a2e, #2a7a4e);
+    border-color: rgba(50,200,100,0.4);
+    color: #8fc;
+  }
+  #btn-camera {
+    background: linear-gradient(135deg, #2a1a3e, #4a2a6e);
+    color: #bac;
+    border: 1px solid rgba(180,100,255,0.3);
+  }
+  #btn-camera:hover {
+    background: linear-gradient(135deg, #3a2a5e, #6a4a9e);
+    color: #edf;
+  }
+  #base-info {
+    font-size: 0.7rem;
+    color: #556;
+    text-align: center;
+    min-height: 16px;
+  }
+  #start-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    gap: 16px;
+  }
+  #start-overlay p {
+    color: #778;
+    font-size: 0.9rem;
+  }
+  #btn-start {
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #3a3a9e, #7b5ce8);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+  #btn-start:hover { transform: scale(1.05); }
+</style>
 </head>
 <body>
-
 <div id="header">
-    <button onclick="toggleUniversal()" id="btnPower">SISTEMA: OFF</button>
-    <button onclick="toggleAudio()" id="btnAudio">ÁUDIO: OFF</button>
-    <button onclick="calibrate()" id="btnCalib">CALIBRAR</button>
-    <button onclick="setMode('LIVRE')" id="btnLivre">MODO LIVRE</button>
-    <button onclick="setMode('PADRAO')" id="btnPadrao">MODO PADRÃO</button>
+  <h1>&#9632; Análise Colorimétrica</h1>
+  <span style="font-size:0.7rem;color:#445;letter-spacing:1px;">CIE L*a*b* D65</span>
 </div>
-
-<div id="video-container">
-    <video id="v" autoplay playsinline webkit-playsinline muted></video>
-    <div id="crosshair"></div>
+<div id="main">
+  <div id="camera-container">
+    <video id="videoEl" autoplay playsinline muted></video>
+    <canvas id="canvasEl"></canvas>
+    <div id="reticle">
+      <div class="reticle-h"></div>
+      <div class="reticle-v"></div>
+      <div class="reticle-box"></div>
+    </div>
+    <div id="start-overlay">
+      <p>Clique para iniciar a câmera</p>
+      <button id="btn-start" onclick="startCamera()">&#9654; Iniciar Câmera</button>
+    </div>
+  </div>
+  <div id="panel">
+    <div class="panel-section">
+      <h3>&#9632; Cor Detectada</h3>
+      <div id="color-swatch" style="background:#1a1a2e;"></div>
+      <div id="color-name" style="color:#445;">Aguardando câmera...</div>
+      <div id="delta-e-display"></div>
+    </div>
+    <div class="panel-section">
+      <h3>&#9632; Valores RGB</h3>
+      <div class="data-row"><span class="data-label">R</span><span class="data-value" id="val-r">---</span></div>
+      <div class="data-row"><span class="data-label">G</span><span class="data-value" id="val-g">---</span></div>
+      <div class="data-row"><span class="data-label">B</span><span class="data-value" id="val-b">---</span></div>
+    </div>
+    <div class="panel-section">
+      <h3>&#9632; CIE L*a*b* (D65)</h3>
+      <div class="data-row"><span class="data-label">L*</span><span class="data-value" id="val-L">---</span></div>
+      <div class="data-row"><span class="data-label">a*</span><span class="data-value" id="val-a">---</span></div>
+      <div class="data-row"><span class="data-label">b*</span><span class="data-value" id="val-bb">---</span></div>
+    </div>
+    <div class="panel-section">
+      <h3>&#9632; Base Neutra Calibrada</h3>
+      <div id="base-info">Não calibrado</div>
+    </div>
+    <button class="btn" id="btn-calibrate" onclick="calibrate()">&#9670; Calibrar Fundo</button>
+    <button class="btn" id="btn-camera" onclick="switchCamera()">&#8635; Alternar Câmera</button>
+  </div>
 </div>
-
-<div id="ui-overlay">
-    <div id="color-name">INATIVO</div>
-</div>
-
-<canvas id="c" style="display:none;"></canvas>
-
 <script>
-    const v = document.getElementById('v'), c = document.getElementById('c');
-    const ctx = c.getContext('2d', {willReadFrequently: true, alpha: false});
-    const colorTxt = document.getElementById('color-name'), cross = document.getElementById('crosshair');
+  const video = document.getElementById('videoEl');
+  const canvas = document.getElementById('canvasEl');
+  const ctx = canvas.getContext('2d');
 
-    // Inicialização Absoluta - Nenhum submódulo ativo por padrão
-    let universalActive = false, audioActive = false, mode = null;
-    
-    // Parâmetros de Balanço de Branco
-    let calibR = 255, calibG = 255, calibB = 255; 
-    let isCalibrated = false;
-    let history = [], lastSpeech = "", isSpeaking = false;
+  let stream = null;
+  let devices = [];
+  let deviceIndex = 0;
+  let running = false;
+  let base = null; // calibrated neutral base {L, a, b}
+  const SAMPLE = 10; // half-size of sampling area
+  const DELTA_E_THRESHOLD = 12;
 
-    // Centroides Espaciais CIE L*a*b* Estabilizados
-    const LAB_CENTROIDS = [
-        { name: "VERMELHO", L: 38,  a: 68,  b: 40 },
-        { name: "LARANJA",  L: 56,  a: 38,  b: 58 },
-        { name: "AMARELO",  L: 86,  a: -4,  b: 82 },
-        { name: "VERDE",    L: 48,  a: -48, b: 34 },
-        { name: "AZUL",     L: 26,  a: 8,   b: -52 },
-        { name: "ROXO",     L: 20,  a: 38,  b: -44 }, 
-        { name: "ROSA",     L: 52,  a: 60,  b: -2 },   
-        { name: "MARROM",   L: 24,  a: 16,  b: 16 }
-    ];
+  // Gamma correction: sRGB -> linear
+  function linearize(c) {
+    const v = c / 255;
+    return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  }
 
-    // Inicialização nativa do stream de vídeo
-    const constraints = {
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }
+  // sRGB linear -> XYZ D65
+  function rgbToXYZ(r, g, b) {
+    const rl = linearize(r), gl = linearize(g), bl = linearize(b);
+    return {
+      X: (0.4124564 * rl + 0.3575761 * gl + 0.1804375 * bl) * 100,
+      Y: (0.2126729 * rl + 0.7151522 * gl + 0.0721750 * bl) * 100,
+      Z: (0.0193339 * rl + 0.1191920 * gl + 0.9503041 * bl) * 100
     };
+  }
 
-    navigator.mediaDevices.getUserMedia(constraints)
-        .then(s => { 
-            v.srcObject = s; 
-            v.play().catch(() => {});
-        })
-        .catch(() => {
-            navigator.mediaDevices.getUserMedia({ video: true }).then(s => { v.srcObject = s; });
-        });
-
-    // BARREIRA LÓGICA INTRANSIVEIL - MODO UNIVERSAL MESTRE
-    function toggleUniversal() { 
-        universalActive = !universalActive; 
-        
-        const btnPower = document.getElementById('btnPower');
-        btnPower.classList.toggle('universal-on', universalActive);
-        btnPower.innerText = 'SISTEMA: ' + (universalActive ? 'ON' : 'OFF');
-        
-        if (universalActive) {
-            // Não pré-ativa modos visuais automaticamente. Aguarda o clique do usuário.
-            colorTxt.innerText = "SISTEMA PRONTO";
-            colorTxt.className = "active-text";
-            if (v.paused) { v.play().catch(() => {}); }
-        } else { 
-            // Reset Completo e Forçado de Segurança (Congelamento)
-            audioActive = false;
-            mode = null;
-            
-            const btnAudio = document.getElementById('btnAudio');
-            btnAudio.classList.remove('active', 'audio-on');
-            btnAudio.innerText = 'ÁUDIO: OFF';
-            
-            document.getElementById('btnLivre').classList.remove('active');
-            document.getElementById('btnPadrao').classList.remove('active');
-            
-            cross.className = '';
-            cross.style.display = 'none';
-            cross.classList.remove('locked');
-            
-            colorTxt.innerText = "INATIVO"; 
-            colorTxt.className = ""; 
-            history = []; 
-        }
+  // XYZ -> CIE L*a*b* D65
+  function xyzToLab(X, Y, Z) {
+    const Xn = 95.047, Yn = 100.000, Zn = 108.883;
+    const e = 0.008856, k = 903.3;
+    function f(t) {
+      return t > e ? Math.cbrt(t) : (k * t + 16) / 116;
     }
+    const fx = f(X / Xn), fy = f(Y / Yn), fz = f(Z / Zn);
+    return {
+      L: 116 * fy - 16,
+      a: 500 * (fx - fy),
+      b: 200 * (fy - fz)
+    };
+  }
 
-    function toggleAudio() {
-        if (!universalActive) return; 
-        audioActive = !audioActive;
-        const btnAudio = document.getElementById('btnAudio');
-        btnAudio.classList.toggle('active', audioActive);
-        btnAudio.classList.toggle('audio-on', audioActive);
-        btnAudio.innerText = 'ÁUDIO: ' + (audioActive ? 'ON' : 'OFF');
-        if (audioActive) speak("Áudio ligado");
+  function rgbToLab(r, g, b) {
+    const xyz = rgbToXYZ(r, g, b);
+    return xyzToLab(xyz.X, xyz.Y, xyz.Z);
+  }
+
+  function deltaE(lab1, lab2) {
+    return Math.sqrt(
+      Math.pow(lab1.L - lab2.L, 2) +
+      Math.pow(lab1.a - lab2.a, 2) +
+      Math.pow(lab1.b - lab2.b, 2)
+    );
+  }
+
+  function classifyColor(lab, dE) {
+    const { L, a, b } = lab;
+    if (base && dE < DELTA_E_THRESHOLD) {
+      return { name: 'Incolor / Outro', color: '#778899' };
     }
-
-    function setMode(m) {
-        if (!universalActive) return; 
-        mode = m;
-        document.getElementById('btnLivre').classList.toggle('active', m === 'LIVRE');
-        document.getElementById('btnPadrao').classList.toggle('active', m === 'PADRAO');
-        
-        cross.className = (m === 'LIVRE' ? 'mira-livre' : 'mira-padrao');
-        colorTxt.innerText = "LENDO...";
-        history = []; 
+    if (a > 20 && L <= 85 && L > 15) {
+      return { name: 'Vermelho Ótimo', color: '#e03040' };
     }
-
-    function calibrate() {
-        if (!universalActive || v.videoWidth === 0) return;
-        c.width = v.videoWidth; c.height = v.videoHeight;
-        ctx.drawImage(v, 0, 0);
-        
-        const size = 20;
-        const sample = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
-        let r=0, g=0, b=0, total=0;
-        
-        for (let i=0; i<sample.length; i+=4) {
-            if (sample[i] > 248 && sample[i+1] > 248 && sample[i+2] > 248) continue; 
-            r+=sample[i]; g+=sample[i+1]; b+=sample[i+2]; total++;
-        }
-        
-        if (total > 0) {
-            calibR = r / total;
-            calibG = g / total;
-            calibB = b / total;
-            isCalibrated = true;
-        }
-        
-        history = []; 
-        if (audioActive) speak("Calibrado");
+    if (a > 8 && a <= 20 && L > (base ? base.L : 40)) {
+      return { name: 'Rosa / Transição', color: '#e07090' };
     }
-
-    function rgbToLab(r, g, b) {
-        r /= 255; g /= 255; b /= 255;
-        r = (r > 0.04045) ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
-        g = (g > 0.04045) ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
-        b = (b > 0.04045) ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
-
-        let x = (r * 0.4124 + g * 0.3576 + b * 0.1805) * 100;
-        let y = (r * 0.2126 + g * 0.7152 + b * 0.0722) * 100;
-        let z = (r * 0.0193 + g * 0.1192 + b * 0.9505) * 100;
-
-        x /= 95.047; y /= 100.000; z /= 108.883;
-        x = (x > 0.008856) ? Math.pow(x, 1/3) : (7.787 * x) + (16 / 116);
-        y = (y > 0.008856) ? Math.pow(y, 1/3) : (7.787 * y) + (16 / 116);
-        z = (z > 0.008856) ? Math.pow(z, 1/3) : (7.787 * z) + (16 / 116);
-
-        return { L: (116 * y) - 16, a: 500 * (x - y), b: 200 * (y - z) };
+    if (L > 85) {
+      return { name: 'Reflexo / Saturado', color: '#ccd0e0' };
     }
+    return { name: 'Indefinido', color: '#445566' };
+  }
 
-    function getFinalColor(rawR, rawG, rawB) {
-        // CORREÇÃO FILTRADA (Vídeo 28.mp4): Teto estendido para capturar Preto Polido com reflexo periférico
-        if (rawR <= 45 && rawG <= 45 && rawB <= 45) return "PRETO";
-
-        let rNorm = calibR > 0 ? (rawR / calibR) * 255 : rawR;
-        let gNorm = calibG > 0 ? (rawG / calibG) * 255 : rawG;
-        let bNorm = calibB > 0 ? (rawB / calibB) * 255 : rawB;
-
-        let r = Math.min(255, Math.max(0, rNorm));
-        let g = Math.min(255, Math.max(0, gNorm));
-        let b = Math.min(255, Math.max(0, bNorm));
-
-        let max = Math.max(r, g, b);
-        let min = Math.min(r, g, b);
-        let rgbDiff = max - min;
-
-        if (r < 50 && g < 50 && b < 50 && rgbDiff < 20) return "PRETO";
-
-        // Classificação Acromática Rígida
-        if (isCalibrated) {
-            if (rgbDiff < 25) {
-                if (rawR >= calibR * 0.76) return "BRANCO";
-                if (rawR <= 45) return "PRETO";
-                return "CINZA";
-            }
-        } else {
-            if (max < 48 && rgbDiff < 15) return "PRETO";
-            if (min > 210 && rgbDiff < 18) return "BRANCO";
-            if (rgbDiff < 16) return "CINZA";
-        }
-
-        let currentLab = rgbToLab(r, g, b);
-        let chroma = Math.sqrt(currentLab.a * currentLab.a + currentLab.b * currentLab.b);
-
-        if (chroma < 12) {
-            if (currentLab.L > 75) return "BRANCO";
-            if (currentLab.L < 30) return "PRETO";
-            return "CINZA";
-        }
-
-        // CORREÇÃO MANDATÓRIA (Vídeo 25): Superexposição de Verdes Limão
-        if (g > r && g > b) {
-            if (currentLab.L > 50 && (currentLab.a < -10 || (g / r > 1.15))) return "VERDE";
-        }
-
-        // CORREÇÃO CRÍTICA CRUCIAL (Vídeo 28.mp4): Isolamento Antioscilamento Vermelho vs Rosa
-        // Casamento de barreiras condicionais por amostragem vetorial para blindar tampas plásticas
-        if (currentLab.a > 18) {
-            if (currentLab.b < -8) return "ROXO";
-            if (currentLab.b >= -8 && currentLab.b <= 24) {
-                // Se houver dominância expressiva de R em relação a B, força Vermelho e impede desvio para Rosa
-                if (r > b * 1.62) {
-                    return "VERMELHO";
-                }
-                // Filtro refinado de Rosa para malhas têxteis reais sob iluminação difusa
-                if (currentLab.L > 45 && b > 65 && currentLab.a > 22) {
-                    return "ROSA";
-                }
-                return "VERMELHO";
-            }
-        }
-
-        let minDeltaE = Infinity;
-        let matchedName = "CINZA";
-
-        // Laço Euclidiano Delta E
-        for (let target of LAB_CENTROIDS) {
-            let dL = currentLab.L - target.L;
-            let da = currentLab.a - target.a;
-            let db = currentLab.b - target.b;
-            let deltaE = Math.sqrt(dL*dL + da*da + db*db);
-
-            if (deltaE < minDeltaE) {
-                minDeltaE = deltaE;
-                matchedName = target.name;
-            }
-        }
-
-        // Limiares de Transição Estabilizados
-        if (matchedName === "LARANJA") {
-            if (currentLab.L < 32) return "MARROM";
-            if (r > g && g > 115 && (g / r > 0.82)) return "AMARELO";
-            if (currentLab.a > 42 && currentLab.b < 24) return "VERMELHO"; 
-        }
-
-        if (matchedName === "AMARELO") {
-            if (currentLab.a < -5 && g > r) return "VERDE";
-        }
-
-        return matchedName;
+  function samplePixels() {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+    const cx = Math.floor(canvas.width / 2);
+    const cy = Math.floor(canvas.height / 2);
+    const data = ctx.getImageData(cx - SAMPLE, cy - SAMPLE, SAMPLE * 2, SAMPLE * 2).data;
+    let rSum = 0, gSum = 0, bSum = 0, count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      rSum += data[i]; gSum += data[i+1]; bSum += data[i+2]; count++;
     }
+    return {
+      r: Math.round(rSum / count),
+      g: Math.round(gSum / count),
+      b: Math.round(bSum / count)
+    };
+  }
 
-    function loop() {
-        // CURTO-CIRCUITO LOGICO MESTRE: Totalmente adormecido se SISTEMA estiver OFF
-        if (!universalActive) {
-            requestAnimationFrame(loop);
-            return;
-        }
+  function update() {
+    if (!running || video.readyState < 2) { requestAnimationFrame(update); return; }
+    const { r, g, b } = samplePixels();
+    const lab = rgbToLab(r, g, b);
+    const dE = base ? deltaE(lab, base) : 999;
+    const classification = classifyColor(lab, dE);
 
-        // Só processa dados se o usuário tiver selecionado um dos modos de amostragem
-        if (mode && v.videoWidth > 0) {
-            c.width = v.videoWidth; c.height = v.videoHeight;
-            ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(v, 0, 0);
-            
-            let size = (mode === 'LIVRE' ? 6 : 32); 
-            const p = ctx.getImageData(v.videoWidth/2 - size/2, v.videoHeight/2 - size/2, size, size).data;
-            
-            let r=0, g=0, b=0, count=0;
-            for (let i=0; i<p.length; i+=4) {
-                // Filtro Especular Ativo (>248)
-                if (p[i] > 248 && p[i+1] > 248 && p[i+2] > 248) continue; 
-                r += p[i]; g += p[i+1]; b += p[i+2];
-                count++;
-            }
-            
-            if (count === 0) { r=255; g=255; b=255; count=1; }
-            
-            let res = getFinalColor(r/count, g/count, b/count);
-            
-            // Estabilização por Moda Temporal (18 frames)
-            history.push(res);
-            if (history.length > 18) history.shift(); 
-            
-            const votes = {};
-            history.forEach(x => votes[x] = (votes[x] || 0) + 1);
-            const winner = Object.keys(votes).reduce((a, b) => votes[a] > votes[b] ? a : b);
-
-            // Corte rigoroso fixado em 10 votos para travar estado visual
-            if (votes[winner] >= 10) { 
-                if (colorTxt.innerText !== winner) {
-                    colorTxt.innerText = winner;
-                    cross.classList.add('locked');
-                    
-                    if (audioActive && winner !== lastSpeech) {
-                        speak(winner);
-                    }
-                }
-            } else {
-                cross.classList.remove('locked');
-            }
-        }
-        requestAnimationFrame(loop);
+    document.getElementById('val-r').textContent = r;
+    document.getElementById('val-g').textContent = g;
+    document.getElementById('val-b').textContent = b;
+    document.getElementById('val-L').textContent = lab.L.toFixed(2);
+    document.getElementById('val-a').textContent = lab.a.toFixed(2);
+    document.getElementById('val-bb').textContent = lab.b.toFixed(2);
+    document.getElementById('color-swatch').style.background = `rgb(${r},${g},${b})`;
+    document.getElementById('color-name').textContent = classification.name;
+    document.getElementById('color-name').style.color = classification.color;
+    if (base) {
+      document.getElementById('delta-e-display').textContent = `ΔE = ${dE.toFixed(2)} (limiar: ${DELTA_E_THRESHOLD})`;
     }
+    requestAnimationFrame(update);
+  }
 
-    function speak(t) {
-        if (!audioActive || isSpeaking || !t || t === "INATIVO" || !universalActive) return;
-        try {
-            window.speechSynthesis.cancel();
-            const m = new SpeechSynthesisUtterance(t);
-            m.lang = 'pt-BR'; 
-            m.rate = 1.9; // Velocidade Mandatória de 1.9x
-            m.onstart = () => isSpeaking = true;
-            m.onend = () => isSpeaking = false;
-            m.onerror = () => isSpeaking = false;
-            window.speechSynthesis.speak(m);
-            lastSpeech = t;
-        } catch(e) {
-            isSpeaking = false;
-        }
+  async function getDevices() {
+    const devs = await navigator.mediaDevices.enumerateDevices();
+    devices = devs.filter(d => d.kind === 'videoinput');
+  }
+
+  async function startCamera() {
+    document.getElementById('start-overlay').style.display = 'none';
+    await getDevices();
+    await openCamera();
+    running = true;
+    requestAnimationFrame(update);
+  }
+
+  async function openCamera() {
+    if (stream) { stream.getTracks().forEach(t => t.stop()); }
+    const constraints = devices.length > 0
+      ? { video: { deviceId: { exact: devices[deviceIndex].deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } } }
+      : { video: { facingMode: 'environment' } };
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      video.srcObject = stream;
+    } catch (e) {
+      alert('Erro ao acessar a câmera: ' + e.message);
     }
-    
-    loop();
+  }
+
+  async function switchCamera() {
+    if (devices.length < 2) { alert('Apenas uma câmera disponível.'); return; }
+    deviceIndex = (deviceIndex + 1) % devices.length;
+    await openCamera();
+  }
+
+  function calibrate() {
+    if (!running) { alert('Inicie a câmera primeiro.'); return; }
+    const { r, g, b } = samplePixels();
+    base = rgbToLab(r, g, b);
+    const btn = document.getElementById('btn-calibrate');
+    btn.textContent = '✓ Base Calibrada';
+    btn.classList.add('calibrated');
+    document.getElementById('base-info').textContent =
+      `L*=${base.L.toFixed(1)}  a*=${base.a.toFixed(1)}  b*=${base.b.toFixed(1)}`;
+  }
 </script>
 </body>
 </html>
+
