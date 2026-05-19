@@ -259,7 +259,7 @@
       background: linear-gradient(135deg, #1e4e28, #2a8040);
     }
 
-    /* Overlay de início */
+    /* Overlay de início — SOLUÇÃO DA TRAVA: Camada máxima absoluta */
     #start-overlay {
       position: absolute;
       inset: 0;
@@ -268,7 +268,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 8;
+      z-index: 9999; /* Sobrepõe o painel flutuante para garantir o clique */
       gap: 16px;
     }
 
