@@ -6,6 +6,7 @@
 <title>Análise Colorimétrica em Tempo Real</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
   body {
     background: #0a0a0f;
     color: #e0e0f0;
@@ -15,6 +16,7 @@
     display: flex;
     flex-direction: column;
   }
+
   #header {
     background: rgba(10,10,20,0.75);
     padding: 8px 16px;
@@ -24,6 +26,7 @@
     border-bottom: 1px solid rgba(100,100,255,0.15);
     z-index: 10;
     position: relative;
+    flex-shrink: 0;
   }
   #header h1 {
     font-size: 0.85rem;
@@ -32,11 +35,13 @@
     color: #7b8cde;
     text-transform: uppercase;
   }
+
   #main {
     flex: 1;
     position: relative;
     overflow: hidden;
   }
+
   #camera-container {
     position: absolute;
     inset: 0;
@@ -45,16 +50,19 @@
     justify-content: center;
     background: #000;
   }
+
+  /* FIX MIRA: vídeo com z-index 1 para não engolir elementos acima */
   #videoEl {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
+    z-index: 1;
   }
-  #canvasEl {
-    display: none;
-  }
+  #canvasEl { display: none; }
 
-  /* ── Mira centralizada ── */
+  /* FIX MIRA: z-index 20 + linhas 2px + cor contrastante rgba(120,220,255,0.9) */
   #reticle {
     position: absolute;
     top: 50%;
@@ -63,15 +71,15 @@
     width: 60px;
     height: 60px;
     pointer-events: none;
-    z-index: 4;
+    z-index: 20;
   }
   .reticle-h {
     position: absolute;
     top: 50%;
     left: 0;
     width: 100%;
-    height: 1px;
-    background: rgba(120,220,255,0.8);
+    height: 2px;
+    background: rgba(120,220,255,0.9);
     transform: translateY(-50%);
   }
   .reticle-v {
@@ -79,8 +87,8 @@
     left: 50%;
     top: 0;
     height: 100%;
-    width: 1px;
-    background: rgba(120,220,255,0.8);
+    width: 2px;
+    background: rgba(120,220,255,0.9);
     transform: translateX(-50%);
   }
   .reticle-box {
@@ -90,10 +98,9 @@
     transform: translate(-50%, -50%);
     width: 20px;
     height: 20px;
-    border: 1px solid rgba(120,220,255,0.6);
+    border: 2px solid rgba(120,220,255,0.7);
   }
 
-  /* ── Painel flutuante compacto — canto inferior esquerdo ── */
   #panel {
     position: absolute;
     bottom: 20px;
@@ -106,12 +113,11 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    z-index: 6;
+    z-index: 15;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
 
-  /* Swatch de cor + nome */
   #color-swatch {
     width: 100%;
     height: 36px;
@@ -131,9 +137,8 @@
     font-size: 0.62rem;
     color: #667;
     margin-top: 1px;
+    min-height: 14px;
   }
-
-  /* Linhas de dados compactadas */
   .data-compact {
     font-size: 0.68rem;
     font-family: 'Courier New', monospace;
@@ -141,12 +146,7 @@
     line-height: 1.6;
     letter-spacing: 0.2px;
   }
-  .data-compact span.lbl {
-    color: #668;
-    margin-right: 2px;
-  }
-
-  /* Base calibrada */
+  .data-compact span.lbl { color: #668; margin-right: 2px; }
   #base-info {
     font-size: 0.62rem;
     color: #556;
@@ -160,12 +160,8 @@
     color: #7b8cde;
     margin-bottom: 3px;
   }
-  hr.divider {
-    border: none;
-    border-top: 1px solid rgba(100,100,255,0.1);
-  }
+  hr.divider { border: none; border-top: 1px solid rgba(100,100,255,0.1); }
 
-  /* Botões compactos */
   .btn {
     width: 100%;
     padding: 7px;
@@ -183,10 +179,7 @@
     color: #aac;
     border: 1px solid rgba(100,100,255,0.3);
   }
-  #btn-calibrate:hover {
-    background: linear-gradient(135deg, #3a3a8e, #5a5abe);
-    color: #eef;
-  }
+  #btn-calibrate:hover { background: linear-gradient(135deg, #3a3a8e, #5a5abe); color: #eef; }
   #btn-calibrate.calibrated {
     background: linear-gradient(135deg, #1a4a2e, #2a7a4e);
     border-color: rgba(50,200,100,0.4);
@@ -197,51 +190,32 @@
     color: #bac;
     border: 1px solid rgba(180,100,255,0.3);
   }
-  #btn-camera:hover {
-    background: linear-gradient(135deg, #3a2a5e, #6a4a9e);
-    color: #edf;
-  }
-  /* Botão de áudio — estados OFF e ON */
+  #btn-camera:hover { background: linear-gradient(135deg, #3a2a5e, #6a4a9e); color: #edf; }
   #btn-audio {
     background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
     color: #556;
     border: 1px solid rgba(100,100,150,0.2);
   }
-  #btn-audio:hover {
-    background: linear-gradient(135deg, #252535, #353550);
-    color: #889;
-  }
+  #btn-audio:hover { background: linear-gradient(135deg, #252535, #353550); color: #889; }
   #btn-audio.audio-on {
     background: linear-gradient(135deg, #163a1e, #1f6030);
     color: #6effa0;
     border: 1px solid rgba(60,200,100,0.45);
     box-shadow: 0 0 8px rgba(60,200,100,0.2);
   }
-  #btn-audio.audio-on:hover {
-    background: linear-gradient(135deg, #1e4e28, #2a8040);
-  }
-
-  /* Botão Modo Universal — estados OFF e ON */
   #btn-universal {
     background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
     color: #556;
     border: 1px solid rgba(100,100,150,0.2);
   }
-  #btn-universal:hover {
-    background: linear-gradient(135deg, #252535, #353550);
-    color: #889;
-  }
+  #btn-universal:hover { background: linear-gradient(135deg, #252535, #353550); color: #889; }
   #btn-universal.universal-on {
     background: linear-gradient(135deg, #163a1e, #1f6030);
     color: #6effa0;
     border: 1px solid rgba(60,200,100,0.45);
     box-shadow: 0 0 8px rgba(60,200,100,0.2);
   }
-  #btn-universal.universal-on:hover {
-    background: linear-gradient(135deg, #1e4e28, #2a8040);
-  }
 
-  /* Overlay de início */
   #start-overlay {
     position: absolute;
     inset: 0;
@@ -250,13 +224,10 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 8;
+    z-index: 30;
     gap: 16px;
   }
-  #start-overlay p {
-    color: #778;
-    font-size: 0.9rem;
-  }
+  #start-overlay p { color: #778; font-size: 0.9rem; }
   #btn-start {
     padding: 14px 32px;
     background: linear-gradient(135deg, #3a3a9e, #7b5ce8);
@@ -273,6 +244,7 @@
 </style>
 </head>
 <body>
+
 <div id="header">
   <h1>&#9632; Análise Colorimétrica</h1>
   <span style="font-size:0.65rem;color:#445;letter-spacing:1px;">CIE L*a*b* · D65</span>
@@ -283,36 +255,31 @@
     <video id="videoEl" autoplay playsinline muted></video>
     <canvas id="canvasEl"></canvas>
 
-    <!-- Mira centralizada -->
+    <!-- FIX MIRA: z-index 20 garante visibilidade por cima do vídeo -->
     <div id="reticle">
       <div class="reticle-h"></div>
       <div class="reticle-v"></div>
       <div class="reticle-box"></div>
     </div>
 
-    <!-- Overlay de início -->
     <div id="start-overlay">
       <p>Clique para iniciar a câmera</p>
       <button id="btn-start" onclick="startCamera()">&#9654; Iniciar Câmera</button>
     </div>
   </div>
 
-  <!-- Painel flutuante compacto -->
   <div id="panel">
-    <!-- Cor detectada -->
     <div id="color-swatch" style="background:#1a1a2e;"></div>
     <div id="color-name" style="color:#445;">Aguardando câmera...</div>
     <div id="delta-e-display"></div>
 
     <hr class="divider">
 
-    <!-- RGB compacto -->
     <div class="section-title">RGB</div>
     <div class="data-compact" id="rgb-line">
       <span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---
     </div>
 
-    <!-- Lab compacto -->
     <div class="section-title">CIE L*a*b*</div>
     <div class="data-compact" id="lab-line">
       <span class="lbl">L*:</span>--- &nbsp;<span class="lbl">a*:</span>--- &nbsp;<span class="lbl">b*:</span>---
@@ -320,31 +287,29 @@
 
     <hr class="divider">
 
-    <!-- Base calibrada -->
     <div class="section-title">Base Neutra</div>
     <div id="base-info">Não calibrado</div>
 
-    <!-- Botões -->
     <button class="btn" id="btn-calibrate" onclick="calibrate()">&#9670; Calibrar Fundo</button>
     <button class="btn" id="btn-camera" onclick="switchCamera()">&#8635; Alternar Câmera</button>
     <button class="btn" id="btn-audio" onclick="toggleAudio()">&#128263; Áudio: DESLIGADO</button>
-    <button class="btn" id="btn-universal" onclick="toggleUniversalMode()">🔇 Modo Universal: DESLIGADO</button>
+    <button class="btn" id="btn-universal" onclick="toggleUniversalMode()">&#128263; Modo Universal: DESLIGADO</button>
   </div>
 </div>
 
 <script>
-  const video   = document.getElementById('videoEl');
-  const canvas  = document.getElementById('canvasEl');
-  const ctx     = canvas.getContext('2d');
+  const video  = document.getElementById('videoEl');
+  const canvas = document.getElementById('canvasEl');
+  const ctx    = canvas.getContext('2d');
 
-  let stream      = null;
-  let devices     = [];
-  let deviceIndex = 0;
-  let running     = false;
-  let base          = null;  // base neutra calibrada {L, a, b}
-  let universalMode = false; // chave mestre do Modo Universal
+  let stream        = null;
+  let devices       = [];
+  let deviceIndex   = 0;
+  let running       = false;
+  let base          = null;
+  let universalMode = false;
 
-  const SAMPLE            = 10;  // meia-largura da área amostrada (px) no espaço do vídeo nativo
+  const SAMPLE            = 10;
   const DELTA_E_THRESHOLD = 12;
 
   // ── Conversões colorimétricas ────────────────────────────────────────────
@@ -357,18 +322,18 @@
   function rgbToXYZ(r, g, b) {
     const rl = linearize(r), gl = linearize(g), bl = linearize(b);
     return {
-      X: (0.4124564 * rl + 0.3575761 * gl + 0.1804375 * bl) * 100,
-      Y: (0.2126729 * rl + 0.7151522 * gl + 0.0721750 * bl) * 100,
-      Z: (0.0193339 * rl + 0.1191920 * gl + 0.9503041 * bl) * 100
+      X: (0.4124564*rl + 0.3575761*gl + 0.1804375*bl) * 100,
+      Y: (0.2126729*rl + 0.7151522*gl + 0.0721750*bl) * 100,
+      Z: (0.0193339*rl + 0.1191920*gl + 0.9503041*bl) * 100
     };
   }
 
   function xyzToLab(X, Y, Z) {
-    const Xn = 95.047, Yn = 100.000, Zn = 108.883;
-    const e = 0.008856, k = 903.3;
-    function f(t) { return t > e ? Math.cbrt(t) : (k * t + 16) / 116; }
-    const fx = f(X / Xn), fy = f(Y / Yn), fz = f(Z / Zn);
-    return { L: 116 * fy - 16, a: 500 * (fx - fy), b: 200 * (fy - fz) };
+    const Xn=95.047, Yn=100.000, Zn=108.883;
+    const e=0.008856, k=903.3;
+    function f(t) { return t > e ? Math.cbrt(t) : (k*t + 16) / 116; }
+    const fx=f(X/Xn), fy=f(Y/Yn), fz=f(Z/Zn);
+    return { L: 116*fy - 16, a: 500*(fx - fy), b: 200*(fy - fz) };
   }
 
   function rgbToLab(r, g, b) {
@@ -384,138 +349,72 @@
     );
   }
 
-  // ── FIX 4: Classificação de cor com fronteiras Lab revisadas ────────────
-  //
-  // Ordem de prioridade (avaliação top-down com fronteiras rígidas):
-  //   Base Calibrada → Reflexo/Saturado → Roxo/Violeta → Azul
-  //   → Verde/Verde-Limão → Amarelo → Laranja → Vermelho → Rosa/Transição → Indefinido
-  //
-  // REGRAS CRÍTICAS:
-  //  • Roxo avaliado ANTES do Vermelho: a* > 10 && b* < -5 captura o quadrante
-  //    vermelho-azul sem cair no território laranja/vermelho (b* positivo).
-  //  • Laranja adicionado entre Amarelo e Vermelho para cobrir a zona
-  //    a* [12,22] && b* [15,35] que antes caía em "Indefinido".
-  //  • Reflexo/Saturado elevado para L* > 90 para não engolir brancos
-  //    levemente coloridos que possuem classificação real.
+  // ── Classificação de cor ─────────────────────────────────────────────────
+  // FIX: superfície calibrada como base neutra exibe "Branco" (#ffffff)
 
   function classifyColor(lab, dE) {
     const { L, a, b } = lab;
 
-    // 1. Base Calibrada (Fundo) — prioridade máxima quando calibrado
-    //    FIX 2: nome renomeado de 'Incolor / Outro' para 'Base Calibrada (Fundo)'
     if (base && dE < DELTA_E_THRESHOLD)
-      return { name: 'Base Calibrada (Fundo)', color: '#778899' };
+      return { name: 'Branco', color: '#ffffff' };
 
-    // 2. Reflexo / Saturado — L* extremamente alto (luz direta, saturação total)
-    //    FIX 4: limiar elevado de 85 → 90 para não engolir brancos coloridos
     if (L > 90)
       return { name: 'Reflexo / Saturado', color: '#ccd0e0' };
 
-    // 3. Roxo / Violeta — quadrante a*+ / b*- (vermelho-azul)
-    //    FIX 4: limiar b* < -5 (era -8) amplia a captura de violetas suaves;
-    //    a* > 10 evita confundir com azuis puros onde a* tende a 0 ou negativo.
     if (a > 10 && b < -5)
       return { name: 'Roxo / Violeta', color: '#a855f7' };
 
-    // 4. Azul — b* fortemente negativo, a* não no quadrante roxo
-    //    FIX 4: a* <= 10 garante separação do roxo; b* < -18 exige azul saturado.
     if (b < -18 && a <= 10)
       return { name: 'Azul', color: '#3b82f6' };
 
-    // 5. Verde / Verde-Limão — a* negativo com b* moderadamente positivo
-    //    FIX 4: a* < -5 (era -6), b* > 10 (era 15) — captura verde-limão
-    //    e verdes escuros sem invadir o amarelo.
     if (a < -5 && b > 10)
       return { name: 'Verde / Verde-Limão', color: '#4ade80' };
 
-    // 6. Amarelo — b* alto, a* neutro (zona pura do amarelo)
-    //    FIX 4: b* > 25 exige amarelo saturado; a* [-5, 10] evita verde e laranja.
     if (b > 25 && a >= -5 && a < 10)
       return { name: 'Amarelo', color: '#facc15' };
 
-    // 7. Laranja — zona de transição entre amarelo e vermelho
-    //    FIX 4: NOVO — cobre a* [10, 22] && b* [12, 38], zona antes "Indefinido".
     if (a >= 10 && a <= 22 && b >= 12 && b <= 38)
       return { name: 'Laranja', color: '#fb923c' };
 
-    // 8. Vermelho — a* alto, b* levemente positivo, sem ser laranja ou roxo
-    //    FIX 4: a* > 22 (era 18) afasta do laranja; b* > 0 confirma desvio
-    //    para o vermelho puro (não violeta); b* < 20 impede sobreposição com laranja.
     if (a > 22 && b > 0 && b < 20 && L > 15 && L <= 90)
       return { name: 'Vermelho', color: '#e03040' };
 
-    // 9. Rosa / Transição — a* moderado sem b* que confirme vermelho/laranja
     if (a >= 12 && a <= 25 && b < 12)
       return { name: 'Rosa / Transição', color: '#e07090' };
 
-    // 10. Indefinido
     return { name: 'Indefinido', color: '#445566' };
   }
 
-  // ── FIX 1: Amostragem de pixels com mapeamento correto de object-fit:cover ──
-  //
-  // Problema original: samplePixels() usava o centro do frame nativo da câmera
-  // (video.videoWidth / 2) como ponto de coleta, ignorando que object-fit:cover
-  // recorta o vídeo para preencher o container. O ponto visual central da
-  // viewport NÃO corresponde ao centro do frame nativo quando as proporções
-  // diferem.
-  //
-  // Solução: calcular o offset e a escala do recorte CSS para mapear o centro
-  // visual (centro do elemento <video> na tela) de volta às coordenadas
-  // corretas dentro do frame nativo da câmera.
-  //
-  //   scaleFactor = max(containerW / videoW, containerH / videoH)
-  //   renderedW   = videoW * scaleFactor   (largura do frame após escala)
-  //   renderedH   = videoH * scaleFactor
-  //   offsetX     = (renderedW - containerW) / 2  (pixels cortados à esquerda)
-  //   offsetY     = (renderedH - containerH) / 2  (pixels cortados em cima)
-  //
-  // O centro visual da tela (containerW/2, containerH/2) corresponde a:
-  //   nativeCX = (containerW/2 + offsetX) / scaleFactor
-  //   nativeCY = (containerH/2 + offsetY) / scaleFactor
-  //
-  // Que simplifica para: nativeCX = videoW/2, nativeCY = videoH/2 — idêntico
-  // ao centro do frame — MAS o SAMPLE (raio de coleta) precisa ser escalado
-  // de volta ao espaço nativo para que a área de coleta corresponda ao tamanho
-  // visual da mira (20px no CSS):
-  //   nativeSample = SAMPLE / scaleFactor
+  // ── Amostragem corrigida para object-fit:cover ───────────────────────────
 
   function samplePixels() {
     const vw = video.videoWidth;
     const vh = video.videoHeight;
+    if (!vw || !vh) return null;
 
-    // Dimensões do container visual (elemento <video> na tela)
     const cw = video.clientWidth;
     const ch = video.clientHeight;
 
-    // Escala aplicada pelo object-fit:cover
-    const scale = Math.max(cw / vw, ch / vh);
-
-    // Offset do recorte: quantos pixels do frame renderizado estão fora da tela
+    const scale   = Math.max(cw / vw, ch / vh);
     const offsetX = (vw * scale - cw) / 2;
     const offsetY = (vh * scale - ch) / 2;
 
-    // Centro visual da viewport mapeado para coordenadas nativas do frame
-    const nativeCX = Math.round((cw / 2 + offsetX) / scale);
-    const nativeCY = Math.round((ch / 2 + offsetY) / scale);
-
-    // Raio de amostragem convertido para o espaço nativo
-    // (SAMPLE px no espaço nativo ≈ SAMPLE * scale px na tela)
+    const nativeCX     = Math.round((cw / 2 + offsetX) / scale);
+    const nativeCY     = Math.round((ch / 2 + offsetY) / scale);
     const nativeSample = Math.max(1, Math.round(SAMPLE / scale));
 
-    // Desenha o frame inteiro no canvas e coleta a região correta
     canvas.width  = vw;
     canvas.height = vh;
     ctx.drawImage(video, 0, 0);
 
     const x0   = Math.max(0, nativeCX - nativeSample);
     const y0   = Math.max(0, nativeCY - nativeSample);
-    const size = nativeSample * 2;
-    const data = ctx.getImageData(x0, y0, size, size).data;
+    const size  = nativeSample * 2;
+    const data  = ctx.getImageData(x0, y0, size, size).data;
 
-    let rSum = 0, gSum = 0, bSum = 0, count = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      rSum += data[i]; gSum += data[i + 1]; bSum += data[i + 2]; count++;
+    let rSum=0, gSum=0, bSum=0, count=0;
+    for (let i=0; i < data.length; i += 4) {
+      rSum += data[i]; gSum += data[i+1]; bSum += data[i+2]; count++;
     }
     return {
       r: Math.round(rSum / count),
@@ -524,20 +423,17 @@
     };
   }
 
-  // ── FIX 3: Feedback de áudio — debounce reduzido + cancel() obrigatório ──
+  // ── Áudio: debounce 500ms + cancel() obrigatório antes de speak() ─────────
 
-  let audioEnabled   = false;   // chave mestre: só fala quando TRUE
-  let lastSpokenName = '';      // último nome falado
-  let pendingName    = '';      // nome candidato aguardando estabilidade
-  let stableTimer    = null;    // timer de debounce
+  let audioEnabled   = false;
+  let lastSpokenName = '';
+  let pendingName    = '';
+  let stableTimer    = null;
+  const STABLE_MS    = 500;
 
-  // FIX 3: reduzido de 1500ms → 500ms para resposta rápida
-  const STABLE_MS = 500;
-
-  /** Liga/desliga o áudio e atualiza o botão visualmente */
   function toggleAudio() {
-    // Captura o gesto físico do usuário para desbloquear speechSynthesis no iOS/Android
-    if (window.speechSynthesis) { window.speechSynthesis.speak(new SpeechSynthesisUtterance('')); }
+    if (window.speechSynthesis)
+      window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
     audioEnabled = !audioEnabled;
     const btn = document.getElementById('btn-audio');
     if (audioEnabled) {
@@ -546,15 +442,12 @@
     } else {
       btn.textContent = '🔇 Áudio: DESLIGADO';
       btn.classList.remove('audio-on');
-      // Silencia tudo imediatamente
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
-      pendingName    = '';
-      lastSpokenName = '';
+      pendingName = ''; lastSpokenName = '';
     }
   }
 
-  /** Liga/desliga o Modo Universal e atualiza o botão visualmente */
   function toggleUniversalMode() {
     universalMode = !universalMode;
     const btn = document.getElementById('btn-universal');
@@ -567,42 +460,25 @@
     }
   }
 
-  // FIX 3: cancel() obrigatório SEMPRE antes de speak() para limpar a fila
   function speakColor(name) {
     if (!window.speechSynthesis) return;
-    // Trava rígida: cancela qualquer fala em curso ou na fila antes de falar
     window.speechSynthesis.cancel();
-    // Pequeno delay para garantir que o cancel() foi processado pelo browser
-    // antes de enfileirar o novo utterance (necessário em alguns browsers móveis)
     setTimeout(() => {
-      if (!audioEnabled) return; // guarda: pode ter desligado durante o delay
+      if (!audioEnabled) return;
       const utt = new SpeechSynthesisUtterance(name);
-      utt.lang  = 'pt-BR';
-      utt.rate  = 1.0;
-      utt.pitch = 1.0;
+      utt.lang = 'pt-BR'; utt.rate = 1.0; utt.pitch = 1.0;
       window.speechSynthesis.speak(utt);
     }, 80);
   }
 
-  /**
-   * Dispara a fala apenas se:
-   *  - A chave de áudio estiver LIGADA
-   *  - A cor mudou em relação à última falada
-   *  - A nova cor se mantiver estável por STABLE_MS ms
-   */
   function triggerAudioIfChanged(name) {
     if (!audioEnabled) return;
-
     if (name === lastSpokenName) {
-      // Cor estável igual à última falada: cancela qualquer pendência diferente
       if (pendingName !== name && stableTimer) {
-        clearTimeout(stableTimer);
-        stableTimer = null;
-        pendingName = '';
+        clearTimeout(stableTimer); stableTimer = null; pendingName = '';
       }
       return;
     }
-
     if (name !== pendingName) {
       pendingName = name;
       if (stableTimer) clearTimeout(stableTimer);
@@ -619,31 +495,30 @@
 
   function update() {
     if (!running || video.readyState < 2) { requestAnimationFrame(update); return; }
-    const { r, g, b } = samplePixels();
-    const lab          = rgbToLab(r, g, b);
-    const dE           = base ? deltaE(lab, base) : 999;
-    const cls          = classifyColor(lab, dE);
 
-    // RGB em linha única
+    const pixels = samplePixels();
+    if (!pixels) { requestAnimationFrame(update); return; }
+
+    const { r, g, b } = pixels;
+    const lab = rgbToLab(r, g, b);
+    const dE  = base ? deltaE(lab, base) : 999;
+    const cls = classifyColor(lab, dE);
+
     document.getElementById('rgb-line').innerHTML =
       `<span class="lbl">R:</span>${r} &nbsp;<span class="lbl">G:</span>${g} &nbsp;<span class="lbl">B:</span>${b}`;
 
-    // Lab em linha única
     document.getElementById('lab-line').innerHTML =
       `<span class="lbl">L*:</span>${lab.L.toFixed(1)} &nbsp;<span class="lbl">a*:</span>${lab.a.toFixed(1)} &nbsp;<span class="lbl">b*:</span>${lab.b.toFixed(1)}`;
 
     document.getElementById('color-swatch').style.background = `rgb(${r},${g},${b})`;
-    document.getElementById('color-name').textContent  = cls.name;
+    document.getElementById('color-name').textContent = cls.name;
     document.getElementById('color-name').style.color  = cls.color;
 
-    if (base) {
+    if (base)
       document.getElementById('delta-e-display').textContent =
         `ΔE = ${dE.toFixed(2)} (limiar: ${DELTA_E_THRESHOLD})`;
-    }
 
-    // Áudio só dispara se o botão toggle estiver LIGADO
     triggerAudioIfChanged(cls.name);
-
     requestAnimationFrame(update);
   }
 
@@ -654,45 +529,24 @@
     devices = devs.filter(d => d.kind === 'videoinput');
   }
 
-  /**
-   * Tenta abrir a câmera na seguinte ordem de prioridade:
-   *  1. Câmera traseira exata  (facingMode: { exact: "environment" })
-   *  2. Câmera traseira suave  (facingMode: "environment")
-   *  3. Câmera genérica        (video: true)
-   */
-  async function openCamera(preferredDeviceId = null) {
-    if (stream) { stream.getTracks().forEach(t => t.stop()); }
+  async function openCamera(preferredDeviceId) {
+    if (stream) stream.getTracks().forEach(t => t.stop());
 
-    const tryOpen = async (constraints) => {
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
+    const tryOpen = async (c) => {
+      stream = await navigator.mediaDevices.getUserMedia(c);
       video.srcObject = stream;
     };
 
     if (preferredDeviceId) {
-      try {
-        await tryOpen({ video: { deviceId: { exact: preferredDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } } });
-        return;
-      } catch (_) { /* fallthrough */ }
+      try { await tryOpen({ video: { deviceId: { exact: preferredDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } } }); return; }
+      catch (_) {}
     }
-
-    // 1ª tentativa: câmera traseira exata
-    try {
-      await tryOpen({ video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } });
-      return;
-    } catch (_) { /* fallthrough */ }
-
-    // 2ª tentativa: câmera traseira soft
-    try {
-      await tryOpen({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } });
-      return;
-    } catch (_) { /* fallthrough */ }
-
-    // 3ª tentativa: qualquer câmera disponível
-    try {
-      await tryOpen({ video: true });
-    } catch (e) {
-      alert('Erro ao acessar a câmera: ' + e.message);
-    }
+    try { await tryOpen({ video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } }); return; }
+    catch (_) {}
+    try { await tryOpen({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } }); return; }
+    catch (_) {}
+    try { await tryOpen({ video: true }); }
+    catch (e) { alert('Erro ao acessar a câmera: ' + e.message); }
   }
 
   async function startCamera() {
@@ -713,8 +567,9 @@
 
   function calibrate() {
     if (!running) { alert('Inicie a câmera primeiro.'); return; }
-    const { r, g, b } = samplePixels();
-    base = rgbToLab(r, g, b);
+    const pixels = samplePixels();
+    if (!pixels) return;
+    base = rgbToLab(pixels.r, pixels.g, pixels.b);
     const btn = document.getElementById('btn-calibrate');
     btn.textContent = '✓ Base Calibrada';
     btn.classList.add('calibrated');
