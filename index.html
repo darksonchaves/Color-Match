@@ -54,7 +54,7 @@
     display: none;
   }
 
-  /* ── Mira centralizada ── */
+  /* ── Mira centralizada física ── */
   #reticle {
     position: absolute;
     top: 50%;
@@ -93,7 +93,7 @@
     border: 1px solid rgba(120,220,255,0.6);
   }
 
-  /* ── Painel flutuante compacto — canto inferior esquerdo ── */
+  /* ── Painel flutuante compacto ── */
   #panel {
     position: absolute;
     bottom: 20px;
@@ -111,13 +111,12 @@
     -webkit-backdrop-filter: blur(8px);
   }
 
-  /* Swatch de cor + nome */
   #color-swatch {
     width: 100%;
     height: 36px;
     border-radius: 6px;
     border: 1px solid rgba(255,255,255,0.08);
-    transition: background 0.3s ease;
+    transition: background 0.1s ease;
   }
   #color-name {
     text-align: center;
@@ -133,7 +132,6 @@
     margin-top: 1px;
   }
 
-  /* Linhas de dados compactadas */
   .data-compact {
     font-size: 0.68rem;
     font-family: 'Courier New', monospace;
@@ -146,7 +144,6 @@
     margin-right: 2px;
   }
 
-  /* Base calibrada */
   #base-info {
     font-size: 0.62rem;
     color: #556;
@@ -165,7 +162,6 @@
     border-top: 1px solid rgba(100,100,255,0.1);
   }
 
-  /* Botões compactos */
   .btn {
     width: 100%;
     padding: 7px;
@@ -201,7 +197,6 @@
     background: linear-gradient(135deg, #3a2a5e, #6a4a9e);
     color: #edf;
   }
-  /* Botão de áudio — estados OFF e ON */
   #btn-audio {
     background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
     color: #556;
@@ -221,7 +216,6 @@
     background: linear-gradient(135deg, #1e4e28, #2a8040);
   }
 
-  /* Botão Modo Universal — estados OFF e ON */
   #btn-universal {
     background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
     color: #556;
@@ -320,7 +314,6 @@
     <button class="btn" id="btn-calibrate" onclick="calibrate()">&#9670; Calibrar Fundo</button>
     <button class="btn" id="btn-camera" onclick="switchCamera()">&#8635; Alternar Câmera</button>
     <button class="btn" id="btn-audio" onclick="toggleAudio()">&#128263; Áudio: DESLIGADO</button>
-    
     <button class="btn" id="btn-universal" onclick="toggleUniversalMode()">🔇 Modo Universal: DESLIGADO</button>
   </div>
 </div>
@@ -334,13 +327,13 @@
   let devices     = [];
   let deviceIndex = 0;
   let running     = false;
-  let base          = null;  // base neutra calibrada {L, a, b}
-  let universalMode = false; // chave mestre do Modo Universal
+  let base          = null;  
+  let universalMode = false; 
 
-  const SAMPLE           = 10;   // meia-largura da área amostrada (px)
+  const SAMPLE           = 6;   // Área de amostragem refinada para precisão do alvo
   const DELTA_E_THRESHOLD = 12;
 
-  // ── Conversões coloriméritricas ──────────────────────────────────────────
+  // ── Conversões Colorimétricas Estáveis ──────────────────────────────────
 
   function linearize(c) {
     const v = c / 255;
@@ -378,72 +371,83 @@
   }
 
   /**
-   * Classifica a cor usando métricas CIE L*a*b* D65 — Modo Universal Blindado.
-   *
-   * Ordem de avaliação (fronteiras rígidas com &&):
-   * Incolor → Reflexo → Roxo/Violeta → Azul → Verde/Verde-Limão
-   * → Amarelo → Vermelho Ótimo → Rosa/Transição → Indefinido
-   *
-   * REGRA CRÍTICA: Roxo é avaliado ANTES do Vermelho para evitar
-   * que a* alto com b* negativo seja engolido pelo vermelho.
+   * Classificação blindada baseada em quadrantes físicos do espaço CIE L*a*b*
    */
   function classifyColor(lab, dE) {
     const { L, a, b } = lab;
 
-    // 1. Incolor / Fundo calibrado (prioridade máxima)
+    // 1. Base Calibrada de Fundo (Independente do modo, se o deltaE for menor que o limite, assume o fundo)
     if (base && dE < DELTA_E_THRESHOLD)
-      return { name: 'Incolor / Outro', color: '#778899' };
+      return { name: 'Base Calibrada (Fundo)', color: '#778899' };
 
-    // 2. Reflexo / Saturado — L* muito alto
-    if (L > 85)
+    // 2. Isolamento de Brancos de Alta Intensidade / Reflexos de Luz
+    if (L > 90)
       return { name: 'Reflexo / Saturado', color: '#ccd0e0' };
 
-    // 3. Roxo / Violeta — DEVE vir antes do Vermelho
-    //    Tolerância ampliada: b* < -8 e a* > 8, impedindo absorção pelo canal Vermelho
-    if (b < -8 && a > 8)
+    // Se o Modo Universal estiver desligado, segue regras diretas para evitar falsos roxos
+    if (!universalMode) {
+      if (b < -12 && a < 10) return { name: 'Azul', color: '#3b82f6' };
+      if (a < -8) return { name: 'Verde / Verde-Limão', color: '#4ade80' };
+      if (b > 15 && a < 5) return { name: 'Amarelo', color: '#facc15' };
+      if (a > 15 && b >= 0) return { name: 'Vermelho Ótimo', color: '#e03040' };
+      if (a > 10 && b < 0) return { name: 'Roxo / Violeta', color: '#a855f7' };
+      return { name: 'Indefinido', color: '#445566' };
+    }
+
+    // ── MODO UNIVERSAL ATIVADO RIGOROSO ──
+    
+    // Roxo / Violeta (b* obrigatoriamente negativo abaixo de -5 e componente a* vermelha ativa)
+    if (b < -5 && a > 8)
       return { name: 'Roxo / Violeta', color: '#a855f7' };
 
-    // 4. Azul — b* fortemente negativo E a* não está no território roxo
-    //    (a* <= 10 garante que não colida com roxo)
-    if (b < -20 && a <= 10)
+    // Azul Puro (Eixo b* negativo profundo, sem traços significativos de a*)
+    if (b < -18 && a <= 8)
       return { name: 'Azul', color: '#3b82f6' };
 
-    // 5. Verde / Verde-Limão — a* marcadamente negativo E b* alto
-    //    Limiar reduzido: a* < -6 e b* > 15 para capturar verde-limão e evitar Amarelo
-    if (a < -6 && b > 15)
+    // Verde / Verde-Limão (Eixo a* negativo predominante)
+    if (a < -6 && b > 10)
       return { name: 'Verde / Verde-Limão', color: '#4ade80' };
 
-    // 6. Amarelo — b* positivo, a* neutro ou ligeiramente positivo
-    //    Trava de balanço de branco: b* > 20 limitando as faixas adjacentes
-    if (b > 20 && a >= -6 && a < 12)
+    // Amarelo (Eixo b* positivo limpo)
+    if (b > 18 && a >= -8 && a < 10)
       return { name: 'Amarelo', color: '#facc15' };
 
-    // 7. Vermelho Ótimo — a* alto E b* obrigatoriamente positivo
-    //    Tolerância ampliada: a* > 18 e b* > 2 impedindo oscilação para Indefinido
-    if (a > 18 && b > 2 && L > 15 && L <= 85)
+    // Vermelho Ótimo (Eixo a* extremamente positivo com b* estabilizado acima de zero)
+    if (a > 16 && b >= 2 && L <= 85)
       return { name: 'Vermelho Ótimo', color: '#e03040' };
 
-    // 8. Rosa / Transição — a* moderado a alto sem b* confirmar vermelho
-    if (a >= 12 && a <= 25)
+    // Rosa / Transição
+    if (a >= 10 && a <= 22 && b < 5)
       return { name: 'Rosa / Transição', color: '#e07090' };
 
-    // 9. Indefinido
     return { name: 'Indefinido', color: '#445566' };
   }
 
-  // ── Amostragem de pixels ─────────────────────────────────────────────────
+  // ── Amostragem de Mapeamento Físico Real (Garante alinhamento com a Mira) ──
 
   function samplePixels() {
-    canvas.width  = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0);
-    const cx   = Math.floor(canvas.width  / 2);
-    const cy   = Math.floor(canvas.height / 2);
+    // Sincroniza as dimensões físicas do canvas com o frame real da câmera
+    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+      canvas.width  = video.videoWidth;
+      canvas.height = video.videoHeight;
+    }
+    
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Mapeia matematicamente o centro exato
+    const cx = Math.floor(canvas.width / 2);
+    const cy = Math.floor(canvas.height / 2);
+    
     const data = ctx.getImageData(cx - SAMPLE, cy - SAMPLE, SAMPLE * 2, SAMPLE * 2).data;
     let rSum = 0, gSum = 0, bSum = 0, count = 0;
+    
     for (let i = 0; i < data.length; i += 4) {
-      rSum += data[i]; gSum += data[i + 1]; bSum += data[i + 2]; count++;
+      rSum += data[i]; 
+      gSum += data[i + 1]; 
+      bSum += data[i + 2]; 
+      count++;
     }
+    
     return {
       r: Math.round(rSum / count),
       g: Math.round(gSum / count),
@@ -451,17 +455,15 @@
     };
   }
 
-  // ── Feedback de áudio (speechSynthesis) — controlado pelo botão toggle ──
+  // ── Controle do Sistema de Áudio sem Atrasos ─────────────────────────────
 
-  let audioEnabled    = false;    // chave mestre: só fala quando TRUE
-  let lastSpokenName  = '';       // último nome falado
-  let pendingName     = '';       // nome candidato aguardando estabilidade
-  let stableTimer     = null;     // timer de debounce
-  const STABLE_MS     = 1500;     // ms de estabilidade antes de falar
+  let audioEnabled    = false;    
+  let lastSpokenName  = '';       
+  let pendingName     = '';       
+  let stableTimer     = null;     
+  const STABLE_MS     = 500; // Resposta rápida para evitar gargalos na fila de áudio
 
-  /** Liga/desliga o áudio e atualiza o botão visualmente */
   function toggleAudio() {
-    // PRIMEIRA LINHA: captura o gesto físico do usuário e desbloqueia speechSynthesis no iOS/Android
     if (window.speechSynthesis) { window.speechSynthesis.speak(new SpeechSynthesisUtterance('')); }
     audioEnabled = !audioEnabled;
     const btn = document.getElementById('btn-audio');
@@ -471,7 +473,6 @@
     } else {
       btn.textContent = '🔇 Áudio: DESLIGADO';
       btn.classList.remove('audio-on');
-      // Silencia tudo imediatamente
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
       pendingName    = '';
@@ -479,7 +480,6 @@
     }
   }
 
-  /** Liga/desliga o Modo Universal e atualiza o botão visualmente */
   function toggleUniversalMode() {
     universalMode = !universalMode;
     const btn = document.getElementById('btn-universal');
@@ -493,23 +493,17 @@
   }
 
   function speakColor(name) {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
+    if (!window.speechSynthesis || !audioEnabled) return;
+    window.speechSynthesis.cancel(); // Mata qualquer áudio atrasado na fila antes de falar o novo
     const utt = new SpeechSynthesisUtterance(name);
     utt.lang  = 'pt-BR';
-    utt.rate  = 1.0;
+    utt.rate  = 1.1; // Ligeiramente mais rápido para dar resposta em tempo real
     utt.pitch = 1.0;
     window.speechSynthesis.speak(utt);
   }
 
-  /**
-   * Dispara a fala apenas se:
-   * - A chave de áudio estiver LIGADA
-   * - A cor mudou em relação à última falada
-   * - A nova cor se mantiver estável por STABLE_MS ms
-   */
   function triggerAudioIfChanged(name) {
-    if (!audioEnabled) return;          // chave mestre desligada → ignora
+    if (!audioEnabled) return;         
     if (name === lastSpokenName) {
       if (pendingName !== name && stableTimer) {
         clearTimeout(stableTimer);
@@ -522,9 +516,7 @@
       pendingName = name;
       if (stableTimer) clearTimeout(stableTimer);
       stableTimer = setTimeout(() => {
-        // Guarda: áudio pode ter sido desligado durante a espera de estabilidade
         if (!audioEnabled) { stableTimer = null; return; }
-        // Verifica o Modo Universal se aplicável, mantendo a voz limpa e estável
         lastSpokenName = pendingName;
         speakColor(pendingName);
         stableTimer = null;
@@ -532,21 +524,19 @@
     }
   }
 
-  // ── Loop de atualização ──────────────────────────────────────────────────
-  // ── Loop de atualização ──────────────────────────────────────────────────
+  // ── Loop Principal ───────────────────────────────────────────────────────
 
   function update() {
     if (!running || video.readyState < 2) { requestAnimationFrame(update); return; }
+    
     const { r, g, b } = samplePixels();
     const lab          = rgbToLab(r, g, b);
     const dE           = base ? deltaE(lab, base) : 999;
     const cls          = classifyColor(lab, dE);
 
-    // RGB em linha única
     document.getElementById('rgb-line').innerHTML =
       `<span class="lbl">R:</span>${r} &nbsp;<span class="lbl">G:</span>${g} &nbsp;<span class="lbl">B:</span>${b}`;
 
-    // Lab em linha única
     document.getElementById('lab-line').innerHTML =
       `<span class="lbl">L*:</span>${lab.L.toFixed(1)} &nbsp;<span class="lbl">a*:</span>${lab.a.toFixed(1)} &nbsp;<span class="lbl">b*:</span>${lab.b.toFixed(1)}`;
 
@@ -557,27 +547,21 @@
     if (base) {
       document.getElementById('delta-e-display').textContent =
         `ΔE = ${dE.toFixed(2)} (limiar: ${DELTA_E_THRESHOLD})`;
+    } else {
+      document.getElementById('delta-e-display').textContent = '';
     }
 
-    // Áudio só dispara se o botão toggle estiver LIGADO
     triggerAudioIfChanged(cls.name);
-
     requestAnimationFrame(update);
   }
 
-  // ── Câmera ───────────────────────────────────────────────────────────────
+  // ── Inicialização de Câmera Hardware ─────────────────────────────────────
 
   async function getDevices() {
     const devs = await navigator.mediaDevices.enumerateDevices();
     devices = devs.filter(d => d.kind === 'videoinput');
   }
 
-  /**
-   * Tenta abrir a câmera na seguinte ordem de prioridade:
-   * 1. Câmera traseira exata  (facingMode: { exact: "environment" })
-   * 2. Câmera traseira suave  (facingMode: "environment")
-   * 3. Câmera genérica        (video: true)
-   */
   async function openCamera(preferredDeviceId = null) {
     if (stream) { stream.getTracks().forEach(t => t.stop()); }
 
@@ -587,26 +571,22 @@
     };
 
     if (preferredDeviceId) {
-      // Alternar câmera manualmente por deviceId
       try {
         await tryOpen({ video: { deviceId: { exact: preferredDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } } });
         return;
-      } catch (_) { /* fallthrough */ }
+      } catch (_) {}
     }
 
-    // 1ª tentativa: câmera traseira exata
     try {
       await tryOpen({ video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } });
       return;
-    } catch (_) { /* fallthrough */ }
+    } catch (_) {}
 
-    // 2ª tentativa: câmera traseira soft
     try {
       await tryOpen({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } });
       return;
-    } catch (_) { /* fallthrough */ }
+    } catch (_) {}
 
-    // 3ª tentativa: qualquer câmera disponível
     try {
       await tryOpen({ video: true });
     } catch (e) {
@@ -617,7 +597,7 @@
   async function startCamera() {
     document.getElementById('start-overlay').style.display = 'none';
     await getDevices();
-    await openCamera(); // prioriza câmera traseira automaticamente
+    await openCamera(); 
     running = true;
     requestAnimationFrame(update);
   }
@@ -627,8 +607,6 @@
     deviceIndex = (deviceIndex + 1) % devices.length;
     await openCamera(devices[deviceIndex].deviceId);
   }
-
-  // ── Calibração ───────────────────────────────────────────────────────────
 
   function calibrate() {
     if (!running) { alert('Inicie a câmera primeiro.'); return; }
