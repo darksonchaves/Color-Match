@@ -256,7 +256,7 @@
 <body>
 <div id="header">
   <h1>&#9632; Análise Colorimétrica</h1>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Sistema HSV · Estabilizado</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Sistema HSV · Calibrado</span>
 </div>
 <div id="top-bar">
   <div id="color-swatch" style="background:#1a1a2e;"></div>
@@ -305,14 +305,16 @@
   let devices       = [];
   let deviceIndex   = 0;
   let running       = false;
-  let base          = null;
   let universalMode = false;
-  let calibrationFactor = null; // Fator de compensação de luminosidade
+  
+  // Sistema de Calibração - REFERÊNCIA DE BRANCO
+  let whiteReference = null; // Armazena os valores RGB/HSV da superfície branca
+  let isCalibrated = false;
   
   // Configurações de amostragem e estabilização
   const SAMPLE_SIZE = 10;
-  const BUFFER_SIZE = 8;  // Número de frames para média móvel
-  const HYSTERESIS_THRESHOLD = 12;  // Reduzido para melhor responsividade
+  const BUFFER_SIZE = 8;
+  const HYSTERESIS_THRESHOLD = 12;
   
   // Buffer circular para estabilização
   let colorBuffer = [];
@@ -350,41 +352,54 @@
     }
     
     return {
-      h: h * 360,      // 0-360 graus
-      s: s * 100,      // 0-100%
-      v: v * 100       // 0-100%
+      h: h * 360,
+      s: s * 100,
+      v: v * 100
     };
   }
   
   // ===============================================
-  // APLICAR COMPENSAÇÃO DE CALIBRAÇÃO
+  // NORMALIZAÇÃO BASEADA NA REFERÊNCIA BRANCA
   // ===============================================
-  function applyCalibration(hsv) {
-    if (!calibrationFactor) return hsv;
+  function normalizeWithWhiteReference(hsv, rgb) {
+    if (!isCalibrated || !whiteReference) {
+      return { hsv, rgb };
+    }
     
-    // Compensar luminosidade baseado na calibração
-    let adjustedV = hsv.v;
+    // Fator de normalização baseado no V (brilho) da referência branca
+    const referenceV = whiteReference.hsv.v;
     
-    // Se calibramos com branco (alta luminosidade), compensar para baixo em outras leituras
-    if (calibrationFactor.type === 'white') {
-      // Normalizar o V baseado no branco de referência
-      const vRatio = calibrationFactor.referenceV / 100;
-      if (vRatio > 0.8) {
-        // Há excesso de luz, reduzir proporcionalmente
-        const compensation = (vRatio - 0.85) * 50;
-        adjustedV = Math.max(0, hsv.v - compensation);
-      }
+    // Se a referência branca tem V < 100%, significa que há pouca luz
+    // Normalizamos para que a referência seja considerada V=100%
+    let normalizedV = hsv.v;
+    
+    if (referenceV > 0 && referenceV < 95) {
+      // Fator de compensação: quanto mais escura a referência, mais compensamos
+      const compensationFactor = 100 / referenceV;
+      normalizedV = Math.min(100, hsv.v * compensationFactor);
+    }
+    
+    // Normalizar saturação também (superfícies brancas podem ter S residual)
+    let normalizedS = hsv.s;
+    const referenceS = whiteReference.hsv.s;
+    
+    // Se a saturação atual é próxima à da referência branca, reduzir
+    if (referenceS > 5 && hsv.s > 0) {
+      normalizedS = Math.max(0, hsv.s - (referenceS * 0.7));
     }
     
     return {
-      h: hsv.h,
-      s: hsv.s,
-      v: adjustedV
+      hsv: {
+        h: hsv.h,
+        s: normalizedS,
+        v: normalizedV
+      },
+      rgb: rgb // RGB mantém original para visualização
     };
   }
   
   // ===============================================
-  // CLASSIFICAÇÃO DE COR - SISTEMA APRIMORADO
+  // CLASSIFICAÇÃO DE COR - SISTEMA OTIMIZADO
   // ===============================================
   function classifyColorSimple(hsv, rgb) {
     const { h, s, v } = hsv;
@@ -392,10 +407,14 @@
     // ============================================
     // 1. CORES ACROMÁTICAS (Branco, Cinza, Preto)
     // ============================================
-    if (s < 15) {  // Baixa saturação = acromático
-      if (v >= 75) {  // Threshold reduzido para capturar branco mais facilmente
+    // Threshold mais generoso após calibração
+    const whiteThreshold = isCalibrated ? 70 : 75;
+    const satThreshold = isCalibrated ? 18 : 15;
+    
+    if (s < satThreshold) {
+      if (v >= whiteThreshold) {
         return { name: 'Branco', color: '#ffffff' };
-      } else if (v <= 25) {  // Threshold aumentado para preto
+      } else if (v <= 25) {
         return { name: 'Preto', color: '#1a1a2a' };
       } else {
         return { name: 'Cinza', color: '#9999aa' };
@@ -403,14 +422,13 @@
     }
     
     // ============================================
-    // 2. CORES CROMÁTICAS - Faixas Ajustadas
+    // 2. CORES CROMÁTICAS - Faixas Otimizadas
     // ============================================
     let baseName = '';
     let baseColor = '';
     
-    // VERMELHO: 345-25° (expandido para capturar melhor)
+    // VERMELHO: 345-25°
     if (h >= 345 || h < 25) {
-      // Diferenciar vermelho de rosa pela saturação e brilho
       if (s < 45 && v > 60) {
         baseName = 'Rosa';
         baseColor = '#ff88aa';
@@ -429,7 +447,7 @@
       baseName = 'Amarelo';
       baseColor = '#fbbf24';
     }
-    // VERDE: 70-165° (grande espectro do verde)
+    // VERDE: 70-165°
     else if (h >= 70 && h < 165) {
       baseName = 'Verde';
       baseColor = '#22c55e';
@@ -439,7 +457,7 @@
       baseName = 'Ciano';
       baseColor = '#06b6d4';
     }
-    // AZUL: 190-260° (expandido para cobrir azul claro e escuro)
+    // AZUL: 190-260°
     else if (h >= 190 && h < 260) {
       baseName = 'Azul';
       baseColor = '#3b82f6';
@@ -451,7 +469,6 @@
     }
     // MAGENTA/ROSA: 290-345°
     else if (h >= 290 && h < 345) {
-      // Diferenciar rosa de magenta
       if (v > 70) {
         baseName = 'Rosa';
         baseColor = '#ff88aa';
@@ -461,9 +478,7 @@
       }
     }
     
-    // ============================================
-    // 3. MODIFICADORES DE LUMINOSIDADE (apenas para modo normal)
-    // ============================================
+    // Modificadores de luminosidade (apenas modo normal)
     let modifier = '';
     if (v < 30) {
       modifier = ' Escuro';
@@ -478,19 +493,20 @@
   }
   
   // ===============================================
-  // CLASSIFICAÇÃO UNIVERSAL - MODO SIMPLIFICADO
+  // CLASSIFICAÇÃO UNIVERSAL - NOMES SIMPLES
   // ===============================================
   function classifyColorUniversal(hsv, rgb) {
     const { h, s, v } = hsv;
     
-    // 1. Acromáticas
-    if (s < 15) {
-      if (v >= 75) return { name: 'Branco', color: '#ffffff' };
+    const whiteThreshold = isCalibrated ? 70 : 75;
+    const satThreshold = isCalibrated ? 18 : 15;
+    
+    if (s < satThreshold) {
+      if (v >= whiteThreshold) return { name: 'Branco', color: '#ffffff' };
       if (v <= 25) return { name: 'Preto', color: '#1a1a2a' };
       return { name: 'Cinza', color: '#9999aa' };
     }
     
-    // 2. Cores básicas - SEM ADJETIVOS
     let colorName = '';
     let colorHex = '';
     
@@ -556,11 +572,9 @@
   function getStableColor() {
     if (colorBuffer.length === 0) return null;
     
-    // Calcular média de HSV e RGB
     let avgH = 0, avgS = 0, avgV = 0;
     let avgR = 0, avgG = 0, avgB = 0;
     
-    // Tratamento especial para Hue (é circular, 0° = 360°)
     let sinSum = 0, cosSum = 0;
     
     colorBuffer.forEach(item => {
@@ -595,16 +609,11 @@
   // HISTERESE PARA EVITAR OSCILAÇÕES
   // ===============================================
   function shouldUpdateColor(newHue, newColorName) {
-    // Se é a primeira vez, aceita
     if (!lastStableColorName) return true;
     
-    // Se o nome mudou, verifica se a mudança de Hue é significativa
     if (newColorName !== lastStableColorName) {
-      // Calcular diferença circular de Hue
       let diff = Math.abs(newHue - lastStableHue);
       if (diff > 180) diff = 360 - diff;
-      
-      // Só aceita mudança se for maior que o threshold
       return diff >= HYSTERESIS_THRESHOLD;
     }
     
@@ -745,13 +754,13 @@
     }
     
     const { r, g, b } = pixels;
-    let hsv = rgbToHSV(r, g, b);
+    const rawHsv = rgbToHSV(r, g, b);
     
-    // Aplicar compensação de calibração
-    hsv = applyCalibration(hsv);
+    // Normalizar com base na referência branca
+    const normalized = normalizeWithWhiteReference(rawHsv, { r, g, b });
     
     // Adicionar ao buffer de estabilização
-    addToBuffer(hsv, { r, g, b });
+    addToBuffer(normalized.hsv, normalized.rgb);
     
     // Obter cor estabilizada
     const stable = getStableColor();
@@ -778,7 +787,7 @@
       triggerAudioIfChanged(classification.name);
     }
     
-    // Atualizar dados técnicos (sempre atualiza)
+    // Atualizar dados técnicos
     document.getElementById('rgb-line').innerHTML =
       `<span class="lbl">R:</span>${stable.rgb.r} <span class="lbl">G:</span>${stable.rgb.g} <span class="lbl">B:</span>${stable.rgb.b}`;
     
@@ -867,7 +876,7 @@
   }
   
   // ===============================================
-  // CALIBRAÇÃO APRIMORADA
+  // CALIBRAÇÃO - FORÇA INTERPRETAÇÃO COMO BRANCO
   // ===============================================
   function calibrate() {
     if (!running) {
@@ -876,56 +885,41 @@
     }
     
     const stable = getStableColor();
-    if (!stable) return;
-    
-    const { h, s, v } = stable.hsv;
-    
-    // Detectar se é uma superfície branca (calibração ideal)
-    if (s < 15 && v >= 70) {
-      // É uma superfície branca - calibração de luminosidade
-      calibrationFactor = {
-        type: 'white',
-        referenceV: v,
-        referenceS: s,
-        referenceH: h
-      };
-      
-      const btn = document.getElementById('btn-calibrate');
-      btn.textContent = '✓ Calibrado (Branco)';
-      btn.classList.add('calibrated');
-      
-      document.getElementById('base-info').textContent =
-        `Base: Branco (V:${v.toFixed(0)}%)`;
-      
-      // Feedback de sucesso
-      if (audioEnabled) {
-        speakColor('Calibração realizada com sucesso em superfície branca');
-      }
-    } else {
-      // Calibração em superfície não-branca
-      calibrationFactor = {
-        type: 'color',
-        referenceV: v,
-        referenceS: s,
-        referenceH: h
-      };
-      
-      const btn = document.getElementById('btn-calibrate');
-      btn.textContent = '✓ Calibrado';
-      btn.classList.add('calibrated');
-      
-      document.getElementById('base-info').textContent =
-        `Base: H:${h.toFixed(0)}° S:${s.toFixed(0)}% V:${v.toFixed(0)}%`;
-      
-      // Aviso se não calibrou em branco
-      if (audioEnabled) {
-        speakColor('Recomenda-se calibrar em superfície branca para melhor precisão');
-      }
+    if (!stable) {
+      alert('Aguarde a estabilização da imagem...');
+      return;
     }
     
-    // Resetar buffer para aplicar calibração imediatamente
+    // FORÇA a superfície atual como REFERÊNCIA BRANCA
+    whiteReference = {
+      hsv: { ...stable.hsv },
+      rgb: { ...stable.rgb }
+    };
+    
+    isCalibrated = true;
+    
+    // Atualizar UI - FORÇA mostrar como "Branco"
+    document.getElementById('color-name').textContent = 'Branco';
+    document.getElementById('color-name').style.color = '#ffffff';
+    
+    const btn = document.getElementById('btn-calibrate');
+    btn.textContent = '✓ Calibrado';
+    btn.classList.add('calibrated');
+    
+    document.getElementById('base-info').textContent =
+      `Base: Branco (V:${stable.hsv.v.toFixed(0)}% S:${stable.hsv.s.toFixed(0)}%)`;
+    
+    // Resetar buffer para aplicar calibração
     colorBuffer = [];
-    lastStableColorName = '';
+    lastStableColorName = 'Branco';
+    lastStableHue = stable.hsv.h;
+    
+    // Feedback de áudio
+    if (audioEnabled) {
+      speakColor('Calibração concluída. Base branca definida com sucesso');
+    }
+    
+    console.log('✓ Calibração realizada:', whiteReference);
   }
 </script>
 </body>
