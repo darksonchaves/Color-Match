@@ -307,11 +307,12 @@
   let running       = false;
   let base          = null;
   let universalMode = false;
+  let calibrationFactor = null; // Fator de compensação de luminosidade
   
   // Configurações de amostragem e estabilização
   const SAMPLE_SIZE = 10;
   const BUFFER_SIZE = 8;  // Número de frames para média móvel
-  const HYSTERESIS_THRESHOLD = 15;  // Limiar para mudança de cor (em graus de Hue)
+  const HYSTERESIS_THRESHOLD = 12;  // Reduzido para melhor responsividade
   
   // Buffer circular para estabilização
   let colorBuffer = [];
@@ -324,6 +325,7 @@
   let pendingName = '';
   let stableTimer = null;
   const STABLE_SPEECH_MS = 400;
+  
   // ===============================================
   // CONVERSÃO DE ESPAÇO DE COR: RGB → HSV
   // ===============================================
@@ -353,102 +355,119 @@
       v: v * 100       // 0-100%
     };
   }
+  
   // ===============================================
-  // CLASSIFICAÇÃO DE COR - SISTEMA SIMPLIFICADO
+  // APLICAR COMPENSAÇÃO DE CALIBRAÇÃO
+  // ===============================================
+  function applyCalibration(hsv) {
+    if (!calibrationFactor) return hsv;
+    
+    // Compensar luminosidade baseado na calibração
+    let adjustedV = hsv.v;
+    
+    // Se calibramos com branco (alta luminosidade), compensar para baixo em outras leituras
+    if (calibrationFactor.type === 'white') {
+      // Normalizar o V baseado no branco de referência
+      const vRatio = calibrationFactor.referenceV / 100;
+      if (vRatio > 0.8) {
+        // Há excesso de luz, reduzir proporcionalmente
+        const compensation = (vRatio - 0.85) * 50;
+        adjustedV = Math.max(0, hsv.v - compensation);
+      }
+    }
+    
+    return {
+      h: hsv.h,
+      s: hsv.s,
+      v: adjustedV
+    };
+  }
+  
+  // ===============================================
+  // CLASSIFICAÇÃO DE COR - SISTEMA APRIMORADO
   // ===============================================
   function classifyColorSimple(hsv, rgb) {
     const { h, s, v } = hsv;
-    const { r, g, b } = rgb;
     
     // ============================================
     // 1. CORES ACROMÁTICAS (Branco, Cinza, Preto)
     // ============================================
-    if (s < 12) {  // Baixa saturação = acromático
-      if (v >= 88) {
+    if (s < 15) {  // Baixa saturação = acromático
+      if (v >= 75) {  // Threshold reduzido para capturar branco mais facilmente
         return { name: 'Branco', color: '#ffffff' };
-      } else if (v <= 20) {
-        return { name: 'Preto', color: '#666677' };
+      } else if (v <= 25) {  // Threshold aumentado para preto
+        return { name: 'Preto', color: '#1a1a2a' };
       } else {
         return { name: 'Cinza', color: '#9999aa' };
       }
     }
     
     // ============================================
-    // 2. CORES CROMÁTICAS - Distribuição Igualitária
+    // 2. CORES CROMÁTICAS - Faixas Ajustadas
     // ============================================
-    // Dividindo o espectro em 12 faixas iguais de 30° cada
-    
     let baseName = '';
     let baseColor = '';
     
-    // VERMELHO: 345-15° (passa pelo 0°)
-    if (h >= 345 || h < 15) {
-      baseName = 'Vermelho';
-      baseColor = '#ef4444';
+    // VERMELHO: 345-25° (expandido para capturar melhor)
+    if (h >= 345 || h < 25) {
+      // Diferenciar vermelho de rosa pela saturação e brilho
+      if (s < 45 && v > 60) {
+        baseName = 'Rosa';
+        baseColor = '#ff88aa';
+      } else {
+        baseName = 'Vermelho';
+        baseColor = '#ef4444';
+      }
     }
-    // VERMELHO-LARANJA: 15-45°
-    else if (h >= 15 && h < 45) {
-      baseName = 'Laranja Avermelhado';
+    // LARANJA: 25-50°
+    else if (h >= 25 && h < 50) {
+      baseName = 'Laranja';
       baseColor = '#f97316';
     }
-    // LARANJA: 45-75°
-    else if (h >= 45 && h < 75) {
-      baseName = 'Laranja';
-      baseColor = '#fb923c';
-    }
-    // AMARELO: 75-105°
-    else if (h >= 75 && h < 105) {
+    // AMARELO: 50-70°
+    else if (h >= 50 && h < 70) {
       baseName = 'Amarelo';
       baseColor = '#fbbf24';
     }
-    // VERDE-AMARELO: 105-135°
-    else if (h >= 105 && h < 135) {
-      baseName = 'Verde Amarelado';
-      baseColor = '#a3e635';
-    }
-    // VERDE: 135-165°
-    else if (h >= 135 && h < 165) {
+    // VERDE: 70-165° (grande espectro do verde)
+    else if (h >= 70 && h < 165) {
       baseName = 'Verde';
       baseColor = '#22c55e';
     }
-    // VERDE-CIANO: 165-195°
-    else if (h >= 165 && h < 195) {
-      baseName = 'Verde Azulado';
-      baseColor = '#14b8a6';
-    }
-    // CIANO: 195-225°
-    else if (h >= 195 && h < 225) {
+    // CIANO: 165-190°
+    else if (h >= 165 && h < 190) {
       baseName = 'Ciano';
       baseColor = '#06b6d4';
     }
-    // AZUL-CIANO: 225-255°
-    else if (h >= 225 && h < 255) {
-      baseName = 'Azul Claro';
+    // AZUL: 190-260° (expandido para cobrir azul claro e escuro)
+    else if (h >= 190 && h < 260) {
+      baseName = 'Azul';
       baseColor = '#3b82f6';
     }
-    // AZUL: 255-285°
-    else if (h >= 255 && h < 285) {
-      baseName = 'Azul';
-      baseColor = '#2563eb';
-    }
-    // ROXO/VIOLETA: 285-315°
-    else if (h >= 285 && h < 315) {
+    // ROXO: 260-290°
+    else if (h >= 260 && h < 290) {
       baseName = 'Roxo';
       baseColor = '#a855f7';
     }
-    // MAGENTA/ROSA: 315-345°
-    else if (h >= 315 && h < 345) {
-      baseName = 'Rosa';
-      baseColor = '#ec4899';
+    // MAGENTA/ROSA: 290-345°
+    else if (h >= 290 && h < 345) {
+      // Diferenciar rosa de magenta
+      if (v > 70) {
+        baseName = 'Rosa';
+        baseColor = '#ff88aa';
+      } else {
+        baseName = 'Magenta';
+        baseColor = '#d946ef';
+      }
     }
     
     // ============================================
-    // 3. ADICIONAR MODIFICADORES DE LUMINOSIDADE
+    // 3. MODIFICADORES DE LUMINOSIDADE (apenas para modo normal)
     // ============================================
     let modifier = '';
-    if (v < 35) {
+    if (v < 30) {
       modifier = ' Escuro';
-    } else if (v > 75 && s < 40) {
+    } else if (v > 80 && s < 50) {
       modifier = ' Claro';
     }
     
@@ -457,58 +476,73 @@
       color: baseColor
     };
   }
+  
   // ===============================================
-  // CLASSIFICAÇÃO UNIVERSAL - MODO DESCRITIVO
+  // CLASSIFICAÇÃO UNIVERSAL - MODO SIMPLIFICADO
   // ===============================================
   function classifyColorUniversal(hsv, rgb) {
     const { h, s, v } = hsv;
     
-    // 1. Determinar acromático vs cromático
-    let hueDesc = '';
-    if (s < 12) {
-      if (v >= 88) return { name: 'Branco puro', color: '#ffffff' };
-      if (v <= 20) return { name: 'Preto profundo', color: '#666677' };
-      hueDesc = 'neutro';
-    } else {
-      // Determinar matiz
-      if (h >= 345 || h < 15) hueDesc = 'vermelho';
-      else if (h >= 15 && h < 45) hueDesc = 'laranja avermelhado';
-      else if (h >= 45 && h < 75) hueDesc = 'laranja';
-      else if (h >= 75 && h < 105) hueDesc = 'amarelo';
-      else if (h >= 105 && h < 135) hueDesc = 'verde amarelado';
-      else if (h >= 135 && h < 165) hueDesc = 'verde';
-      else if (h >= 165 && h < 195) hueDesc = 'verde azulado';
-      else if (h >= 195 && h < 225) hueDesc = 'ciano';
-      else if (h >= 225 && h < 255) hueDesc = 'azul claro';
-      else if (h >= 255 && h < 285) hueDesc = 'azul';
-      else if (h >= 285 && h < 315) hueDesc = 'roxo';
-      else if (h >= 315 && h < 345) hueDesc = 'rosa';
+    // 1. Acromáticas
+    if (s < 15) {
+      if (v >= 75) return { name: 'Branco', color: '#ffffff' };
+      if (v <= 25) return { name: 'Preto', color: '#1a1a2a' };
+      return { name: 'Cinza', color: '#9999aa' };
     }
     
-    // 2. Determinar brilho
-    let brightnessDesc = '';
-    if (v < 25) brightnessDesc = 'muito escuro';
-    else if (v < 45) brightnessDesc = 'escuro';
-    else if (v < 65) brightnessDesc = 'médio';
-    else if (v < 82) brightnessDesc = 'claro';
-    else brightnessDesc = 'muito claro';
+    // 2. Cores básicas - SEM ADJETIVOS
+    let colorName = '';
+    let colorHex = '';
     
-    // 3. Determinar saturação
-    let satDesc = '';
-    if (s < 12) satDesc = 'sem cor';
-    else if (s < 30) satDesc = 'pouco saturado';
-    else if (s < 60) satDesc = 'saturado';
-    else satDesc = 'muito saturado';
-    
-    // Construir descrição
-    const parts = [hueDesc, brightnessDesc, satDesc].filter(p => p);
-    const description = parts.join(', ');
+    if (h >= 345 || h < 25) {
+      if (s < 45 && v > 60) {
+        colorName = 'Rosa';
+        colorHex = '#ff88aa';
+      } else {
+        colorName = 'Vermelho';
+        colorHex = '#ef4444';
+      }
+    }
+    else if (h >= 25 && h < 50) {
+      colorName = 'Laranja';
+      colorHex = '#f97316';
+    }
+    else if (h >= 50 && h < 70) {
+      colorName = 'Amarelo';
+      colorHex = '#fbbf24';
+    }
+    else if (h >= 70 && h < 165) {
+      colorName = 'Verde';
+      colorHex = '#22c55e';
+    }
+    else if (h >= 165 && h < 190) {
+      colorName = 'Ciano';
+      colorHex = '#06b6d4';
+    }
+    else if (h >= 190 && h < 260) {
+      colorName = 'Azul';
+      colorHex = '#3b82f6';
+    }
+    else if (h >= 260 && h < 290) {
+      colorName = 'Roxo';
+      colorHex = '#a855f7';
+    }
+    else if (h >= 290 && h < 345) {
+      if (v > 70) {
+        colorName = 'Rosa';
+        colorHex = '#ff88aa';
+      } else {
+        colorName = 'Magenta';
+        colorHex = '#d946ef';
+      }
+    }
     
     return {
-      name: description.charAt(0).toUpperCase() + description.slice(1),
-      color: classifyColorSimple(hsv, rgb).color
+      name: colorName,
+      color: colorHex
     };
   }
+  
   // ===============================================
   // ESTABILIZAÇÃO COM MÉDIA MÓVEL
   // ===============================================
@@ -556,6 +590,7 @@
       rgb: { r: avgR, g: avgG, b: avgB }
     };
   }
+  
   // ===============================================
   // HISTERESE PARA EVITAR OSCILAÇÕES
   // ===============================================
@@ -575,6 +610,7 @@
     
     return true;
   }
+  
   // ===============================================
   // AMOSTRAGEM DE PIXELS DA CÂMERA
   // ===============================================
@@ -613,6 +649,7 @@
       b: Math.round(bSum / count)
     };
   }
+  
   // ===============================================
   // SISTEMA DE ÁUDIO
   // ===============================================
@@ -637,6 +674,7 @@
       lastSpokenName = '';
     }
   }
+  
   function toggleUniversalMode() {
     universalMode = !universalMode;
     const btn = document.getElementById('btn-universal');
@@ -650,6 +688,7 @@
       stableTimer = null;
     }
   }
+  
   function speakColor(name) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
@@ -662,6 +701,7 @@
       window.speechSynthesis.speak(utt);
     }, 60);
   }
+  
   function triggerAudioIfChanged(name) {
     if (!audioEnabled) return;
     
@@ -688,6 +728,7 @@
       }, STABLE_SPEECH_MS);
     }
   }
+  
   // ===============================================
   // LOOP PRINCIPAL DE ATUALIZAÇÃO
   // ===============================================
@@ -704,7 +745,10 @@
     }
     
     const { r, g, b } = pixels;
-    const hsv = rgbToHSV(r, g, b);
+    let hsv = rgbToHSV(r, g, b);
+    
+    // Aplicar compensação de calibração
+    hsv = applyCalibration(hsv);
     
     // Adicionar ao buffer de estabilização
     addToBuffer(hsv, { r, g, b });
@@ -746,6 +790,7 @@
     
     requestAnimationFrame(update);
   }
+  
   // ===============================================
   // GERENCIAMENTO DE CÂMERA
   // ===============================================
@@ -753,6 +798,7 @@
     const devs = await navigator.mediaDevices.enumerateDevices();
     devices = devs.filter(d => d.kind === 'videoinput');
   }
+  
   async function openCamera(preferredDeviceId) {
     if (stream) stream.getTracks().forEach(t => t.stop());
     
@@ -802,6 +848,7 @@
       alert('Erro ao acessar a câmera: ' + e.message);
     }
   }
+  
   async function startCamera() {
     document.getElementById('start-overlay').style.display = 'none';
     await getDevices();
@@ -809,6 +856,7 @@
     running = true;
     requestAnimationFrame(update);
   }
+  
   async function switchCamera() {
     if (devices.length < 2) {
       alert('Apenas uma câmera disponível.');
@@ -817,8 +865,9 @@
     deviceIndex = (deviceIndex + 1) % devices.length;
     await openCamera(devices[deviceIndex].deviceId);
   }
+  
   // ===============================================
-  // CALIBRAÇÃO (PLACEHOLDER - PODE SER EXPANDIDA)
+  // CALIBRAÇÃO APRIMORADA
   // ===============================================
   function calibrate() {
     if (!running) {
@@ -829,13 +878,54 @@
     const stable = getStableColor();
     if (!stable) return;
     
-    base = stable.hsv;
-    const btn = document.getElementById('btn-calibrate');
-    btn.textContent = '✓ Calibrado';
-    btn.classList.add('calibrated');
+    const { h, s, v } = stable.hsv;
     
-    document.getElementById('base-info').textContent =
-      `Base: H:${base.h.toFixed(0)}° S:${base.s.toFixed(0)}% V:${base.v.toFixed(0)}%`;
+    // Detectar se é uma superfície branca (calibração ideal)
+    if (s < 15 && v >= 70) {
+      // É uma superfície branca - calibração de luminosidade
+      calibrationFactor = {
+        type: 'white',
+        referenceV: v,
+        referenceS: s,
+        referenceH: h
+      };
+      
+      const btn = document.getElementById('btn-calibrate');
+      btn.textContent = '✓ Calibrado (Branco)';
+      btn.classList.add('calibrated');
+      
+      document.getElementById('base-info').textContent =
+        `Base: Branco (V:${v.toFixed(0)}%)`;
+      
+      // Feedback de sucesso
+      if (audioEnabled) {
+        speakColor('Calibração realizada com sucesso em superfície branca');
+      }
+    } else {
+      // Calibração em superfície não-branca
+      calibrationFactor = {
+        type: 'color',
+        referenceV: v,
+        referenceS: s,
+        referenceH: h
+      };
+      
+      const btn = document.getElementById('btn-calibrate');
+      btn.textContent = '✓ Calibrado';
+      btn.classList.add('calibrated');
+      
+      document.getElementById('base-info').textContent =
+        `Base: H:${h.toFixed(0)}° S:${s.toFixed(0)}% V:${v.toFixed(0)}%`;
+      
+      // Aviso se não calibrou em branco
+      if (audioEnabled) {
+        speakColor('Recomenda-se calibrar em superfície branca para melhor precisão');
+      }
+    }
+    
+    // Resetar buffer para aplicar calibração imediatamente
+    colorBuffer = [];
+    lastStableColorName = '';
   }
 </script>
 </body>
