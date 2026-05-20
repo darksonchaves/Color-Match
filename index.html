@@ -57,10 +57,10 @@
     box-shadow: 0 0 8px rgba(0,0,0,0.5);
   }
   #color-name {
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     font-weight: 700;
     letter-spacing: 0.4px;
-    min-width: 110px;
+    min-width: 120px;
   }
   #delta-e-display {
     font-size: 0.58rem;
@@ -247,7 +247,7 @@
     #header h1 { font-size: 0.65rem; }
     #top-bar { gap: 6px; padding: 4px 8px; }
     .btn-top { padding: 3px 6px; font-size: 0.55rem; }
-    #color-name { font-size: 0.7rem; min-width: 90px; }
+    #color-name { font-size: 0.74rem; min-width: 100px; }
     .data-inline { font-size: 0.58rem; }
     #base-info { font-size: 0.54rem; }
   }
@@ -256,15 +256,15 @@
 <body>
 <div id="header">
   <h1>&#9632; Análise Colorimétrica</h1>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">CIE L*a*b* · D65</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Sistema HSV · Estabilizado</span>
 </div>
 <div id="top-bar">
   <div id="color-swatch" style="background:#1a1a2e;"></div>
   <div id="color-name" style="color:#445;">Aguardando...</div>
   <div id="delta-e-display"></div>
   <span class="sep">│</span>
-  <div class="data-inline" id="lab-line">
-    <span class="lbl">L*:</span>--- &nbsp;<span class="lbl">a*:</span>--- &nbsp;<span class="lbl">b*:</span>---
+  <div class="data-inline" id="hsv-line">
+    <span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---
   </div>
   <span class="sep">│</span>
   <div class="data-inline" id="rgb-line">
@@ -299,150 +299,350 @@
   const video  = document.getElementById('videoEl');
   const canvas = document.getElementById('canvasEl');
   const ctx    = canvas.getContext('2d');
+  
+  // Estado do sistema
   let stream        = null;
   let devices       = [];
   let deviceIndex   = 0;
   let running       = false;
   let base          = null;
   let universalMode = false;
-  const SAMPLE            = 10;
-  const DELTA_E_THRESHOLD = 12;
-  function linearize(c) {
-    const v = c / 255;
-    return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-  }
-  function rgbToXYZ(r, g, b) {
-    const rl = linearize(r), gl = linearize(g), bl = linearize(b);
+  
+  // Configurações de amostragem e estabilização
+  const SAMPLE_SIZE = 10;
+  const BUFFER_SIZE = 8;  // Número de frames para média móvel
+  const HYSTERESIS_THRESHOLD = 15;  // Limiar para mudança de cor (em graus de Hue)
+  
+  // Buffer circular para estabilização
+  let colorBuffer = [];
+  let lastStableColorName = '';
+  let lastStableHue = 0;
+  
+  // Sistema de áudio
+  let audioEnabled = false;
+  let lastSpokenName = '';
+  let pendingName = '';
+  let stableTimer = null;
+  const STABLE_SPEECH_MS = 400;
+  // ===============================================
+  // CONVERSÃO DE ESPAÇO DE COR: RGB → HSV
+  // ===============================================
+  function rgbToHSV(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const delta = max - min;
+    
+    let h = 0, s = 0, v = max;
+    
+    if (delta !== 0) {
+      s = delta / max;
+      
+      if (max === r) {
+        h = ((g - b) / delta + (g < b ? 6 : 0)) / 6;
+      } else if (max === g) {
+        h = ((b - r) / delta + 2) / 6;
+      } else {
+        h = ((r - g) / delta + 4) / 6;
+      }
+    }
+    
     return {
-      X: (0.4124564*rl + 0.3575761*gl + 0.1804375*bl) * 100,
-      Y: (0.2126729*rl + 0.7151522*gl + 0.0721750*bl) * 100,
-      Z: (0.0193339*rl + 0.1191920*gl + 0.9503041*bl) * 100
+      h: h * 360,      // 0-360 graus
+      s: s * 100,      // 0-100%
+      v: v * 100       // 0-100%
     };
   }
-  function xyzToLab(X, Y, Z) {
-    const Xn=95.047, Yn=100.000, Zn=108.883;
-    const e=0.008856, k=903.3;
-    function f(t) { return t > e ? Math.cbrt(t) : (k*t + 16) / 116; }
-    const fx=f(X/Xn), fy=f(Y/Yn), fz=f(Z/Zn);
-    return { L: 116*fy - 16, a: 500*(fx - fy), b: 200*(fy - fz) };
-  }
-  function rgbToLab(r, g, b) {
-    const xyz = rgbToXYZ(r, g, b);
-    return xyzToLab(xyz.X, xyz.Y, xyz.Z);
-  }
-  function deltaE(lab1, lab2) {
-    return Math.sqrt(
-      Math.pow(lab1.L - lab2.L, 2) +
-      Math.pow(lab1.a - lab2.a, 2) +
-      Math.pow(lab1.b - lab2.b, 2)
-    );
-  }
-  function classifyColor(lab) {
-    const { L, a, b } = lab;
-    if (L < 18)
-      return { name: 'Preto / Escuro', color: '#8899aa' };
-    if (L > 85 && Math.abs(a) < 8 && Math.abs(b) < 8)
-      return { name: 'Branco / Muito Claro', color: '#ffffff' };
-    if (Math.abs(a) < 8 && Math.abs(b) < 8)
-      return { name: 'Cinza / Neutro', color: '#9aaabb' };
-    if (a > 8 && b < -3)
-      return { name: 'Roxo / Violeta', color: '#a855f7' };
-    if (b < -12 && a <= 8)
-      return { name: 'Azul', color: '#3b82f6' };
-    if (a < -5 && b <= 5)
-      return { name: 'Ciano / Turquesa', color: '#22d3ee' };
-    if (a < -5 && b > 5)
-      return { name: 'Verde / Verde-Limão', color: '#4ade80' };
-    if (b > 20 && a >= -5 && a < 15)
-      return { name: 'Amarelo', color: '#facc15' };
-    if (a >= 12 && a <= 30 && b >= 8 && b <= 40)
-      return { name: 'Laranja', color: '#fb923c' };
-    if (a > 20 && b > -5 && b < 35 && L >= 18)
-      return { name: 'Vermelho', color: '#e03040' };
-    if (a >= 8 && b < 8)
-      return { name: 'Rosa / Magenta', color: '#e070b0' };
-    return { name: 'Indefinido', color: '#445566' };
-  }
-  function getUniversalDescription(lab) {
-    const { L, a, b } = lab;
-    let brightness = '';
-    if (L < 20) brightness = 'muito escuro';
-    else if (L < 40) brightness = 'escuro';
-    else if (L < 60) brightness = 'médio';
-    else if (L < 80) brightness = 'claro';
-    else brightness = 'muito claro';
-    let saturation = '';
-    const chromaIntensity = Math.sqrt(a*a + b*b);
-    if (chromaIntensity < 10) saturation = 'sem cor, neutro';
-    else if (chromaIntensity < 25) saturation = 'pouco saturado';
-    else if (chromaIntensity < 45) saturation = 'saturado';
-    else saturation = 'muito saturado';
-    let hue = '';
-    if (chromaIntensity < 10) {
-      hue = 'cinza ou neutro';
-    } else {
-      if (a > 8 && b < -3) hue = 'roxo';
-      else if (b < -12 && a <= 8) hue = 'azul';
-      else if (a < -5 && b <= 5) hue = 'ciano';
-      else if (a < -5 && b > 5) hue = 'verde';
-      else if (b > 20 && a >= -5 && a < 15) hue = 'amarelo';
-      else if (a >= 12 && a <= 30 && b >= 8 && b <= 40) hue = 'laranja';
-      else if (a > 20 && b > -5 && b < 35) hue = 'vermelho';
-      else if (a >= 8 && b < 8) hue = 'rosa';
-      else hue = 'indeterminado';
+  // ===============================================
+  // CLASSIFICAÇÃO DE COR - SISTEMA SIMPLIFICADO
+  // ===============================================
+  function classifyColorSimple(hsv, rgb) {
+    const { h, s, v } = hsv;
+    const { r, g, b } = rgb;
+    
+    // ============================================
+    // 1. CORES ACROMÁTICAS (Branco, Cinza, Preto)
+    // ============================================
+    if (s < 12) {  // Baixa saturação = acromático
+      if (v >= 88) {
+        return { name: 'Branco', color: '#ffffff' };
+      } else if (v <= 20) {
+        return { name: 'Preto', color: '#666677' };
+      } else {
+        return { name: 'Cinza', color: '#9999aa' };
+      }
     }
-    return `Tom ${hue}, ${brightness}, ${saturation}`;
+    
+    // ============================================
+    // 2. CORES CROMÁTICAS - Distribuição Igualitária
+    // ============================================
+    // Dividindo o espectro em 12 faixas iguais de 30° cada
+    
+    let baseName = '';
+    let baseColor = '';
+    
+    // VERMELHO: 345-15° (passa pelo 0°)
+    if (h >= 345 || h < 15) {
+      baseName = 'Vermelho';
+      baseColor = '#ef4444';
+    }
+    // VERMELHO-LARANJA: 15-45°
+    else if (h >= 15 && h < 45) {
+      baseName = 'Laranja Avermelhado';
+      baseColor = '#f97316';
+    }
+    // LARANJA: 45-75°
+    else if (h >= 45 && h < 75) {
+      baseName = 'Laranja';
+      baseColor = '#fb923c';
+    }
+    // AMARELO: 75-105°
+    else if (h >= 75 && h < 105) {
+      baseName = 'Amarelo';
+      baseColor = '#fbbf24';
+    }
+    // VERDE-AMARELO: 105-135°
+    else if (h >= 105 && h < 135) {
+      baseName = 'Verde Amarelado';
+      baseColor = '#a3e635';
+    }
+    // VERDE: 135-165°
+    else if (h >= 135 && h < 165) {
+      baseName = 'Verde';
+      baseColor = '#22c55e';
+    }
+    // VERDE-CIANO: 165-195°
+    else if (h >= 165 && h < 195) {
+      baseName = 'Verde Azulado';
+      baseColor = '#14b8a6';
+    }
+    // CIANO: 195-225°
+    else if (h >= 195 && h < 225) {
+      baseName = 'Ciano';
+      baseColor = '#06b6d4';
+    }
+    // AZUL-CIANO: 225-255°
+    else if (h >= 225 && h < 255) {
+      baseName = 'Azul Claro';
+      baseColor = '#3b82f6';
+    }
+    // AZUL: 255-285°
+    else if (h >= 255 && h < 285) {
+      baseName = 'Azul';
+      baseColor = '#2563eb';
+    }
+    // ROXO/VIOLETA: 285-315°
+    else if (h >= 285 && h < 315) {
+      baseName = 'Roxo';
+      baseColor = '#a855f7';
+    }
+    // MAGENTA/ROSA: 315-345°
+    else if (h >= 315 && h < 345) {
+      baseName = 'Rosa';
+      baseColor = '#ec4899';
+    }
+    
+    // ============================================
+    // 3. ADICIONAR MODIFICADORES DE LUMINOSIDADE
+    // ============================================
+    let modifier = '';
+    if (v < 35) {
+      modifier = ' Escuro';
+    } else if (v > 75 && s < 40) {
+      modifier = ' Claro';
+    }
+    
+    return {
+      name: baseName + modifier,
+      color: baseColor
+    };
   }
+  // ===============================================
+  // CLASSIFICAÇÃO UNIVERSAL - MODO DESCRITIVO
+  // ===============================================
+  function classifyColorUniversal(hsv, rgb) {
+    const { h, s, v } = hsv;
+    
+    // 1. Determinar acromático vs cromático
+    let hueDesc = '';
+    if (s < 12) {
+      if (v >= 88) return { name: 'Branco puro', color: '#ffffff' };
+      if (v <= 20) return { name: 'Preto profundo', color: '#666677' };
+      hueDesc = 'neutro';
+    } else {
+      // Determinar matiz
+      if (h >= 345 || h < 15) hueDesc = 'vermelho';
+      else if (h >= 15 && h < 45) hueDesc = 'laranja avermelhado';
+      else if (h >= 45 && h < 75) hueDesc = 'laranja';
+      else if (h >= 75 && h < 105) hueDesc = 'amarelo';
+      else if (h >= 105 && h < 135) hueDesc = 'verde amarelado';
+      else if (h >= 135 && h < 165) hueDesc = 'verde';
+      else if (h >= 165 && h < 195) hueDesc = 'verde azulado';
+      else if (h >= 195 && h < 225) hueDesc = 'ciano';
+      else if (h >= 225 && h < 255) hueDesc = 'azul claro';
+      else if (h >= 255 && h < 285) hueDesc = 'azul';
+      else if (h >= 285 && h < 315) hueDesc = 'roxo';
+      else if (h >= 315 && h < 345) hueDesc = 'rosa';
+    }
+    
+    // 2. Determinar brilho
+    let brightnessDesc = '';
+    if (v < 25) brightnessDesc = 'muito escuro';
+    else if (v < 45) brightnessDesc = 'escuro';
+    else if (v < 65) brightnessDesc = 'médio';
+    else if (v < 82) brightnessDesc = 'claro';
+    else brightnessDesc = 'muito claro';
+    
+    // 3. Determinar saturação
+    let satDesc = '';
+    if (s < 12) satDesc = 'sem cor';
+    else if (s < 30) satDesc = 'pouco saturado';
+    else if (s < 60) satDesc = 'saturado';
+    else satDesc = 'muito saturado';
+    
+    // Construir descrição
+    const parts = [hueDesc, brightnessDesc, satDesc].filter(p => p);
+    const description = parts.join(', ');
+    
+    return {
+      name: description.charAt(0).toUpperCase() + description.slice(1),
+      color: classifyColorSimple(hsv, rgb).color
+    };
+  }
+  // ===============================================
+  // ESTABILIZAÇÃO COM MÉDIA MÓVEL
+  // ===============================================
+  function addToBuffer(hsv, rgb) {
+    colorBuffer.push({ hsv, rgb });
+    if (colorBuffer.length > BUFFER_SIZE) {
+      colorBuffer.shift();
+    }
+  }
+  
+  function getStableColor() {
+    if (colorBuffer.length === 0) return null;
+    
+    // Calcular média de HSV e RGB
+    let avgH = 0, avgS = 0, avgV = 0;
+    let avgR = 0, avgG = 0, avgB = 0;
+    
+    // Tratamento especial para Hue (é circular, 0° = 360°)
+    let sinSum = 0, cosSum = 0;
+    
+    colorBuffer.forEach(item => {
+      const radH = item.hsv.h * Math.PI / 180;
+      sinSum += Math.sin(radH);
+      cosSum += Math.cos(radH);
+      
+      avgS += item.hsv.s;
+      avgV += item.hsv.v;
+      avgR += item.rgb.r;
+      avgG += item.rgb.g;
+      avgB += item.rgb.b;
+    });
+    
+    const len = colorBuffer.length;
+    avgH = Math.atan2(sinSum / len, cosSum / len) * 180 / Math.PI;
+    if (avgH < 0) avgH += 360;
+    
+    avgS /= len;
+    avgV /= len;
+    avgR = Math.round(avgR / len);
+    avgG = Math.round(avgG / len);
+    avgB = Math.round(avgB / len);
+    
+    return {
+      hsv: { h: avgH, s: avgS, v: avgV },
+      rgb: { r: avgR, g: avgG, b: avgB }
+    };
+  }
+  // ===============================================
+  // HISTERESE PARA EVITAR OSCILAÇÕES
+  // ===============================================
+  function shouldUpdateColor(newHue, newColorName) {
+    // Se é a primeira vez, aceita
+    if (!lastStableColorName) return true;
+    
+    // Se o nome mudou, verifica se a mudança de Hue é significativa
+    if (newColorName !== lastStableColorName) {
+      // Calcular diferença circular de Hue
+      let diff = Math.abs(newHue - lastStableHue);
+      if (diff > 180) diff = 360 - diff;
+      
+      // Só aceita mudança se for maior que o threshold
+      return diff >= HYSTERESIS_THRESHOLD;
+    }
+    
+    return true;
+  }
+  // ===============================================
+  // AMOSTRAGEM DE PIXELS DA CÂMERA
+  // ===============================================
   function samplePixels() {
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw || !vh) return null;
+    
     const cw = video.clientWidth, ch = video.clientHeight;
-    const scale   = Math.max(cw / vw, ch / vh);
+    const scale = Math.max(cw / vw, ch / vh);
     const offsetX = (vw * scale - cw) / 2;
     const offsetY = (vh * scale - ch) / 2;
-    const nativeCX     = Math.round((cw / 2 + offsetX) / scale);
-    const nativeCY     = Math.round((ch / 2 + offsetY) / scale);
-    const nativeSample = Math.max(1, Math.round(SAMPLE / scale));
-    canvas.width = vw; canvas.height = vh;
+    
+    const nativeCX = Math.round((cw / 2 + offsetX) / scale);
+    const nativeCY = Math.round((ch / 2 + offsetY) / scale);
+    const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
+    
+    canvas.width = vw;
+    canvas.height = vh;
     ctx.drawImage(video, 0, 0);
+    
     const x0 = Math.max(0, nativeCX - nativeSample);
     const y0 = Math.max(0, nativeCY - nativeSample);
-    const data = ctx.getImageData(x0, y0, nativeSample*2, nativeSample*2).data;
-    let rSum=0, gSum=0, bSum=0, count=0;
-    for (let i=0; i < data.length; i += 4) {
-      rSum += data[i]; gSum += data[i+1]; bSum += data[i+2]; count++;
+    const data = ctx.getImageData(x0, y0, nativeSample * 2, nativeSample * 2).data;
+    
+    let rSum = 0, gSum = 0, bSum = 0, count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      rSum += data[i];
+      gSum += data[i + 1];
+      bSum += data[i + 2];
+      count++;
     }
+    
     return {
-      r: Math.round(rSum/count),
-      g: Math.round(gSum/count),
-      b: Math.round(bSum/count)
+      r: Math.round(rSum / count),
+      g: Math.round(gSum / count),
+      b: Math.round(bSum / count)
     };
   }
-  let audioEnabled=false, lastSpokenName='', pendingName='', stableTimer=null;
-  const STABLE_MS = 300;
+  // ===============================================
+  // SISTEMA DE ÁUDIO
+  // ===============================================
   function toggleAudio() {
-    if (window.speechSynthesis)
+    if (window.speechSynthesis) {
       window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+    }
     audioEnabled = !audioEnabled;
     const btn = document.getElementById('btn-audio');
     if (audioEnabled) {
-      btn.textContent = '🔊 Áudio: ON';
+      btn.textContent = '🔊 Áudio';
       btn.classList.add('audio-on');
     } else {
-      btn.textContent = '🔇 Áudio: OFF';
+      btn.textContent = '🔇 Áudio';
       btn.classList.remove('audio-on');
       if (window.speechSynthesis) window.speechSynthesis.cancel();
-      if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
-      pendingName = ''; lastSpokenName = '';
+      if (stableTimer) {
+        clearTimeout(stableTimer);
+        stableTimer = null;
+      }
+      pendingName = '';
+      lastSpokenName = '';
     }
   }
   function toggleUniversalMode() {
     universalMode = !universalMode;
     const btn = document.getElementById('btn-universal');
-    btn.textContent = universalMode ? '⭐ Universal: ON' : '☆ Universal: OFF';
+    btn.textContent = universalMode ? '⭐ Universal' : '☆ Universal';
     btn.classList.toggle('universal-on', universalMode);
     
-    // Reset spoken name when toggling mode
     lastSpokenName = '';
     pendingName = '';
     if (stableTimer) {
@@ -456,80 +656,151 @@
     setTimeout(() => {
       if (!audioEnabled) return;
       const utt = new SpeechSynthesisUtterance(name);
-      utt.lang='pt-BR'; utt.rate=1.1; utt.pitch=1.0;
+      utt.lang = 'pt-BR';
+      utt.rate = 1.1;
+      utt.pitch = 1.0;
       window.speechSynthesis.speak(utt);
     }, 60);
   }
   function triggerAudioIfChanged(name) {
     if (!audioEnabled) return;
+    
     if (name === lastSpokenName) {
       if (pendingName !== name && stableTimer) {
-        clearTimeout(stableTimer); stableTimer=null; pendingName='';
+        clearTimeout(stableTimer);
+        stableTimer = null;
+        pendingName = '';
       }
       return;
     }
+    
     if (name !== pendingName) {
       pendingName = name;
       if (stableTimer) clearTimeout(stableTimer);
       stableTimer = setTimeout(() => {
-        if (!audioEnabled) { stableTimer=null; return; }
+        if (!audioEnabled) {
+          stableTimer = null;
+          return;
+        }
         lastSpokenName = pendingName;
         speakColor(pendingName);
         stableTimer = null;
-      }, STABLE_MS);
+      }, STABLE_SPEECH_MS);
     }
   }
+  // ===============================================
+  // LOOP PRINCIPAL DE ATUALIZAÇÃO
+  // ===============================================
   function update() {
-    if (!running || video.readyState < 2) { requestAnimationFrame(update); return; }
-    const pixels = samplePixels();
-    if (!pixels) { requestAnimationFrame(update); return; }
-    const { r, g, b } = pixels;
-    const rawLab = rgbToLab(r, g, b);
-    const dE = base ? deltaE(rawLab, base) : 999;
-    let labForClass;
-    if (base) {
-      labForClass = {
-        L: Math.min(100, Math.max(0, rawLab.L * (100 / Math.max(base.L, 1)))),
-        a: rawLab.a - base.a,
-        b: rawLab.b - base.b
-      };
-    } else {
-      labForClass = rawLab;
+    if (!running || video.readyState < 2) {
+      requestAnimationFrame(update);
+      return;
     }
     
-    const cls = classifyColor(labForClass);
-    const universalDesc = getUniversalDescription(labForClass);
+    const pixels = samplePixels();
+    if (!pixels) {
+      requestAnimationFrame(update);
+      return;
+    }
     
+    const { r, g, b } = pixels;
+    const hsv = rgbToHSV(r, g, b);
+    
+    // Adicionar ao buffer de estabilização
+    addToBuffer(hsv, { r, g, b });
+    
+    // Obter cor estabilizada
+    const stable = getStableColor();
+    if (!stable) {
+      requestAnimationFrame(update);
+      return;
+    }
+    
+    // Classificar cor
+    const classification = universalMode 
+      ? classifyColorUniversal(stable.hsv, stable.rgb)
+      : classifyColorSimple(stable.hsv, stable.rgb);
+    
+    // Aplicar histerese
+    if (shouldUpdateColor(stable.hsv.h, classification.name)) {
+      lastStableColorName = classification.name;
+      lastStableHue = stable.hsv.h;
+      
+      // Atualizar UI
+      document.getElementById('color-name').textContent = classification.name;
+      document.getElementById('color-name').style.color = classification.color;
+      
+      // Trigger áudio
+      triggerAudioIfChanged(classification.name);
+    }
+    
+    // Atualizar dados técnicos (sempre atualiza)
     document.getElementById('rgb-line').innerHTML =
-      `<span class="lbl">R:</span>${r} <span class="lbl">G:</span>${g} <span class="lbl">B:</span>${b}`;
-    document.getElementById('lab-line').innerHTML =
-      `<span class="lbl">L*:</span>${rawLab.L.toFixed(1)} <span class="lbl">a*:</span>${rawLab.a.toFixed(1)} <span class="lbl">b*:</span>${rawLab.b.toFixed(1)}`;
-    document.getElementById('color-swatch').style.background = `rgb(${r},${g},${b})`;
+      `<span class="lbl">R:</span>${stable.rgb.r} <span class="lbl">G:</span>${stable.rgb.g} <span class="lbl">B:</span>${stable.rgb.b}`;
     
-    // Display name based on mode
-    const displayName = universalMode ? universalDesc : cls.name;
-    document.getElementById('color-name').textContent = displayName;
-    document.getElementById('color-name').style.color  = cls.color;
+    document.getElementById('hsv-line').innerHTML =
+      `<span class="lbl">H:</span>${stable.hsv.h.toFixed(0)}° <span class="lbl">S:</span>${stable.hsv.s.toFixed(0)}% <span class="lbl">V:</span>${stable.hsv.v.toFixed(0)}%`;
     
-    if (base)
-      document.getElementById('delta-e-display').textContent = `ΔE=${dE.toFixed(1)}`;
+    document.getElementById('color-swatch').style.background =
+      `rgb(${stable.rgb.r},${stable.rgb.g},${stable.rgb.b})`;
     
-    triggerAudioIfChanged(displayName);
     requestAnimationFrame(update);
   }
+  // ===============================================
+  // GERENCIAMENTO DE CÂMERA
+  // ===============================================
   async function getDevices() {
     const devs = await navigator.mediaDevices.enumerateDevices();
     devices = devs.filter(d => d.kind === 'videoinput');
   }
   async function openCamera(preferredDeviceId) {
     if (stream) stream.getTracks().forEach(t => t.stop());
-    const tryOpen = async (c) => { stream = await navigator.mediaDevices.getUserMedia(c); video.srcObject = stream; };
+    
+    const tryOpen = async (constraints) => {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      video.srcObject = stream;
+    };
+    
     if (preferredDeviceId) {
-      try { await tryOpen({ video: { deviceId: { exact: preferredDeviceId }, width:{ideal:1280}, height:{ideal:720} } }); return; } catch(_){}
+      try {
+        await tryOpen({
+          video: {
+            deviceId: { exact: preferredDeviceId },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+        return;
+      } catch (_) {}
     }
-    try { await tryOpen({ video: { facingMode:{exact:'environment'}, width:{ideal:1280}, height:{ideal:720} } }); return; } catch(_){}
-    try { await tryOpen({ video: { facingMode:'environment', width:{ideal:1280}, height:{ideal:720} } }); return; } catch(_){}
-    try { await tryOpen({ video: true }); } catch(e) { alert('Erro ao acessar a câmera: ' + e.message); }
+    
+    try {
+      await tryOpen({
+        video: {
+          facingMode: { exact: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+      return;
+    } catch (_) {}
+    
+    try {
+      await tryOpen({
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+      return;
+    } catch (_) {}
+    
+    try {
+      await tryOpen({ video: true });
+    } catch (e) {
+      alert('Erro ao acessar a câmera: ' + e.message);
+    }
   }
   async function startCamera() {
     document.getElementById('start-overlay').style.display = 'none';
@@ -539,21 +810,32 @@
     requestAnimationFrame(update);
   }
   async function switchCamera() {
-    if (devices.length < 2) { alert('Apenas uma câmera disponível.'); return; }
+    if (devices.length < 2) {
+      alert('Apenas uma câmera disponível.');
+      return;
+    }
     deviceIndex = (deviceIndex + 1) % devices.length;
     await openCamera(devices[deviceIndex].deviceId);
   }
+  // ===============================================
+  // CALIBRAÇÃO (PLACEHOLDER - PODE SER EXPANDIDA)
+  // ===============================================
   function calibrate() {
-    if (!running) { alert('Inicie a câmera primeiro.'); return; }
-    const pixels = samplePixels();
-    if (!pixels) return;
-    base = rgbToLab(pixels.r, pixels.g, pixels.b);
+    if (!running) {
+      alert('Inicie a câmera primeiro.');
+      return;
+    }
+    
+    const stable = getStableColor();
+    if (!stable) return;
+    
+    base = stable.hsv;
     const btn = document.getElementById('btn-calibrate');
     btn.textContent = '✓ Calibrado';
     btn.classList.add('calibrated');
+    
     document.getElementById('base-info').textContent =
-      `Base: L*=${base.L.toFixed(1)} a*=${base.a.toFixed(1)} b*=${base.b.toFixed(1)}`;
-    document.getElementById('delta-e-display').textContent = '';
+      `Base: H:${base.h.toFixed(0)}° S:${base.s.toFixed(0)}% V:${base.v.toFixed(0)}%`;
   }
 </script>
 </body>
