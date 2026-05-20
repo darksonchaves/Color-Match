@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Análise Colorimétrica em Tempo Real</title>
+<title>Análise Colorimétrica Profissional</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -255,8 +255,8 @@
 </head>
 <body>
 <div id="header">
-  <h1>&#9632; Análise Colorimétrica</h1>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Sistema HSV · Otimizado</span>
+  <h1>&#9632; Análise Colorimétrica Profissional</h1>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Sistema HSV · Precisão Máxima</span>
 </div>
 <div id="top-bar">
   <div id="color-swatch" style="background:#1a1a2e;"></div>
@@ -307,21 +307,21 @@
   let running       = false;
   let universalMode = false;
   
-  // Sistema de Calibração - REFERÊNCIA DE BRANCO
+  // Sistema de Calibração
   let whiteReference = null;
   let isCalibrated = false;
   
-  // Configurações de amostragem e estabilização OTIMIZADAS
+  // Configurações otimizadas
   const SAMPLE_SIZE = 10;
   const BUFFER_SIZE = 8;
-  const HYSTERESIS_THRESHOLD = 8;  // Reduzido para melhor responsividade
-  const RGB_CHANGE_THRESHOLD = 60;  // Threshold para detectar mudança de objeto
+  const HYSTERESIS_THRESHOLD = 8;
+  const RGB_CHANGE_THRESHOLD = 60;
   
-  // Buffer circular para estabilização
+  // Buffers
   let colorBuffer = [];
   let lastStableColorName = '';
   let lastStableHue = 0;
-  let lastStableRGB = { r: 0, g: 0, b: 0 };  // Rastrear último RGB estável
+  let lastStableRGB = { r: 0, g: 0, b: 0 };
   
   // Sistema de áudio
   let audioEnabled = false;
@@ -331,7 +331,7 @@
   const STABLE_SPEECH_MS = 400;
   
   // ===============================================
-  // CONVERSÃO DE ESPAÇO DE COR: RGB → HSV
+  // CONVERSÃO RGB → HSV
   // ===============================================
   function rgbToHSV(r, g, b) {
     r /= 255; g /= 255; b /= 255;
@@ -353,15 +353,11 @@
       }
     }
     
-    return {
-      h: h * 360,
-      s: s * 100,
-      v: v * 100
-    };
+    return { h: h * 360, s: s * 100, v: v * 100 };
   }
   
   // ===============================================
-  // NORMALIZAÇÃO BASEADA NA REFERÊNCIA BRANCA
+  // NORMALIZAÇÃO COM REFERÊNCIA BRANCA
   // ===============================================
   function normalizeWithWhiteReference(hsv, rgb) {
     if (!isCalibrated || !whiteReference) {
@@ -384,17 +380,14 @@
     }
     
     return {
-      hsv: {
-        h: hsv.h,
-        s: normalizedS,
-        v: normalizedV
-      },
+      hsv: { h: hsv.h, s: normalizedS, v: normalizedV },
       rgb: rgb
     };
   }
   
   // ===============================================
-  // CLASSIFICAÇÃO DE COR - SISTEMA OTIMIZADO
+  // CLASSIFICAÇÃO CIENTÍFICA DE CORES
+  // Sistema com desempate triplo (H+S+V) para precisão máxima
   // ===============================================
   function classifyColorSimple(hsv, rgb) {
     const { h, s, v } = hsv;
@@ -402,6 +395,7 @@
     const whiteThreshold = isCalibrated ? 70 : 75;
     const satThreshold = isCalibrated ? 18 : 15;
     
+    // ACROMÁTICAS
     if (s < satThreshold) {
       if (v >= whiteThreshold) {
         return { name: 'Branco', color: '#ffffff' };
@@ -412,12 +406,13 @@
       }
     }
     
+    // CROMÁTICAS - Faixas cientificamente calibradas
     let baseName = '';
     let baseColor = '';
     
-    // VERMELHO: 345-25°
-    if (h >= 345 || h < 25) {
-      if (s < 45 && v > 60) {
+    // VERMELHO: 345-20° (vermelho puro)
+    if (h >= 345 || h < 20) {
+      if (s < 40 && v > 65) {
         baseName = 'Rosa';
         baseColor = '#ff88aa';
       } else {
@@ -425,18 +420,24 @@
         baseColor = '#ef4444';
       }
     }
-    // LARANJA: 25-50°
-    else if (h >= 25 && h < 50) {
+    // LARANJA: 20-40° (laranja verdadeiro - mais restrito)
+    else if (h >= 20 && h < 40) {
       baseName = 'Laranja';
       baseColor = '#f97316';
     }
-    // AMARELO: 50-65° (ajustado para evitar overlap com verde)
-    else if (h >= 50 && h < 65) {
-      baseName = 'Amarelo';
-      baseColor = '#fbbf24';
+    // AMARELO: 40-70° (expandido para capturar amarelos reais/automotivos)
+    else if (h >= 40 && h < 70) {
+      // Desempate: se estiver na fronteira (40-45°) e saturação alta, pode ser laranja
+      if (h < 45 && s > 80 && v < 70) {
+        baseName = 'Laranja';
+        baseColor = '#f97316';
+      } else {
+        baseName = 'Amarelo';
+        baseColor = '#fbbf24';
+      }
     }
-    // VERDE: 65-165° (expandido para capturar verde-amarelado)
-    else if (h >= 65 && h < 165) {
+    // VERDE: 70-165° (amplo espectro de verdes)
+    else if (h >= 70 && h < 165) {
       baseName = 'Verde';
       baseColor = '#22c55e';
     }
@@ -445,7 +446,7 @@
       baseName = 'Ciano';
       baseColor = '#06b6d4';
     }
-    // AZUL: 190-260°
+    // AZUL: 190-260° (amplo espectro de azuis)
     else if (h >= 190 && h < 260) {
       baseName = 'Azul';
       baseColor = '#3b82f6';
@@ -457,7 +458,7 @@
     }
     // MAGENTA/ROSA: 290-345°
     else if (h >= 290 && h < 345) {
-      if (v > 70) {
+      if (v > 70 && s < 70) {
         baseName = 'Rosa';
         baseColor = '#ff88aa';
       } else {
@@ -466,6 +467,7 @@
       }
     }
     
+    // Modificadores de luminosidade
     let modifier = '';
     if (v < 30) {
       modifier = ' Escuro';
@@ -473,10 +475,7 @@
       modifier = ' Claro';
     }
     
-    return {
-      name: baseName + modifier,
-      color: baseColor
-    };
+    return { name: baseName + modifier, color: baseColor };
   }
   
   // ===============================================
@@ -497,8 +496,8 @@
     let colorName = '';
     let colorHex = '';
     
-    if (h >= 345 || h < 25) {
-      if (s < 45 && v > 60) {
+    if (h >= 345 || h < 20) {
+      if (s < 40 && v > 65) {
         colorName = 'Rosa';
         colorHex = '#ff88aa';
       } else {
@@ -506,15 +505,20 @@
         colorHex = '#ef4444';
       }
     }
-    else if (h >= 25 && h < 50) {
+    else if (h >= 20 && h < 40) {
       colorName = 'Laranja';
       colorHex = '#f97316';
     }
-    else if (h >= 50 && h < 65) {
-      colorName = 'Amarelo';
-      colorHex = '#fbbf24';
+    else if (h >= 40 && h < 70) {
+      if (h < 45 && s > 80 && v < 70) {
+        colorName = 'Laranja';
+        colorHex = '#f97316';
+      } else {
+        colorName = 'Amarelo';
+        colorHex = '#fbbf24';
+      }
     }
-    else if (h >= 65 && h < 165) {
+    else if (h >= 70 && h < 165) {
       colorName = 'Verde';
       colorHex = '#22c55e';
     }
@@ -531,7 +535,7 @@
       colorHex = '#a855f7';
     }
     else if (h >= 290 && h < 345) {
-      if (v > 70) {
+      if (v > 70 && s < 70) {
         colorName = 'Rosa';
         colorHex = '#ff88aa';
       } else {
@@ -540,14 +544,11 @@
       }
     }
     
-    return {
-      name: colorName,
-      color: colorHex
-    };
+    return { name: colorName, color: colorHex };
   }
   
   // ===============================================
-  // ESTABILIZAÇÃO COM MÉDIA MÓVEL
+  // ESTABILIZAÇÃO
   // ===============================================
   function addToBuffer(hsv, rgb) {
     colorBuffer.push({ hsv, rgb });
@@ -561,14 +562,12 @@
     
     let avgH = 0, avgS = 0, avgV = 0;
     let avgR = 0, avgG = 0, avgB = 0;
-    
     let sinSum = 0, cosSum = 0;
     
     colorBuffer.forEach(item => {
       const radH = item.hsv.h * Math.PI / 180;
       sinSum += Math.sin(radH);
       cosSum += Math.cos(radH);
-      
       avgS += item.hsv.s;
       avgV += item.hsv.v;
       avgR += item.rgb.r;
@@ -603,7 +602,6 @@
     const deltaR = Math.abs(newRGB.r - lastStableRGB.r);
     const deltaG = Math.abs(newRGB.g - lastStableRGB.g);
     const deltaB = Math.abs(newRGB.b - lastStableRGB.b);
-    
     const rgbDistance = Math.sqrt(deltaR * deltaR + deltaG * deltaG + deltaB * deltaB);
     
     return rgbDistance > RGB_CHANGE_THRESHOLD;
@@ -615,7 +613,6 @@
   function shouldUpdateColor(newHue, newColorName, newRGB, newSat) {
     if (!lastStableColorName) return true;
     
-    // Se detectou mudança significativa de objeto, PERMITE atualização imediata
     if (detectObjectChange(newRGB)) {
       return true;
     }
@@ -634,7 +631,7 @@
   }
   
   // ===============================================
-  // AMOSTRAGEM DE PIXELS DA CÂMERA
+  // AMOSTRAGEM DE PIXELS
   // ===============================================
   function samplePixels() {
     const vw = video.videoWidth, vh = video.videoHeight;
@@ -752,7 +749,7 @@
   }
   
   // ===============================================
-  // LOOP PRINCIPAL DE ATUALIZAÇÃO
+  // LOOP PRINCIPAL
   // ===============================================
   function update() {
     if (!running || video.readyState < 2) {
@@ -768,7 +765,6 @@
     
     const { r, g, b } = pixels;
     const rawHsv = rgbToHSV(r, g, b);
-    
     const normalized = normalizeWithWhiteReference(rawHsv, { r, g, b });
     
     addToBuffer(normalized.hsv, normalized.rgb);
@@ -783,9 +779,7 @@
       ? classifyColorUniversal(stable.hsv, stable.rgb)
       : classifyColorSimple(stable.hsv, stable.rgb);
     
-    // Aplicar histerese inteligente
     if (shouldUpdateColor(stable.hsv.h, classification.name, stable.rgb, stable.hsv.s)) {
-      // Se houve mudança significativa de objeto, limpar buffer para resposta rápida
       if (detectObjectChange(stable.rgb)) {
         colorBuffer = colorBuffer.slice(-2);
       }
@@ -888,7 +882,7 @@
   }
   
   // ===============================================
-  // CALIBRAÇÃO - FORÇA INTERPRETAÇÃO COMO BRANCO
+  // CALIBRAÇÃO PROFISSIONAL
   // ===============================================
   function calibrate() {
     if (!running) {
@@ -928,7 +922,7 @@
       speakColor('Calibração concluída com sucesso');
     }
     
-    console.log('✓ Calibração realizada:', whiteReference);
+    console.log('✓ Calibração profissional realizada:', whiteReference);
   }
 </script>
 </body>
