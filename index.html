@@ -482,107 +482,51 @@
     return false;
   }
   
-  // FUNÇÃO MATEMÁTICA UNIVERSAL: ROSA vs VERMELHO (usando PROPORÇÕES)
-  function distinguishRedFromPink(rgb, h, s, v) {
+  // FUNÇÃO UNIVERSAL: Detectar ROSA (em toda zona H:290-20°)
+  // PRIORIDADE MÁXIMA - Verificada ANTES de Vermelho/Roxo/Magenta
+  function isPink(rgb, h, s, v) {
     const r = rgb.r;
     const g = rgb.g;
     const b = rgb.b;
     
-    // Validação mínima: R deve ser dominante
-    if (r < Math.max(g, b)) {
-      return 'Vermelho'; // Fallback
-    }
+    // Rosa só existe em zona vermelha-roxa (H: 290-20°)
+    const isInPinkZone = (h >= 290) || (h < 20);
+    if (!isInPinkZone) return false;
     
-    // Calcular proporções (funcionam para qualquer intensidade)
+    // R deve ser dominante (maior que G e B)
+    if (r < Math.max(g, b)) return false;
+    
+    // Proporções chave
     const avgGB = (g + b) / 2;
     const maxRGB = Math.max(r, g, b);
     
-    // PROPORÇÃO CRÍTICA: avgGB / R
-    // Rosa: G e B são significativos (55-85% do valor de R)
-    // Vermelho: G e B são muito menores (< 50% de R)
-    const gbToRRatio = avgGB / r;
+    // CRITÉRIO 1: Proporção avgGB/R (G e B significativos)
+    // Rosa: 0.45 - 0.90 (expandido para pegar neon e escuro)
+    const gbToRRatio = avgGB / Math.max(r, 1);
     
-    // PROPORÇÃO SECUNDÁRIA: Proximidade de G e B
-    // Rosa: G e B estão próximos (diferença < 15% do maior)
-    // Vermelho: Pode ter diferença maior
+    // CRITÉRIO 2: Componente azul presente (diferencia de Vermelho puro)
+    // Rosa tem B >= G×0.80 (azul próximo ou maior que verde)
+    const bToGRatio = b / Math.max(g, 1);
+    
+    // CRITÉRIO 3: G e B próximos (não muito divergentes)
     const gbDiff = Math.abs(g - b);
-    const gbProximity = gbDiff / maxRGB;
+    const gbProximity = gbDiff / Math.max(maxRGB, 1);
     
-    // CRITÉRIO 1: ROSA (qualquer intensidade)
-    // - avgGB/R entre 0.55 e 0.85 (G e B significativos)
-    // - G e B próximos (diferença < 12% do máximo)
-    // - R mínimo de 80 (visível)
-    const isPinkByRatio = gbToRRatio >= 0.55 && gbToRRatio <= 0.85;
-    const isPinkByProximity = gbProximity < 0.12;
+    // ROSA (qualquer tom: neon, médio, escuro):
+    // - avgGB/R entre 0.45 e 0.90
+    // - B >= G×0.80 (componente azul significativo)
+    // - G e B próximos (diferença < 15% do máximo)
+    // - R >= 70 (mínimo visível)
     
-    if (isPinkByRatio && isPinkByProximity && r >= 80) {
-      return 'Rosa';
+    const isPinkByRatio = gbToRRatio >= 0.45 && gbToRRatio <= 0.90;
+    const isPinkByBlue = bToGRatio >= 0.80;
+    const isPinkByProximity = gbProximity < 0.15;
+    
+    if (isPinkByRatio && isPinkByBlue && isPinkByProximity && r >= 70) {
+      return true;
     }
     
-    // CRITÉRIO 2: VERMELHO PURO
-    // - avgGB/R < 0.50 (G e B muito menores)
-    // - R mínimo de 100
-    const isRedByRatio = gbToRRatio < 0.50;
-    
-    if (isRedByRatio && r >= 100) {
-      return 'Vermelho';
-    }
-    
-    // DESEMPATE: Zona intermediária (0.50 - 0.55)
-    // Usar saturação como critério adicional
-    // Se S muito alto (> 70%) E avgGB baixo → Vermelho
-    // Caso contrário → Rosa
-    if (s > 70 && avgGB < r * 0.52) {
-      return 'Vermelho';
-    }
-    
-    return 'Rosa';
-  }
-  
-  // FUNÇÃO MATEMÁTICA UNIVERSAL: ROXO vs MAGENTA (usando PROPORÇÕES)
-  function distinguishPurpleFromMagenta(rgb, h, s, v) {
-    const r = rgb.r;
-    const g = rgb.g;
-    const b = rgb.b;
-    
-    const maxRGB = Math.max(r, g, b);
-    
-    // PROPORÇÃO CRÍTICA: Equilíbrio R/B
-    // Magenta: R e B equilibrados (diferença < 20% do maior)
-    // Roxo: B dominante (B >= 85% de R)
-    const rbDiff = Math.abs(r - b);
-    const rbBalance = rbDiff / maxRGB;
-    
-    // PROPORÇÃO SECUNDÁRIA: B/R
-    const bToRRatio = b / Math.max(r, 1); // Evitar divisão por zero
-    
-    // CRITÉRIO 1: ROXO
-    // - B >= 85% de R (azul dominante ou equilibrado)
-    // - B >= 80 (componente azul forte)
-    // - S >= 35%
-    const isPurpleByBlue = bToRRatio >= 0.85;
-    const isPurpleByStrongBlue = b >= 80;
-    const isPurpleBySaturation = s >= 35;
-    
-    if (isPurpleByBlue && isPurpleByStrongBlue && isPurpleBySaturation) {
-      return 'Roxo';
-    }
-    
-    // CRITÉRIO 2: MAGENTA
-    // - Equilíbrio R/B (diferença < 18% do máximo)
-    // - Ambos R e B altos (>= 85)
-    // - G significativamente menor (< 70% do menor entre R e B)
-    const isMagentaByBalance = rbBalance < 0.18;
-    const isMagentaByHighRB = r >= 85 && b >= 85;
-    const minRB = Math.min(r, b);
-    const isMagentaByLowG = g < minRB * 0.70;
-    
-    if (isMagentaByBalance && isMagentaByHighRB && isMagentaByLowG && s >= 30) {
-      return 'Magenta';
-    }
-    
-    // DESEMPATE: Se B é forte → Roxo, senão → Magenta
-    return b >= 75 ? 'Roxo' : 'Magenta';
+    return false;
   }
   
   function classifyColorWithRuler(hsv, rgb, variance) {
@@ -641,19 +585,40 @@
     
     let baseName = '', baseColor = '', confidence = 98;
     
-    // ZONA ROSA/VERMELHO (H: 345-20°) - Usar função proporcional
-    if ((h >= 345 || h < 20) && s >= 15) {
-      const result = distinguishRedFromPink(rgb, h, s, v);
-      baseName = result;
-      baseColor = result === 'Rosa' ? '#ff88aa' : '#ef4444';
-      confidence = result === 'Rosa' ? 95 : 98;
+    // PRIORIDADE 1: Verificar ROSA em toda zona crítica (H: 290-20°)
+    if (((h >= 290) || (h < 20)) && s >= 15) {
+      if (isPink(rgb, h, s, v)) {
+        baseName = 'Rosa';
+        baseColor = '#ff88aa';
+        confidence = 95;
+      } else {
+        // Não é rosa, verificar se é Vermelho
+        const avgGB = (rgb.g + rgb.b) / 2;
+        const gbToRRatio = avgGB / Math.max(rgb.r, 1);
+        
+        // Vermelho: avgGB/R < 0.45 (G e B muito baixos)
+        if (gbToRRatio < 0.45 && rgb.r >= 100) {
+          baseName = 'Vermelho';
+          baseColor = '#ef4444';
+        } else {
+          // Zona intermediária ou Magenta
+          baseName = 'Magenta';
+          baseColor = '#d946ef';
+        }
+      }
     }
-    // ZONA ROXO/MAGENTA (H: 260-345°) - Usar função proporcional
-    else if (h >= 260 && h < 345 && s >= 30) {
-      const result = distinguishPurpleFromMagenta(rgb, h, s, v);
-      baseName = result;
-      baseColor = result === 'Roxo' ? '#a855f7' : '#d946ef';
-      confidence = 98;
+    // Roxo (H: 260-290°)
+    else if (h >= 260 && h < 290 && s >= 30) {
+      const bToRRatio = rgb.b / Math.max(rgb.r, 1);
+      
+      // Roxo: B >= R×0.85 E B >= 80
+      if (bToRRatio >= 0.85 && rgb.b >= 80) {
+        baseName = 'Roxo';
+        baseColor = '#a855f7';
+      } else {
+        baseName = 'Magenta';
+        baseColor = '#d946ef';
+      }
     }
     else if (h >= 20 && h < 35) {
       baseName = 'Laranja';
