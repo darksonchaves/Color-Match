@@ -100,12 +100,6 @@
     color: #446;
     white-space: nowrap;
   }
-  #light-warning {
-    font-size: 0.58rem;
-    color: #fa0;
-    white-space: nowrap;
-    display: none;
-  }
   .btn-top {
     padding: 4px 8px;
     border: none;
@@ -322,7 +316,6 @@
   </div>
   <span class="sep">│</span>
   <div id="base-info">Base: não calibrada</div>
-  <div id="light-warning">⚠️ Pouca luz</div>
   <span class="sep">│</span>
   <button class="btn-top" id="btn-calibrate-white" onclick="calibrateWhite()">&#9670; Cal. Branco</button>
   <button class="btn-top" id="btn-calibrate-black" onclick="calibrateBlack()">&#9670; Cal. Preto</button>
@@ -361,7 +354,6 @@
   let blackCalibration = null;
   let isWhiteCalibrated = false;
   let isBlackCalibrated = false;
-  let ambientProfile = { light: 100 };
   
   const SAMPLE_SIZE = 4;
   const BUFFER_SIZE = 8;
@@ -404,7 +396,6 @@
       document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
       document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
       document.getElementById('color-swatch').style.background = '#1a1a2e';
-      document.getElementById('light-warning').style.display = 'none';
     }
   }
   
@@ -432,23 +423,6 @@
     const vNormalized = ((vRaw - vBlack) / (vWhite - vBlack)) * 100;
     
     return Math.max(0, Math.min(100, vNormalized));
-  }
-  
-  function detectAmbientLight(v, rgb) {
-    const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
-    ambientProfile.light = Math.min(100, (avgRGB / 255) * 100 + v * 0.5);
-    const warning = document.getElementById('light-warning');
-    
-    if (ambientProfile.light < 35) {
-      warning.style.display = 'block';
-      warning.textContent = '⚠️ Pouca luz';
-    } else if (ambientProfile.light > 92) {
-      warning.style.display = 'block';
-      warning.textContent = '⚠️ Luz excessiva';
-    } else {
-      warning.style.display = 'none';
-    }
-    return ambientProfile.light;
   }
   
   function calculateVariance(buffer) {
@@ -508,59 +482,92 @@
     return false;
   }
   
-  // FUNÇÃO CIRÚRGICA: Classificar Rosa/Roxo/Magenta com precisão
-  function classifyPinkMagentaPurple(h, s, v, rgb) {
-    // ZONA ROSA/VERMELHO (H: 345-20°)
-    if (h >= 345 || h < 20) {
-      // Critérios para ROSA (cor dessaturada com vermelho dominante)
-      const isRosaPorSaturacao = s >= 25 && s <= 75 && v >= 35;
-      const isRosaPorRGB = rgb.r >= 120 && rgb.r > rgb.b * 1.15 && rgb.r > rgb.g * 1.1;
-      
-      if (isRosaPorSaturacao || isRosaPorRGB) {
-        return { name: 'Rosa', color: '#ff88aa' };
-      }
-      
-      // Se não é Rosa, é Vermelho puro
-      return { name: 'Vermelho', color: '#ef4444' };
+  // FUNÇÃO MATEMÁTICA RIGOROSA: Distinguir VERMELHO de ROSA
+  function distinguishRedFromPink(rgb, s, v) {
+    const r = rgb.r;
+    const g = rgb.g;
+    const b = rgb.b;
+    
+    // Médias para análise
+    const avgGB = (g + b) / 2;
+    
+    // CRITÉRIOS MATEMÁTICOS UNIVERSAIS:
+    
+    // VERMELHO PURO:
+    // - R dominante absoluto (pelo menos 1.7x maior que G e B)
+    // - Média de G+B deve ser baixa (< 85)
+    // - Saturação alta (> 65%)
+    const isRedByRatio = (r > g * 1.7) && (r > b * 1.7);
+    const isRedByLowGB = avgGB < 85;
+    const isRedBySaturation = s > 65;
+    
+    if (isRedByRatio && isRedByLowGB && isRedBySaturation && r >= 100) {
+      return 'Vermelho';
     }
     
-    // ZONA ROXO (H: 260-290°)
-    if (h >= 260 && h < 290) {
-      // ROXO: Azul deve ser dominante ou equilibrado com vermelho
-      const blueIsDominant = rgb.b >= rgb.r * 0.80;
-      const hasStrongBlue = rgb.b >= 80;
-      const isSaturated = s >= 35;
-      
-      if ((blueIsDominant || hasStrongBlue) && isSaturated && v >= 25) {
-        return { name: 'Roxo', color: '#a855f7' };
-      }
-      
-      // Se não atende critérios de Roxo, pode ser Magenta
-      return { name: 'Magenta', color: '#d946ef' };
+    // ROSA:
+    // - R é maior, mas G e B têm valores significativos (> 90)
+    // - Razão R/(G+B) está entre 1.05 e 1.45
+    // - Saturação moderada (20% a 65%)
+    const ratioRtoGB = r / avgGB;
+    const isPinkByRatio = ratioRtoGB >= 1.05 && ratioRtoGB <= 1.45;
+    const isPinkByHighGB = avgGB >= 90;
+    const isPinkBySaturation = s >= 20 && s <= 65;
+    
+    if (isPinkByRatio && isPinkByHighGB && isPinkBySaturation && r >= 100) {
+      return 'Rosa';
     }
     
-    // ZONA MAGENTA (H: 290-345°)
-    if (h >= 290 && h < 345) {
-      // MAGENTA: Equilíbrio entre vermelho e azul
-      const redBlueBalance = Math.abs(rgb.r - rgb.b);
-      const bothHighEnough = rgb.r >= 100 && rgb.b >= 80;
-      const isSaturated = s >= 40;
-      
-      // Se vermelho e azul estão equilibrados E saturados = Magenta
-      if (redBlueBalance <= 40 && bothHighEnough && isSaturated && v >= 30) {
-        return { name: 'Magenta', color: '#d946ef' };
-      }
-      
-      // Se vermelho é muito maior que azul = Rosa
-      if (rgb.r > rgb.b * 1.25 && s >= 30 && s <= 75 && v >= 35) {
-        return { name: 'Rosa', color: '#ff88aa' };
-      }
-      
-      // Padrão: Magenta
-      return { name: 'Magenta', color: '#d946ef' };
+    // Caso ambíguo: usar saturação como desempate
+    if (s > 65) {
+      return 'Vermelho';
+    } else if (s >= 20 && avgGB >= 80) {
+      return 'Rosa';
     }
     
-    return null;
+    // Padrão: Vermelho
+    return 'Vermelho';
+  }
+  
+  // FUNÇÃO MATEMÁTICA RIGOROSA: Distinguir ROXO de MAGENTA
+  function distinguishPurpleFromMagenta(rgb, s, v) {
+    const r = rgb.r;
+    const g = rgb.g;
+    const b = rgb.b;
+    
+    // ROXO:
+    // - Azul DOMINANTE ou equilibrado com vermelho
+    // - B >= R × 0.85
+    // - B >= 90 (azul forte)
+    // - Saturação >= 40%
+    const isPurpleByBlue = b >= r * 0.85;
+    const isPurpleByStrongBlue = b >= 90;
+    const isPurpleBySaturation = s >= 40;
+    
+    if (isPurpleByBlue && isPurpleByStrongBlue && isPurpleBySaturation && v >= 30) {
+      return 'Roxo';
+    }
+    
+    // MAGENTA:
+    // - Equilíbrio entre R e B (diferença <= 45)
+    // - Ambos R e B devem ser altos (>= 100)
+    // - Verde deve ser significativamente menor
+    const rgbDiff = Math.abs(r - b);
+    const isMagentaByBalance = rgbDiff <= 45;
+    const isMagentaByHighRB = r >= 100 && b >= 90;
+    const isMagentaByLowG = g < r * 0.7 && g < b * 0.7;
+    
+    if (isMagentaByBalance && isMagentaByHighRB && isMagentaByLowG && s >= 35) {
+      return 'Magenta';
+    }
+    
+    // Desempate: Se vermelho > azul × 1.2 = tende a Magenta
+    if (r > b * 1.2 && s >= 35) {
+      return 'Magenta';
+    }
+    
+    // Padrão: Roxo se azul >= 80, senão Magenta
+    return b >= 80 ? 'Roxo' : 'Magenta';
   }
   
   function classifyColorWithRuler(hsv, rgb, variance) {
@@ -613,12 +620,26 @@
     
     let baseName = '', baseColor = '', confidence = 98;
     
-    // USAR FUNÇÃO CIRÚRGICA para Rosa/Roxo/Magenta
-    const pinkMagentaPurple = classifyPinkMagentaPurple(h, s, v, rgb);
-    if (pinkMagentaPurple !== null) {
-      baseName = pinkMagentaPurple.name;
-      baseColor = pinkMagentaPurple.color;
-      confidence = baseName === 'Rosa' ? 95 : 98;
+    // ZONA VERMELHO/ROSA (H: 345-20°)
+    if ((h >= 345 || h < 20) && s >= 20) {
+      const result = distinguishRedFromPink(rgb, s, v);
+      baseName = result;
+      baseColor = result === 'Rosa' ? '#ff88aa' : '#ef4444';
+      confidence = result === 'Rosa' ? 95 : 98;
+    }
+    // ZONA ROXO (H: 260-290°)
+    else if (h >= 260 && h < 290 && s >= 35) {
+      const result = distinguishPurpleFromMagenta(rgb, s, v);
+      baseName = result;
+      baseColor = result === 'Roxo' ? '#a855f7' : '#d946ef';
+      confidence = 98;
+    }
+    // ZONA MAGENTA (H: 290-345°)
+    else if (h >= 290 && h < 345 && s >= 35) {
+      const result = distinguishPurpleFromMagenta(rgb, s, v);
+      baseName = result;
+      baseColor = result === 'Roxo' ? '#a855f7' : '#d946ef';
+      confidence = 98;
     }
     else if (h >= 20 && h < 35) {
       baseName = 'Laranja';
@@ -644,8 +665,6 @@
     let modifier = '';
     if (v < 28) modifier = ' Escuro';
     else if (v > 82 && s < 45) modifier = ' Claro';
-    
-    if (ambientProfile.light < 35) confidence = Math.max(75, confidence - 10);
     
     return { name: baseName + modifier, color: baseColor, confidence };
   }
@@ -845,7 +864,6 @@
     
     const { r, g, b } = pixels;
     const rawHsv = rgbToHSV(r, g, b);
-    detectAmbientLight(rawHsv.v, { r, g, b });
     
     addToBuffer(rawHsv, { r, g, b });
     
@@ -1055,7 +1073,6 @@
     console.log('═══════════════════════════════════════════════');
   }
   
-  // NOVAS FUNÇÕES DE RESET
   function resetWhite() {
     if (!systemOn) return;
     
