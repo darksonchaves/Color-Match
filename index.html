@@ -278,7 +278,7 @@
   </div>
   <span class="sep">│</span>
   <div id="base-info">Base: não calibrada</div>
-  <div id="light-warning">⚠ Pouca luz</div>
+  <div id="light-warning">⚠️ Pouca luz</div>
   <span class="sep">│</span>
   <button class="btn-top" id="btn-calibrate" onclick="calibrate()">&#9670; Calibrar</button>
   <button class="btn-top" id="btn-camera"    onclick="switchCamera()">&#8635; Câmera</button>
@@ -324,6 +324,10 @@
   let lastStableRGB = { r: 0, g: 0, b: 0 };
   let lastStableVariance = 0;
   
+  // Anti-pane: contador de frames consecutivos com cor diferente da exibida
+  let mismatchCounter = 0;
+  const MISMATCH_FORCE_UPDATE = 5;
+  
   let audioEnabled = false, lastSpokenName = '', pendingName = '', stableTimer = null;
   const STABLE_SPEECH_MS = 400;
   
@@ -346,10 +350,10 @@
     const warning = document.getElementById('light-warning');
     if (ambientProfile.light < 40) {
       warning.style.display = 'block';
-      warning.textContent = '⚠ Pouca luz';
+      warning.textContent = '⚠️ Pouca luz';
     } else if (ambientProfile.light > 85) {
       warning.style.display = 'block';
-      warning.textContent = '⚠ Luz excessiva';
+      warning.textContent = '⚠️ Luz excessiva';
     } else {
       warning.style.display = 'none';
     }
@@ -710,7 +714,23 @@
       ? classifyColorUniversal(stable.hsv, stable.rgb, variance)
       : classifyColorSimple(stable.hsv, stable.rgb, variance);
     
-    if (shouldUpdateColor(stable.hsv.h, classification.name, stable.rgb, stable.hsv.s, variance)) {
+    // Anti-pane: detectar quando o classificador insiste numa cor diferente da exibida
+    if (classification.name !== lastStableColorName && lastStableColorName !== '') {
+      mismatchCounter++;
+    } else {
+      mismatchCounter = 0;
+    }
+    
+    // Forçar atualização se mismatch persistir por N frames consecutivos
+    const forceUpdate = mismatchCounter >= MISMATCH_FORCE_UPDATE;
+    
+    if (forceUpdate || shouldUpdateColor(stable.hsv.h, classification.name, stable.rgb, stable.hsv.s, variance)) {
+      // Se foi forçado pelo anti-pane, limpar buffer para reiniciar leitura limpa
+      if (forceUpdate) {
+        colorBuffer = colorBuffer.slice(-3);
+        mismatchCounter = 0;
+      }
+      
       if (detectObjectChange(stable.rgb)) colorBuffer = colorBuffer.slice(-2);
       
       lastStableColorName = classification.name;
@@ -825,16 +845,13 @@
     lastStableColorName = 'Branco';
     lastStableHue = stable.hsv.h;
     lastStableRGB = { ...stable.rgb };
+    mismatchCounter = 0;
     
     if (audioEnabled) {
-      if (ambientProfile.light < 40) {
-        speakColor('Calibrado. Óculos escuros ativados. Atenção: pouca luz');
-      } else {
-        speakColor('Calibração com óculos escuros concluída');
-      }
+      speakColor('Calibrado');
     }
     
-    console.log('✓ Calibração com Óculos Escuros:', ambientProfile);
+    console.log('✓ Calibração:', ambientProfile);
   }
 </script>
 </body>
