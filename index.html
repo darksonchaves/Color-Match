@@ -371,21 +371,10 @@
     let adjustedV = hsv.v;
     const isReflective = variance > 6;
     
-    // Se superfície reflexiva (variância alta)
+    // Se superfície reflexiva (variância alta), reduzir V
     if (isReflective) {
-      // Reduzir V artificialmente (30-40% de redução)
       const reductionFactor = Math.min(0.4, variance / 25);
       adjustedV = hsv.v * (1 - reductionFactor);
-    }
-    
-    // Compensação adicional baseada na calibração
-    if (isCalibrated && whiteReference) {
-      const referenceV = whiteReference.hsv.v;
-      // Se ambiente tem muito brilho, compensar mais agressivamente
-      if (referenceV > 0 && referenceV < 90) {
-        const compensationFactor = 85 / referenceV;
-        adjustedV = Math.min(100, adjustedV * compensationFactor);
-      }
     }
     
     return {
@@ -400,10 +389,9 @@
     let whiteThreshold, blackThreshold, satThreshold, grayMaxThreshold;
     
     if (isCalibrated) {
-      // ZONA DE EXCLUSÃO SUPER RIGOROSA
       grayMaxThreshold = Math.min(ambientProfile.grayZone.max, ambientProfile.whiteV - 18);
       whiteThreshold = Math.max(ambientProfile.whiteV - 10, 65);
-      blackThreshold = Math.min(32, grayMaxThreshold - 30);
+      blackThreshold = Math.max(22, Math.min(32, ambientProfile.whiteV * 0.35));
       satThreshold = 22;
     } else {
       if (ambientProfile.light < 40) {
@@ -421,18 +409,16 @@
   function classifyColorSimple(hsv, rgb, variance) {
     const thresholds = getAdaptiveThresholds();
     
-    // APLICAR ÓCULOS ESCUROS
     const adjusted = applyDarkGlasses(hsv, variance, rgb);
     const { h, s, v } = adjusted;
     
-    // ACROMÁTICAS - Baseadas no V AJUSTADO
+    // ACROMÁTICAS
     if (s < thresholds.satThreshold) {
       if (v >= thresholds.whiteThreshold) {
         return { name: 'Branco', color: '#ffffff', confidence: 98 };
       } else if (v <= thresholds.blackThreshold) {
         return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
       } else {
-        // Cinza NUNCA ultrapassa grayMaxThreshold
         if (v > thresholds.grayMaxThreshold && isCalibrated) {
           return { name: 'Cinza', color: '#9999aa', confidence: 78 };
         }
@@ -440,13 +426,11 @@
       }
     }
     
-    // CROMÁTICAS - Baseadas principalmente em H e S (V ajustado menos relevante)
+    // CROMÁTICAS
     let baseName = '', baseColor = '', confidence = 98;
     
-    // VERMELHO vs ROSA - Critério baseado em S principalmente
     if (h >= 345 || h < 20) {
-      // Rosa: saturação REALMENTE baixa (<38) E não tem muita saturação
-      if (s < 38 && v > 65) {
+      if (s < 55 && v > 50) {
         baseName = 'Rosa';
         baseColor = '#ff88aa';
         confidence = 95;
@@ -456,11 +440,11 @@
         confidence = 98;
       }
     }
-    else if (h >= 20 && h < 40) {
+    else if (h >= 20 && h < 35) {
       baseName = 'Laranja';
       baseColor = '#f97316';
     }
-    else if (h >= 40 && h < 70) {
+    else if (h >= 35 && h < 70) {
       baseName = 'Amarelo';
       baseColor = '#fbbf24';
     }
@@ -481,7 +465,7 @@
       baseColor = '#a855f7';
     }
     else if (h >= 290 && h < 345) {
-      if (s < 45 && v > 70) {
+      if (s < 58 && v > 50) {
         baseName = 'Rosa';
         baseColor = '#ff88aa';
       } else {
@@ -490,7 +474,6 @@
       }
     }
     
-    // Modificadores baseados no V AJUSTADO
     let modifier = '';
     if (v < 28) modifier = ' Escuro';
     else if (v > 82 && s < 45) modifier = ' Claro';
@@ -503,7 +486,6 @@
   function classifyColorUniversal(hsv, rgb, variance) {
     const thresholds = getAdaptiveThresholds();
     
-    // APLICAR ÓCULOS ESCUROS
     const adjusted = applyDarkGlasses(hsv, variance, rgb);
     const { h, s, v } = adjusted;
     
@@ -522,11 +504,11 @@
       return { name: 'Cinza', color: '#9999aa', confidence: 96 };
     }
     
-    // CROMÁTICAS - Foco em H e S
+    // CROMÁTICAS
     let colorName = '', colorHex = '';
     
     if (h >= 345 || h < 20) {
-      if (s < 38 && v > 65) {
+      if (s < 55 && v > 50) {
         colorName = 'Rosa';
         colorHex = '#ff88aa';
         confidence = 95;
@@ -536,14 +518,14 @@
         confidence = 98;
       }
     }
-    else if (h >= 20 && h < 40) { colorName = 'Laranja'; colorHex = '#f97316'; }
-    else if (h >= 40 && h < 70) { colorName = 'Amarelo'; colorHex = '#fbbf24'; }
+    else if (h >= 20 && h < 35) { colorName = 'Laranja'; colorHex = '#f97316'; }
+    else if (h >= 35 && h < 70) { colorName = 'Amarelo'; colorHex = '#fbbf24'; }
     else if (h >= 70 && h < 165) { colorName = 'Verde'; colorHex = '#22c55e'; }
     else if (h >= 165 && h < 190) { colorName = 'Ciano'; colorHex = '#06b6d4'; }
     else if (h >= 190 && h < 260) { colorName = 'Azul'; colorHex = '#3b82f6'; }
     else if (h >= 260 && h < 290) { colorName = 'Roxo'; colorHex = '#a855f7'; }
     else if (h >= 290 && h < 345) {
-      if (s < 45 && v > 70) {
+      if (s < 58 && v > 50) {
         colorName = 'Rosa'; colorHex = '#ff88aa';
       } else {
         colorName = 'Magenta'; colorHex = '#d946ef';
@@ -817,11 +799,10 @@
       return;
     }
     
-    // ZONA DE EXCLUSÃO SUPER RIGOROSA
     ambientProfile.whiteV = stable.hsv.v;
     ambientProfile.grayZone = {
       min: 0,
-      max: Math.min(stable.hsv.v - 18, 62) // Cinza NUNCA ultrapassa isso
+      max: Math.min(stable.hsv.v - 18, 62)
     };
     
     whiteReference = {
