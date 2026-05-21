@@ -335,13 +335,12 @@
   let isCalibrated = false;
   let ambientProfile = { light: 100, whiteV: 100, grayZone: { min: 0, max: 100 } };
   
-  // MODIFICAÇÃO 2: Reduzir drasticamente área de amostragem (era 12, agora 4)
   const SAMPLE_SIZE = 4;
   const BUFFER_SIZE = 8;
   const HYSTERESIS_THRESHOLD = 6;
   const RGB_CHANGE_THRESHOLD = 55;
-  // MODIFICAÇÃO 1: Distância adaptativa será calculada dinamicamente
-  let WHITE_RGB_DISTANCE_ADAPTIVE = 35;
+  // CORREÇÃO CRÍTICA: Zona de ancoragem rígida para calibração
+  let WHITE_RGB_DISTANCE_ADAPTIVE = 45;
   
   let colorBuffer = [];
   let lastStableColorName = '';
@@ -353,10 +352,8 @@
   const MISMATCH_FORCE_UPDATE = 5;
   
   let audioEnabled = false, lastSpokenName = '', pendingName = '', stableTimer = null;
-  // MODIFICAÇÃO 4: Aumentar tempo de estabilização para 600ms (era 400ms)
   const STABLE_SPEECH_MS = 600;
   
-  // MODIFICAÇÃO 4: Aumentar frames consecutivos para 7 (era 3)
   let consecutiveFrameCounter = 0;
   const MIN_CONSECUTIVE_FRAMES = 7;
   
@@ -466,13 +463,27 @@
     };
   }
   
-  // MODIFICAÇÃO 1: Distância RGB com tolerância adaptativa baseada em calibração
   function distanceFromWhiteRef(rgb) {
     if (!whiteReference) return Infinity;
     const dr = rgb.r - whiteReference.rgb.r;
     const dg = rgb.g - whiteReference.rgb.g;
     const db = rgb.b - whiteReference.rgb.b;
     return Math.sqrt(dr * dr + dg * dg + db * db);
+  }
+  
+  // CORREÇÃO CRÍTICA: Função de verificação de correspondência com calibração (PRIORIDADE MÁXIMA)
+  function isCalibrationMatch(rgb, s, v) {
+    if (!isCalibrated || !whiteReference) return null;
+    
+    const dist = distanceFromWhiteRef(rgb);
+    
+    // REGRA ABSOLUTA: Se está dentro da zona de ancoragem E saturação baixa, É BRANCO
+    // Tolerância expandida: S <= 25% (ao invés de 8%)
+    if (dist <= WHITE_RGB_DISTANCE_ADAPTIVE && s <= 25) {
+      return { name: 'Branco', color: '#ffffff', confidence: 99 };
+    }
+    
+    return null;
   }
   
   function getAdaptiveThresholds() {
@@ -496,9 +507,24 @@
     return { whiteThreshold, blackThreshold, satThreshold, grayMaxThreshold };
   }
   
-  // MODIFICAÇÃO 1 e 3: Classificação acromática com fixação inteligente da base
+  // CORREÇÃO CRÍTICA: Classificação de preto rigorosa
+  function isBlackSurface(v, s, rgb) {
+    // REGRA 1: V muito baixo (< 22%) com saturação baixa (< 35%) = SEMPRE PRETO
+    if (v < 22 && s < 35) {
+      return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+    }
+    
+    // REGRA 2: Todos os canais RGB baixos (< 50) = PRETO (ignora ruído de cor)
+    const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
+    if (maxRGB < 50 && s < 40) {
+      return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+    }
+    
+    return null;
+  }
+  
   function classifyAchromatic(v, s, rgb, thresholds) {
-    // MODIFICAÇÃO 3: Trava rigorosa - S deve ser < 15% (era 20%)
+    // CORREÇÃO: Trava de saturação rigorosa - S > 15% nunca é acromático
     if (s > 15) {
       return null;
     }
@@ -506,10 +532,9 @@
     if (isCalibrated && whiteReference) {
       const dist = distanceFromWhiteRef(rgb);
       
-      // MODIFICAÇÃO 1: Fixação da base calibrada com zona de confiança expandida
-      // Se S <= 8% e está próximo do branco calibrado, FORÇAR "Branco"
-      if (s <= 8 && dist <= WHITE_RGB_DISTANCE_ADAPTIVE) {
-        return { name: 'Branco', color: '#ffffff', confidence: 98 };
+      // Zona de confiança para branco calibrado
+      if (dist <= WHITE_RGB_DISTANCE_ADAPTIVE && s <= 12) {
+        return { name: 'Branco', color: '#ffffff', confidence: 99 };
       }
       
       if (v <= thresholds.blackThreshold) {
@@ -527,7 +552,6 @@
   }
   
   function classifyPinkRegion(h, s, v, rgb) {
-    // MODIFICAÇÃO 3: Validação extra para rosa - se S > 30% em zona rosa, NUNCA acromático
     if (h >= 345 || h < 20) {
       const hasBlueComponent = rgb.b > rgb.g * 1.2;
       if (s < 58 && v > 40) {
@@ -560,10 +584,21 @@
     const adjusted = applyDarkGlasses(normalized, variance, rgb);
     const { h, s, v } = adjusted;
     
-    // MODIFICAÇÃO 3: Verificação adicional para zona rosa com saturação alta
+    // CORREÇÃO CRÍTICA 1: PRIMEIRA PRIORIDADE - Verificar calibração
+    const calibMatch = isCalibrationMatch(rgb, s, v);
+    if (calibMatch !== null) {
+      return calibMatch;
+    }
+    
+    // CORREÇÃO CRÍTICA 2: SEGUNDA PRIORIDADE - Verificar se é preto
+    const blackCheck = isBlackSurface(v, s, rgb);
+    if (blackCheck !== null) {
+      return blackCheck;
+    }
+    
+    // Verificação de zona rosa com saturação alta
     const isInPinkZone = (h >= 290 && h < 360) || (h >= 0 && h < 20);
     if (isInPinkZone && s > 30) {
-      // FORÇAR classificação cromática - rosa não pode ser cinza/preto
       const pinkResult = classifyPinkRegion(h, s, v, rgb);
       if (pinkResult !== null) {
         const baseColor = pinkResult === 'Rosa' ? '#ff88aa' : (pinkResult === 'Vermelho' ? '#ef4444' : '#d946ef');
@@ -638,7 +673,18 @@
     
     let confidence = 98;
     
-    // MODIFICAÇÃO 3: Verificação adicional para zona rosa
+    // CORREÇÃO CRÍTICA 1: Verificar calibração primeiro
+    const calibMatch = isCalibrationMatch(rgb, s, v);
+    if (calibMatch !== null) {
+      return calibMatch;
+    }
+    
+    // CORREÇÃO CRÍTICA 2: Verificar se é preto
+    const blackCheck = isBlackSurface(v, s, rgb);
+    if (blackCheck !== null) {
+      return blackCheck;
+    }
+    
     const isInPinkZone = (h >= 290 && h < 360) || (h >= 0 && h < 20);
     if (isInPinkZone && s > 30) {
       const pinkResult = classifyPinkRegion(h, s, v, rgb);
@@ -734,7 +780,6 @@
     return rgbDistance > RGB_CHANGE_THRESHOLD;
   }
   
-  // MODIFICAÇÃO 4: Validação rigorosa com contador de frames consecutivos
   function shouldUpdateColor(newHue, newColorName, newRGB, newSat, newVariance) {
     if (!lastStableColorName) return true;
     if (detectObjectChange(newRGB)) {
@@ -751,7 +796,6 @@
       
       if (hueDiffSignificant || saturationChange) {
         consecutiveFrameCounter++;
-        // MODIFICAÇÃO 4: Aumentado para 7 frames consecutivos (era 3)
         return consecutiveFrameCounter >= MIN_CONSECUTIVE_FRAMES;
       } else {
         consecutiveFrameCounter = 0;
@@ -763,7 +807,6 @@
     return true;
   }
   
-  // MODIFICAÇÃO 2: Amostragem estrita de pixels no centro exato da mira
   function samplePixels() {
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw || !vh) return null;
@@ -773,7 +816,6 @@
     const offsetY = (vh * scale - ch) / 2;
     const nativeCX = Math.round((cw / 2 + offsetX) / scale);
     const nativeCY = Math.round((ch / 2 + offsetY) / scale);
-    // MODIFICAÇÃO 2: Área drasticamente reduzida (era ~12, agora 4)
     const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
     
     canvas.width = vw; canvas.height = vh;
@@ -837,7 +879,6 @@
     if (name !== pendingName) {
       pendingName = name;
       if (stableTimer) clearTimeout(stableTimer);
-      // MODIFICAÇÃO 4: Tempo aumentado para 600ms (era 400ms)
       stableTimer = setTimeout(() => {
         if (!audioEnabled) { stableTimer = null; return; }
         lastSpokenName = pendingName;
@@ -1002,10 +1043,11 @@
     };
     isCalibrated = true;
     
-    // MODIFICAÇÃO 1: Ajustar distância adaptativa baseada no ambiente
-    // Quanto mais alto o V da calibração, maior a tolerância para variações de sombra
-    WHITE_RGB_DISTANCE_ADAPTIVE = Math.min(50, Math.max(30, stable.hsv.v * 0.7));
+    // CORREÇÃO CRÍTICA: Zona de ancoragem expandida e adaptativa
+    // Fórmula ajustada: tolera variações maiores em ambientes claros
+    WHITE_RGB_DISTANCE_ADAPTIVE = Math.min(60, Math.max(40, stable.hsv.v * 0.85));
     
+    // FORÇAR exibição imediata de "Branco"
     document.getElementById('color-name').textContent = 'Branco';
     document.getElementById('color-name').style.color = '#ffffff';
     
@@ -1016,10 +1058,12 @@
     document.getElementById('base-info').textContent =
       `Base: Branco V:${stable.hsv.v.toFixed(0)}% | Cinza≤${ambientProfile.grayZone.max.toFixed(0)}%`;
     
+    // RESET completo do buffer e contadores
     colorBuffer = [];
     lastStableColorName = 'Branco';
     lastStableHue = stable.hsv.h;
     lastStableRGB = { ...stable.rgb };
+    lastStableVariance = 0;
     mismatchCounter = 0;
     consecutiveFrameCounter = 0;
     
@@ -1027,7 +1071,10 @@
       speakColor('Calibrado');
     }
     
-    console.log('✓ Calibração:', ambientProfile, 'RGB Ref:', whiteReference.rgb, 'Tolerância:', WHITE_RGB_DISTANCE_ADAPTIVE);
+    console.log('✓ CALIBRAÇÃO COMPLETA');
+    console.log('   Branco Ref RGB:', whiteReference.rgb);
+    console.log('   Zona de Ancoragem:', WHITE_RGB_DISTANCE_ADAPTIVE.toFixed(1), 'pixels');
+    console.log('   Tolerância S:', '≤ 25%');
   }
 </script>
 </body>
