@@ -26,12 +26,28 @@
     position: relative;
     flex-shrink: 0;
   }
-  #header h1 {
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 2px;
-    color: #7b8cde;
+  #btn-system {
+    padding: 5px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
+    transition: all 0.2s ease;
+  }
+  #btn-system.system-on {
+    background: linear-gradient(135deg, #1a4a2e, #2a7a4e);
+    color: #6effa0;
+    border: 1px solid rgba(60,200,100,0.45);
+    box-shadow: 0 0 8px rgba(60,200,100,0.25);
+  }
+  #btn-system.system-off {
+    background: linear-gradient(135deg, #3a1a1a, #5a2020);
+    color: #ff5050;
+    border: 1px solid rgba(200,50,50,0.45);
+    box-shadow: 0 0 8px rgba(200,50,50,0.2);
   }
   #top-bar {
     background: rgba(8,8,20,0.86);
@@ -103,12 +119,16 @@
     white-space: nowrap;
     flex-shrink: 0;
   }
+  .btn-top:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+  }
   #btn-calibrate {
     background: linear-gradient(135deg, #2a2a6e, #3a3a9e);
     color: #aac;
     border: 1px solid rgba(100,100,255,0.3);
   }
-  #btn-calibrate:hover { background: linear-gradient(135deg, #3a3a8e, #5a5abe); color: #eef; }
+  #btn-calibrate:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a8e, #5a5abe); color: #eef; }
   #btn-calibrate.calibrated {
     background: linear-gradient(135deg, #1a4a2e, #2a7a4e);
     border-color: rgba(50,200,100,0.4);
@@ -119,13 +139,13 @@
     color: #bac;
     border: 1px solid rgba(180,100,255,0.3);
   }
-  #btn-camera:hover { background: linear-gradient(135deg, #3a2a5e, #6a4a9e); color: #edf; }
+  #btn-camera:hover:not(:disabled) { background: linear-gradient(135deg, #3a2a5e, #6a4a9e); color: #edf; }
   #btn-audio {
     background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
     color: #446;
     border: 1px solid rgba(100,100,150,0.2);
   }
-  #btn-audio:hover { background: linear-gradient(135deg, #252535, #353550); color: #778; }
+  #btn-audio:hover:not(:disabled) { background: linear-gradient(135deg, #252535, #353550); color: #778; }
   #btn-audio.audio-on {
     background: linear-gradient(135deg, #163a1e, #1f6030);
     color: #6effa0;
@@ -137,7 +157,7 @@
     color: #446;
     border: 1px solid rgba(100,100,150,0.2);
   }
-  #btn-universal:hover { background: linear-gradient(135deg, #252535, #353550); color: #778; }
+  #btn-universal:hover:not(:disabled) { background: linear-gradient(135deg, #252535, #353550); color: #778; }
   #btn-universal.universal-on {
     background: linear-gradient(135deg, #3a2a1e, #6a4a30);
     color: #ffa060;
@@ -250,7 +270,8 @@
   #btn-start:hover { transform: scale(1.05); }
   
   @media (max-width: 768px) {
-    #header h1 { font-size: 0.65rem; }
+    #header { padding: 4px 8px; }
+    #btn-system { font-size: 0.6rem; padding: 4px 9px; }
     #top-bar { gap: 6px; padding: 4px 8px; }
     .btn-top { padding: 3px 6px; font-size: 0.55rem; }
     #color-name { font-size: 0.74rem; min-width: 100px; }
@@ -261,7 +282,7 @@
 </head>
 <body>
 <div id="header">
-  <h1>&#9632; Motor de Cor - Óculos Escuros</h1>
+  <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
   <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Compensação de Brilho · 100%</span>
 </div>
 <div id="top-bar">
@@ -308,6 +329,7 @@
   const ctx = canvas.getContext('2d');
   
   let stream = null, devices = [], deviceIndex = 0, running = false, universalMode = false;
+  let systemOn = true;
   
   let whiteReference = null;
   let isCalibrated = false;
@@ -324,12 +346,36 @@
   let lastStableRGB = { r: 0, g: 0, b: 0 };
   let lastStableVariance = 0;
   
-  // Anti-pane: contador de frames consecutivos com cor diferente da exibida
   let mismatchCounter = 0;
   const MISMATCH_FORCE_UPDATE = 5;
   
   let audioEnabled = false, lastSpokenName = '', pendingName = '', stableTimer = null;
   const STABLE_SPEECH_MS = 400;
+  
+  function toggleSystem() {
+    systemOn = !systemOn;
+    const btn = document.getElementById('btn-system');
+    const btns = ['btn-calibrate', 'btn-camera', 'btn-audio', 'btn-universal'];
+    
+    if (systemOn) {
+      btn.textContent = 'SISTEMA/ON';
+      btn.className = 'system-on';
+      btns.forEach(id => document.getElementById(id).disabled = false);
+    } else {
+      btn.textContent = 'SISTEMA/OFF';
+      btn.className = 'system-off';
+      btns.forEach(id => document.getElementById(id).disabled = true);
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
+      document.getElementById('color-name').textContent = '---';
+      document.getElementById('color-name').style.color = '#445';
+      document.getElementById('confidence-display').textContent = '';
+      document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
+      document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
+      document.getElementById('color-swatch').style.background = '#1a1a2e';
+      document.getElementById('light-warning').style.display = 'none';
+    }
+  }
   
   function rgbToHSV(r, g, b) {
     r /= 255; g /= 255; b /= 255;
@@ -375,7 +421,6 @@
     let adjustedV = hsv.v;
     const isReflective = variance > 6;
     
-    // Se superfície reflexiva (variância alta), reduzir V
     if (isReflective) {
       const reductionFactor = Math.min(0.4, variance / 25);
       adjustedV = hsv.v * (1 - reductionFactor);
@@ -394,7 +439,7 @@
     
     if (isCalibrated) {
       grayMaxThreshold = Math.min(ambientProfile.grayZone.max, ambientProfile.whiteV - 18);
-      whiteThreshold = Math.max(ambientProfile.whiteV - 10, 65);
+      whiteThreshold = ambientProfile.whiteV - 5;
       blackThreshold = Math.max(22, Math.min(32, ambientProfile.whiteV * 0.35));
       satThreshold = 22;
     } else {
@@ -632,6 +677,7 @@
   }
   
   function toggleAudio() {
+    if (!systemOn) return;
     if (window.speechSynthesis) window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
     audioEnabled = !audioEnabled;
     const btn = document.getElementById('btn-audio');
@@ -646,6 +692,7 @@
   }
   
   function toggleUniversalMode() {
+    if (!systemOn) return;
     universalMode = !universalMode;
     const btn = document.getElementById('btn-universal');
     btn.textContent = universalMode ? '⭐ Universal' : '☆ Universal';
@@ -691,6 +738,11 @@
       return;
     }
     
+    if (!systemOn) {
+      requestAnimationFrame(update);
+      return;
+    }
+    
     const pixels = samplePixels();
     if (!pixels) {
       requestAnimationFrame(update);
@@ -714,18 +766,15 @@
       ? classifyColorUniversal(stable.hsv, stable.rgb, variance)
       : classifyColorSimple(stable.hsv, stable.rgb, variance);
     
-    // Anti-pane: detectar quando o classificador insiste numa cor diferente da exibida
     if (classification.name !== lastStableColorName && lastStableColorName !== '') {
       mismatchCounter++;
     } else {
       mismatchCounter = 0;
     }
     
-    // Forçar atualização se mismatch persistir por N frames consecutivos
     const forceUpdate = mismatchCounter >= MISMATCH_FORCE_UPDATE;
     
     if (forceUpdate || shouldUpdateColor(stable.hsv.h, classification.name, stable.rgb, stable.hsv.s, variance)) {
-      // Se foi forçado pelo anti-pane, limpar buffer para reiniciar leitura limpa
       if (forceUpdate) {
         colorBuffer = colorBuffer.slice(-3);
         mismatchCounter = 0;
@@ -791,6 +840,7 @@
   }
   
   async function startCamera() {
+    if (!systemOn) return;
     document.getElementById('start-overlay').style.display = 'none';
     await getDevices();
     await openCamera();
@@ -799,6 +849,7 @@
   }
   
   async function switchCamera() {
+    if (!systemOn) return;
     if (devices.length < 2) {
       alert('Apenas uma câmera disponível.');
       return;
@@ -808,6 +859,7 @@
   }
   
   function calibrate() {
+    if (!systemOn) return;
     if (!running) {
       alert('Inicie a câmera primeiro.');
       return;
