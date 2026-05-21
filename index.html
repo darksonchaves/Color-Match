@@ -145,6 +145,18 @@
     border-color: rgba(200,200,200,0.4);
     color: #fff;
   }
+  #btn-reset-white {
+    background: linear-gradient(135deg, #3a2a2a, #5a3a3a);
+    color: #d99;
+    border: 1px solid rgba(200,100,100,0.3);
+  }
+  #btn-reset-white:hover:not(:disabled) { background: linear-gradient(135deg, #4a3a3a, #6a4a4a); color: #faa; }
+  #btn-reset-black {
+    background: linear-gradient(135deg, #2a2a3a, #3a3a5a);
+    color: #99d;
+    border: 1px solid rgba(100,100,200,0.3);
+  }
+  #btn-reset-black:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a4a, #4a4a6a); color: #aaf; }
   #btn-camera {
     background: linear-gradient(135deg, #2a1a3e, #4a2a6e);
     color: #bac;
@@ -314,6 +326,8 @@
   <span class="sep">│</span>
   <button class="btn-top" id="btn-calibrate-white" onclick="calibrateWhite()">&#9670; Cal. Branco</button>
   <button class="btn-top" id="btn-calibrate-black" onclick="calibrateBlack()">&#9670; Cal. Preto</button>
+  <button class="btn-top" id="btn-reset-white" onclick="resetWhite()">&#10006; Reset Branco</button>
+  <button class="btn-top" id="btn-reset-black" onclick="resetBlack()">&#10006; Reset Preto</button>
   <button class="btn-top" id="btn-camera"    onclick="switchCamera()">&#8635; Câmera</button>
   <button class="btn-top" id="btn-audio"     onclick="toggleAudio()">&#128263; Áudio</button>
   <button class="btn-top" id="btn-universal" onclick="toggleUniversalMode()">&#9733; Universal</button>
@@ -343,7 +357,6 @@
   let stream = null, devices = [], deviceIndex = 0, running = false, universalMode = false;
   let systemOn = true;
   
-  // CALIBRAÇÃO DUPLA: Âncoras de BRANCO e PRETO
   let whiteCalibration = null;
   let blackCalibration = null;
   let isWhiteCalibrated = false;
@@ -373,7 +386,7 @@
   function toggleSystem() {
     systemOn = !systemOn;
     const btn = document.getElementById('btn-system');
-    const btns = ['btn-calibrate-white', 'btn-calibrate-black', 'btn-camera', 'btn-audio', 'btn-universal'];
+    const btns = ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-universal'];
     
     if (systemOn) {
       btn.textContent = 'SISTEMA/ON';
@@ -408,20 +421,16 @@
     return { h: h * 360, s: s * 100, v: v * 100 };
   }
   
-  // FUNÇÃO CRÍTICA: Normalizar V baseado na régua BRANCO-PRETO
   function normalizeV(vRaw) {
     if (!isWhiteCalibrated || !isBlackCalibrated) {
-      return vRaw; // Sem calibração completa, retorna V original
+      return vRaw;
     }
     
     const vWhite = whiteCalibration.hsv.v;
     const vBlack = blackCalibration.hsv.v;
     
-    // Fórmula de mapeamento linear:
-    // V_normalizado = ((V_atual - V_preto) / (V_branco - V_preto)) × 100
     const vNormalized = ((vRaw - vBlack) / (vWhite - vBlack)) * 100;
     
-    // Clampar entre 0-100
     return Math.max(0, Math.min(100, vNormalized));
   }
   
@@ -450,7 +459,6 @@
     return Math.sqrt(variance);
   }
   
-  // Verificar se é o BRANCO calibrado
   function isCalibrationWhite(hsv, rgb) {
     if (!isWhiteCalibrated || !whiteCalibration) return false;
     
@@ -475,7 +483,6 @@
     return false;
   }
   
-  // Verificar se é o PRETO calibrado
   function isCalibrationBlack(hsv, rgb) {
     if (!isBlackCalibrated || !blackCalibration) return false;
     
@@ -501,24 +508,73 @@
     return false;
   }
   
-  // Classificação usando a RÉGUA de calibração dupla
+  // FUNÇÃO CIRÚRGICA: Classificar Rosa/Roxo/Magenta com precisão
+  function classifyPinkMagentaPurple(h, s, v, rgb) {
+    // ZONA ROSA/VERMELHO (H: 345-20°)
+    if (h >= 345 || h < 20) {
+      // Critérios para ROSA (cor dessaturada com vermelho dominante)
+      const isRosaPorSaturacao = s >= 25 && s <= 75 && v >= 35;
+      const isRosaPorRGB = rgb.r >= 120 && rgb.r > rgb.b * 1.15 && rgb.r > rgb.g * 1.1;
+      
+      if (isRosaPorSaturacao || isRosaPorRGB) {
+        return { name: 'Rosa', color: '#ff88aa' };
+      }
+      
+      // Se não é Rosa, é Vermelho puro
+      return { name: 'Vermelho', color: '#ef4444' };
+    }
+    
+    // ZONA ROXO (H: 260-290°)
+    if (h >= 260 && h < 290) {
+      // ROXO: Azul deve ser dominante ou equilibrado com vermelho
+      const blueIsDominant = rgb.b >= rgb.r * 0.80;
+      const hasStrongBlue = rgb.b >= 80;
+      const isSaturated = s >= 35;
+      
+      if ((blueIsDominant || hasStrongBlue) && isSaturated && v >= 25) {
+        return { name: 'Roxo', color: '#a855f7' };
+      }
+      
+      // Se não atende critérios de Roxo, pode ser Magenta
+      return { name: 'Magenta', color: '#d946ef' };
+    }
+    
+    // ZONA MAGENTA (H: 290-345°)
+    if (h >= 290 && h < 345) {
+      // MAGENTA: Equilíbrio entre vermelho e azul
+      const redBlueBalance = Math.abs(rgb.r - rgb.b);
+      const bothHighEnough = rgb.r >= 100 && rgb.b >= 80;
+      const isSaturated = s >= 40;
+      
+      // Se vermelho e azul estão equilibrados E saturados = Magenta
+      if (redBlueBalance <= 40 && bothHighEnough && isSaturated && v >= 30) {
+        return { name: 'Magenta', color: '#d946ef' };
+      }
+      
+      // Se vermelho é muito maior que azul = Rosa
+      if (rgb.r > rgb.b * 1.25 && s >= 30 && s <= 75 && v >= 35) {
+        return { name: 'Rosa', color: '#ff88aa' };
+      }
+      
+      // Padrão: Magenta
+      return { name: 'Magenta', color: '#d946ef' };
+    }
+    
+    return null;
+  }
+  
   function classifyColorWithRuler(hsv, rgb, variance) {
-    // PRIORIDADE 1: Verificar se é o branco calibrado
     if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) {
       return { name: 'Branco', color: '#ffffff', confidence: 99 };
     }
     
-    // PRIORIDADE 2: Verificar se é o preto calibrado
     if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) {
       return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
     }
     
     const { h, s } = hsv;
-    
-    // Usar V NORMALIZADO se ambas calibrações existem
     const v = normalizeV(hsv.v);
     
-    // Detectar PRETO genérico (sem calibração ou fora da calibração)
     const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
     if (v < 22 && s < 35) {
       return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
@@ -527,10 +583,8 @@
       return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
     }
     
-    // Classificação de cores acromáticas usando V NORMALIZADO
     if (s < 15) {
       if (isWhiteCalibrated && isBlackCalibrated) {
-        // COM RÉGUA COMPLETA: usar V normalizado
         if (v >= 85) {
           return { name: 'Branco', color: '#ffffff', confidence: 98 };
         } else if (v <= 20) {
@@ -539,7 +593,6 @@
           return { name: 'Cinza', color: '#9999aa', confidence: 96 };
         }
       } else if (isWhiteCalibrated) {
-        // SÓ BRANCO calibrado
         const baseV = whiteCalibration.hsv.v;
         if (v >= baseV - 10) {
           return { name: 'Branco', color: '#ffffff', confidence: 98 };
@@ -549,7 +602,6 @@
           return { name: 'Cinza', color: '#9999aa', confidence: 96 };
         }
       } else {
-        // SEM CALIBRAÇÃO: usar limites absolutos
         if (v >= 72) {
           return { name: 'Branco', color: '#ffffff', confidence: 98 };
         } else if (v <= 28) {
@@ -559,39 +611,14 @@
       }
     }
     
-    // Cores cromáticas (com saturação)
     let baseName = '', baseColor = '', confidence = 98;
     
-    if ((h >= 345 || h < 20) || (h >= 290 && h < 345)) {
-      if (h >= 345 || h < 20) {
-        const hasBlueComponent = rgb.b > rgb.g * 1.2;
-        if (s < 58 && v > 40) {
-          baseName = 'Rosa';
-          baseColor = '#ff88aa';
-          confidence = 95;
-        } else if (hasBlueComponent && s < 72 && v > 45) {
-          baseName = 'Rosa';
-          baseColor = '#ff88aa';
-          confidence = 95;
-        } else {
-          baseName = 'Vermelho';
-          baseColor = '#ef4444';
-        }
-      } else {
-        const moreRedThanBlue = rgb.r > rgb.b * 0.9;
-        if (s < 60 && v > 40) {
-          baseName = 'Rosa';
-          baseColor = '#ff88aa';
-          confidence = 95;
-        } else if (moreRedThanBlue && s < 70 && v > 45) {
-          baseName = 'Rosa';
-          baseColor = '#ff88aa';
-          confidence = 95;
-        } else {
-          baseName = 'Magenta';
-          baseColor = '#d946ef';
-        }
-      }
+    // USAR FUNÇÃO CIRÚRGICA para Rosa/Roxo/Magenta
+    const pinkMagentaPurple = classifyPinkMagentaPurple(h, s, v, rgb);
+    if (pinkMagentaPurple !== null) {
+      baseName = pinkMagentaPurple.name;
+      baseColor = pinkMagentaPurple.color;
+      confidence = baseName === 'Rosa' ? 95 : 98;
     }
     else if (h >= 20 && h < 35) {
       baseName = 'Laranja';
@@ -612,10 +639,6 @@
     else if (h >= 190 && h < 260) {
       baseName = 'Azul';
       baseColor = '#3b82f6';
-    }
-    else if (h >= 260 && h < 290) {
-      baseName = 'Roxo';
-      baseColor = '#a855f7';
     }
     
     let modifier = '';
@@ -932,7 +955,6 @@
     await openCamera(devices[deviceIndex].deviceId);
   }
   
-  // CALIBRAR BRANCO
   function calibrateWhite() {
     if (!systemOn) return;
     if (!running) {
@@ -981,7 +1003,6 @@
     console.log('═══════════════════════════════════════════════');
   }
   
-  // CALIBRAR PRETO
   function calibrateBlack() {
     if (!systemOn) return;
     if (!running) {
@@ -1032,6 +1053,55 @@
       console.log('   RÉGUA COMPLETA: Range de', range.toFixed(1) + '%');
     }
     console.log('═══════════════════════════════════════════════');
+  }
+  
+  // NOVAS FUNÇÕES DE RESET
+  function resetWhite() {
+    if (!systemOn) return;
+    
+    whiteCalibration = null;
+    isWhiteCalibrated = false;
+    
+    const btn = document.getElementById('btn-calibrate-white');
+    btn.textContent = '◆ Cal. Branco';
+    btn.classList.remove('calibrated');
+    
+    updateCalibrationStatus();
+    
+    colorBuffer = [];
+    lastStableColorName = '';
+    mismatchCounter = 0;
+    consecutiveFrameCounter = 0;
+    
+    if (audioEnabled) {
+      speakColor('Branco resetado');
+    }
+    
+    console.log('✗ CALIBRAÇÃO DE BRANCO RESETADA');
+  }
+  
+  function resetBlack() {
+    if (!systemOn) return;
+    
+    blackCalibration = null;
+    isBlackCalibrated = false;
+    
+    const btn = document.getElementById('btn-calibrate-black');
+    btn.textContent = '◆ Cal. Preto';
+    btn.classList.remove('calibrated');
+    
+    updateCalibrationStatus();
+    
+    colorBuffer = [];
+    lastStableColorName = '';
+    mismatchCounter = 0;
+    consecutiveFrameCounter = 0;
+    
+    if (audioEnabled) {
+      speakColor('Preto resetado');
+    }
+    
+    console.log('✗ CALIBRAÇÃO DE PRETO RESETADA');
   }
 </script>
 </body>
