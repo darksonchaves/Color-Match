@@ -331,16 +331,15 @@
   let stream = null, devices = [], deviceIndex = 0, running = false, universalMode = false;
   let systemOn = true;
   
-  let whiteReference = null;
+  // NOVA ABORDAGEM: Calibração como ÂNCORA ABSOLUTA
+  let calibrationBase = null;
   let isCalibrated = false;
-  let ambientProfile = { light: 100, whiteV: 100, grayZone: { min: 0, max: 100 } };
+  let ambientProfile = { light: 100 };
   
   const SAMPLE_SIZE = 4;
   const BUFFER_SIZE = 8;
   const HYSTERESIS_THRESHOLD = 6;
   const RGB_CHANGE_THRESHOLD = 55;
-  // CORREÇÃO CRÍTICA: Zona de ancoragem rígida para calibração
-  let WHITE_RGB_DISTANCE_ADAPTIVE = 45;
   
   let colorBuffer = [];
   let lastStableColorName = '';
@@ -395,32 +394,6 @@
     return { h: h * 360, s: s * 100, v: v * 100 };
   }
   
-  function normalizeLuminance(hsv, rgb) {
-    const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
-    
-    const maxChannel = Math.max(rgb.r, rgb.g, rgb.b);
-    const minChannel = Math.min(rgb.r, rgb.g, rgb.b);
-    const channelSpread = maxChannel - minChannel;
-    
-    const isSpecularReflection = (channelSpread < 30 && hsv.v > 75);
-    
-    let normalizedV = hsv.v;
-    
-    if (avgRGB > 200 && hsv.v > 70) {
-      const reductionFactor = Math.min(0.25, (avgRGB - 200) / 220);
-      normalizedV = hsv.v * (1 - reductionFactor);
-    } else if (isSpecularReflection) {
-      normalizedV = hsv.v * 0.75;
-    }
-    
-    return {
-      h: hsv.h,
-      s: hsv.s,
-      v: normalizedV,
-      originalV: hsv.v
-    };
-  }
-  
   function detectAmbientLight(v, rgb) {
     const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
     ambientProfile.light = Math.min(100, (avgRGB / 255) * 100 + v * 0.5);
@@ -446,188 +419,127 @@
     return Math.sqrt(variance);
   }
   
-  function applyDarkGlasses(hsv, variance, rgb) {
-    let adjustedV = hsv.v;
-    const isReflective = variance > 6;
+  // FUNÇÃO CRUCIAL: Verificar se a leitura atual corresponde ao BRANCO CALIBRADO
+  // Usa múltiplos critérios para garantir que a mesma superfície sempre retorne BRANCO
+  function isCalibrationWhite(hsv, rgb) {
+    if (!isCalibrated || !calibrationBase) return false;
     
-    if (isReflective) {
-      const reductionFactor = Math.min(0.4, variance / 25);
-      adjustedV = hsv.v * (1 - reductionFactor);
+    const base = calibrationBase;
+    
+    // Critério 1: Distância Euclidiana RGB
+    const dr = rgb.r - base.rgb.r;
+    const dg = rgb.g - base.rgb.g;
+    const db = rgb.b - base.rgb.b;
+    const rgbDistance = Math.sqrt(dr*dr + dg*dg + db*db);
+    
+    // Critério 2: Diferença de Brilho (V)
+    const vDiff = Math.abs(hsv.v - base.hsv.v);
+    
+    // Critério 3: Diferença de Saturação (S)
+    const sDiff = Math.abs(hsv.s - base.hsv.s);
+    
+    // REGRA ABSOLUTA: Se QUALQUER critério indicar semelhança forte, É BRANCO
+    // Tolerâncias generosas para cobrir variações de sombra/iluminação
+    const isRGBSimilar = rgbDistance <= 50;  // Distância RGB tolerante
+    const isVSimilar = vDiff <= 15;           // Diferença de brilho até 15%
+    const isSLow = hsv.s <= 30;               // Saturação baixa (sem cor forte)
+    
+    // Se RGB é similar OU (V é similar E saturação baixa), É O BRANCO CALIBRADO
+    if (isRGBSimilar || (isVSimilar && isSLow)) {
+      return true;
     }
     
-    return {
-      h: hsv.h,
-      s: hsv.s,
-      v: adjustedV,
-      originalV: hsv.v
-    };
+    // Também: se é MAIS CLARO que a calibração e sem saturação, é Branco
+    if (hsv.v >= base.hsv.v && hsv.s <= 20) {
+      return true;
+    }
+    
+    return false;
   }
   
-  function distanceFromWhiteRef(rgb) {
-    if (!whiteReference) return Infinity;
-    const dr = rgb.r - whiteReference.rgb.r;
-    const dg = rgb.g - whiteReference.rgb.g;
-    const db = rgb.b - whiteReference.rgb.b;
-    return Math.sqrt(dr * dr + dg * dg + db * db);
-  }
-  
-  // CORREÇÃO CRÍTICA: Função de verificação de correspondência com calibração (PRIORIDADE MÁXIMA)
-  function isCalibrationMatch(rgb, s, v) {
-    if (!isCalibrated || !whiteReference) return null;
-    
-    const dist = distanceFromWhiteRef(rgb);
-    
-    // REGRA ABSOLUTA: Se está dentro da zona de ancoragem E saturação baixa, É BRANCO
-    // Tolerância expandida: S <= 25% (ao invés de 8%)
-    if (dist <= WHITE_RGB_DISTANCE_ADAPTIVE && s <= 25) {
+  // Classificação RELATIVA baseada na calibração
+  function classifyColorRelative(hsv, rgb, variance) {
+    // PRIORIDADE ABSOLUTA: Verificar se é o branco calibrado
+    if (isCalibrated && isCalibrationWhite(hsv, rgb)) {
       return { name: 'Branco', color: '#ffffff', confidence: 99 };
     }
     
-    return null;
-  }
-  
-  function getAdaptiveThresholds() {
-    let whiteThreshold, blackThreshold, satThreshold, grayMaxThreshold;
-    
-    if (isCalibrated) {
-      grayMaxThreshold = Math.min(ambientProfile.grayZone.max, ambientProfile.whiteV - 18);
-      whiteThreshold = ambientProfile.whiteV - 5;
-      blackThreshold = Math.max(22, Math.min(32, ambientProfile.whiteV * 0.35));
-      satThreshold = 22;
-    } else {
-      if (ambientProfile.light < 40) {
-        whiteThreshold = 62; blackThreshold = 32; satThreshold = 24; grayMaxThreshold = 50;
-      } else if (ambientProfile.light > 70) {
-        whiteThreshold = 78; blackThreshold = 22; satThreshold = 14; grayMaxThreshold = 68;
-      } else {
-        whiteThreshold = 72; blackThreshold = 28; satThreshold = 18; grayMaxThreshold = 60;
-      }
-    }
-    
-    return { whiteThreshold, blackThreshold, satThreshold, grayMaxThreshold };
-  }
-  
-  // CORREÇÃO CRÍTICA: Classificação de preto rigorosa
-  function isBlackSurface(v, s, rgb) {
-    // REGRA 1: V muito baixo (< 22%) com saturação baixa (< 35%) = SEMPRE PRETO
-    if (v < 22 && s < 35) {
-      return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-    }
-    
-    // REGRA 2: Todos os canais RGB baixos (< 50) = PRETO (ignora ruído de cor)
+    // Detectar PRETO: V muito baixo ou RGB todos baixos
     const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
-    if (maxRGB < 50 && s < 40) {
+    if (hsv.v < 22 && hsv.s < 35) {
+      return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+    }
+    if (maxRGB < 50 && hsv.s < 40) {
       return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
     }
     
-    return null;
-  }
-  
-  function classifyAchromatic(v, s, rgb, thresholds) {
-    // CORREÇÃO: Trava de saturação rigorosa - S > 15% nunca é acromático
-    if (s > 15) {
-      return null;
+    const { h, s, v } = hsv;
+    
+    // Se calibrado, trabalhar RELATIVAMENTE à base
+    if (isCalibrated && calibrationBase) {
+      const baseV = calibrationBase.hsv.v;
+      
+      // Superfícies acromáticas RELATIVAS à calibração
+      if (s < 15) {
+        // Mais claro ou similar ao branco calibrado = Branco
+        if (v >= baseV - 10) {
+          return { name: 'Branco', color: '#ffffff', confidence: 98 };
+        }
+        // Muito mais escuro que a base = Preto
+        else if (v < baseV * 0.4) {
+          return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+        }
+        // No meio = Cinza
+        else {
+          return { name: 'Cinza', color: '#9999aa', confidence: 96 };
+        }
+      }
     }
     
-    if (isCalibrated && whiteReference) {
-      const dist = distanceFromWhiteRef(rgb);
-      
-      // Zona de confiança para branco calibrado
-      if (dist <= WHITE_RGB_DISTANCE_ADAPTIVE && s <= 12) {
-        return { name: 'Branco', color: '#ffffff', confidence: 99 };
-      }
-      
-      if (v <= thresholds.blackThreshold) {
+    // Classificação de cores com saturação
+    if (s < 15) {
+      // Sem calibração, usar limites absolutos
+      if (v >= 72) {
+        return { name: 'Branco', color: '#ffffff', confidence: 98 };
+      } else if (v <= 28) {
         return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
       }
       return { name: 'Cinza', color: '#9999aa', confidence: 96 };
     }
     
-    if (v >= thresholds.whiteThreshold) {
-      return { name: 'Branco', color: '#ffffff', confidence: 98 };
-    } else if (v <= thresholds.blackThreshold) {
-      return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-    }
-    return { name: 'Cinza', color: '#9999aa', confidence: 96 };
-  }
-  
-  function classifyPinkRegion(h, s, v, rgb) {
-    if (h >= 345 || h < 20) {
-      const hasBlueComponent = rgb.b > rgb.g * 1.2;
-      if (s < 58 && v > 40) {
-        return 'Rosa';
-      }
-      if (hasBlueComponent && s < 72 && v > 45) {
-        return 'Rosa';
-      }
-      return 'Vermelho';
-    }
-    
-    if (h >= 290 && h < 345) {
-      const moreRedThanBlue = rgb.r > rgb.b * 0.9;
-      if (s < 60 && v > 40) {
-        return 'Rosa';
-      }
-      if (moreRedThanBlue && s < 70 && v > 45) {
-        return 'Rosa';
-      }
-      return 'Magenta';
-    }
-    
-    return null;
-  }
-  
-  function classifyColorSimple(hsv, rgb, variance) {
-    const thresholds = getAdaptiveThresholds();
-    
-    const normalized = normalizeLuminance(hsv, rgb);
-    const adjusted = applyDarkGlasses(normalized, variance, rgb);
-    const { h, s, v } = adjusted;
-    
-    // CORREÇÃO CRÍTICA 1: PRIMEIRA PRIORIDADE - Verificar calibração
-    const calibMatch = isCalibrationMatch(rgb, s, v);
-    if (calibMatch !== null) {
-      return calibMatch;
-    }
-    
-    // CORREÇÃO CRÍTICA 2: SEGUNDA PRIORIDADE - Verificar se é preto
-    const blackCheck = isBlackSurface(v, s, rgb);
-    if (blackCheck !== null) {
-      return blackCheck;
-    }
-    
-    // Verificação de zona rosa com saturação alta
-    const isInPinkZone = (h >= 290 && h < 360) || (h >= 0 && h < 20);
-    if (isInPinkZone && s > 30) {
-      const pinkResult = classifyPinkRegion(h, s, v, rgb);
-      if (pinkResult !== null) {
-        const baseColor = pinkResult === 'Rosa' ? '#ff88aa' : (pinkResult === 'Vermelho' ? '#ef4444' : '#d946ef');
-        const confidence = pinkResult === 'Rosa' ? 95 : 98;
-        return { name: pinkResult, color: baseColor, confidence };
-      }
-    }
-    
-    if (s < thresholds.satThreshold) {
-      const achromaticResult = classifyAchromatic(v, s, rgb, thresholds);
-      if (achromaticResult !== null) {
-        return achromaticResult;
-      }
-    }
-    
+    // Cores cromáticas (com saturação)
     let baseName = '', baseColor = '', confidence = 98;
     
-    const pinkResult = classifyPinkRegion(h, s, v, rgb);
-    if (pinkResult !== null) {
-      if (pinkResult === 'Rosa') {
-        baseName = 'Rosa';
-        baseColor = '#ff88aa';
-        confidence = 95;
-      } else if (pinkResult === 'Vermelho') {
-        baseName = 'Vermelho';
-        baseColor = '#ef4444';
+    // Rosa/Vermelho/Magenta
+    if ((h >= 345 || h < 20) || (h >= 290 && h < 345)) {
+      if (h >= 345 || h < 20) {
+        const hasBlueComponent = rgb.b > rgb.g * 1.2;
+        if (s < 58 && v > 40) {
+          baseName = 'Rosa';
+          baseColor = '#ff88aa';
+          confidence = 95;
+        } else if (hasBlueComponent && s < 72 && v > 45) {
+          baseName = 'Rosa';
+          baseColor = '#ff88aa';
+          confidence = 95;
+        } else {
+          baseName = 'Vermelho';
+          baseColor = '#ef4444';
+        }
       } else {
-        baseName = 'Magenta';
-        baseColor = '#d946ef';
+        const moreRedThanBlue = rgb.r > rgb.b * 0.9;
+        if (s < 60 && v > 40) {
+          baseName = 'Rosa';
+          baseColor = '#ff88aa';
+          confidence = 95;
+        } else if (moreRedThanBlue && s < 70 && v > 45) {
+          baseName = 'Rosa';
+          baseColor = '#ff88aa';
+          confidence = 95;
+        } else {
+          baseName = 'Magenta';
+          baseColor = '#d946ef';
+        }
       }
     }
     else if (h >= 20 && h < 35) {
@@ -662,71 +574,6 @@
     if (ambientProfile.light < 35) confidence = Math.max(75, confidence - 10);
     
     return { name: baseName + modifier, color: baseColor, confidence };
-  }
-  
-  function classifyColorUniversal(hsv, rgb, variance) {
-    const thresholds = getAdaptiveThresholds();
-    
-    const normalized = normalizeLuminance(hsv, rgb);
-    const adjusted = applyDarkGlasses(normalized, variance, rgb);
-    const { h, s, v } = adjusted;
-    
-    let confidence = 98;
-    
-    // CORREÇÃO CRÍTICA 1: Verificar calibração primeiro
-    const calibMatch = isCalibrationMatch(rgb, s, v);
-    if (calibMatch !== null) {
-      return calibMatch;
-    }
-    
-    // CORREÇÃO CRÍTICA 2: Verificar se é preto
-    const blackCheck = isBlackSurface(v, s, rgb);
-    if (blackCheck !== null) {
-      return blackCheck;
-    }
-    
-    const isInPinkZone = (h >= 290 && h < 360) || (h >= 0 && h < 20);
-    if (isInPinkZone && s > 30) {
-      const pinkResult = classifyPinkRegion(h, s, v, rgb);
-      if (pinkResult !== null) {
-        const colorHex = pinkResult === 'Rosa' ? '#ff88aa' : (pinkResult === 'Vermelho' ? '#ef4444' : '#d946ef');
-        const conf = pinkResult === 'Rosa' ? 95 : 98;
-        return { name: pinkResult, color: colorHex, confidence: conf };
-      }
-    }
-    
-    if (s < thresholds.satThreshold) {
-      const achromaticResult = classifyAchromatic(v, s, rgb, thresholds);
-      if (achromaticResult !== null) {
-        return achromaticResult;
-      }
-    }
-    
-    let colorName = '', colorHex = '';
-    
-    const pinkResult = classifyPinkRegion(h, s, v, rgb);
-    if (pinkResult !== null) {
-      if (pinkResult === 'Rosa') {
-        colorName = 'Rosa';
-        colorHex = '#ff88aa';
-        confidence = 95;
-      } else if (pinkResult === 'Vermelho') {
-        colorName = 'Vermelho';
-        colorHex = '#ef4444';
-      } else {
-        colorName = 'Magenta';
-        colorHex = '#d946ef';
-      }
-    }
-    else if (h >= 20 && h < 35) { colorName = 'Laranja'; colorHex = '#f97316'; }
-    else if (h >= 35 && h < 70) { colorName = 'Amarelo'; colorHex = '#fbbf24'; }
-    else if (h >= 70 && h < 165) { colorName = 'Verde'; colorHex = '#22c55e'; }
-    else if (h >= 165 && h < 190) { colorName = 'Ciano'; colorHex = '#06b6d4'; }
-    else if (h >= 190 && h < 260) { colorName = 'Azul'; colorHex = '#3b82f6'; }
-    else if (h >= 260 && h < 290) { colorName = 'Roxo'; colorHex = '#a855f7'; }
-    
-    if (ambientProfile.light < 35) confidence = Math.max(75, confidence - 10);
-    return { name: colorName, color: colorHex, confidence };
   }
   
   function addToBuffer(hsv, rgb) {
@@ -918,9 +765,9 @@
     }
     
     const variance = calculateVariance(colorBuffer);
-    const classification = universalMode 
-      ? classifyColorUniversal(stable.hsv, stable.rgb, variance)
-      : classifyColorSimple(stable.hsv, stable.rgb, variance);
+    
+    // Usar classificação RELATIVA baseada na calibração
+    const classification = classifyColorRelative(stable.hsv, stable.rgb, variance);
     
     if (classification.name !== lastStableColorName && lastStableColorName !== '') {
       mismatchCounter++;
@@ -1018,6 +865,7 @@
     await openCamera(devices[deviceIndex].deviceId);
   }
   
+  // FUNÇÃO CALIBRAR - Define ÂNCORA ABSOLUTA do sistema
   function calibrate() {
     if (!systemOn) return;
     if (!running) {
@@ -1031,23 +879,24 @@
       return;
     }
     
-    ambientProfile.whiteV = stable.hsv.v;
-    ambientProfile.grayZone = {
-      min: 0,
-      max: Math.min(stable.hsv.v - 18, 62)
+    // RESET COMPLETO do sistema
+    // Armazena valores ABSOLUTOS como base de referência
+    calibrationBase = {
+      hsv: { 
+        h: stable.hsv.h, 
+        s: stable.hsv.s, 
+        v: stable.hsv.v 
+      },
+      rgb: { 
+        r: stable.rgb.r, 
+        g: stable.rgb.g, 
+        b: stable.rgb.b 
+      }
     };
     
-    whiteReference = {
-      hsv: { ...stable.hsv },
-      rgb: { ...stable.rgb }
-    };
     isCalibrated = true;
     
-    // CORREÇÃO CRÍTICA: Zona de ancoragem expandida e adaptativa
-    // Fórmula ajustada: tolera variações maiores em ambientes claros
-    WHITE_RGB_DISTANCE_ADAPTIVE = Math.min(60, Math.max(40, stable.hsv.v * 0.85));
-    
-    // FORÇAR exibição imediata de "Branco"
+    // FORÇAR exibição imediata de "Branco" e resetar sistema
     document.getElementById('color-name').textContent = 'Branco';
     document.getElementById('color-name').style.color = '#ffffff';
     
@@ -1056,9 +905,9 @@
     btn.classList.add('calibrated');
     
     document.getElementById('base-info').textContent =
-      `Base: Branco V:${stable.hsv.v.toFixed(0)}% | Cinza≤${ambientProfile.grayZone.max.toFixed(0)}%`;
+      `Base: Branco RGB(${stable.rgb.r},${stable.rgb.g},${stable.rgb.b}) V:${stable.hsv.v.toFixed(0)}%`;
     
-    // RESET completo do buffer e contadores
+    // RESET completo de buffers e contadores
     colorBuffer = [];
     lastStableColorName = 'Branco';
     lastStableHue = stable.hsv.h;
@@ -1071,10 +920,16 @@
       speakColor('Calibrado');
     }
     
-    console.log('✓ CALIBRAÇÃO COMPLETA');
-    console.log('   Branco Ref RGB:', whiteReference.rgb);
-    console.log('   Zona de Ancoragem:', WHITE_RGB_DISTANCE_ADAPTIVE.toFixed(1), 'pixels');
-    console.log('   Tolerância S:', '≤ 25%');
+    console.log('═══════════════════════════════════════════════');
+    console.log('✓ CALIBRAÇÃO ABSOLUTA ESTABELECIDA');
+    console.log('═══════════════════════════════════════════════');
+    console.log('   BRANCO BASE RGB:', calibrationBase.rgb);
+    console.log('   BRANCO BASE HSV:', 
+      `H:${calibrationBase.hsv.h.toFixed(1)}° ` +
+      `S:${calibrationBase.hsv.s.toFixed(1)}% ` +
+      `V:${calibrationBase.hsv.v.toFixed(1)}%`);
+    console.log('   MODO: Todas as cores trabalham RELATIVAMENTE a esta base');
+    console.log('═══════════════════════════════════════════════');
   }
 </script>
 </body>
