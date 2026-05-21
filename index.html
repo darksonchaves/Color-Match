@@ -339,6 +339,7 @@
   const BUFFER_SIZE = 10;
   const HYSTERESIS_THRESHOLD = 6;
   const RGB_CHANGE_THRESHOLD = 55;
+  const WHITE_RGB_DISTANCE = 20;
   
   let colorBuffer = [];
   let lastStableColorName = '';
@@ -414,9 +415,6 @@
     return Math.sqrt(variance);
   }
   
-  // ===============================================
-  // ÓCULOS ESCUROS DIGITAIS - Compensa reflexo
-  // ===============================================
   function applyDarkGlasses(hsv, variance, rgb) {
     let adjustedV = hsv.v;
     const isReflective = variance > 6;
@@ -432,6 +430,14 @@
       v: adjustedV,
       originalV: hsv.v
     };
+  }
+  
+  function distanceFromWhiteRef(rgb) {
+    if (!whiteReference) return Infinity;
+    const dr = rgb.r - whiteReference.rgb.r;
+    const dg = rgb.g - whiteReference.rgb.g;
+    const db = rgb.b - whiteReference.rgb.b;
+    return Math.sqrt(dr * dr + dg * dg + db * db);
   }
   
   function getAdaptiveThresholds() {
@@ -455,38 +461,76 @@
     return { whiteThreshold, blackThreshold, satThreshold, grayMaxThreshold };
   }
   
+  function classifyAchromatic(v, rgb, thresholds) {
+    if (isCalibrated && whiteReference) {
+      const dist = distanceFromWhiteRef(rgb);
+      if (dist <= WHITE_RGB_DISTANCE) {
+        return { name: 'Branco', color: '#ffffff', confidence: 98 };
+      }
+      if (v <= thresholds.blackThreshold) {
+        return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+      }
+      return { name: 'Cinza', color: '#9999aa', confidence: 96 };
+    }
+    
+    if (v >= thresholds.whiteThreshold) {
+      return { name: 'Branco', color: '#ffffff', confidence: 98 };
+    } else if (v <= thresholds.blackThreshold) {
+      return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+    }
+    return { name: 'Cinza', color: '#9999aa', confidence: 96 };
+  }
+  
+  function classifyPinkRegion(h, s, v, rgb) {
+    if (h >= 345 || h < 20) {
+      const hasBlueComponent = rgb.b > rgb.g * 1.2;
+      if (s < 58 && v > 40) {
+        return 'Rosa';
+      }
+      if (hasBlueComponent && s < 72 && v > 45) {
+        return 'Rosa';
+      }
+      return 'Vermelho';
+    }
+    
+    if (h >= 290 && h < 345) {
+      const moreRedThanBlue = rgb.r > rgb.b * 0.9;
+      if (s < 60 && v > 40) {
+        return 'Rosa';
+      }
+      if (moreRedThanBlue && s < 70 && v > 45) {
+        return 'Rosa';
+      }
+      return 'Magenta';
+    }
+    
+    return null;
+  }
+  
   function classifyColorSimple(hsv, rgb, variance) {
     const thresholds = getAdaptiveThresholds();
     
     const adjusted = applyDarkGlasses(hsv, variance, rgb);
     const { h, s, v } = adjusted;
     
-    // ACROMÁTICAS
     if (s < thresholds.satThreshold) {
-      if (v >= thresholds.whiteThreshold) {
-        return { name: 'Branco', color: '#ffffff', confidence: 98 };
-      } else if (v <= thresholds.blackThreshold) {
-        return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-      } else {
-        if (v > thresholds.grayMaxThreshold && isCalibrated) {
-          return { name: 'Cinza', color: '#9999aa', confidence: 78 };
-        }
-        return { name: 'Cinza', color: '#9999aa', confidence: 96 };
-      }
+      return classifyAchromatic(v, rgb, thresholds);
     }
     
-    // CROMÁTICAS
     let baseName = '', baseColor = '', confidence = 98;
     
-    if (h >= 345 || h < 20) {
-      if (s < 55 && v > 50) {
+    const pinkResult = classifyPinkRegion(h, s, v, rgb);
+    if (pinkResult !== null) {
+      if (pinkResult === 'Rosa') {
         baseName = 'Rosa';
         baseColor = '#ff88aa';
         confidence = 95;
-      } else {
+      } else if (pinkResult === 'Vermelho') {
         baseName = 'Vermelho';
         baseColor = '#ef4444';
-        confidence = 98;
+      } else {
+        baseName = 'Magenta';
+        baseColor = '#d946ef';
       }
     }
     else if (h >= 20 && h < 35) {
@@ -513,15 +557,6 @@
       baseName = 'Roxo';
       baseColor = '#a855f7';
     }
-    else if (h >= 290 && h < 345) {
-      if (s < 58 && v > 50) {
-        baseName = 'Rosa';
-        baseColor = '#ff88aa';
-      } else {
-        baseName = 'Magenta';
-        baseColor = '#d946ef';
-      }
-    }
     
     let modifier = '';
     if (v < 28) modifier = ' Escuro';
@@ -540,31 +575,24 @@
     
     let confidence = 98;
     
-    // ACROMÁTICAS
     if (s < thresholds.satThreshold) {
-      if (v >= thresholds.whiteThreshold) {
-        return { name: 'Branco', color: '#ffffff', confidence: 98 };
-      } else if (v <= thresholds.blackThreshold) {
-        return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-      }
-      if (v > thresholds.grayMaxThreshold && isCalibrated) {
-        return { name: 'Cinza', color: '#9999aa', confidence: 78 };
-      }
-      return { name: 'Cinza', color: '#9999aa', confidence: 96 };
+      return classifyAchromatic(v, rgb, thresholds);
     }
     
-    // CROMÁTICAS
     let colorName = '', colorHex = '';
     
-    if (h >= 345 || h < 20) {
-      if (s < 55 && v > 50) {
+    const pinkResult = classifyPinkRegion(h, s, v, rgb);
+    if (pinkResult !== null) {
+      if (pinkResult === 'Rosa') {
         colorName = 'Rosa';
         colorHex = '#ff88aa';
         confidence = 95;
-      } else {
+      } else if (pinkResult === 'Vermelho') {
         colorName = 'Vermelho';
         colorHex = '#ef4444';
-        confidence = 98;
+      } else {
+        colorName = 'Magenta';
+        colorHex = '#d946ef';
       }
     }
     else if (h >= 20 && h < 35) { colorName = 'Laranja'; colorHex = '#f97316'; }
@@ -573,13 +601,6 @@
     else if (h >= 165 && h < 190) { colorName = 'Ciano'; colorHex = '#06b6d4'; }
     else if (h >= 190 && h < 260) { colorName = 'Azul'; colorHex = '#3b82f6'; }
     else if (h >= 260 && h < 290) { colorName = 'Roxo'; colorHex = '#a855f7'; }
-    else if (h >= 290 && h < 345) {
-      if (s < 58 && v > 50) {
-        colorName = 'Rosa'; colorHex = '#ff88aa';
-      } else {
-        colorName = 'Magenta'; colorHex = '#d946ef';
-      }
-    }
     
     if (ambientProfile.light < 35) confidence = Math.max(75, confidence - 10);
     return { name: colorName, color: colorHex, confidence };
@@ -903,7 +924,7 @@
       speakColor('Calibrado');
     }
     
-    console.log('✓ Calibração:', ambientProfile);
+    console.log('✓ Calibração:', ambientProfile, 'RGB Ref:', whiteReference.rgb);
   }
 </script>
 </body>
