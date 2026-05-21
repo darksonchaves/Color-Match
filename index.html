@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Análise Colorimétrica Profissional</title>
+<title>Motor de Cor Profissional</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -62,9 +62,9 @@
     letter-spacing: 0.4px;
     min-width: 120px;
   }
-  #delta-e-display {
+  #confidence-display {
     font-size: 0.58rem;
-    color: #556;
+    color: #6a6;
     white-space: nowrap;
   }
   .sep {
@@ -83,6 +83,12 @@
     font-size: 0.58rem;
     color: #446;
     white-space: nowrap;
+  }
+  #light-warning {
+    font-size: 0.58rem;
+    color: #fa0;
+    white-space: nowrap;
+    display: none;
   }
   .btn-top {
     padding: 4px 8px;
@@ -255,13 +261,13 @@
 </head>
 <body>
 <div id="header">
-  <h1>&#9632; Análise Colorimétrica Profissional</h1>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Sistema HSV · Precisão Máxima</span>
+  <h1>&#9632; Motor de Cor Profissional</h1>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Máxima Precisão · Adaptativo</span>
 </div>
 <div id="top-bar">
   <div id="color-swatch" style="background:#1a1a2e;"></div>
   <div id="color-name" style="color:#445;">Aguardando...</div>
-  <div id="delta-e-display"></div>
+  <div id="confidence-display"></div>
   <span class="sep">│</span>
   <div class="data-inline" id="hsv-line">
     <span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---
@@ -272,6 +278,7 @@
   </div>
   <span class="sep">│</span>
   <div id="base-info">Base: não calibrada</div>
+  <div id="light-warning">⚠ Pouca luz</div>
   <span class="sep">│</span>
   <button class="btn-top" id="btn-calibrate" onclick="calibrate()">&#9670; Calibrar</button>
   <button class="btn-top" id="btn-camera"    onclick="switchCamera()">&#8635; Câmera</button>
@@ -310,18 +317,21 @@
   // Sistema de Calibração
   let whiteReference = null;
   let isCalibrated = false;
+  let ambientLightLevel = 100; // 0-100%
   
-  // Configurações otimizadas
-  const SAMPLE_SIZE = 10;
-  const BUFFER_SIZE = 8;
-  const HYSTERESIS_THRESHOLD = 8;
-  const RGB_CHANGE_THRESHOLD = 60;
+  // Configurações MÁXIMA QUALIDADE
+  const SAMPLE_SIZE = 12; // Aumentado para melhor amostragem
+  const BUFFER_SIZE = 10; // Aumentado para mais estabilidade
+  const HYSTERESIS_THRESHOLD = 6; // Reduzido para mais responsividade
+  const RGB_CHANGE_THRESHOLD = 55; // Ajustado para detecção mais sensível
   
-  // Buffers
+  // Buffers e rastreamento
   let colorBuffer = [];
+  let varianceBuffer = []; // Buffer de variância para detectar superfícies reflexivas
   let lastStableColorName = '';
   let lastStableHue = 0;
   let lastStableRGB = { r: 0, g: 0, b: 0 };
+  let lastStableVariance = 0;
   
   // Sistema de áudio
   let audioEnabled = false;
@@ -357,6 +367,56 @@
   }
   
   // ===============================================
+  // DETECÇÃO DE CONDIÇÕES DE ILUMINAÇÃO
+  // ===============================================
+  function detectAmbientLight(v, rgb) {
+    // Estimar nível de luz ambiente baseado em V e média RGB
+    const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+    ambientLightLevel = Math.min(100, (avgRGB / 255) * 100 + v * 0.5);
+    
+    // Atualizar aviso visual
+    const warning = document.getElementById('light-warning');
+    if (ambientLightLevel < 40) {
+      warning.style.display = 'block';
+      warning.textContent = '⚠ Pouca luz';
+    } else if (ambientLightLevel > 85) {
+      warning.style.display = 'block';
+      warning.textContent = '⚠ Luz excessiva';
+    } else {
+      warning.style.display = 'none';
+    }
+    
+    return ambientLightLevel;
+  }
+  
+  // ===============================================
+  // THRESHOLDS ADAPTATIVOS
+  // ===============================================
+  function getAdaptiveThresholds() {
+    // Ajustar thresholds baseado em luminosidade ambiente
+    let whiteThreshold, blackThreshold, satThreshold;
+    
+    if (ambientLightLevel < 40) {
+      // Pouca luz - thresholds mais permissivos
+      whiteThreshold = isCalibrated ? 60 : 65;
+      blackThreshold = 30;
+      satThreshold = isCalibrated ? 22 : 18;
+    } else if (ambientLightLevel > 70) {
+      // Muita luz - thresholds mais rigorosos
+      whiteThreshold = isCalibrated ? 75 : 80;
+      blackThreshold = 20;
+      satThreshold = isCalibrated ? 15 : 12;
+    } else {
+      // Luz normal - thresholds padrão
+      whiteThreshold = isCalibrated ? 70 : 75;
+      blackThreshold = 25;
+      satThreshold = isCalibrated ? 18 : 15;
+    }
+    
+    return { whiteThreshold, blackThreshold, satThreshold };
+  }
+  
+  // ===============================================
   // NORMALIZAÇÃO COM REFERÊNCIA BRANCA
   // ===============================================
   function normalizeWithWhiteReference(hsv, rgb) {
@@ -386,84 +446,114 @@
   }
   
   // ===============================================
-  // CLASSIFICAÇÃO CIENTÍFICA DE CORES
-  // Sistema com desempate triplo (H+S+V) para precisão máxima
+  // DETECÇÃO DE SUPERFÍCIE REFLEXIVA
   // ===============================================
-  function classifyColorSimple(hsv, rgb) {
+  function calculateVariance(buffer) {
+    if (buffer.length < 3) return 0;
+    
+    // Calcular variância de V (brilho) nos últimos frames
+    const values = buffer.map(item => item.hsv.v);
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+    
+    return Math.sqrt(variance); // Desvio padrão
+  }
+  
+  // ===============================================
+  // CLASSIFICAÇÃO PROFISSIONAL DE CORES
+  // ===============================================
+  function classifyColorSimple(hsv, rgb, variance) {
     const { h, s, v } = hsv;
+    const thresholds = getAdaptiveThresholds();
     
-    const whiteThreshold = isCalibrated ? 70 : 75;
-    const satThreshold = isCalibrated ? 18 : 15;
-    
-    // ACROMÁTICAS
-    if (s < satThreshold) {
-      if (v >= whiteThreshold) {
-        return { name: 'Branco', color: '#ffffff' };
-      } else if (v <= 25) {
-        return { name: 'Preto', color: '#1a1a2a' };
+    // ACROMÁTICAS com detecção de reflexo
+    if (s < thresholds.satThreshold) {
+      // Superfície reflexiva detectada (alta variância)
+      const isReflective = variance > 8;
+      
+      if (v >= thresholds.whiteThreshold) {
+        return { name: 'Branco', color: '#ffffff', confidence: isReflective ? 85 : 98 };
+      } else if (v <= thresholds.blackThreshold) {
+        // Preto com compensação para reflexos
+        if (isReflective && v > 15) {
+          // Preto reflexivo - ainda é preto
+          return { name: 'Preto', color: '#1a1a2a', confidence: 92 };
+        }
+        return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
       } else {
-        return { name: 'Cinza', color: '#9999aa' };
+        return { name: 'Cinza', color: '#9999aa', confidence: 95 };
       }
     }
     
-    // CROMÁTICAS - Faixas cientificamente calibradas
     let baseName = '';
     let baseColor = '';
+    let confidence = 98;
     
-    // VERMELHO: 345-20° (vermelho puro)
+    // VERMELHO vs ROSA - Ajuste fino
     if (h >= 345 || h < 20) {
-      if (s < 40 && v > 65) {
+      // Rosa: saturação baixa OU brilho muito alto
+      if (s < 50 || v > 85) {
         baseName = 'Rosa';
         baseColor = '#ff88aa';
+        confidence = (s < 40) ? 98 : 92; // Menos confiança em zona de fronteira
       } else {
         baseName = 'Vermelho';
         baseColor = '#ef4444';
+        confidence = 98;
       }
     }
-    // LARANJA: 20-40° (laranja verdadeiro - mais restrito)
+    // LARANJA: 20-40°
     else if (h >= 20 && h < 40) {
       baseName = 'Laranja';
       baseColor = '#f97316';
+      confidence = 98;
     }
-    // AMARELO: 40-70° (expandido para capturar amarelos reais/automotivos)
+    // AMARELO: 40-70° com desempate
     else if (h >= 40 && h < 70) {
-      // Desempate: se estiver na fronteira (40-45°) e saturação alta, pode ser laranja
-      if (h < 45 && s > 80 && v < 70) {
+      if (h < 42 && s > 85 && v < 65) {
         baseName = 'Laranja';
         baseColor = '#f97316';
+        confidence = 90;
       } else {
         baseName = 'Amarelo';
         baseColor = '#fbbf24';
+        confidence = (h > 45) ? 98 : 94;
       }
     }
-    // VERDE: 70-165° (amplo espectro de verdes)
+    // VERDE: 70-165°
     else if (h >= 70 && h < 165) {
       baseName = 'Verde';
       baseColor = '#22c55e';
+      confidence = 98;
     }
     // CIANO: 165-190°
     else if (h >= 165 && h < 190) {
       baseName = 'Ciano';
       baseColor = '#06b6d4';
+      confidence = 98;
     }
-    // AZUL: 190-260° (amplo espectro de azuis)
+    // AZUL: 190-260°
     else if (h >= 190 && h < 260) {
       baseName = 'Azul';
       baseColor = '#3b82f6';
+      confidence = 98;
     }
     // ROXO: 260-290°
     else if (h >= 260 && h < 290) {
       baseName = 'Roxo';
       baseColor = '#a855f7';
+      confidence = 98;
     }
     // MAGENTA/ROSA: 290-345°
     else if (h >= 290 && h < 345) {
-      if (v > 70 && s < 70) {
+      if (v > 75 || s < 60) {
         baseName = 'Rosa';
         baseColor = '#ff88aa';
+        confidence = 95;
       } else {
         baseName = 'Magenta';
         baseColor = '#d946ef';
+        confidence = 98;
       }
     }
     
@@ -475,34 +565,48 @@
       modifier = ' Claro';
     }
     
-    return { name: baseName + modifier, color: baseColor };
+    // Reduzir confiança em baixa luminosidade
+    if (ambientLightLevel < 35) {
+      confidence = Math.max(75, confidence - 10);
+    }
+    
+    return { name: baseName + modifier, color: baseColor, confidence };
   }
   
   // ===============================================
-  // CLASSIFICAÇÃO UNIVERSAL - NOMES SIMPLES
+  // CLASSIFICAÇÃO UNIVERSAL
   // ===============================================
-  function classifyColorUniversal(hsv, rgb) {
+  function classifyColorUniversal(hsv, rgb, variance) {
     const { h, s, v } = hsv;
+    const thresholds = getAdaptiveThresholds();
+    const isReflective = variance > 8;
     
-    const whiteThreshold = isCalibrated ? 70 : 75;
-    const satThreshold = isCalibrated ? 18 : 15;
+    let confidence = 98;
     
-    if (s < satThreshold) {
-      if (v >= whiteThreshold) return { name: 'Branco', color: '#ffffff' };
-      if (v <= 25) return { name: 'Preto', color: '#1a1a2a' };
-      return { name: 'Cinza', color: '#9999aa' };
+    if (s < thresholds.satThreshold) {
+      if (v >= thresholds.whiteThreshold) {
+        return { name: 'Branco', color: '#ffffff', confidence: isReflective ? 85 : 98 };
+      } else if (v <= thresholds.blackThreshold) {
+        if (isReflective && v > 15) {
+          return { name: 'Preto', color: '#1a1a2a', confidence: 92 };
+        }
+        return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+      }
+      return { name: 'Cinza', color: '#9999aa', confidence: 95 };
     }
     
     let colorName = '';
     let colorHex = '';
     
     if (h >= 345 || h < 20) {
-      if (s < 40 && v > 65) {
+      if (s < 50 || v > 85) {
         colorName = 'Rosa';
         colorHex = '#ff88aa';
+        confidence = (s < 40) ? 98 : 92;
       } else {
         colorName = 'Vermelho';
         colorHex = '#ef4444';
+        confidence = 98;
       }
     }
     else if (h >= 20 && h < 40) {
@@ -510,12 +614,14 @@
       colorHex = '#f97316';
     }
     else if (h >= 40 && h < 70) {
-      if (h < 45 && s > 80 && v < 70) {
+      if (h < 42 && s > 85 && v < 65) {
         colorName = 'Laranja';
         colorHex = '#f97316';
+        confidence = 90;
       } else {
         colorName = 'Amarelo';
         colorHex = '#fbbf24';
+        confidence = (h > 45) ? 98 : 94;
       }
     }
     else if (h >= 70 && h < 165) {
@@ -535,20 +641,25 @@
       colorHex = '#a855f7';
     }
     else if (h >= 290 && h < 345) {
-      if (v > 70 && s < 70) {
+      if (v > 75 || s < 60) {
         colorName = 'Rosa';
         colorHex = '#ff88aa';
+        confidence = 95;
       } else {
         colorName = 'Magenta';
         colorHex = '#d946ef';
       }
     }
     
-    return { name: colorName, color: colorHex };
+    if (ambientLightLevel < 35) {
+      confidence = Math.max(75, confidence - 10);
+    }
+    
+    return { name: colorName, color: colorHex, confidence };
   }
   
   // ===============================================
-  // ESTABILIZAÇÃO
+  // ESTABILIZAÇÃO COM FILTRO DE OUTLIERS
   // ===============================================
   function addToBuffer(hsv, rgb) {
     colorBuffer.push({ hsv, rgb });
@@ -558,13 +669,18 @@
   }
   
   function getStableColor() {
-    if (colorBuffer.length === 0) return null;
+    if (colorBuffer.length < 3) return null;
+    
+    // Filtrar outliers (valores muito discrepantes)
+    const filteredBuffer = filterOutliers(colorBuffer);
+    
+    if (filteredBuffer.length === 0) return null;
     
     let avgH = 0, avgS = 0, avgV = 0;
     let avgR = 0, avgG = 0, avgB = 0;
     let sinSum = 0, cosSum = 0;
     
-    colorBuffer.forEach(item => {
+    filteredBuffer.forEach(item => {
       const radH = item.hsv.h * Math.PI / 180;
       sinSum += Math.sin(radH);
       cosSum += Math.cos(radH);
@@ -575,7 +691,7 @@
       avgB += item.rgb.b;
     });
     
-    const len = colorBuffer.length;
+    const len = filteredBuffer.length;
     avgH = Math.atan2(sinSum / len, cosSum / len) * 180 / Math.PI;
     if (avgH < 0) avgH += 360;
     
@@ -589,6 +705,23 @@
       hsv: { h: avgH, s: avgS, v: avgV },
       rgb: { r: avgR, g: avgG, b: avgB }
     };
+  }
+  
+  // ===============================================
+  // FILTRO DE OUTLIERS
+  // ===============================================
+  function filterOutliers(buffer) {
+    if (buffer.length < 5) return buffer;
+    
+    // Calcular mediana de V para detectar outliers
+    const vValues = buffer.map(item => item.hsv.v).sort((a, b) => a - b);
+    const median = vValues[Math.floor(vValues.length / 2)];
+    
+    // Filtrar valores muito distantes da mediana (>30% de diferença)
+    return buffer.filter(item => {
+      const diff = Math.abs(item.hsv.v - median);
+      return diff < 30;
+    });
   }
   
   // ===============================================
@@ -610,10 +743,16 @@
   // ===============================================
   // HISTERESE INTELIGENTE
   // ===============================================
-  function shouldUpdateColor(newHue, newColorName, newRGB, newSat) {
+  function shouldUpdateColor(newHue, newColorName, newRGB, newSat, newVariance) {
     if (!lastStableColorName) return true;
     
+    // Reset agressivo em mudança de objeto
     if (detectObjectChange(newRGB)) {
+      return true;
+    }
+    
+    // Mudança grande de variância = troca de superfície
+    if (Math.abs(newVariance - lastStableVariance) > 10) {
       return true;
     }
     
@@ -622,7 +761,7 @@
       if (diff > 180) diff = 360 - diff;
       
       const hueDiffSignificant = diff >= HYSTERESIS_THRESHOLD;
-      const saturationChange = Math.abs(newSat - (colorBuffer[colorBuffer.length - 1]?.hsv.s || 0)) > 20;
+      const saturationChange = Math.abs(newSat - (colorBuffer[colorBuffer.length - 1]?.hsv.s || 0)) > 18;
       
       return hueDiffSignificant || saturationChange;
     }
@@ -765,6 +904,10 @@
     
     const { r, g, b } = pixels;
     const rawHsv = rgbToHSV(r, g, b);
+    
+    // Detectar luminosidade ambiente
+    detectAmbientLight(rawHsv.v, { r, g, b });
+    
     const normalized = normalizeWithWhiteReference(rawHsv, { r, g, b });
     
     addToBuffer(normalized.hsv, normalized.rgb);
@@ -775,21 +918,31 @@
       return;
     }
     
-    const classification = universalMode 
-      ? classifyColorUniversal(stable.hsv, stable.rgb)
-      : classifyColorSimple(stable.hsv, stable.rgb);
+    // Calcular variância (superfícies reflexivas)
+    const variance = calculateVariance(colorBuffer);
     
-    if (shouldUpdateColor(stable.hsv.h, classification.name, stable.rgb, stable.hsv.s)) {
+    const classification = universalMode 
+      ? classifyColorUniversal(stable.hsv, stable.rgb, variance)
+      : classifyColorSimple(stable.hsv, stable.rgb, variance);
+    
+    if (shouldUpdateColor(stable.hsv.h, classification.name, stable.rgb, stable.hsv.s, variance)) {
       if (detectObjectChange(stable.rgb)) {
-        colorBuffer = colorBuffer.slice(-2);
+        colorBuffer = colorBuffer.slice(-2); // Reset agressivo
       }
       
       lastStableColorName = classification.name;
       lastStableHue = stable.hsv.h;
       lastStableRGB = { ...stable.rgb };
+      lastStableVariance = variance;
       
       document.getElementById('color-name').textContent = classification.name;
       document.getElementById('color-name').style.color = classification.color;
+      
+      // Mostrar confiança
+      document.getElementById('confidence-display').textContent = `${classification.confidence}%`;
+      document.getElementById('confidence-display').style.color = 
+        classification.confidence > 95 ? '#6a6' : 
+        classification.confidence > 85 ? '#fa0' : '#f66';
       
       triggerAudioIfChanged(classification.name);
     }
@@ -827,8 +980,8 @@
         await tryOpen({
           video: {
             deviceId: { exact: preferredDeviceId },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
           }
         });
         return;
@@ -839,8 +992,8 @@
       await tryOpen({
         video: {
           facingMode: { exact: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
         }
       });
       return;
@@ -911,7 +1064,7 @@
     btn.classList.add('calibrated');
     
     document.getElementById('base-info').textContent =
-      `Base: Branco (V:${stable.hsv.v.toFixed(0)}% S:${stable.hsv.s.toFixed(0)}%)`;
+      `Base: Branco (V:${stable.hsv.v.toFixed(0)}% | Luz:${ambientLightLevel.toFixed(0)}%)`;
     
     colorBuffer = [];
     lastStableColorName = 'Branco';
@@ -919,10 +1072,14 @@
     lastStableRGB = { ...stable.rgb };
     
     if (audioEnabled) {
-      speakColor('Calibração concluída com sucesso');
+      if (ambientLightLevel < 40) {
+        speakColor('Calibração concluída. Atenção: ambiente com pouca luz');
+      } else {
+        speakColor('Calibração concluída com sucesso');
+      }
     }
     
-    console.log('✓ Calibração profissional realizada:', whiteReference);
+    console.log('✓ Calibração profissional:', whiteReference, 'Luz:', ambientLightLevel);
   }
 </script>
 </body>
