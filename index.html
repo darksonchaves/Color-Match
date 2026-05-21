@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Motor de Cor - Sistema LAB ΔE v2.2</title>
+<title>Motor de Cor - Compensação de Brilho v2.0</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -100,6 +100,12 @@
     color: #446;
     white-space: nowrap;
   }
+  #light-warning {
+    font-size: 0.58rem;
+    color: #fa0;
+    white-space: nowrap;
+    display: none;
+  }
   .btn-top {
     padding: 4px 8px;
     border: none;
@@ -139,18 +145,6 @@
     border-color: rgba(200,200,200,0.4);
     color: #fff;
   }
-  #btn-reset-white {
-    background: linear-gradient(135deg, #3a2a2a, #5a3a3a);
-    color: #d99;
-    border: 1px solid rgba(200,100,100,0.3);
-  }
-  #btn-reset-white:hover:not(:disabled) { background: linear-gradient(135deg, #4a3a3a, #6a4a4a); color: #faa; }
-  #btn-reset-black {
-    background: linear-gradient(135deg, #2a2a3a, #3a3a5a);
-    color: #99d;
-    border: 1px solid rgba(100,100,200,0.3);
-  }
-  #btn-reset-black:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a4a, #4a4a6a); color: #aaf; }
   #btn-camera {
     background: linear-gradient(135deg, #2a1a3e, #4a2a6e);
     color: #bac;
@@ -300,7 +294,7 @@
 <body>
 <div id="header">
   <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v2.2 - Sistema LAB ΔE*</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Compensação de Brilho v2.0 · Calibração Dupla</span>
 </div>
 <div id="top-bar">
   <div id="color-swatch" style="background:#1a1a2e;"></div>
@@ -316,11 +310,10 @@
   </div>
   <span class="sep">│</span>
   <div id="base-info">Base: não calibrada</div>
+  <div id="light-warning">⚠️ Pouca luz</div>
   <span class="sep">│</span>
   <button class="btn-top" id="btn-calibrate-white" onclick="calibrateWhite()">&#9670; Cal. Branco</button>
   <button class="btn-top" id="btn-calibrate-black" onclick="calibrateBlack()">&#9670; Cal. Preto</button>
-  <button class="btn-top" id="btn-reset-white" onclick="resetWhite()">&#10006; Reset Branco</button>
-  <button class="btn-top" id="btn-reset-black" onclick="resetBlack()">&#10006; Reset Preto</button>
   <button class="btn-top" id="btn-camera"    onclick="switchCamera()">&#8635; Câmera</button>
   <button class="btn-top" id="btn-audio"     onclick="toggleAudio()">&#128263; Áudio</button>
   <button class="btn-top" id="btn-universal" onclick="toggleUniversalMode()">&#9733; Universal</button>
@@ -350,12 +343,14 @@
   let stream = null, devices = [], deviceIndex = 0, running = false, universalMode = false;
   let systemOn = true;
   
+  // CALIBRAÇÃO DUPLA: Âncoras de BRANCO e PRETO
   let whiteCalibration = null;
   let blackCalibration = null;
   let isWhiteCalibrated = false;
   let isBlackCalibrated = false;
+  let ambientProfile = { light: 100 };
   
-  const SAMPLE_SIZE = 2;
+  const SAMPLE_SIZE = 4;
   const BUFFER_SIZE = 8;
   const HYSTERESIS_THRESHOLD = 6;
   const RGB_CHANGE_THRESHOLD = 55;
@@ -375,211 +370,10 @@
   let consecutiveFrameCounter = 0;
   const MIN_CONSECUTIVE_FRAMES = 7;
   
-  // ═══════════════════════════════════════════════════════════════════
-  // 🔬 SISTEMA LAB DELTA E - CORES DE REFERÊNCIA CIENTÍFICAS
-  // ═══════════════════════════════════════════════════════════════════
-  const COLOR_REFERENCES = {
-    'Vermelho': [
-      { rgb: [255, 0, 0], hex: '#ef4444' },
-      { rgb: [220, 20, 20], hex: '#ef4444' },
-      { rgb: [200, 0, 0], hex: '#ef4444' }
-    ],
-    'Vermelho Escuro': [
-      { rgb: [139, 0, 0], hex: '#7f1d1d' },
-      { rgb: [100, 0, 0], hex: '#7f1d1d' }
-    ],
-    'Rosa': [
-      { rgb: [255, 105, 180], hex: '#ff88aa' },
-      { rgb: [255, 182, 193], hex: '#ff88aa' },
-      { rgb: [255, 20, 147], hex: '#ff88aa' }
-    ],
-    'Laranja': [
-      { rgb: [255, 165, 0], hex: '#f97316' },
-      { rgb: [255, 140, 0], hex: '#f97316' },
-      { rgb: [255, 100, 0], hex: '#f97316' }
-    ],
-    'Amarelo': [
-      { rgb: [255, 255, 0], hex: '#fbbf24' },
-      { rgb: [255, 215, 0], hex: '#fbbf24' },
-      { rgb: [255, 250, 100], hex: '#fbbf24' }
-    ],
-    'Verde': [
-      { rgb: [0, 255, 0], hex: '#22c55e' },
-      { rgb: [0, 200, 0], hex: '#22c55e' },
-      { rgb: [50, 205, 50], hex: '#22c55e' }
-    ],
-    'Verde Escuro': [
-      { rgb: [0, 100, 0], hex: '#15803d' },
-      { rgb: [34, 139, 34], hex: '#15803d' }
-    ],
-    'Ciano': [
-      { rgb: [0, 255, 255], hex: '#06b6d4' },
-      { rgb: [0, 206, 209], hex: '#06b6d4' },
-      { rgb: [64, 224, 208], hex: '#06b6d4' }
-    ],
-    'Azul': [
-      { rgb: [0, 0, 255], hex: '#3b82f6' },
-      { rgb: [0, 100, 255], hex: '#3b82f6' },
-      { rgb: [30, 144, 255], hex: '#3b82f6' }
-    ],
-    'Azul Escuro': [
-      { rgb: [0, 0, 139], hex: '#1e3a8a' },
-      { rgb: [0, 0, 100], hex: '#1e3a8a' }
-    ],
-    // ⭐ ROXO - MÚLTIPLAS VARIAÇÕES PARA PRECISÃO MÁXIMA ⭐
-    'Roxo': [
-      { rgb: [138, 43, 226], hex: '#a855f7' },    // BlueViolet
-      { rgb: [128, 0, 255], hex: '#a855f7' },     // Roxo puro
-      { rgb: [148, 0, 211], hex: '#a855f7' },     // DarkViolet
-      { rgb: [100, 0, 200], hex: '#a855f7' },     // Roxo escuro
-      { rgb: [120, 40, 200], hex: '#a855f7' },    // Roxo médio
-      { rgb: [110, 30, 180], hex: '#a855f7' },    // Roxo mais escuro
-      { rgb: [130, 50, 210], hex: '#a855f7' }     // Roxo variação
-    ],
-    'Roxo Escuro': [
-      { rgb: [75, 0, 130], hex: '#6b21a8' },      // Indigo
-      { rgb: [80, 20, 140], hex: '#6b21a8' }
-    ],
-    // ⭐ MAGENTA - MÚLTIPLAS VARIAÇÕES PARA DIFERENCIAÇÃO ⭐
-    'Magenta': [
-      { rgb: [255, 0, 255], hex: '#d946ef' },     // Magenta puro
-      { rgb: [217, 70, 239], hex: '#d946ef' },    // Fuchsia
-      { rgb: [240, 50, 230], hex: '#d946ef' },    // Magenta vibrante
-      { rgb: [200, 0, 200], hex: '#d946ef' },     // Magenta escuro
-      { rgb: [230, 80, 220], hex: '#d946ef' }     // Magenta claro
-    ],
-    'Branco': [
-      { rgb: [255, 255, 255], hex: '#ffffff' },
-      { rgb: [245, 245, 245], hex: '#ffffff' }
-    ],
-    'Cinza': [
-      { rgb: [128, 128, 128], hex: '#9999aa' },
-      { rgb: [160, 160, 160], hex: '#9999aa' },
-      { rgb: [100, 100, 100], hex: '#9999aa' }
-    ],
-    'Cinza Escuro': [
-      { rgb: [64, 64, 64], hex: '#4a4a5a' },
-      { rgb: [80, 80, 80], hex: '#4a4a5a' }
-    ],
-    'Preto': [
-      { rgb: [0, 0, 0], hex: '#1a1a2a' },
-      { rgb: [20, 20, 20], hex: '#1a1a2a' },
-      { rgb: [40, 40, 40], hex: '#1a1a2a' }
-    ]
-  };
-  
-  // ═══════════════════════════════════════════════════════════════════
-  // 🧮 CONVERSÃO RGB → LAB (ESPAÇO PERCEPTUALMENTE UNIFORME CIE L*a*b*)
-  // ═══════════════════════════════════════════════════════════════════
-  function rgbToLab(r, g, b) {
-    // Normalizar RGB para [0, 1]
-    r = r / 255;
-    g = g / 255;
-    b = b / 255;
-    
-    // Aplicar gamma correction (sRGB → RGB linear)
-    r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
-    g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
-    b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
-    
-    // Converter RGB linear → XYZ usando matriz D65
-    let x = r * 0.4124564 + g * 0.3575761 + b * 0.1804375;
-    let y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750;
-    let z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041;
-    
-    // Normalizar para D65 white point
-    x = x / 0.95047;
-    y = y / 1.00000;
-    z = z / 1.08883;
-    
-    // Aplicar função f(t) para LAB
-    x = x > 0.008856 ? Math.pow(x, 1/3) : (7.787 * x + 16/116);
-    y = y > 0.008856 ? Math.pow(y, 1/3) : (7.787 * y + 16/116);
-    z = z > 0.008856 ? Math.pow(z, 1/3) : (7.787 * z + 16/116);
-    
-    // Calcular L*, a*, b*
-    const L = (116 * y) - 16;
-    const A = 500 * (x - y);
-    const B = 200 * (y - z);
-    
-    return { L, A, B };
-  }
-  
-  // ═══════════════════════════════════════════════════════════════════
-  // 📏 CÁLCULO DELTA E (ΔE*) - DISTÂNCIA EUCLIDIANA NO ESPAÇO LAB (CIE76)
-  // Quanto menor o ΔE, mais próximas são as cores perceptualmente
-  // ═══════════════════════════════════════════════════════════════════
-  function calculateDeltaE(lab1, lab2) {
-    const dL = lab1.L - lab2.L;
-    const dA = lab1.A - lab2.A;
-    const dB = lab1.B - lab2.B;
-    return Math.sqrt(dL * dL + dA * dA + dB * dB);
-  }
-  
-  // ═══════════════════════════════════════════════════════════════════
-  // 🎯 CLASSIFICAÇÃO POR SISTEMA LAB - TRATAMENTO IGUAL PARA TODAS AS CORES
-  // ═══════════════════════════════════════════════════════════════════
-  function classifyColorByLab(r, g, b, hsv) {
-    const inputLab = rgbToLab(r, g, b);
-    const v = normalizeV(hsv.v);
-    
-    let bestMatch = null;
-    let minDistance = Infinity;
-    let secondBest = null;
-    let secondDistance = Infinity;
-    
-    // Calcular distância LAB para TODAS as cores de referência
-    for (const [colorName, references] of Object.entries(COLOR_REFERENCES)) {
-      for (const ref of references) {
-        const refLab = rgbToLab(ref.rgb[0], ref.rgb[1], ref.rgb[2]);
-        const distance = calculateDeltaE(inputLab, refLab);
-        
-        if (distance < minDistance) {
-          secondBest = bestMatch;
-          secondDistance = minDistance;
-          minDistance = distance;
-          bestMatch = { name: colorName, hex: ref.hex, distance, lab: refLab };
-        } else if (distance < secondDistance) {
-          secondDistance = distance;
-          secondBest = { name: colorName, hex: ref.hex, distance };
-        }
-      }
-    }
-    
-    // Calcular confiança baseada na distância ΔE
-    const maxDelta = 100;
-    const confidence = Math.max(75, Math.min(99, 99 - (minDistance / maxDelta * 24)));
-    
-    // Log detalhado para análise (Console F12)
-    console.log('═══════════════════════════════════════════');
-    console.log('🎨 RGB:', r, g, b);
-    console.log('🔬 LAB:', 'L=' + inputLab.L.toFixed(1), 'a=' + inputLab.A.toFixed(1), 'b=' + inputLab.B.toFixed(1));
-    console.log('🏆 Melhor:', bestMatch.name, '| ΔE =', minDistance.toFixed(2));
-    if (secondBest) {
-      console.log('🥈 2º lugar:', secondBest.name, '| ΔE =', secondDistance.toFixed(2));
-      console.log('📊 Diferença:', (secondDistance - minDistance).toFixed(2), 'unidades');
-    }
-    console.log('✅ Confiança:', confidence.toFixed(1) + '%');
-    
-    // Adicionar modificador de luminosidade
-    let modifier = '';
-    if (v < 28) modifier = ' Escuro';
-    else if (v > 82 && hsv.s < 45) modifier = ' Claro';
-    
-    const finalName = bestMatch.name + modifier;
-    
-    return {
-      name: finalName,
-      color: bestMatch.hex,
-      confidence: Math.round(confidence),
-      deltaE: minDistance
-    };
-  }
-  
   function toggleSystem() {
     systemOn = !systemOn;
     const btn = document.getElementById('btn-system');
-    const btns = ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-universal'];
+    const btns = ['btn-calibrate-white', 'btn-calibrate-black', 'btn-camera', 'btn-audio', 'btn-universal'];
     
     if (systemOn) {
       btn.textContent = 'SISTEMA/ON';
@@ -597,6 +391,7 @@
       document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
       document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
       document.getElementById('color-swatch').style.background = '#1a1a2e';
+      document.getElementById('light-warning').style.display = 'none';
     }
   }
   
@@ -613,17 +408,38 @@
     return { h: h * 360, s: s * 100, v: v * 100 };
   }
   
+  // FUNÇÃO CRÍTICA: Normalizar V baseado na régua BRANCO-PRETO
   function normalizeV(vRaw) {
     if (!isWhiteCalibrated || !isBlackCalibrated) {
-      return vRaw;
+      return vRaw; // Sem calibração completa, retorna V original
     }
     
     const vWhite = whiteCalibration.hsv.v;
     const vBlack = blackCalibration.hsv.v;
     
+    // Fórmula de mapeamento linear:
+    // V_normalizado = ((V_atual - V_preto) / (V_branco - V_preto)) × 100
     const vNormalized = ((vRaw - vBlack) / (vWhite - vBlack)) * 100;
     
+    // Clampar entre 0-100
     return Math.max(0, Math.min(100, vNormalized));
+  }
+  
+  function detectAmbientLight(v, rgb) {
+    const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+    ambientProfile.light = Math.min(100, (avgRGB / 255) * 100 + v * 0.5);
+    const warning = document.getElementById('light-warning');
+    
+    if (ambientProfile.light < 35) {
+      warning.style.display = 'block';
+      warning.textContent = '⚠️ Pouca luz';
+    } else if (ambientProfile.light > 92) {
+      warning.style.display = 'block';
+      warning.textContent = '⚠️ Luz excessiva';
+    } else {
+      warning.style.display = 'none';
+    }
+    return ambientProfile.light;
   }
   
   function calculateVariance(buffer) {
@@ -634,6 +450,7 @@
     return Math.sqrt(variance);
   }
   
+  // Verificar se é o BRANCO calibrado
   function isCalibrationWhite(hsv, rgb) {
     if (!isWhiteCalibrated || !whiteCalibration) return false;
     
@@ -658,6 +475,7 @@
     return false;
   }
   
+  // Verificar se é o PRETO calibrado
   function isCalibrationBlack(hsv, rgb) {
     if (!isBlackCalibrated || !blackCalibration) return false;
     
@@ -683,28 +501,25 @@
     return false;
   }
   
+  // Classificação usando a RÉGUA de calibração dupla
   function classifyColorWithRuler(hsv, rgb, variance) {
-    const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
-    const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
-    
-    // Verificações de preto absoluto
-    if (maxRGB <= 15 || avgRGB <= 10) {
-      return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
-    }
-    
-    // Verificações de calibração
+    // PRIORIDADE 1: Verificar se é o branco calibrado
     if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) {
       return { name: 'Branco', color: '#ffffff', confidence: 99 };
     }
     
+    // PRIORIDADE 2: Verificar se é o preto calibrado
     if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) {
       return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
     }
     
-    const { s } = hsv;
+    const { h, s } = hsv;
+    
+    // Usar V NORMALIZADO se ambas calibrações existem
     const v = normalizeV(hsv.v);
     
-    // Verificações adicionais de preto
+    // Detectar PRETO genérico (sem calibração ou fora da calibração)
+    const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
     if (v < 22 && s < 35) {
       return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
     }
@@ -712,9 +527,10 @@
       return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
     }
     
-    // Verificações de cores acromáticas (cinza/branco)
+    // Classificação de cores acromáticas usando V NORMALIZADO
     if (s < 15) {
       if (isWhiteCalibrated && isBlackCalibrated) {
+        // COM RÉGUA COMPLETA: usar V normalizado
         if (v >= 85) {
           return { name: 'Branco', color: '#ffffff', confidence: 98 };
         } else if (v <= 20) {
@@ -723,6 +539,7 @@
           return { name: 'Cinza', color: '#9999aa', confidence: 96 };
         }
       } else if (isWhiteCalibrated) {
+        // SÓ BRANCO calibrado
         const baseV = whiteCalibration.hsv.v;
         if (v >= baseV - 10) {
           return { name: 'Branco', color: '#ffffff', confidence: 98 };
@@ -732,6 +549,7 @@
           return { name: 'Cinza', color: '#9999aa', confidence: 96 };
         }
       } else {
+        // SEM CALIBRAÇÃO: usar limites absolutos
         if (v >= 72) {
           return { name: 'Branco', color: '#ffffff', confidence: 98 };
         } else if (v <= 28) {
@@ -741,11 +559,72 @@
       }
     }
     
-    // ═══════════════════════════════════════════════════════════════════
-    // 🔬 USAR SISTEMA LAB PARA CORES CROMÁTICAS
-    // Tratamento matemático igual para TODAS as cores
-    // ═══════════════════════════════════════════════════════════════════
-    return classifyColorByLab(rgb.r, rgb.g, rgb.b, hsv);
+    // Cores cromáticas (com saturação)
+    let baseName = '', baseColor = '', confidence = 98;
+    
+    if ((h >= 345 || h < 20) || (h >= 290 && h < 345)) {
+      if (h >= 345 || h < 20) {
+        const hasBlueComponent = rgb.b > rgb.g * 1.2;
+        if (s < 58 && v > 40) {
+          baseName = 'Rosa';
+          baseColor = '#ff88aa';
+          confidence = 95;
+        } else if (hasBlueComponent && s < 72 && v > 45) {
+          baseName = 'Rosa';
+          baseColor = '#ff88aa';
+          confidence = 95;
+        } else {
+          baseName = 'Vermelho';
+          baseColor = '#ef4444';
+        }
+      } else {
+        const moreRedThanBlue = rgb.r > rgb.b * 0.9;
+        if (s < 60 && v > 40) {
+          baseName = 'Rosa';
+          baseColor = '#ff88aa';
+          confidence = 95;
+        } else if (moreRedThanBlue && s < 70 && v > 45) {
+          baseName = 'Rosa';
+          baseColor = '#ff88aa';
+          confidence = 95;
+        } else {
+          baseName = 'Magenta';
+          baseColor = '#d946ef';
+        }
+      }
+    }
+    else if (h >= 20 && h < 35) {
+      baseName = 'Laranja';
+      baseColor = '#f97316';
+    }
+    else if (h >= 35 && h < 70) {
+      baseName = 'Amarelo';
+      baseColor = '#fbbf24';
+    }
+    else if (h >= 70 && h < 165) {
+      baseName = 'Verde';
+      baseColor = '#22c55e';
+    }
+    else if (h >= 165 && h < 190) {
+      baseName = 'Ciano';
+      baseColor = '#06b6d4';
+    }
+    else if (h >= 190 && h < 260) {
+      baseName = 'Azul';
+      baseColor = '#3b82f6';
+    }
+    else if (h >= 260 && h < 290) {
+      baseName = 'Roxo';
+      baseColor = '#a855f7';
+    }
+    
+    let modifier = '';
+    if (v < 28) modifier = ' Escuro';
+    else if (v > 82 && s < 45) modifier = ' Claro';
+    
+    if (ambientProfile.light < 35) confidence = Math.max(75, confidence - 10);
+    
+    return { name: baseName + modifier, color: baseColor, confidence };
   }
   
   function addToBuffer(hsv, rgb) {
@@ -943,6 +822,7 @@
     
     const { r, g, b } = pixels;
     const rawHsv = rgbToHSV(r, g, b);
+    detectAmbientLight(rawHsv.v, { r, g, b });
     
     addToBuffer(rawHsv, { r, g, b });
     
@@ -1052,6 +932,7 @@
     await openCamera(devices[deviceIndex].deviceId);
   }
   
+  // CALIBRAR BRANCO
   function calibrateWhite() {
     if (!systemOn) return;
     if (!running) {
@@ -1100,6 +981,7 @@
     console.log('═══════════════════════════════════════════════');
   }
   
+  // CALIBRAR PRETO
   function calibrateBlack() {
     if (!systemOn) return;
     if (!running) {
@@ -1151,78 +1033,6 @@
     }
     console.log('═══════════════════════════════════════════════');
   }
-  
-  function resetWhite() {
-    if (!systemOn) return;
-    
-    whiteCalibration = null;
-    isWhiteCalibrated = false;
-    
-    const btn = document.getElementById('btn-calibrate-white');
-    btn.textContent = '◆ Cal. Branco';
-    btn.classList.remove('calibrated');
-    
-    updateCalibrationStatus();
-    
-    colorBuffer = [];
-    lastStableColorName = '';
-    mismatchCounter = 0;
-    consecutiveFrameCounter = 0;
-    
-    if (audioEnabled) {
-      speakColor('Branco resetado');
-    }
-    
-    console.log('✗ CALIBRAÇÃO DE BRANCO RESETADA');
-  }
-  
-  function resetBlack() {
-    if (!systemOn) return;
-    
-    blackCalibration = null;
-    isBlackCalibrated = false;
-    
-    const btn = document.getElementById('btn-calibrate-black');
-    btn.textContent = '◆ Cal. Preto';
-    btn.classList.remove('calibrated');
-    
-    updateCalibrationStatus();
-    
-    colorBuffer = [];
-    lastStableColorName = '';
-    mismatchCounter = 0;
-    consecutiveFrameCounter = 0;
-    
-    if (audioEnabled) {
-      speakColor('Preto resetado');
-    }
-    
-    console.log('✗ CALIBRAÇÃO DE PRETO RESETADA');
-  }
-  
-  // ═══════════════════════════════════════════════════════════════════
-  // 🚀 LOG DE INICIALIZAÇÃO DO SISTEMA
-  // ═══════════════════════════════════════════════════════════════════
-  console.log('╔═══════════════════════════════════════════════════════════╗');
-  console.log('║     🔬 MOTOR DE CORES v2.2 - SISTEMA LAB ΔE* ATIVO ✓    ║');
-  console.log('╚═══════════════════════════════════════════════════════════╝');
-  console.log('');
-  console.log('📐 MÉTODO CIENTÍFICO IMPLEMENTADO:');
-  console.log('   • Conversão RGB → XYZ → LAB (Espaço perceptual CIE)');
-  console.log('   • Cálculo Delta E (ΔE* CIE76) - Distância euclidiana');
-  console.log('   • Comparação com', Object.keys(COLOR_REFERENCES).length, 'categorias de cores');
-  console.log('   • 7 variações de ROXO vs 5 de MAGENTA para máxima precisão');
-  console.log('');
-  console.log('🎯 TRATAMENTO IGUALITÁRIO:');
-  console.log('   • TODAS as cores usam o mesmo algoritmo matemático');
-  console.log('   • Sem regras especiais ou prioridades');
-  console.log('   • Decisão baseada puramente em distância perceptual');
-  console.log('');
-  console.log('🟣 ROXO: Componente azul > vermelho (ex: RGB 138,43,226)');
-  console.log('🟪 MAGENTA: Vermelho ≈ Azul equilibrados (ex: RGB 255,0,255)');
-  console.log('');
-  console.log('📊 Logs detalhados aparecerão durante a detecção (F12)');
-  console.log('');
 </script>
 </body>
 </html>
