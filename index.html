@@ -300,7 +300,7 @@
 <body>
 <div id="header">
   <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Compensação de Brilho v2.0 · Calibração Dupla</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Compensação de Brilho v2.0 · Ultra Preciso</span>
 </div>
 <div id="top-bar">
   <div id="color-swatch" style="background:#1a1a2e;"></div>
@@ -355,7 +355,8 @@
   let isWhiteCalibrated = false;
   let isBlackCalibrated = false;
   
-  const SAMPLE_SIZE = 4;
+  // CORREÇÃO 1: Reduzir área de amostragem para 2x2 pixels (ultra preciso)
+  const SAMPLE_SIZE = 2;
   const BUFFER_SIZE = 8;
   const HYSTERESIS_THRESHOLD = 6;
   const RGB_CHANGE_THRESHOLD = 55;
@@ -482,21 +483,13 @@
     return false;
   }
   
-  // FUNÇÃO MATEMÁTICA RIGOROSA: Distinguir VERMELHO de ROSA
   function distinguishRedFromPink(rgb, s, v) {
     const r = rgb.r;
     const g = rgb.g;
     const b = rgb.b;
     
-    // Médias para análise
     const avgGB = (g + b) / 2;
     
-    // CRITÉRIOS MATEMÁTICOS UNIVERSAIS:
-    
-    // VERMELHO PURO:
-    // - R dominante absoluto (pelo menos 1.7x maior que G e B)
-    // - Média de G+B deve ser baixa (< 85)
-    // - Saturação alta (> 65%)
     const isRedByRatio = (r > g * 1.7) && (r > b * 1.7);
     const isRedByLowGB = avgGB < 85;
     const isRedBySaturation = s > 65;
@@ -505,10 +498,6 @@
       return 'Vermelho';
     }
     
-    // ROSA:
-    // - R é maior, mas G e B têm valores significativos (> 90)
-    // - Razão R/(G+B) está entre 1.05 e 1.45
-    // - Saturação moderada (20% a 65%)
     const ratioRtoGB = r / avgGB;
     const isPinkByRatio = ratioRtoGB >= 1.05 && ratioRtoGB <= 1.45;
     const isPinkByHighGB = avgGB >= 90;
@@ -518,28 +507,20 @@
       return 'Rosa';
     }
     
-    // Caso ambíguo: usar saturação como desempate
     if (s > 65) {
       return 'Vermelho';
     } else if (s >= 20 && avgGB >= 80) {
       return 'Rosa';
     }
     
-    // Padrão: Vermelho
     return 'Vermelho';
   }
   
-  // FUNÇÃO MATEMÁTICA RIGOROSA: Distinguir ROXO de MAGENTA
   function distinguishPurpleFromMagenta(rgb, s, v) {
     const r = rgb.r;
     const g = rgb.g;
     const b = rgb.b;
     
-    // ROXO:
-    // - Azul DOMINANTE ou equilibrado com vermelho
-    // - B >= R × 0.85
-    // - B >= 90 (azul forte)
-    // - Saturação >= 40%
     const isPurpleByBlue = b >= r * 0.85;
     const isPurpleByStrongBlue = b >= 90;
     const isPurpleBySaturation = s >= 40;
@@ -548,10 +529,6 @@
       return 'Roxo';
     }
     
-    // MAGENTA:
-    // - Equilíbrio entre R e B (diferença <= 45)
-    // - Ambos R e B devem ser altos (>= 100)
-    // - Verde deve ser significativamente menor
     const rgbDiff = Math.abs(r - b);
     const isMagentaByBalance = rgbDiff <= 45;
     const isMagentaByHighRB = r >= 100 && b >= 90;
@@ -561,16 +538,24 @@
       return 'Magenta';
     }
     
-    // Desempate: Se vermelho > azul × 1.2 = tende a Magenta
     if (r > b * 1.2 && s >= 35) {
       return 'Magenta';
     }
     
-    // Padrão: Roxo se azul >= 80, senão Magenta
     return b >= 80 ? 'Roxo' : 'Magenta';
   }
   
   function classifyColorWithRuler(hsv, rgb, variance) {
+    // CORREÇÃO 2: VALIDAÇÃO ABSOLUTA DE PRETO (CÂMERA TAMPADA)
+    // Se TODOS os canais RGB são extremamente baixos, é PRETO ABSOLUTO
+    const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
+    const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+    
+    if (maxRGB <= 15 || avgRGB <= 10) {
+      // Câmera tampada ou escuridão total = SEMPRE PRETO
+      return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
+    }
+    
     if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) {
       return { name: 'Branco', color: '#ffffff', confidence: 99 };
     }
@@ -582,7 +567,7 @@
     const { h, s } = hsv;
     const v = normalizeV(hsv.v);
     
-    const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
+    // Detecção secundária de preto
     if (v < 22 && s < 35) {
       return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
     }
@@ -620,21 +605,18 @@
     
     let baseName = '', baseColor = '', confidence = 98;
     
-    // ZONA VERMELHO/ROSA (H: 345-20°)
     if ((h >= 345 || h < 20) && s >= 20) {
       const result = distinguishRedFromPink(rgb, s, v);
       baseName = result;
       baseColor = result === 'Rosa' ? '#ff88aa' : '#ef4444';
       confidence = result === 'Rosa' ? 95 : 98;
     }
-    // ZONA ROXO (H: 260-290°)
     else if (h >= 260 && h < 290 && s >= 35) {
       const result = distinguishPurpleFromMagenta(rgb, s, v);
       baseName = result;
       baseColor = result === 'Roxo' ? '#a855f7' : '#d946ef';
       confidence = 98;
     }
-    // ZONA MAGENTA (H: 290-345°)
     else if (h >= 290 && h < 345 && s >= 35) {
       const result = distinguishPurpleFromMagenta(rgb, s, v);
       baseName = result;
@@ -747,6 +729,7 @@
     return true;
   }
   
+  // CORREÇÃO 1: Amostragem ultra-precisa (2x2 pixels no centro EXATO)
   function samplePixels() {
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw || !vh) return null;
