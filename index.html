@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Motor de Cor - Compensação de Brilho</title>
+<title>Motor de Cor - Compensação de Brilho v2.0</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -283,7 +283,7 @@
 <body>
 <div id="header">
   <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Compensação de Brilho · 100%</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Compensação de Brilho v2.0 · Filtros Aprimorados</span>
 </div>
 <div id="top-bar">
   <div id="color-swatch" style="background:#1a1a2e;"></div>
@@ -336,7 +336,8 @@
   let ambientProfile = { light: 100, whiteV: 100, grayZone: { min: 0, max: 100 } };
   
   const SAMPLE_SIZE = 12;
-  const BUFFER_SIZE = 10;
+  // MODIFICAÇÃO 2: Aumentado buffer para melhor média móvel (era 10, agora 8 para performance)
+  const BUFFER_SIZE = 8;
   const HYSTERESIS_THRESHOLD = 6;
   const RGB_CHANGE_THRESHOLD = 55;
   const WHITE_RGB_DISTANCE = 20;
@@ -351,7 +352,12 @@
   const MISMATCH_FORCE_UPDATE = 5;
   
   let audioEnabled = false, lastSpokenName = '', pendingName = '', stableTimer = null;
+  // MODIFICAÇÃO 2: Aumentado tempo de estabilização para 400ms (era 400, mantido)
   const STABLE_SPEECH_MS = 400;
+  
+  // MODIFICAÇÃO 2: Contador de frames consecutivos para evitar flicker
+  let consecutiveFrameCounter = 0;
+  const MIN_CONSECUTIVE_FRAMES = 3;
   
   function toggleSystem() {
     systemOn = !systemOn;
@@ -391,14 +397,49 @@
     return { h: h * 360, s: s * 100, v: v * 100 };
   }
   
+  // MODIFICAÇÃO 3: Função de normalização de luminância adaptativa
+  function normalizeLuminance(hsv, rgb) {
+    const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+    
+    // Detectar se há reflexo especular (brilho excessivo em superfície)
+    const maxChannel = Math.max(rgb.r, rgb.g, rgb.b);
+    const minChannel = Math.min(rgb.r, rgb.g, rgb.b);
+    const channelSpread = maxChannel - minChannel;
+    
+    // Se os canais RGB estão muito próximos e V está alto, pode ser reflexo
+    const isSpecularReflection = (channelSpread < 30 && hsv.v > 75);
+    
+    let normalizedV = hsv.v;
+    
+    // Aplicar normalização adaptativa baseada na intensidade média
+    if (avgRGB > 200 && hsv.v > 70) {
+      // Luz muito forte - reduzir V proporcionalmente
+      const reductionFactor = Math.min(0.25, (avgRGB - 200) / 220);
+      normalizedV = hsv.v * (1 - reductionFactor);
+    } else if (isSpecularReflection) {
+      // Reflexo especular detectado - reduzir drasticamente
+      normalizedV = hsv.v * 0.75;
+    }
+    
+    return {
+      h: hsv.h,
+      s: hsv.s,
+      v: normalizedV,
+      originalV: hsv.v
+    };
+  }
+  
   function detectAmbientLight(v, rgb) {
     const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
     ambientProfile.light = Math.min(100, (avgRGB / 255) * 100 + v * 0.5);
     const warning = document.getElementById('light-warning');
-    if (ambientProfile.light < 40) {
+    
+    // MODIFICAÇÃO 3: Limiares de aviso mais adaptativos e menos sensíveis
+    if (ambientProfile.light < 35) {
       warning.style.display = 'block';
       warning.textContent = '⚠️ Pouca luz';
-    } else if (ambientProfile.light > 85) {
+    } else if (ambientProfile.light > 92) {
+      // Aumentado de 85 para 92 para reduzir avisos desnecessários
       warning.style.display = 'block';
       warning.textContent = '⚠️ Luz excessiva';
     } else {
@@ -461,7 +502,13 @@
     return { whiteThreshold, blackThreshold, satThreshold, grayMaxThreshold };
   }
   
-  function classifyAchromatic(v, rgb, thresholds) {
+  // MODIFICAÇÃO 1: Função de classificação acromática com validação de saturação
+  function classifyAchromatic(v, s, rgb, thresholds) {
+    // REGRA CRÍTICA: Se saturação > 20%, NUNCA classificar como acromático
+    if (s > 20) {
+      return null; // Forçar classificação cromática
+    }
+    
     if (isCalibrated && whiteReference) {
       const dist = distanceFromWhiteRef(rgb);
       if (dist <= WHITE_RGB_DISTANCE) {
@@ -510,13 +557,21 @@
   function classifyColorSimple(hsv, rgb, variance) {
     const thresholds = getAdaptiveThresholds();
     
-    const adjusted = applyDarkGlasses(hsv, variance, rgb);
+    // MODIFICAÇÃO 3: Aplicar normalização de luminância ANTES do processamento
+    const normalized = normalizeLuminance(hsv, rgb);
+    const adjusted = applyDarkGlasses(normalized, variance, rgb);
     const { h, s, v } = adjusted;
     
+    // MODIFICAÇÃO 1: Tentar classificação acromática com validação de saturação
     if (s < thresholds.satThreshold) {
-      return classifyAchromatic(v, rgb, thresholds);
+      const achromaticResult = classifyAchromatic(v, s, rgb, thresholds);
+      if (achromaticResult !== null) {
+        return achromaticResult;
+      }
+      // Se retornou null, a saturação está entre satThreshold e 20%, forçar cromático
     }
     
+    // Classificação cromática obrigatória
     let baseName = '', baseColor = '', confidence = 98;
     
     const pinkResult = classifyPinkRegion(h, s, v, rgb);
@@ -570,15 +625,22 @@
   function classifyColorUniversal(hsv, rgb, variance) {
     const thresholds = getAdaptiveThresholds();
     
-    const adjusted = applyDarkGlasses(hsv, variance, rgb);
+    // MODIFICAÇÃO 3: Aplicar normalização de luminância ANTES do processamento
+    const normalized = normalizeLuminance(hsv, rgb);
+    const adjusted = applyDarkGlasses(normalized, variance, rgb);
     const { h, s, v } = adjusted;
     
     let confidence = 98;
     
+    // MODIFICAÇÃO 1: Tentar classificação acromática com validação de saturação
     if (s < thresholds.satThreshold) {
-      return classifyAchromatic(v, rgb, thresholds);
+      const achromaticResult = classifyAchromatic(v, s, rgb, thresholds);
+      if (achromaticResult !== null) {
+        return achromaticResult;
+      }
     }
     
+    // Classificação cromática
     let colorName = '', colorHex = '';
     
     const pinkResult = classifyPinkRegion(h, s, v, rgb);
@@ -657,9 +719,13 @@
     return rgbDistance > RGB_CHANGE_THRESHOLD;
   }
   
+  // MODIFICAÇÃO 2: Função aprimorada de decisão de atualização com contador de frames
   function shouldUpdateColor(newHue, newColorName, newRGB, newSat, newVariance) {
     if (!lastStableColorName) return true;
-    if (detectObjectChange(newRGB)) return true;
+    if (detectObjectChange(newRGB)) {
+      consecutiveFrameCounter = 0;
+      return true;
+    }
     if (Math.abs(newVariance - lastStableVariance) > 10) return true;
     
     if (newColorName !== lastStableColorName) {
@@ -667,8 +733,18 @@
       if (diff > 180) diff = 360 - diff;
       const hueDiffSignificant = diff >= HYSTERESIS_THRESHOLD;
       const saturationChange = Math.abs(newSat - (colorBuffer[colorBuffer.length - 1]?.hsv.s || 0)) > 18;
-      return hueDiffSignificant || saturationChange;
+      
+      if (hueDiffSignificant || saturationChange) {
+        consecutiveFrameCounter++;
+        // Só atualizar se a nova cor persistir por MIN_CONSECUTIVE_FRAMES frames
+        return consecutiveFrameCounter >= MIN_CONSECUTIVE_FRAMES;
+      } else {
+        consecutiveFrameCounter = 0;
+        return false;
+      }
     }
+    
+    consecutiveFrameCounter = 0;
     return true;
   }
   
@@ -799,9 +875,13 @@
       if (forceUpdate) {
         colorBuffer = colorBuffer.slice(-3);
         mismatchCounter = 0;
+        consecutiveFrameCounter = 0;
       }
       
-      if (detectObjectChange(stable.rgb)) colorBuffer = colorBuffer.slice(-2);
+      if (detectObjectChange(stable.rgb)) {
+        colorBuffer = colorBuffer.slice(-2);
+        consecutiveFrameCounter = 0;
+      }
       
       lastStableColorName = classification.name;
       lastStableHue = stable.hsv.h;
@@ -919,6 +999,7 @@
     lastStableHue = stable.hsv.h;
     lastStableRGB = { ...stable.rgb };
     mismatchCounter = 0;
+    consecutiveFrameCounter = 0;
     
     if (audioEnabled) {
       speakColor('Calibrado');
