@@ -123,16 +123,27 @@
     opacity: 0.25;
     cursor: not-allowed;
   }
-  #btn-calibrate {
+  #btn-calibrate-white {
     background: linear-gradient(135deg, #2a2a6e, #3a3a9e);
     color: #aac;
     border: 1px solid rgba(100,100,255,0.3);
   }
-  #btn-calibrate:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a8e, #5a5abe); color: #eef; }
-  #btn-calibrate.calibrated {
+  #btn-calibrate-white:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a8e, #5a5abe); color: #eef; }
+  #btn-calibrate-white.calibrated {
     background: linear-gradient(135deg, #1a4a2e, #2a7a4e);
     border-color: rgba(50,200,100,0.4);
     color: #8fc;
+  }
+  #btn-calibrate-black {
+    background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
+    color: #aaa;
+    border: 1px solid rgba(100,100,100,0.3);
+  }
+  #btn-calibrate-black:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a3a, #5a5a5a); color: #ddd; }
+  #btn-calibrate-black.calibrated {
+    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+    border-color: rgba(200,200,200,0.4);
+    color: #fff;
   }
   #btn-camera {
     background: linear-gradient(135deg, #2a1a3e, #4a2a6e);
@@ -283,7 +294,7 @@
 <body>
 <div id="header">
   <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Compensação de Brilho v2.0 · Filtros Aprimorados</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Compensação de Brilho v2.0 · Calibração Dupla</span>
 </div>
 <div id="top-bar">
   <div id="color-swatch" style="background:#1a1a2e;"></div>
@@ -301,7 +312,8 @@
   <div id="base-info">Base: não calibrada</div>
   <div id="light-warning">⚠️ Pouca luz</div>
   <span class="sep">│</span>
-  <button class="btn-top" id="btn-calibrate" onclick="calibrate()">&#9670; Calibrar</button>
+  <button class="btn-top" id="btn-calibrate-white" onclick="calibrateWhite()">&#9670; Cal. Branco</button>
+  <button class="btn-top" id="btn-calibrate-black" onclick="calibrateBlack()">&#9670; Cal. Preto</button>
   <button class="btn-top" id="btn-camera"    onclick="switchCamera()">&#8635; Câmera</button>
   <button class="btn-top" id="btn-audio"     onclick="toggleAudio()">&#128263; Áudio</button>
   <button class="btn-top" id="btn-universal" onclick="toggleUniversalMode()">&#9733; Universal</button>
@@ -331,9 +343,11 @@
   let stream = null, devices = [], deviceIndex = 0, running = false, universalMode = false;
   let systemOn = true;
   
-  // NOVA ABORDAGEM: Calibração como ÂNCORA ABSOLUTA
-  let calibrationBase = null;
-  let isCalibrated = false;
+  // CALIBRAÇÃO DUPLA: Âncoras de BRANCO e PRETO
+  let whiteCalibration = null;
+  let blackCalibration = null;
+  let isWhiteCalibrated = false;
+  let isBlackCalibrated = false;
   let ambientProfile = { light: 100 };
   
   const SAMPLE_SIZE = 4;
@@ -359,7 +373,7 @@
   function toggleSystem() {
     systemOn = !systemOn;
     const btn = document.getElementById('btn-system');
-    const btns = ['btn-calibrate', 'btn-camera', 'btn-audio', 'btn-universal'];
+    const btns = ['btn-calibrate-white', 'btn-calibrate-black', 'btn-camera', 'btn-audio', 'btn-universal'];
     
     if (systemOn) {
       btn.textContent = 'SISTEMA/ON';
@@ -394,6 +408,23 @@
     return { h: h * 360, s: s * 100, v: v * 100 };
   }
   
+  // FUNÇÃO CRÍTICA: Normalizar V baseado na régua BRANCO-PRETO
+  function normalizeV(vRaw) {
+    if (!isWhiteCalibrated || !isBlackCalibrated) {
+      return vRaw; // Sem calibração completa, retorna V original
+    }
+    
+    const vWhite = whiteCalibration.hsv.v;
+    const vBlack = blackCalibration.hsv.v;
+    
+    // Fórmula de mapeamento linear:
+    // V_normalizado = ((V_atual - V_preto) / (V_branco - V_preto)) × 100
+    const vNormalized = ((vRaw - vBlack) / (vWhite - vBlack)) * 100;
+    
+    // Clampar entre 0-100
+    return Math.max(0, Math.min(100, vNormalized));
+  }
+  
   function detectAmbientLight(v, rgb) {
     const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
     ambientProfile.light = Math.min(100, (avgRGB / 255) * 100 + v * 0.5);
@@ -419,37 +450,24 @@
     return Math.sqrt(variance);
   }
   
-  // FUNÇÃO CRUCIAL: Verificar se a leitura atual corresponde ao BRANCO CALIBRADO
-  // Usa múltiplos critérios para garantir que a mesma superfície sempre retorne BRANCO
+  // Verificar se é o BRANCO calibrado
   function isCalibrationWhite(hsv, rgb) {
-    if (!isCalibrated || !calibrationBase) return false;
+    if (!isWhiteCalibrated || !whiteCalibration) return false;
     
-    const base = calibrationBase;
+    const base = whiteCalibration;
     
-    // Critério 1: Distância Euclidiana RGB
     const dr = rgb.r - base.rgb.r;
     const dg = rgb.g - base.rgb.g;
     const db = rgb.b - base.rgb.b;
     const rgbDistance = Math.sqrt(dr*dr + dg*dg + db*db);
     
-    // Critério 2: Diferença de Brilho (V)
     const vDiff = Math.abs(hsv.v - base.hsv.v);
+    const isSLow = hsv.s <= 30;
     
-    // Critério 3: Diferença de Saturação (S)
-    const sDiff = Math.abs(hsv.s - base.hsv.s);
-    
-    // REGRA ABSOLUTA: Se QUALQUER critério indicar semelhança forte, É BRANCO
-    // Tolerâncias generosas para cobrir variações de sombra/iluminação
-    const isRGBSimilar = rgbDistance <= 50;  // Distância RGB tolerante
-    const isVSimilar = vDiff <= 15;           // Diferença de brilho até 15%
-    const isSLow = hsv.s <= 30;               // Saturação baixa (sem cor forte)
-    
-    // Se RGB é similar OU (V é similar E saturação baixa), É O BRANCO CALIBRADO
-    if (isRGBSimilar || (isVSimilar && isSLow)) {
+    if (rgbDistance <= 50 || (vDiff <= 15 && isSLow)) {
       return true;
     }
     
-    // Também: se é MAIS CLARO que a calibração e sem saturação, é Branco
     if (hsv.v >= base.hsv.v && hsv.s <= 20) {
       return true;
     }
@@ -457,60 +475,93 @@
     return false;
   }
   
-  // Classificação RELATIVA baseada na calibração
-  function classifyColorRelative(hsv, rgb, variance) {
-    // PRIORIDADE ABSOLUTA: Verificar se é o branco calibrado
-    if (isCalibrated && isCalibrationWhite(hsv, rgb)) {
+  // Verificar se é o PRETO calibrado
+  function isCalibrationBlack(hsv, rgb) {
+    if (!isBlackCalibrated || !blackCalibration) return false;
+    
+    const base = blackCalibration;
+    
+    const dr = rgb.r - base.rgb.r;
+    const dg = rgb.g - base.rgb.g;
+    const db = rgb.b - base.rgb.b;
+    const rgbDistance = Math.sqrt(dr*dr + dg*dg + db*db);
+    
+    const vDiff = Math.abs(hsv.v - base.hsv.v);
+    const isSLow = hsv.s <= 35;
+    
+    if (rgbDistance <= 40 || (vDiff <= 12 && isSLow)) {
+      return true;
+    }
+    
+    const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
+    if (maxRGB <= base.rgb.r + 20 && maxRGB <= base.rgb.g + 20 && maxRGB <= base.rgb.b + 20 && hsv.s <= 35) {
+      return true;
+    }
+    
+    return false;
+  }
+  
+  // Classificação usando a RÉGUA de calibração dupla
+  function classifyColorWithRuler(hsv, rgb, variance) {
+    // PRIORIDADE 1: Verificar se é o branco calibrado
+    if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) {
       return { name: 'Branco', color: '#ffffff', confidence: 99 };
     }
     
-    // Detectar PRETO: V muito baixo ou RGB todos baixos
+    // PRIORIDADE 2: Verificar se é o preto calibrado
+    if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) {
+      return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
+    }
+    
+    const { h, s } = hsv;
+    
+    // Usar V NORMALIZADO se ambas calibrações existem
+    const v = normalizeV(hsv.v);
+    
+    // Detectar PRETO genérico (sem calibração ou fora da calibração)
     const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
-    if (hsv.v < 22 && hsv.s < 35) {
+    if (v < 22 && s < 35) {
       return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
     }
-    if (maxRGB < 50 && hsv.s < 40) {
+    if (maxRGB < 50 && s < 40) {
       return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
     }
     
-    const { h, s, v } = hsv;
-    
-    // Se calibrado, trabalhar RELATIVAMENTE à base
-    if (isCalibrated && calibrationBase) {
-      const baseV = calibrationBase.hsv.v;
-      
-      // Superfícies acromáticas RELATIVAS à calibração
-      if (s < 15) {
-        // Mais claro ou similar ao branco calibrado = Branco
-        if (v >= baseV - 10) {
+    // Classificação de cores acromáticas usando V NORMALIZADO
+    if (s < 15) {
+      if (isWhiteCalibrated && isBlackCalibrated) {
+        // COM RÉGUA COMPLETA: usar V normalizado
+        if (v >= 85) {
           return { name: 'Branco', color: '#ffffff', confidence: 98 };
-        }
-        // Muito mais escuro que a base = Preto
-        else if (v < baseV * 0.4) {
+        } else if (v <= 20) {
           return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-        }
-        // No meio = Cinza
-        else {
+        } else {
           return { name: 'Cinza', color: '#9999aa', confidence: 96 };
         }
+      } else if (isWhiteCalibrated) {
+        // SÓ BRANCO calibrado
+        const baseV = whiteCalibration.hsv.v;
+        if (v >= baseV - 10) {
+          return { name: 'Branco', color: '#ffffff', confidence: 98 };
+        } else if (v < baseV * 0.4) {
+          return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+        } else {
+          return { name: 'Cinza', color: '#9999aa', confidence: 96 };
+        }
+      } else {
+        // SEM CALIBRAÇÃO: usar limites absolutos
+        if (v >= 72) {
+          return { name: 'Branco', color: '#ffffff', confidence: 98 };
+        } else if (v <= 28) {
+          return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+        }
+        return { name: 'Cinza', color: '#9999aa', confidence: 96 };
       }
-    }
-    
-    // Classificação de cores com saturação
-    if (s < 15) {
-      // Sem calibração, usar limites absolutos
-      if (v >= 72) {
-        return { name: 'Branco', color: '#ffffff', confidence: 98 };
-      } else if (v <= 28) {
-        return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-      }
-      return { name: 'Cinza', color: '#9999aa', confidence: 96 };
     }
     
     // Cores cromáticas (com saturação)
     let baseName = '', baseColor = '', confidence = 98;
     
-    // Rosa/Vermelho/Magenta
     if ((h >= 345 || h < 20) || (h >= 290 && h < 345)) {
       if (h >= 345 || h < 20) {
         const hasBlueComponent = rgb.b > rgb.g * 1.2;
@@ -735,6 +786,23 @@
     }
   }
   
+  function updateCalibrationStatus() {
+    let statusText = 'Base: ';
+    
+    if (isWhiteCalibrated && isBlackCalibrated) {
+      const vRange = whiteCalibration.hsv.v - blackCalibration.hsv.v;
+      statusText += `Régua Completa (${vRange.toFixed(0)}% range)`;
+    } else if (isWhiteCalibrated) {
+      statusText += `Branco V:${whiteCalibration.hsv.v.toFixed(0)}%`;
+    } else if (isBlackCalibrated) {
+      statusText += `Preto V:${blackCalibration.hsv.v.toFixed(0)}%`;
+    } else {
+      statusText += 'não calibrada';
+    }
+    
+    document.getElementById('base-info').textContent = statusText;
+  }
+  
   function update() {
     if (!running || video.readyState < 2) {
       requestAnimationFrame(update);
@@ -766,8 +834,7 @@
     
     const variance = calculateVariance(colorBuffer);
     
-    // Usar classificação RELATIVA baseada na calibração
-    const classification = classifyColorRelative(stable.hsv, stable.rgb, variance);
+    const classification = classifyColorWithRuler(stable.hsv, stable.rgb, variance);
     
     if (classification.name !== lastStableColorName && lastStableColorName !== '') {
       mismatchCounter++;
@@ -865,8 +932,8 @@
     await openCamera(devices[deviceIndex].deviceId);
   }
   
-  // FUNÇÃO CALIBRAR - Define ÂNCORA ABSOLUTA do sistema
-  function calibrate() {
+  // CALIBRAR BRANCO
+  function calibrateWhite() {
     if (!systemOn) return;
     if (!running) {
       alert('Inicie a câmera primeiro.');
@@ -879,35 +946,22 @@
       return;
     }
     
-    // RESET COMPLETO do sistema
-    // Armazena valores ABSOLUTOS como base de referência
-    calibrationBase = {
-      hsv: { 
-        h: stable.hsv.h, 
-        s: stable.hsv.s, 
-        v: stable.hsv.v 
-      },
-      rgb: { 
-        r: stable.rgb.r, 
-        g: stable.rgb.g, 
-        b: stable.rgb.b 
-      }
+    whiteCalibration = {
+      hsv: { h: stable.hsv.h, s: stable.hsv.s, v: stable.hsv.v },
+      rgb: { r: stable.rgb.r, g: stable.rgb.g, b: stable.rgb.b }
     };
     
-    isCalibrated = true;
+    isWhiteCalibrated = true;
     
-    // FORÇAR exibição imediata de "Branco" e resetar sistema
     document.getElementById('color-name').textContent = 'Branco';
     document.getElementById('color-name').style.color = '#ffffff';
     
-    const btn = document.getElementById('btn-calibrate');
-    btn.textContent = '✓ Calibrado';
+    const btn = document.getElementById('btn-calibrate-white');
+    btn.textContent = '✓ Branco';
     btn.classList.add('calibrated');
     
-    document.getElementById('base-info').textContent =
-      `Base: Branco RGB(${stable.rgb.r},${stable.rgb.g},${stable.rgb.b}) V:${stable.hsv.v.toFixed(0)}%`;
+    updateCalibrationStatus();
     
-    // RESET completo de buffers e contadores
     colorBuffer = [];
     lastStableColorName = 'Branco';
     lastStableHue = stable.hsv.h;
@@ -917,18 +971,66 @@
     consecutiveFrameCounter = 0;
     
     if (audioEnabled) {
-      speakColor('Calibrado');
+      speakColor('Branco calibrado');
     }
     
     console.log('═══════════════════════════════════════════════');
-    console.log('✓ CALIBRAÇÃO ABSOLUTA ESTABELECIDA');
+    console.log('✓ BRANCO CALIBRADO');
+    console.log('   RGB:', whiteCalibration.rgb);
+    console.log('   V:', whiteCalibration.hsv.v.toFixed(1) + '%');
     console.log('═══════════════════════════════════════════════');
-    console.log('   BRANCO BASE RGB:', calibrationBase.rgb);
-    console.log('   BRANCO BASE HSV:', 
-      `H:${calibrationBase.hsv.h.toFixed(1)}° ` +
-      `S:${calibrationBase.hsv.s.toFixed(1)}% ` +
-      `V:${calibrationBase.hsv.v.toFixed(1)}%`);
-    console.log('   MODO: Todas as cores trabalham RELATIVAMENTE a esta base');
+  }
+  
+  // CALIBRAR PRETO
+  function calibrateBlack() {
+    if (!systemOn) return;
+    if (!running) {
+      alert('Inicie a câmera primeiro.');
+      return;
+    }
+    
+    const stable = getStableColor();
+    if (!stable) {
+      alert('Aguarde a estabilização da imagem...');
+      return;
+    }
+    
+    blackCalibration = {
+      hsv: { h: stable.hsv.h, s: stable.hsv.s, v: stable.hsv.v },
+      rgb: { r: stable.rgb.r, g: stable.rgb.g, b: stable.rgb.b }
+    };
+    
+    isBlackCalibrated = true;
+    
+    document.getElementById('color-name').textContent = 'Preto';
+    document.getElementById('color-name').style.color = '#1a1a2a';
+    
+    const btn = document.getElementById('btn-calibrate-black');
+    btn.textContent = '✓ Preto';
+    btn.classList.add('calibrated');
+    
+    updateCalibrationStatus();
+    
+    colorBuffer = [];
+    lastStableColorName = 'Preto';
+    lastStableHue = stable.hsv.h;
+    lastStableRGB = { ...stable.rgb };
+    lastStableVariance = 0;
+    mismatchCounter = 0;
+    consecutiveFrameCounter = 0;
+    
+    if (audioEnabled) {
+      speakColor('Preto calibrado');
+    }
+    
+    console.log('═══════════════════════════════════════════════');
+    console.log('✓ PRETO CALIBRADO');
+    console.log('   RGB:', blackCalibration.rgb);
+    console.log('   V:', blackCalibration.hsv.v.toFixed(1) + '%');
+    if (isWhiteCalibrated) {
+      const range = whiteCalibration.hsv.v - blackCalibration.hsv.v;
+      console.log('   RÉGUA COMPLETA: Range de', range.toFixed(1) + '%');
+    }
     console.log('═══════════════════════════════════════════════');
   }
 </script>
