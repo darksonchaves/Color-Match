@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Motor de Cor - Compensação de Brilho v2.2</title>
+<title>Motor de Cor - Sistema de Modos v2.3</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -63,6 +63,81 @@
     -webkit-backdrop-filter: blur(6px);
     flex-wrap: wrap;
   }
+  
+  /* BOTÃO MODOS - DROPDOWN */
+  .mode-selector {
+    position: relative;
+  }
+  #btn-modes {
+    padding: 6px 12px;
+    border: 2px solid rgba(100,100,255,0.4);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+    background: linear-gradient(135deg, #2a2a4e, #3a3a6e);
+    color: #aac;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  #btn-modes:hover {
+    background: linear-gradient(135deg, #3a3a6e, #4a4a8e);
+    border-color: rgba(150,150,255,0.6);
+  }
+  #btn-modes.mode-livre {
+    background: linear-gradient(135deg, #1a4a2e, #2a7a4e);
+    border-color: rgba(60,200,100,0.5);
+    color: #6effa0;
+  }
+  #btn-modes.mode-estatico {
+    background: linear-gradient(135deg, #1a2a4e, #2a4a7e);
+    border-color: rgba(60,150,255,0.5);
+    color: #6eb0ff;
+  }
+  #mode-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: rgba(20,20,40,0.98);
+    border: 1px solid rgba(100,100,255,0.3);
+    border-radius: 6px;
+    overflow: hidden;
+    display: none;
+    min-width: 160px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    z-index: 100;
+  }
+  #mode-dropdown.show {
+    display: block;
+  }
+  .mode-option {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.15s ease;
+    border-bottom: 1px solid rgba(100,100,255,0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mode-option:last-child {
+    border-bottom: none;
+  }
+  .mode-option:hover {
+    background: rgba(100,100,255,0.15);
+  }
+  .mode-option.active {
+    background: rgba(60,200,100,0.2);
+    color: #6effa0;
+  }
+  
   #color-swatch {
     width: 28px;
     height: 28px;
@@ -128,6 +203,17 @@
     border-color: rgba(50,200,100,0.4);
     color: #8fc;
   }
+  #btn-calibrate-white-pro {
+    background: linear-gradient(135deg, #3a3a7e, #4a4aae);
+    color: #cce;
+    border: 1px solid rgba(120,120,255,0.4);
+  }
+  #btn-calibrate-white-pro:hover:not(:disabled) { background: linear-gradient(135deg, #4a4a9e, #6a6ace); color: #fff; }
+  #btn-calibrate-white-pro.calibrated {
+    background: linear-gradient(135deg, #2a5a3e, #3a8a5e);
+    border-color: rgba(60,220,120,0.5);
+    color: #afd;
+  }
   #btn-calibrate-black {
     background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
     color: #aaa;
@@ -137,6 +223,17 @@
   #btn-calibrate-black.calibrated {
     background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
     border-color: rgba(200,200,200,0.4);
+    color: #fff;
+  }
+  #btn-calibrate-black-pro {
+    background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
+    color: #bbb;
+    border: 1px solid rgba(120,120,120,0.4);
+  }
+  #btn-calibrate-black-pro:hover:not(:disabled) { background: linear-gradient(135deg, #4a4a4a, #6a6a6a); color: #eee; }
+  #btn-calibrate-black-pro.calibrated {
+    background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
+    border-color: rgba(220,220,220,0.5);
     color: #fff;
   }
   #btn-reset-white {
@@ -151,6 +248,16 @@
     border: 1px solid rgba(100,100,200,0.3);
   }
   #btn-reset-black:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a4a, #4a4a6a); color: #aaf; }
+  #btn-reset-estatico {
+    background: linear-gradient(135deg, #3a2a1e, #5a4a30);
+    color: #fa8;
+    border: 1px solid rgba(255,150,80,0.4);
+    display: none;
+  }
+  #btn-reset-estatico.show {
+    display: inline-block;
+  }
+  #btn-reset-estatico:hover:not(:disabled) { background: linear-gradient(135deg, #4a3a2e, #6a5a40); color: #fca; }
   #btn-camera {
     background: linear-gradient(135deg, #2a1a3e, #4a2a6e);
     color: #bac;
@@ -200,6 +307,8 @@
     z-index: 1;
   }
   #canvasEl { display: none; }
+  
+  /* RETICLE - MIRA */
   #reticle {
     position: absolute;
     top: 50%;
@@ -209,6 +318,10 @@
     height: 60px;
     pointer-events: none;
     z-index: 20;
+    display: none;
+  }
+  #reticle.show {
+    display: block;
   }
   .reticle-h {
     position: absolute;
@@ -260,6 +373,35 @@
     background: rgba(120,220,255,0.9);
     box-shadow: 0 0 4px rgba(120,220,255,0.8);
   }
+  
+  /* OVERLAY - MENSAGEM INICIAL */
+  #mode-select-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 35;
+    gap: 20px;
+  }
+  #mode-select-overlay.hide {
+    display: none;
+  }
+  #mode-select-overlay h2 {
+    color: #aac;
+    font-size: 1.3rem;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+  #mode-select-overlay p {
+    color: #778;
+    font-size: 0.9rem;
+    text-align: center;
+    max-width: 400px;
+  }
+  
   #start-overlay {
     position: absolute;
     inset: 0;
@@ -291,6 +433,7 @@
     #btn-system { font-size: 0.6rem; padding: 4px 9px; }
     #top-bar { gap: 6px; padding: 4px 8px; }
     .btn-top { padding: 3px 6px; font-size: 0.55rem; }
+    #btn-modes { padding: 4px 8px; font-size: 0.62rem; }
     #color-name { font-size: 0.74rem; min-width: 100px; }
     .data-inline { font-size: 0.58rem; }
     #base-info { font-size: 0.54rem; }
@@ -300,11 +443,28 @@
 <body>
 <div id="header">
   <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v2.2 - Temp Cor Auto</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v2.3 - Modos LIVRE/ESTÁTICO</span>
 </div>
 <div id="top-bar">
+  <div class="mode-selector">
+    <button id="btn-modes" onclick="toggleModeDropdown()">
+      <span id="mode-label">MODOS</span>
+      <span style="font-size:0.5rem;">▼</span>
+    </button>
+    <div id="mode-dropdown">
+      <div class="mode-option" onclick="selectMode('livre')">
+        <span>🎯</span>
+        <span>LIVRE</span>
+      </div>
+      <div class="mode-option" onclick="selectMode('estatico')">
+        <span>📍</span>
+        <span>ESTÁTICO</span>
+      </div>
+    </div>
+  </div>
+  
   <div id="color-swatch" style="background:#1a1a2e;"></div>
-  <div id="color-name" style="color:#445;">Aguardando...</div>
+  <div id="color-name" style="color:#445;">---</div>
   <div id="confidence-display"></div>
   <span class="sep">│</span>
   <div class="data-inline" id="hsv-line">
@@ -317,12 +477,15 @@
   <span class="sep">│</span>
   <div id="base-info">Base: não calibrada</div>
   <span class="sep">│</span>
-  <button class="btn-top" id="btn-calibrate-white" onclick="calibrateWhite()">&#9670; Cal. Branco</button>
-  <button class="btn-top" id="btn-calibrate-black" onclick="calibrateBlack()">&#9670; Cal. Preto</button>
-  <button class="btn-top" id="btn-reset-white" onclick="resetWhite()">&#10006; Reset Branco</button>
-  <button class="btn-top" id="btn-reset-black" onclick="resetBlack()">&#10006; Reset Preto</button>
-  <button class="btn-top" id="btn-camera"    onclick="switchCamera()">&#8635; Câmera</button>
-  <button class="btn-top" id="btn-audio"     onclick="toggleAudio()">&#128263; Áudio</button>
+  <button class="btn-top" id="btn-calibrate-white" onclick="calibrateWhite(false)">&#9670; Cal.Branco</button>
+  <button class="btn-top" id="btn-calibrate-white-pro" onclick="calibrateWhite(true)">&#9670;&#9670; PRO</button>
+  <button class="btn-top" id="btn-calibrate-black" onclick="calibrateBlack(false)">&#9670; Cal.Preto</button>
+  <button class="btn-top" id="btn-calibrate-black-pro" onclick="calibrateBlack(true)">&#9670;&#9670; PRO</button>
+  <button class="btn-top" id="btn-reset-white" onclick="resetWhite()">&#10006; ResetB</button>
+  <button class="btn-top" id="btn-reset-black" onclick="resetBlack()">&#10006; ResetP</button>
+  <button class="btn-top" id="btn-reset-estatico" onclick="resetEstatico()">&#8635; RESET EST</button>
+  <button class="btn-top" id="btn-camera" onclick="switchCamera()">&#8635; Câmera</button>
+  <button class="btn-top" id="btn-audio" onclick="toggleAudio()">&#128263; Áudio</button>
   <button class="btn-top" id="btn-universal" onclick="toggleUniversalMode()">&#9733; Universal</button>
 </div>
 <div id="main">
@@ -336,6 +499,15 @@
       <div class="reticle-sample-circle"></div>
       <div class="reticle-dot"></div>
     </div>
+    
+    <!-- OVERLAY - SELEÇÃO DE MODO INICIAL -->
+    <div id="mode-select-overlay">
+      <h2>SELECIONE O MODO</h2>
+      <p>🎯 <strong>LIVRE</strong> - Mira fixa no centro, análise contínua<br>
+         📍 <strong>ESTÁTICO</strong> - Clique na tela para analisar ponto específico</p>
+    </div>
+    
+    <!-- OVERLAY - INICIAR CÂMERA -->
     <div id="start-overlay">
       <p>Toque para iniciar a câmera</p>
       <button id="btn-start" onclick="startCamera()">&#9654; Iniciar Câmera</button>
@@ -346,21 +518,29 @@
   const video = document.getElementById('videoEl');
   const canvas = document.getElementById('canvasEl');
   const ctx = canvas.getContext('2d');
+  const reticle = document.getElementById('reticle');
+  const cameraContainer = document.getElementById('camera-container');
   
   let stream = null, devices = [], deviceIndex = 0, running = false, universalMode = false;
   let systemOn = true;
+  
+  // ═══════════════════════════════════════════════════════════════════
+  // SISTEMA DE MODOS
+  // ═══════════════════════════════════════════════════════════════════
+  let currentMode = null; // 'livre' ou 'estatico'
+  let staticPosition = null; // { x, y } - posição no modo estático
+  let staticAnalysisActive = false;
+  // ═══════════════════════════════════════════════════════════════════
   
   let whiteCalibration = null;
   let blackCalibration = null;
   let isWhiteCalibrated = false;
   let isBlackCalibrated = false;
+  let whiteCalibrationPro = false;
+  let blackCalibrationPro = false;
   
-  // ═══════════════════════════════════════════════════════════════════
-  // NOVO: Compensação automática de temperatura de cor
-  // ═══════════════════════════════════════════════════════════════════
   let colorTemperatureBias = { r: 0, g: 0, b: 0 };
   let hasColorTempCompensation = false;
-  // ═══════════════════════════════════════════════════════════════════
   
   const SAMPLE_SIZE = 2;
   const BUFFER_SIZE = 8;
@@ -382,19 +562,126 @@
   let consecutiveFrameCounter = 0;
   const MIN_CONSECUTIVE_FRAMES = 7;
   
+  // ═══════════════════════════════════════════════════════════════════
+  // CONTROLE DE DROPDOWN DE MODOS
+  // ═══════════════════════════════════════════════════════════════════
+  function toggleModeDropdown() {
+    const dropdown = document.getElementById('mode-dropdown');
+    dropdown.classList.toggle('show');
+  }
+  
+  // Fechar dropdown ao clicar fora
+  document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('mode-dropdown');
+    const btnModes = document.getElementById('btn-modes');
+    if (!btnModes.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.remove('show');
+    }
+  });
+  
+  function selectMode(mode) {
+    currentMode = mode;
+    const dropdown = document.getElementById('mode-dropdown');
+    const btnModes = document.getElementById('btn-modes');
+    const modeLabel = document.getElementById('mode-label');
+    const modeSelectOverlay = document.getElementById('mode-select-overlay');
+    const btnResetEstatico = document.getElementById('btn-reset-estatico');
+    
+    // Fechar dropdown
+    dropdown.classList.remove('show');
+    
+    // Esconder overlay de seleção
+    modeSelectOverlay.classList.add('hide');
+    
+    // Atualizar visual do botão
+    btnModes.classList.remove('mode-livre', 'mode-estatico');
+    
+    if (mode === 'livre') {
+      btnModes.classList.add('mode-livre');
+      modeLabel.textContent = 'MODO: 🎯 LIVRE';
+      reticle.classList.add('show');
+      btnResetEstatico.classList.remove('show');
+      staticAnalysisActive = false;
+      staticPosition = null;
+      console.log('✅ MODO LIVRE ATIVADO - Mira fixa no centro');
+    } else if (mode === 'estatico') {
+      btnModes.classList.add('mode-estatico');
+      modeLabel.textContent = 'MODO: 📍 ESTÁTICO';
+      reticle.classList.remove('show');
+      btnResetEstatico.classList.add('show');
+      staticAnalysisActive = false;
+      staticPosition = null;
+      console.log('✅ MODO ESTÁTICO ATIVADO - Clique na tela para analisar');
+    }
+    
+    // Atualizar opções ativas no dropdown
+    const options = dropdown.querySelectorAll('.mode-option');
+    options.forEach(opt => opt.classList.remove('active'));
+    if (mode === 'livre') options[0].classList.add('active');
+    if (mode === 'estatico') options[1].classList.add('active');
+  }
+  
+  // ═══════════════════════════════════════════════════════════════════
+  // MODO ESTÁTICO - CLIQUE NA TELA
+  // ═══════════════════════════════════════════════════════════════════
+  cameraContainer.addEventListener('click', function(e) {
+    if (currentMode !== 'estatico' || !running) return;
+    
+    const rect = cameraContainer.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    staticPosition = { x, y };
+    staticAnalysisActive = true;
+    
+    // Posicionar mira no ponto clicado
+    reticle.style.left = x + 'px';
+    reticle.style.top = y + 'px';
+    reticle.style.transform = 'translate(-50%, -50%)';
+    reticle.classList.add('show');
+    
+    console.log('📍 Ponto selecionado:', x.toFixed(0), y.toFixed(0));
+  });
+  
+  function resetEstatico() {
+    if (currentMode !== 'estatico') return;
+    
+    staticPosition = null;
+    staticAnalysisActive = false;
+    reticle.classList.remove('show');
+    
+    // Limpar displays
+    document.getElementById('color-name').textContent = '---';
+    document.getElementById('color-name').style.color = '#445';
+    document.getElementById('confidence-display').textContent = '';
+    document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
+    document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
+    document.getElementById('color-swatch').style.background = '#1a1a2e';
+    
+    console.log('🔄 Modo ESTÁTICO resetado - Selecione novo ponto');
+  }
+  // ═══════════════════════════════════════════════════════════════════
+  
   function toggleSystem() {
     systemOn = !systemOn;
     const btn = document.getElementById('btn-system');
-    const btns = ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-universal'];
+    const btns = ['btn-calibrate-white', 'btn-calibrate-white-pro', 'btn-calibrate-black', 'btn-calibrate-black-pro', 
+                  'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-universal', 'btn-modes'];
     
     if (systemOn) {
       btn.textContent = 'SISTEMA/ON';
       btn.className = 'system-on';
-      btns.forEach(id => document.getElementById(id).disabled = false);
+      btns.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = false;
+      });
     } else {
       btn.textContent = 'SISTEMA/OFF';
       btn.className = 'system-off';
-      btns.forEach(id => document.getElementById(id).disabled = true);
+      btns.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = true;
+      });
       if (window.speechSynthesis) window.speechSynthesis.cancel();
       if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
       document.getElementById('color-name').textContent = '---';
@@ -419,19 +706,12 @@
     return { h: h * 360, s: s * 100, v: v * 100 };
   }
   
-  // ═══════════════════════════════════════════════════════════════════
-  // NOVO: Detectar temperatura de cor baseada no branco calibrado
-  // ═══════════════════════════════════════════════════════════════════
   function detectColorTemperature(rgb) {
-    // Branco ideal: R=G=B (valores equilibrados)
     const avg = (rgb.r + rgb.g + rgb.b) / 3;
-    
-    // Calcular desvio de cada canal
     const rDev = rgb.r - avg;
     const gDev = rgb.g - avg;
     const bDev = rgb.b - avg;
     
-    // Determinar tipo de iluminação
     let lightType = 'Neutra';
     if (bDev > 10 && bDev > rDev) {
       lightType = 'Fria (Azulada)';
@@ -439,7 +719,6 @@
       lightType = 'Quente (Amarelada)';
     }
     
-    // Calcular bias de compensação (inverso do desvio)
     colorTemperatureBias = {
       r: -rDev,
       g: -gDev,
@@ -451,9 +730,6 @@
     return { lightType, bias: colorTemperatureBias };
   }
   
-  // ═══════════════════════════════════════════════════════════════════
-  // NOVO: Aplicar compensação de temperatura de cor
-  // ═══════════════════════════════════════════════════════════════════
   function applyColorTempCompensation(rgb) {
     if (!hasColorTempCompensation) return rgb;
     
@@ -463,7 +739,6 @@
       b: Math.max(0, Math.min(255, Math.round(rgb.b + colorTemperatureBias.b)))
     };
   }
-  // ═══════════════════════════════════════════════════════════════════
   
   function normalizeV(vRaw) {
     if (!isWhiteCalibrated || !isBlackCalibrated) {
@@ -592,10 +867,7 @@
     
     let baseName = '', baseColor = '', confidence = 98;
     
-    // LÓGICA SIMPLIFICADA UNIVERSAL
-    // ZONA ROSA/VERMELHO/MAGENTA (H: 290-20°)
     if ((h >= 290) || (h < 20)) {
-      // REGRA SIMPLES: Rosa tem azul (B >= 60), Vermelho não tem
       if (r > Math.max(g, b) && b >= 60 && s >= 20) {
         baseName = 'Rosa';
         baseColor = '#ff88aa';
@@ -610,15 +882,12 @@
         confidence = 95;
       }
     }
-    // ZONA ROXO/MAGENTA (H: 255-290°) - Com diferenciação por luminosidade
     else if (h >= 255 && h < 290 && s >= 25) {
-      // ROXO: Azul > Vermelho E cor mais ESCURA (V < 65)
       if (b > r && v < 65) {
         baseName = 'Roxo';
         baseColor = '#a855f7';
         confidence = 98;
       } 
-      // MAGENTA: Vermelho >= Azul OU cor mais CLARA (V >= 65)
       else {
         baseName = 'Magenta';
         baseColor = '#d946ef';
@@ -646,7 +915,6 @@
       baseColor = '#3b82f6';
     }
     
-    // MODO UNIVERSAL - Remove modificadores
     let modifier = '';
     if (!universalMode) {
       if (v < 28) modifier = ' Escuro';
@@ -734,22 +1002,42 @@
     return true;
   }
   
+  // ═══════════════════════════════════════════════════════════════════
+  // SAMPLE PIXELS - ADAPTADO PARA MODO LIVRE E ESTÁTICO
+  // ═══════════════════════════════════════════════════════════════════
   function samplePixels() {
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw || !vh) return null;
-    const cw = video.clientWidth, ch = video.clientHeight;
-    const scale = Math.max(cw / vw, ch / vh);
-    const offsetX = (vw * scale - cw) / 2;
-    const offsetY = (vh * scale - ch) / 2;
-    const nativeCX = Math.round((cw / 2 + offsetX) / scale);
-    const nativeCY = Math.round((ch / 2 + offsetY) / scale);
-    const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
     
-    canvas.width = vw; canvas.height = vh;
+    canvas.width = vw;
+    canvas.height = vh;
     ctx.drawImage(video, 0, 0);
     
-    const x0 = Math.max(0, nativeCX - nativeSample);
-    const y0 = Math.max(0, nativeCY - nativeSample);
+    let nativeCX, nativeCY;
+    
+    if (currentMode === 'livre') {
+      // MODO LIVRE: Centro fixo
+      const cw = video.clientWidth, ch = video.clientHeight;
+      const scale = Math.max(cw / vw, ch / vh);
+      const offsetX = (vw * scale - cw) / 2;
+      const offsetY = (vh * scale - ch) / 2;
+      nativeCX = Math.round((cw / 2 + offsetX) / scale);
+      nativeCY = Math.round((ch / 2 + offsetY) / scale);
+    } else if (currentMode === 'estatico' && staticPosition) {
+      // MODO ESTÁTICO: Posição clicada
+      const rect = cameraContainer.getBoundingClientRect();
+      const scaleX = vw / rect.width;
+      const scaleY = vh / rect.height;
+      nativeCX = Math.round(staticPosition.x * scaleX);
+      nativeCY = Math.round(staticPosition.y * scaleY);
+    } else {
+      return null; // Modo estático sem posição selecionada
+    }
+    
+    const nativeSample = Math.max(1, SAMPLE_SIZE);
+    const x0 = Math.max(0, Math.min(vw - nativeSample * 2, nativeCX - nativeSample));
+    const y0 = Math.max(0, Math.min(vh - nativeSample * 2, nativeCY - nativeSample));
+    
     const data = ctx.getImageData(x0, y0, nativeSample * 2, nativeSample * 2).data;
     
     let rSum = 0, gSum = 0, bSum = 0, count = 0;
@@ -758,6 +1046,7 @@
     }
     return { r: Math.round(rSum / count), g: Math.round(gSum / count), b: Math.round(bSum / count) };
   }
+  // ═══════════════════════════════════════════════════════════════════
   
   function toggleAudio() {
     if (!systemOn) return;
@@ -820,11 +1109,15 @@
     
     if (isWhiteCalibrated && isBlackCalibrated) {
       const vRange = whiteCalibration.hsv.v - blackCalibration.hsv.v;
-      statusText += `Régua Completa (${vRange.toFixed(0)}% range)`;
+      const wType = whiteCalibrationPro ? 'PRO' : 'Normal';
+      const bType = blackCalibrationPro ? 'PRO' : 'Normal';
+      statusText += `Régua ${wType}/${bType} (${vRange.toFixed(0)}%)`;
     } else if (isWhiteCalibrated) {
-      statusText += `Branco V:${whiteCalibration.hsv.v.toFixed(0)}%`;
+      const wType = whiteCalibrationPro ? 'PRO' : 'Normal';
+      statusText += `Branco ${wType} V:${whiteCalibration.hsv.v.toFixed(0)}%`;
     } else if (isBlackCalibrated) {
-      statusText += `Preto V:${blackCalibration.hsv.v.toFixed(0)}%`;
+      const bType = blackCalibrationPro ? 'PRO' : 'Normal';
+      statusText += `Preto ${bType} V:${blackCalibration.hsv.v.toFixed(0)}%`;
     } else {
       statusText += 'não calibrada';
     }
@@ -838,7 +1131,13 @@
       return;
     }
     
-    if (!systemOn) {
+    if (!systemOn || !currentMode) {
+      requestAnimationFrame(update);
+      return;
+    }
+    
+    // Modo ESTÁTICO: só atualiza se tiver posição selecionada
+    if (currentMode === 'estatico' && !staticAnalysisActive) {
       requestAnimationFrame(update);
       return;
     }
@@ -849,11 +1148,7 @@
       return;
     }
     
-    // ═══════════════════════════════════════════════════════════════════
-    // APLICAR COMPENSAÇÃO DE TEMPERATURA DE COR (se calibrado)
-    // ═══════════════════════════════════════════════════════════════════
     pixels = applyColorTempCompensation(pixels);
-    // ═══════════════════════════════════════════════════════════════════
     
     const { r, g, b } = pixels;
     const rawHsv = rgbToHSV(r, g, b);
@@ -867,7 +1162,6 @@
     }
     
     const variance = calculateVariance(colorBuffer);
-    
     const classification = classifyColorWithRuler(stable.hsv, stable.rgb, variance);
     
     if (classification.name !== lastStableColorName && lastStableColorName !== '') {
@@ -878,7 +1172,13 @@
     
     const forceUpdate = mismatchCounter >= MISMATCH_FORCE_UPDATE;
     
-    if (forceUpdate || shouldUpdateColor(stable.hsv.h, classification.name, stable.rgb, stable.hsv.s, variance)) {
+    // Modo LIVRE: atualização contínua normal
+    // Modo ESTÁTICO: atualização normal (mas só roda se staticAnalysisActive)
+    const shouldUpdate = currentMode === 'livre' ? 
+      (forceUpdate || shouldUpdateColor(stable.hsv.h, classification.name, stable.rgb, stable.hsv.s, variance)) :
+      true; // Modo estático sempre atualiza quando ativo
+    
+    if (shouldUpdate) {
       if (forceUpdate) {
         colorBuffer = colorBuffer.slice(-3);
         mismatchCounter = 0;
@@ -966,108 +1266,228 @@
     await openCamera(devices[deviceIndex].deviceId);
   }
   
-  function calibrateWhite() {
+  // ═══════════════════════════════════════════════════════════════════
+  // CALIBRAÇÃO NORMAL E PRO
+  // ═══════════════════════════════════════════════════════════════════
+  async function calibrateWhite(isPro) {
     if (!systemOn) return;
     if (!running) {
       alert('Inicie a câmera primeiro.');
       return;
     }
-    
-    const stable = getStableColor();
-    if (!stable) {
-      alert('Aguarde a estabilização da imagem...');
+    if (!currentMode) {
+      alert('Selecione um modo (LIVRE ou ESTÁTICO) primeiro.');
       return;
     }
     
+    let samples = [];
+    const numFrames = isPro ? 30 : 1;
+    
+    if (isPro) {
+      // Calibração PRO: 30 frames em 1 segundo
+      for (let i = 0; i < numFrames; i++) {
+        const pixels = samplePixels();
+        if (pixels) {
+          const hsv = rgbToHSV(pixels.r, pixels.g, pixels.b);
+          samples.push({ hsv, rgb: pixels });
+        }
+        await new Promise(resolve => setTimeout(resolve, 33)); // ~30fps
+      }
+      
+      // Filtrar outliers
+      if (samples.length > 5) {
+        const vValues = samples.map(s => s.hsv.v).sort((a, b) => a - b);
+        const median = vValues[Math.floor(vValues.length / 2)];
+        samples = samples.filter(s => Math.abs(s.hsv.v - median) < 20);
+      }
+    } else {
+      // Calibração Normal: 1 frame
+      const stable = getStableColor();
+      if (!stable) {
+        alert('Aguarde a estabilização da imagem...');
+        return;
+      }
+      samples.push({ hsv: stable.hsv, rgb: stable.rgb });
+    }
+    
+    if (samples.length === 0) {
+      alert('Erro na calibração. Tente novamente.');
+      return;
+    }
+    
+    // Calcular média
+    let avgH = 0, avgS = 0, avgV = 0, avgR = 0, avgG = 0, avgB = 0;
+    let sinSum = 0, cosSum = 0;
+    
+    samples.forEach(item => {
+      const radH = item.hsv.h * Math.PI / 180;
+      sinSum += Math.sin(radH);
+      cosSum += Math.cos(radH);
+      avgS += item.hsv.s;
+      avgV += item.hsv.v;
+      avgR += item.rgb.r;
+      avgG += item.rgb.g;
+      avgB += item.rgb.b;
+    });
+    
+    const len = samples.length;
+    avgH = Math.atan2(sinSum / len, cosSum / len) * 180 / Math.PI;
+    if (avgH < 0) avgH += 360;
+    avgS /= len; avgV /= len;
+    avgR = Math.round(avgR / len);
+    avgG = Math.round(avgG / len);
+    avgB = Math.round(avgB / len);
+    
     whiteCalibration = {
-      hsv: { h: stable.hsv.h, s: stable.hsv.s, v: stable.hsv.v },
-      rgb: { r: stable.rgb.r, g: stable.rgb.g, b: stable.rgb.b }
+      hsv: { h: avgH, s: avgS, v: avgV },
+      rgb: { r: avgR, g: avgG, b: avgB }
     };
     
     isWhiteCalibrated = true;
+    whiteCalibrationPro = isPro;
     
-    // ═══════════════════════════════════════════════════════════════════
-    // DETECTAR E COMPENSAR TEMPERATURA DE COR AUTOMATICAMENTE
-    // ═══════════════════════════════════════════════════════════════════
-    const tempResult = detectColorTemperature(stable.rgb);
-    console.log('═══════════════════════════════════════════════');
-    console.log('✓ BRANCO CALIBRADO');
-    console.log('   RGB Original:', whiteCalibration.rgb);
-    console.log('   V:', whiteCalibration.hsv.v.toFixed(1) + '%');
-    console.log('   Tipo de Luz:', tempResult.lightType);
-    console.log('   Compensação RGB:', 
-      'R' + (tempResult.bias.r >= 0 ? '+' : '') + tempResult.bias.r.toFixed(1),
-      'G' + (tempResult.bias.g >= 0 ? '+' : '') + tempResult.bias.g.toFixed(1),
-      'B' + (tempResult.bias.b >= 0 ? '+' : '') + tempResult.bias.b.toFixed(1)
-    );
-    console.log('═══════════════════════════════════════════════');
-    // ═══════════════════════════════════════════════════════════════════
+    const tempResult = detectColorTemperature(whiteCalibration.rgb);
     
     document.getElementById('color-name').textContent = 'Branco';
     document.getElementById('color-name').style.color = '#ffffff';
     
-    const btn = document.getElementById('btn-calibrate-white');
-    btn.textContent = '✓ Branco';
-    btn.classList.add('calibrated');
+    if (isPro) {
+      document.getElementById('btn-calibrate-white-pro').classList.add('calibrated');
+      document.getElementById('btn-calibrate-white').classList.remove('calibrated');
+    } else {
+      document.getElementById('btn-calibrate-white').classList.add('calibrated');
+      document.getElementById('btn-calibrate-white-pro').classList.remove('calibrated');
+    }
     
     updateCalibrationStatus();
     
     colorBuffer = [];
     lastStableColorName = 'Branco';
-    lastStableHue = stable.hsv.h;
-    lastStableRGB = { ...stable.rgb };
+    lastStableHue = avgH;
+    lastStableRGB = { r: avgR, g: avgG, b: avgB };
     lastStableVariance = 0;
     mismatchCounter = 0;
     consecutiveFrameCounter = 0;
     
     if (audioEnabled) {
-      speakColor('Branco calibrado');
+      speakColor(isPro ? 'Branco PRO calibrado' : 'Branco calibrado');
     }
+    
+    console.log('═══════════════════════════════════════════════');
+    console.log(`✓ BRANCO CALIBRADO ${isPro ? 'PRO' : 'NORMAL'}`);
+    console.log('   Amostras:', len);
+    console.log('   RGB:', whiteCalibration.rgb);
+    console.log('   V:', whiteCalibration.hsv.v.toFixed(1) + '%');
+    console.log('   Tipo de Luz:', tempResult.lightType);
+    console.log('   Compensação:', 
+      'R' + (tempResult.bias.r >= 0 ? '+' : '') + tempResult.bias.r.toFixed(1),
+      'G' + (tempResult.bias.g >= 0 ? '+' : '') + tempResult.bias.g.toFixed(1),
+      'B' + (tempResult.bias.b >= 0 ? '+' : '') + tempResult.bias.b.toFixed(1)
+    );
+    console.log('═══════════════════════════════════════════════');
   }
   
-  function calibrateBlack() {
+  async function calibrateBlack(isPro) {
     if (!systemOn) return;
     if (!running) {
       alert('Inicie a câmera primeiro.');
       return;
     }
-    
-    const stable = getStableColor();
-    if (!stable) {
-      alert('Aguarde a estabilização da imagem...');
+    if (!currentMode) {
+      alert('Selecione um modo (LIVRE ou ESTÁTICO) primeiro.');
       return;
     }
     
+    let samples = [];
+    const numFrames = isPro ? 30 : 1;
+    
+    if (isPro) {
+      for (let i = 0; i < numFrames; i++) {
+        const pixels = samplePixels();
+        if (pixels) {
+          const hsv = rgbToHSV(pixels.r, pixels.g, pixels.b);
+          samples.push({ hsv, rgb: pixels });
+        }
+        await new Promise(resolve => setTimeout(resolve, 33));
+      }
+      
+      if (samples.length > 5) {
+        const vValues = samples.map(s => s.hsv.v).sort((a, b) => a - b);
+        const median = vValues[Math.floor(vValues.length / 2)];
+        samples = samples.filter(s => Math.abs(s.hsv.v - median) < 20);
+      }
+    } else {
+      const stable = getStableColor();
+      if (!stable) {
+        alert('Aguarde a estabilização da imagem...');
+        return;
+      }
+      samples.push({ hsv: stable.hsv, rgb: stable.rgb });
+    }
+    
+    if (samples.length === 0) {
+      alert('Erro na calibração. Tente novamente.');
+      return;
+    }
+    
+    let avgH = 0, avgS = 0, avgV = 0, avgR = 0, avgG = 0, avgB = 0;
+    let sinSum = 0, cosSum = 0;
+    
+    samples.forEach(item => {
+      const radH = item.hsv.h * Math.PI / 180;
+      sinSum += Math.sin(radH);
+      cosSum += Math.cos(radH);
+      avgS += item.hsv.s;
+      avgV += item.hsv.v;
+      avgR += item.rgb.r;
+      avgG += item.rgb.g;
+      avgB += item.rgb.b;
+    });
+    
+    const len = samples.length;
+    avgH = Math.atan2(sinSum / len, cosSum / len) * 180 / Math.PI;
+    if (avgH < 0) avgH += 360;
+    avgS /= len; avgV /= len;
+    avgR = Math.round(avgR / len);
+    avgG = Math.round(avgG / len);
+    avgB = Math.round(avgB / len);
+    
     blackCalibration = {
-      hsv: { h: stable.hsv.h, s: stable.hsv.s, v: stable.hsv.v },
-      rgb: { r: stable.rgb.r, g: stable.rgb.g, b: stable.rgb.b }
+      hsv: { h: avgH, s: avgS, v: avgV },
+      rgb: { r: avgR, g: avgG, b: avgB }
     };
     
     isBlackCalibrated = true;
+    blackCalibrationPro = isPro;
     
     document.getElementById('color-name').textContent = 'Preto';
     document.getElementById('color-name').style.color = '#1a1a2a';
     
-    const btn = document.getElementById('btn-calibrate-black');
-    btn.textContent = '✓ Preto';
-    btn.classList.add('calibrated');
+    if (isPro) {
+      document.getElementById('btn-calibrate-black-pro').classList.add('calibrated');
+      document.getElementById('btn-calibrate-black').classList.remove('calibrated');
+    } else {
+      document.getElementById('btn-calibrate-black').classList.add('calibrated');
+      document.getElementById('btn-calibrate-black-pro').classList.remove('calibrated');
+    }
     
     updateCalibrationStatus();
     
     colorBuffer = [];
     lastStableColorName = 'Preto';
-    lastStableHue = stable.hsv.h;
-    lastStableRGB = { ...stable.rgb };
+    lastStableHue = avgH;
+    lastStableRGB = { r: avgR, g: avgG, b: avgB };
     lastStableVariance = 0;
     mismatchCounter = 0;
     consecutiveFrameCounter = 0;
     
     if (audioEnabled) {
-      speakColor('Preto calibrado');
+      speakColor(isPro ? 'Preto PRO calibrado' : 'Preto calibrado');
     }
     
     console.log('═══════════════════════════════════════════════');
-    console.log('✓ PRETO CALIBRADO');
+    console.log(`✓ PRETO CALIBRADO ${isPro ? 'PRO' : 'NORMAL'}`);
+    console.log('   Amostras:', len);
     console.log('   RGB:', blackCalibration.rgb);
     console.log('   V:', blackCalibration.hsv.v.toFixed(1) + '%');
     if (isWhiteCalibrated) {
@@ -1076,23 +1496,20 @@
     }
     console.log('═══════════════════════════════════════════════');
   }
+  // ═══════════════════════════════════════════════════════════════════
   
   function resetWhite() {
     if (!systemOn) return;
     
     whiteCalibration = null;
     isWhiteCalibrated = false;
+    whiteCalibrationPro = false;
     
-    // ═══════════════════════════════════════════════════════════════════
-    // RESETAR COMPENSAÇÃO DE TEMPERATURA DE COR
-    // ═══════════════════════════════════════════════════════════════════
     colorTemperatureBias = { r: 0, g: 0, b: 0 };
     hasColorTempCompensation = false;
-    // ═══════════════════════════════════════════════════════════════════
     
-    const btn = document.getElementById('btn-calibrate-white');
-    btn.textContent = '◆ Cal. Branco';
-    btn.classList.remove('calibrated');
+    document.getElementById('btn-calibrate-white').classList.remove('calibrated');
+    document.getElementById('btn-calibrate-white-pro').classList.remove('calibrated');
     
     updateCalibrationStatus();
     
@@ -1106,7 +1523,6 @@
     }
     
     console.log('✗ CALIBRAÇÃO DE BRANCO RESETADA');
-    console.log('✗ COMPENSAÇÃO DE TEMPERATURA DE COR RESETADA');
   }
   
   function resetBlack() {
@@ -1114,10 +1530,10 @@
     
     blackCalibration = null;
     isBlackCalibrated = false;
+    blackCalibrationPro = false;
     
-    const btn = document.getElementById('btn-calibrate-black');
-    btn.textContent = '◆ Cal. Preto';
-    btn.classList.remove('calibrated');
+    document.getElementById('btn-calibrate-black').classList.remove('calibrated');
+    document.getElementById('btn-calibrate-black-pro').classList.remove('calibrated');
     
     updateCalibrationStatus();
     
@@ -1132,6 +1548,16 @@
     
     console.log('✗ CALIBRAÇÃO DE PRETO RESETADA');
   }
+  
+  console.log('╔═══════════════════════════════════════════════════════════╗');
+  console.log('║    MOTOR DE CORES v2.3 - SISTEMA DE MODOS LIVRE/ESTÁTICO ║');
+  console.log('╚═══════════════════════════════════════════════════════════╝');
+  console.log('');
+  console.log('🎯 MODO LIVRE: Mira fixa, análise contínua');
+  console.log('📍 MODO ESTÁTICO: Clique para selecionar ponto');
+  console.log('◆ Calibração Normal: 1 frame (instantânea)');
+  console.log('◆◆ Calibração PRO: 30 frames em 1 segundo');
+  console.log('');
 </script>
 </body>
 </html>
