@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Motor de Cor - Sistema de Modos v2.4</title>
+<title>Motor de Cor - Sistema de Modos v2.5</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -369,7 +369,7 @@
 <body>
 <div id="header">
   <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v2.4 - Modos LIVRE/ESTÁTICO</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v2.5 - Modos LIVRE/ESTÁTICO</span>
 </div>
 <div id="top-bar">
   <div class="mode-selector">
@@ -405,9 +405,9 @@
   <span class="sep">│</span>
   <button class="btn-top" id="btn-calibrate-white" onclick="calibrateWhite()">&#9670; Calibrar Branco</button>
   <button class="btn-top" id="btn-calibrate-black" onclick="calibrateBlack()">&#9670; Calibrar Preto</button>
-  <button class="btn-top" id="btn-reset-white" onclick="resetWhite()">&#10006; ResetB</button>
-  <button class="btn-top" id="btn-reset-black" onclick="resetBlack()">&#10006; ResetP</button>
-  <button class="btn-top" id="btn-reset-estatico" onclick="resetEstatico()">&#8635; RESET ESTÁTICO</button>
+  <button class="btn-top" id="btn-reset-white" onclick="resetWhite()">&#10006; Resetar Branco</button>
+  <button class="btn-top" id="btn-reset-black" onclick="resetBlack()">&#10006; Resetar Preto</button>
+  <button class="btn-top" id="btn-reset-estatico" onclick="resetEstatico()">&#8635; Resetar Estático</button>
   <button class="btn-top" id="btn-camera" onclick="switchCamera()">&#8635; Câmera</button>
   <button class="btn-top" id="btn-audio" onclick="toggleAudio()">&#128263; Áudio</button>
   <button class="btn-top" id="btn-universal" onclick="toggleUniversalMode()">&#9733; Universal</button>
@@ -586,6 +586,8 @@
   
   // ═══════════════════════════════════════════════════════════════════
   // RESET ESTÁTICO - LIBERAR NOVA ANÁLISE
+  // v2.5: Adicionado reset de lastSpokenName/pendingName para que
+  //       a próxima cor seja falada mesmo que seja a mesma anterior
   // ═══════════════════════════════════════════════════════════════════
   function resetEstatico() {
     if (currentMode !== 'estatico') return;
@@ -607,6 +609,14 @@
     lastStableRGB = { r: 0, g: 0, b: 0 };
     mismatchCounter = 0;
     consecutiveFrameCounter = 0;
+    
+    // ════════════════════════════════════════════════════════════════
+    // v2.5: Reset das variáveis de áudio para forçar nova fala
+    //       mesmo que a cor selecionada seja a mesma anterior
+    // ════════════════════════════════════════════════════════════════
+    lastSpokenName = '';
+    pendingName = '';
+    if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
     
     console.log('🔄 MODO ESTÁTICO RESETADO - Selecione novo ponto');
   }
@@ -1440,15 +1450,16 @@
   }
   
   console.log('╔═══════════════════════════════════════════════════════════╗');
-  console.log('║    MOTOR DE CORES v2.4 - CORRIGIDO (overlay fixado)      ║');
-  console.log('║    Calibração unificada (30 frames + filtro outliers)    ║');
+  console.log('║    MOTOR DE CORES v2.5 - LAPIDAÇÃO                       ║');
+  console.log('║    Nomenclaturas atualizadas + fala após reset estático  ║');
   console.log('╚═══════════════════════════════════════════════════════════╝');
   console.log('');
   console.log('🎯 MODO LIVRE: Mira fixa no centro, análise contínua');
   console.log('📍 MODO ESTÁTICO: Clique para analisar (congela após estabilizar)');
   console.log('◆ Calibrar Branco: 30 frames (lógica PRO unificada)');
   console.log('◆ Calibrar Preto: 30 frames (lógica PRO unificada)');
-  console.log('🔒 RESET ESTÁTICO: Única forma de destravar modo ESTÁTICO');
+  console.log('🔒 Resetar Estático: Única forma de destravar modo ESTÁTICO');
+  console.log('🔊 v2.5: Após resetar estático, cor é falada mesmo que repetida');
   console.log('');
 </script>
 </body>
