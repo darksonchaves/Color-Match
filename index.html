@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Motor de Cor - Sistema de Modos v2.3</title>
+<title>Motor de Cor - Sistema de Modos v2.3 (CORRIGIDO)</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -1003,7 +1003,7 @@
   }
   
   // ═══════════════════════════════════════════════════════════════════
-  // SAMPLE PIXELS - ADAPTADO PARA MODO LIVRE E ESTÁTICO
+  // SAMPLE PIXELS - CORREÇÃO: nativeSample igual à v2.2
   // ═══════════════════════════════════════════════════════════════════
   function samplePixels() {
     const vw = video.videoWidth, vh = video.videoHeight;
@@ -1013,30 +1013,35 @@
     canvas.height = vh;
     ctx.drawImage(video, 0, 0);
     
+    // ═══════════════════════════════════════════════════════════════════
+    // CÁLCULO DE ESCALA (igual à v2.2) - necessário para nativeSample
+    // ═══════════════════════════════════════════════════════════════════
+    const cw = video.clientWidth, ch = video.clientHeight;
+    const scale = Math.max(cw / vw, ch / vh);
+    const offsetX = (vw * scale - cw) / 2;
+    const offsetY = (vh * scale - ch) / 2;
+    
     let nativeCX, nativeCY;
     
     if (currentMode === 'livre') {
-      // MODO LIVRE: Centro fixo
-      const cw = video.clientWidth, ch = video.clientHeight;
-      const scale = Math.max(cw / vw, ch / vh);
-      const offsetX = (vw * scale - cw) / 2;
-      const offsetY = (vh * scale - ch) / 2;
+      // MODO LIVRE: Centro fixo (igual à v2.2)
       nativeCX = Math.round((cw / 2 + offsetX) / scale);
       nativeCY = Math.round((ch / 2 + offsetY) / scale);
     } else if (currentMode === 'estatico' && staticPosition) {
-      // MODO ESTÁTICO: Posição clicada
-      const rect = cameraContainer.getBoundingClientRect();
-      const scaleX = vw / rect.width;
-      const scaleY = vh / rect.height;
-      nativeCX = Math.round(staticPosition.x * scaleX);
-      nativeCY = Math.round(staticPosition.y * scaleY);
+      // MODO ESTÁTICO: Posição clicada - com compensação correta de object-fit: cover
+      nativeCX = Math.round((staticPosition.x + offsetX) / scale);
+      nativeCY = Math.round((staticPosition.y + offsetY) / scale);
     } else {
       return null; // Modo estático sem posição selecionada
     }
     
-    const nativeSample = Math.max(1, SAMPLE_SIZE);
-    const x0 = Math.max(0, Math.min(vw - nativeSample * 2, nativeCX - nativeSample));
-    const y0 = Math.max(0, Math.min(vh - nativeSample * 2, nativeCY - nativeSample));
+    // ═══════════════════════════════════════════════════════════════════
+    // CORREÇÃO CRÍTICA: nativeSample agora é ajustado pelo scale (igual à v2.2)
+    // Isso garante amostragem cirúrgica em diferentes densidades de tela
+    // ═══════════════════════════════════════════════════════════════════
+    const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
+    const x0 = Math.max(0, nativeCX - nativeSample);
+    const y0 = Math.max(0, nativeCY - nativeSample);
     
     const data = ctx.getImageData(x0, y0, nativeSample * 2, nativeSample * 2).data;
     
@@ -1550,13 +1555,15 @@
   }
   
   console.log('╔═══════════════════════════════════════════════════════════╗');
-  console.log('║    MOTOR DE CORES v2.3 - SISTEMA DE MODOS LIVRE/ESTÁTICO ║');
+  console.log('║    MOTOR DE CORES v2.3 - CORRIGIDO (nativeSample=v2.2)    ║');
   console.log('╚═══════════════════════════════════════════════════════════╝');
   console.log('');
   console.log('🎯 MODO LIVRE: Mira fixa, análise contínua');
   console.log('📍 MODO ESTÁTICO: Clique para selecionar ponto');
   console.log('◆ Calibração Normal: 1 frame (instantânea)');
   console.log('◆◆ Calibração PRO: 30 frames em 1 segundo');
+  console.log('');
+  console.log('✅ CORREÇÃO APLICADA: nativeSample ajustado pelo scale (igual à v2.2)');
   console.log('');
 </script>
 </body>
