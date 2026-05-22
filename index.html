@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Motor de Cor - Sistema de Modos v2.3 (CORRIGIDO)</title>
+<title>Motor de Cor - Sistema de Modos v2.3</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -203,17 +203,6 @@
     border-color: rgba(50,200,100,0.4);
     color: #8fc;
   }
-  #btn-calibrate-white-pro {
-    background: linear-gradient(135deg, #3a3a7e, #4a4aae);
-    color: #cce;
-    border: 1px solid rgba(120,120,255,0.4);
-  }
-  #btn-calibrate-white-pro:hover:not(:disabled) { background: linear-gradient(135deg, #4a4a9e, #6a6ace); color: #fff; }
-  #btn-calibrate-white-pro.calibrated {
-    background: linear-gradient(135deg, #2a5a3e, #3a8a5e);
-    border-color: rgba(60,220,120,0.5);
-    color: #afd;
-  }
   #btn-calibrate-black {
     background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
     color: #aaa;
@@ -223,17 +212,6 @@
   #btn-calibrate-black.calibrated {
     background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
     border-color: rgba(200,200,200,0.4);
-    color: #fff;
-  }
-  #btn-calibrate-black-pro {
-    background: linear-gradient(135deg, #3a3a3a, #4a4a4a);
-    color: #bbb;
-    border: 1px solid rgba(120,120,120,0.4);
-  }
-  #btn-calibrate-black-pro:hover:not(:disabled) { background: linear-gradient(135deg, #4a4a4a, #6a6a6a); color: #eee; }
-  #btn-calibrate-black-pro.calibrated {
-    background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
-    border-color: rgba(220,220,220,0.5);
     color: #fff;
   }
   #btn-reset-white {
@@ -477,13 +455,11 @@
   <span class="sep">│</span>
   <div id="base-info">Base: não calibrada</div>
   <span class="sep">│</span>
-  <button class="btn-top" id="btn-calibrate-white" onclick="calibrateWhite(false)">&#9670; Cal.Branco</button>
-  <button class="btn-top" id="btn-calibrate-white-pro" onclick="calibrateWhite(true)">&#9670;&#9670; PRO</button>
-  <button class="btn-top" id="btn-calibrate-black" onclick="calibrateBlack(false)">&#9670; Cal.Preto</button>
-  <button class="btn-top" id="btn-calibrate-black-pro" onclick="calibrateBlack(true)">&#9670;&#9670; PRO</button>
+  <button class="btn-top" id="btn-calibrate-white" onclick="calibrateWhite()">&#9670; Calibrar Branco</button>
+  <button class="btn-top" id="btn-calibrate-black" onclick="calibrateBlack()">&#9670; Calibrar Preto</button>
   <button class="btn-top" id="btn-reset-white" onclick="resetWhite()">&#10006; ResetB</button>
   <button class="btn-top" id="btn-reset-black" onclick="resetBlack()">&#10006; ResetP</button>
-  <button class="btn-top" id="btn-reset-estatico" onclick="resetEstatico()">&#8635; RESET EST</button>
+  <button class="btn-top" id="btn-reset-estatico" onclick="resetEstatico()">&#8635; Reset Estático</button>
   <button class="btn-top" id="btn-camera" onclick="switchCamera()">&#8635; Câmera</button>
   <button class="btn-top" id="btn-audio" onclick="toggleAudio()">&#128263; Áudio</button>
   <button class="btn-top" id="btn-universal" onclick="toggleUniversalMode()">&#9733; Universal</button>
@@ -529,15 +505,13 @@
   // ═══════════════════════════════════════════════════════════════════
   let currentMode = null; // 'livre' ou 'estatico'
   let staticPosition = null; // { x, y } - posição no modo estático
-  let staticAnalysisActive = false;
+  let staticLocked = false; // true = sistema travado após clique no modo estático
   // ═══════════════════════════════════════════════════════════════════
   
   let whiteCalibration = null;
   let blackCalibration = null;
   let isWhiteCalibrated = false;
   let isBlackCalibrated = false;
-  let whiteCalibrationPro = false;
-  let blackCalibrationPro = false;
   
   let colorTemperatureBias = { r: 0, g: 0, b: 0 };
   let hasColorTempCompensation = false;
@@ -580,7 +554,6 @@
   });
   
   function selectMode(mode) {
-    currentMode = mode;
     const dropdown = document.getElementById('mode-dropdown');
     const btnModes = document.getElementById('btn-modes');
     const modeLabel = document.getElementById('mode-label');
@@ -590,8 +563,10 @@
     // Fechar dropdown
     dropdown.classList.remove('show');
     
-    // Esconder overlay de seleção
-    modeSelectOverlay.classList.add('hide');
+    // Se já estava nesse modo, não fazer nada
+    if (currentMode === mode) return;
+    
+    currentMode = mode;
     
     // Atualizar visual do botão
     btnModes.classList.remove('mode-livre', 'mode-estatico');
@@ -599,18 +574,36 @@
     if (mode === 'livre') {
       btnModes.classList.add('mode-livre');
       modeLabel.textContent = 'MODO: 🎯 LIVRE';
+      
+      // MODO LIVRE: voltar mira ao centro
+      reticle.style.top = '50%';
+      reticle.style.left = '50%';
+      reticle.style.transform = 'translate(-50%, -50%)';
       reticle.classList.add('show');
+      
+      // Esconder botão reset estático
       btnResetEstatico.classList.remove('show');
-      staticAnalysisActive = false;
+      
+      // Liberar sistema para modo livre (não trava)
+      staticLocked = false;
       staticPosition = null;
+      
       console.log('✅ MODO LIVRE ATIVADO - Mira fixa no centro');
+      
     } else if (mode === 'estatico') {
       btnModes.classList.add('mode-estatico');
       modeLabel.textContent = 'MODO: 📍 ESTÁTICO';
+      
+      // Modo estático: esconder mira até clicar
       reticle.classList.remove('show');
+      
+      // Mostrar botão reset estático
       btnResetEstatico.classList.add('show');
-      staticAnalysisActive = false;
+      
+      // Resetar posição e travar
       staticPosition = null;
+      staticLocked = false;
+      
       console.log('✅ MODO ESTÁTICO ATIVADO - Clique na tela para analisar');
     }
     
@@ -627,12 +620,14 @@
   cameraContainer.addEventListener('click', function(e) {
     if (currentMode !== 'estatico' || !running) return;
     
+    // Se já está travado (clique já feito), não fazer nada até RESET
+    if (staticLocked && staticPosition) return;
+    
     const rect = cameraContainer.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
     staticPosition = { x, y };
-    staticAnalysisActive = true;
     
     // Posicionar mira no ponto clicado
     reticle.style.left = x + 'px';
@@ -640,14 +635,21 @@
     reticle.style.transform = 'translate(-50%, -50%)';
     reticle.classList.add('show');
     
+    // TRAVAR sistema - não atualiza mais até RESET
+    staticLocked = true;
+    
     console.log('📍 Ponto selecionado:', x.toFixed(0), y.toFixed(0));
+    console.log('🔒 SISTEMA TRAVADO - Clique em RESET ESTÁTICO para nova análise');
   });
   
+  // ═══════════════════════════════════════════════════════════════════
+  // RESET ESTÁTICO - LIBERAR NOVA ANÁLISE
+  // ═══════════════════════════════════════════════════════════════════
   function resetEstatico() {
     if (currentMode !== 'estatico') return;
     
     staticPosition = null;
-    staticAnalysisActive = false;
+    staticLocked = false;
     reticle.classList.remove('show');
     
     // Limpar displays
@@ -658,15 +660,22 @@
     document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
     document.getElementById('color-swatch').style.background = '#1a1a2e';
     
-    console.log('🔄 Modo ESTÁTICO resetado - Selecione novo ponto');
+    // Resetar buffer para nova análise
+    colorBuffer = [];
+    lastStableColorName = '';
+    lastStableRGB = { r: 0, g: 0, b: 0 };
+    mismatchCounter = 0;
+    consecutiveFrameCounter = 0;
+    
+    console.log('🔄 MODO ESTÁTICO RESETADO - Selecione novo ponto');
   }
   // ═══════════════════════════════════════════════════════════════════
   
   function toggleSystem() {
     systemOn = !systemOn;
     const btn = document.getElementById('btn-system');
-    const btns = ['btn-calibrate-white', 'btn-calibrate-white-pro', 'btn-calibrate-black', 'btn-calibrate-black-pro', 
-                  'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-universal', 'btn-modes'];
+    const btns = ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black', 
+                  'btn-camera', 'btn-audio', 'btn-universal', 'btn-modes', 'btn-reset-estatico'];
     
     if (systemOn) {
       btn.textContent = 'SISTEMA/ON';
@@ -1003,46 +1012,50 @@
   }
   
   // ═══════════════════════════════════════════════════════════════════
-  // SAMPLE PIXELS - CORREÇÃO: nativeSample igual à v2.2
+  // SAMPLE PIXELS - ORIGINAL v2.2 (centro fixo)
   // ═══════════════════════════════════════════════════════════════════
   function samplePixels() {
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw || !vh) return null;
-    
-    canvas.width = vw;
-    canvas.height = vh;
-    ctx.drawImage(video, 0, 0);
-    
-    // ═══════════════════════════════════════════════════════════════════
-    // CÁLCULO DE ESCALA (igual à v2.2) - necessário para nativeSample
-    // ═══════════════════════════════════════════════════════════════════
     const cw = video.clientWidth, ch = video.clientHeight;
     const scale = Math.max(cw / vw, ch / vh);
     const offsetX = (vw * scale - cw) / 2;
     const offsetY = (vh * scale - ch) / 2;
-    
-    let nativeCX, nativeCY;
-    
-    if (currentMode === 'livre') {
-      // MODO LIVRE: Centro fixo (igual à v2.2)
-      nativeCX = Math.round((cw / 2 + offsetX) / scale);
-      nativeCY = Math.round((ch / 2 + offsetY) / scale);
-    } else if (currentMode === 'estatico' && staticPosition) {
-      // MODO ESTÁTICO: Posição clicada - com compensação correta de object-fit: cover
-      nativeCX = Math.round((staticPosition.x + offsetX) / scale);
-      nativeCY = Math.round((staticPosition.y + offsetY) / scale);
-    } else {
-      return null; // Modo estático sem posição selecionada
-    }
-    
-    // ═══════════════════════════════════════════════════════════════════
-    // CORREÇÃO CRÍTICA: nativeSample agora é ajustado pelo scale (igual à v2.2)
-    // Isso garante amostragem cirúrgica em diferentes densidades de tela
-    // ═══════════════════════════════════════════════════════════════════
+    const nativeCX = Math.round((cw / 2 + offsetX) / scale);
+    const nativeCY = Math.round((ch / 2 + offsetY) / scale);
     const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
+    
+    canvas.width = vw; canvas.height = vh;
+    ctx.drawImage(video, 0, 0);
+    
     const x0 = Math.max(0, nativeCX - nativeSample);
     const y0 = Math.max(0, nativeCY - nativeSample);
+    const data = ctx.getImageData(x0, y0, nativeSample * 2, nativeSample * 2).data;
     
+    let rSum = 0, gSum = 0, bSum = 0, count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      rSum += data[i]; gSum += data[i + 1]; bSum += data[i + 2]; count++;
+    }
+    return { r: Math.round(rSum / count), g: Math.round(gSum / count), b: Math.round(bSum / count) };
+  }
+  
+  // Função separada para modo estático
+  function samplePixelsEstatico(x, y) {
+    const vw = video.videoWidth, vh = video.videoHeight;
+    if (!vw || !vh) return null;
+    
+    const rect = cameraContainer.getBoundingClientRect();
+    const scaleX = vw / rect.width;
+    const scaleY = vh / rect.height;
+    const nativeCX = Math.round(x * scaleX);
+    const nativeCY = Math.round(y * scaleY);
+    const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / Math.max(rect.width / vw, rect.height / vh)));
+    
+    canvas.width = vw; canvas.height = vh;
+    ctx.drawImage(video, 0, 0);
+    
+    const x0 = Math.max(0, Math.min(vw - nativeSample * 2, nativeCX - nativeSample));
+    const y0 = Math.max(0, Math.min(vh - nativeSample * 2, nativeCY - nativeSample));
     const data = ctx.getImageData(x0, y0, nativeSample * 2, nativeSample * 2).data;
     
     let rSum = 0, gSum = 0, bSum = 0, count = 0;
@@ -1114,15 +1127,11 @@
     
     if (isWhiteCalibrated && isBlackCalibrated) {
       const vRange = whiteCalibration.hsv.v - blackCalibration.hsv.v;
-      const wType = whiteCalibrationPro ? 'PRO' : 'Normal';
-      const bType = blackCalibrationPro ? 'PRO' : 'Normal';
-      statusText += `Régua ${wType}/${bType} (${vRange.toFixed(0)}%)`;
+      statusText += `Régua Completa (${vRange.toFixed(0)}%)`;
     } else if (isWhiteCalibrated) {
-      const wType = whiteCalibrationPro ? 'PRO' : 'Normal';
-      statusText += `Branco ${wType} V:${whiteCalibration.hsv.v.toFixed(0)}%`;
+      statusText += `Branco V:${whiteCalibration.hsv.v.toFixed(0)}%`;
     } else if (isBlackCalibrated) {
-      const bType = blackCalibrationPro ? 'PRO' : 'Normal';
-      statusText += `Preto ${bType} V:${blackCalibration.hsv.v.toFixed(0)}%`;
+      statusText += `Preto V:${blackCalibration.hsv.v.toFixed(0)}%`;
     } else {
       statusText += 'não calibrada';
     }
@@ -1136,18 +1145,34 @@
       return;
     }
     
-    if (!systemOn || !currentMode) {
+    if (!systemOn) {
       requestAnimationFrame(update);
       return;
     }
     
-    // Modo ESTÁTICO: só atualiza se tiver posição selecionada
-    if (currentMode === 'estatico' && !staticAnalysisActive) {
+    let pixels;
+    
+    if (currentMode === 'estatico') {
+      // MODO ESTÁTICO: só processa se tiver posição E não estiver travado
+      if (!staticPosition) {
+        // Espera clicar
+        requestAnimationFrame(update);
+        return;
+      }
+      // Se está travado, continua mostrando os últimos dados (não atualiza)
+      if (staticLocked) {
+        requestAnimationFrame(update);
+        return;
+      }
+      pixels = samplePixelsEstatico(staticPosition.x, staticPosition.y);
+    } else if (currentMode === 'livre') {
+      // MODO LIVRE: centro fixo (original v2.2)
+      pixels = samplePixels();
+    } else {
       requestAnimationFrame(update);
       return;
     }
     
-    let pixels = samplePixels();
     if (!pixels) {
       requestAnimationFrame(update);
       return;
@@ -1177,11 +1202,13 @@
     
     const forceUpdate = mismatchCounter >= MISMATCH_FORCE_UPDATE;
     
-    // Modo LIVRE: atualização contínua normal
-    // Modo ESTÁTICO: atualização normal (mas só roda se staticAnalysisActive)
-    const shouldUpdate = currentMode === 'livre' ? 
-      (forceUpdate || shouldUpdateColor(stable.hsv.h, classification.name, stable.rgb, stable.hsv.s, variance)) :
-      true; // Modo estático sempre atualiza quando ativo
+    let shouldUpdate = true;
+    
+    if (currentMode === 'livre') {
+      // Modo LIVRE: lógica original com histerese
+      shouldUpdate = forceUpdate || shouldUpdateColor(stable.hsv.h, classification.name, stable.rgb, stable.hsv.s, variance);
+    }
+    // Modo ESTÁTICO (não travado): atualiza até clicar, depois trava
     
     if (shouldUpdate) {
       if (forceUpdate) {
@@ -1272,9 +1299,9 @@
   }
   
   // ═══════════════════════════════════════════════════════════════════
-  // CALIBRAÇÃO NORMAL E PRO
+  // CALIBRAÇÃO UNIFICADA (integra modo PRO - 30 frames)
   // ═══════════════════════════════════════════════════════════════════
-  async function calibrateWhite(isPro) {
+  async function calibrateWhite() {
     if (!systemOn) return;
     if (!running) {
       alert('Inicie a câmera primeiro.');
@@ -1286,33 +1313,28 @@
     }
     
     let samples = [];
-    const numFrames = isPro ? 30 : 1;
+    const numFrames = 30; // Sempre modo PRO (30 frames)
     
-    if (isPro) {
-      // Calibração PRO: 30 frames em 1 segundo
-      for (let i = 0; i < numFrames; i++) {
-        const pixels = samplePixels();
-        if (pixels) {
-          const hsv = rgbToHSV(pixels.r, pixels.g, pixels.b);
-          samples.push({ hsv, rgb: pixels });
-        }
-        await new Promise(resolve => setTimeout(resolve, 33)); // ~30fps
+    // Calibração com 30 frames ao longo de 1 segundo
+    for (let i = 0; i < numFrames; i++) {
+      let pixels;
+      if (currentMode === 'estatico' && staticPosition) {
+        pixels = samplePixelsEstatico(staticPosition.x, staticPosition.y);
+      } else {
+        pixels = samplePixels();
       }
-      
-      // Filtrar outliers
-      if (samples.length > 5) {
-        const vValues = samples.map(s => s.hsv.v).sort((a, b) => a - b);
-        const median = vValues[Math.floor(vValues.length / 2)];
-        samples = samples.filter(s => Math.abs(s.hsv.v - median) < 20);
+      if (pixels) {
+        const hsv = rgbToHSV(pixels.r, pixels.g, pixels.b);
+        samples.push({ hsv, rgb: pixels });
       }
-    } else {
-      // Calibração Normal: 1 frame
-      const stable = getStableColor();
-      if (!stable) {
-        alert('Aguarde a estabilização da imagem...');
-        return;
-      }
-      samples.push({ hsv: stable.hsv, rgb: stable.rgb });
+      await new Promise(resolve => setTimeout(resolve, 33)); // ~30fps
+    }
+    
+    // Filtrar outliers
+    if (samples.length > 5) {
+      const vValues = samples.map(s => s.hsv.v).sort((a, b) => a - b);
+      const median = vValues[Math.floor(vValues.length / 2)];
+      samples = samples.filter(s => Math.abs(s.hsv.v - median) < 20);
     }
     
     if (samples.length === 0) {
@@ -1349,20 +1371,13 @@
     };
     
     isWhiteCalibrated = true;
-    whiteCalibrationPro = isPro;
     
     const tempResult = detectColorTemperature(whiteCalibration.rgb);
     
     document.getElementById('color-name').textContent = 'Branco';
     document.getElementById('color-name').style.color = '#ffffff';
     
-    if (isPro) {
-      document.getElementById('btn-calibrate-white-pro').classList.add('calibrated');
-      document.getElementById('btn-calibrate-white').classList.remove('calibrated');
-    } else {
-      document.getElementById('btn-calibrate-white').classList.add('calibrated');
-      document.getElementById('btn-calibrate-white-pro').classList.remove('calibrated');
-    }
+    document.getElementById('btn-calibrate-white').classList.add('calibrated');
     
     updateCalibrationStatus();
     
@@ -1375,11 +1390,11 @@
     consecutiveFrameCounter = 0;
     
     if (audioEnabled) {
-      speakColor(isPro ? 'Branco PRO calibrado' : 'Branco calibrado');
+      speakColor('Branco calibrado');
     }
     
     console.log('═══════════════════════════════════════════════');
-    console.log(`✓ BRANCO CALIBRADO ${isPro ? 'PRO' : 'NORMAL'}`);
+    console.log('✓ BRANCO CALIBRADO (30 frames)');
     console.log('   Amostras:', len);
     console.log('   RGB:', whiteCalibration.rgb);
     console.log('   V:', whiteCalibration.hsv.v.toFixed(1) + '%');
@@ -1392,7 +1407,7 @@
     console.log('═══════════════════════════════════════════════');
   }
   
-  async function calibrateBlack(isPro) {
+  async function calibrateBlack() {
     if (!systemOn) return;
     if (!running) {
       alert('Inicie a câmera primeiro.');
@@ -1404,30 +1419,26 @@
     }
     
     let samples = [];
-    const numFrames = isPro ? 30 : 1;
+    const numFrames = 30; // Sempre modo PRO (30 frames)
     
-    if (isPro) {
-      for (let i = 0; i < numFrames; i++) {
-        const pixels = samplePixels();
-        if (pixels) {
-          const hsv = rgbToHSV(pixels.r, pixels.g, pixels.b);
-          samples.push({ hsv, rgb: pixels });
-        }
-        await new Promise(resolve => setTimeout(resolve, 33));
+    for (let i = 0; i < numFrames; i++) {
+      let pixels;
+      if (currentMode === 'estatico' && staticPosition) {
+        pixels = samplePixelsEstatico(staticPosition.x, staticPosition.y);
+      } else {
+        pixels = samplePixels();
       }
-      
-      if (samples.length > 5) {
-        const vValues = samples.map(s => s.hsv.v).sort((a, b) => a - b);
-        const median = vValues[Math.floor(vValues.length / 2)];
-        samples = samples.filter(s => Math.abs(s.hsv.v - median) < 20);
+      if (pixels) {
+        const hsv = rgbToHSV(pixels.r, pixels.g, pixels.b);
+        samples.push({ hsv, rgb: pixels });
       }
-    } else {
-      const stable = getStableColor();
-      if (!stable) {
-        alert('Aguarde a estabilização da imagem...');
-        return;
-      }
-      samples.push({ hsv: stable.hsv, rgb: stable.rgb });
+      await new Promise(resolve => setTimeout(resolve, 33));
+    }
+    
+    if (samples.length > 5) {
+      const vValues = samples.map(s => s.hsv.v).sort((a, b) => a - b);
+      const median = vValues[Math.floor(vValues.length / 2)];
+      samples = samples.filter(s => Math.abs(s.hsv.v - median) < 20);
     }
     
     if (samples.length === 0) {
@@ -1463,18 +1474,11 @@
     };
     
     isBlackCalibrated = true;
-    blackCalibrationPro = isPro;
     
     document.getElementById('color-name').textContent = 'Preto';
     document.getElementById('color-name').style.color = '#1a1a2a';
     
-    if (isPro) {
-      document.getElementById('btn-calibrate-black-pro').classList.add('calibrated');
-      document.getElementById('btn-calibrate-black').classList.remove('calibrated');
-    } else {
-      document.getElementById('btn-calibrate-black').classList.add('calibrated');
-      document.getElementById('btn-calibrate-black-pro').classList.remove('calibrated');
-    }
+    document.getElementById('btn-calibrate-black').classList.add('calibrated');
     
     updateCalibrationStatus();
     
@@ -1487,11 +1491,11 @@
     consecutiveFrameCounter = 0;
     
     if (audioEnabled) {
-      speakColor(isPro ? 'Preto PRO calibrado' : 'Preto calibrado');
+      speakColor('Preto calibrado');
     }
     
     console.log('═══════════════════════════════════════════════');
-    console.log(`✓ PRETO CALIBRADO ${isPro ? 'PRO' : 'NORMAL'}`);
+    console.log('✓ PRETO CALIBRADO (30 frames)');
     console.log('   Amostras:', len);
     console.log('   RGB:', blackCalibration.rgb);
     console.log('   V:', blackCalibration.hsv.v.toFixed(1) + '%');
@@ -1508,13 +1512,11 @@
     
     whiteCalibration = null;
     isWhiteCalibrated = false;
-    whiteCalibrationPro = false;
     
     colorTemperatureBias = { r: 0, g: 0, b: 0 };
     hasColorTempCompensation = false;
     
     document.getElementById('btn-calibrate-white').classList.remove('calibrated');
-    document.getElementById('btn-calibrate-white-pro').classList.remove('calibrated');
     
     updateCalibrationStatus();
     
@@ -1535,10 +1537,8 @@
     
     blackCalibration = null;
     isBlackCalibrated = false;
-    blackCalibrationPro = false;
     
     document.getElementById('btn-calibrate-black').classList.remove('calibrated');
-    document.getElementById('btn-calibrate-black-pro').classList.remove('calibrated');
     
     updateCalibrationStatus();
     
@@ -1555,15 +1555,13 @@
   }
   
   console.log('╔═══════════════════════════════════════════════════════════╗');
-  console.log('║    MOTOR DE CORES v2.3 - CORRIGIDO (nativeSample=v2.2)    ║');
+  console.log('║    MOTOR DE CORES v2.3 - SISTEMA DE MODOS LIVRE/ESTÁTICO ║');
   console.log('╚═══════════════════════════════════════════════════════════╝');
   console.log('');
-  console.log('🎯 MODO LIVRE: Mira fixa, análise contínua');
-  console.log('📍 MODO ESTÁTICO: Clique para selecionar ponto');
-  console.log('◆ Calibração Normal: 1 frame (instantânea)');
-  console.log('◆◆ Calibração PRO: 30 frames em 1 segundo');
-  console.log('');
-  console.log('✅ CORREÇÃO APLICADA: nativeSample ajustado pelo scale (igual à v2.2)');
+  console.log('🎯 MODO LIVRE: Mira fixa no centro, análise contínua');
+  console.log('📍 MODO ESTÁTICO: Clique para analisar (travado até RESET)');
+  console.log('◆ Calibrar Branco: 30 frames (PRO integrado)');
+  console.log('◆ Calibrar Preto: 30 frames (PRO integrado)');
   console.log('');
 </script>
 </body>
