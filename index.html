@@ -557,19 +557,24 @@
         confidence = 95;
       }
     }
-    // ZONA ROXO/MAGENTA (H: 255-290°) - Zona expandida para estabilizar
+    // ═══════════════════════════════════════════════════════════════════
+    // CORREÇÃO ROXO vs MAGENTA - MODIFICAÇÃO CIRÚRGICA
+    // ═══════════════════════════════════════════════════════════════════
     else if (h >= 255 && h < 290 && s >= 25) {
-      // Roxo: Azul >= 90 E Azul > Vermelho
-      if (b >= 90 && b > r * 0.90) {
+      // ROXO: Azul > Vermelho E cor mais ESCURA (V < 65)
+      if (b > r && v < 65) {
         baseName = 'Roxo';
         baseColor = '#a855f7';
         confidence = 98;
-      } else {
+      } 
+      // MAGENTA: Vermelho >= Azul OU cor mais CLARA (V >= 65)
+      else {
         baseName = 'Magenta';
         baseColor = '#d946ef';
         confidence = 95;
       }
     }
+    // ═══════════════════════════════════════════════════════════════════
     else if (h >= 20 && h < 35) {
       baseName = 'Laranja';
       baseColor = '#f97316';
@@ -591,9 +596,15 @@
       baseColor = '#3b82f6';
     }
     
+    // ═══════════════════════════════════════════════════════════════════
+    // MODO UNIVERSAL - REMOVE MODIFICADORES (Escuro/Claro)
+    // ═══════════════════════════════════════════════════════════════════
     let modifier = '';
-    if (v < 28) modifier = ' Escuro';
-    else if (v > 82 && s < 45) modifier = ' Claro';
+    if (!universalMode) {
+      if (v < 28) modifier = ' Escuro';
+      else if (v > 82 && s < 45) modifier = ' Claro';
+    }
+    // ═══════════════════════════════════════════════════════════════════
     
     return { name: baseName + modifier, color: baseColor, confidence };
   }
