@@ -505,7 +505,7 @@
   // ═══════════════════════════════════════════════════════════════════
   let currentMode = null; // 'livre' ou 'estatico'
   let staticPosition = null; // { x, y } - posição no modo estático
-  let staticLocked = false; // true = sistema travado após clique no modo estático
+  let staticFrozen = false; // true = sistema congelado após clique no modo estático
   // ═══════════════════════════════════════════════════════════════════
   
   let whiteCalibration = null;
@@ -557,7 +557,6 @@
     const dropdown = document.getElementById('mode-dropdown');
     const btnModes = document.getElementById('btn-modes');
     const modeLabel = document.getElementById('mode-label');
-    const modeSelectOverlay = document.getElementById('mode-select-overlay');
     const btnResetEstatico = document.getElementById('btn-reset-estatico');
     
     // Fechar dropdown
@@ -584,8 +583,8 @@
       // Esconder botão reset estático
       btnResetEstatico.classList.remove('show');
       
-      // Liberar sistema para modo livre (não trava)
-      staticLocked = false;
+      // Resetar variáveis do modo estático
+      staticFrozen = false;
       staticPosition = null;
       
       console.log('✅ MODO LIVRE ATIVADO - Mira fixa no centro');
@@ -600,9 +599,9 @@
       // Mostrar botão reset estático
       btnResetEstatico.classList.add('show');
       
-      // Resetar posição e travar
+      // Resetar variáveis
       staticPosition = null;
-      staticLocked = false;
+      staticFrozen = false;
       
       console.log('✅ MODO ESTÁTICO ATIVADO - Clique na tela para analisar');
     }
@@ -620,8 +619,8 @@
   cameraContainer.addEventListener('click', function(e) {
     if (currentMode !== 'estatico' || !running) return;
     
-    // Se já está travado (clique já feito), não fazer nada até RESET
-    if (staticLocked && staticPosition) return;
+    // Se já está congelado (clique já feito), não fazer nada até RESET
+    if (staticFrozen && staticPosition) return;
     
     const rect = cameraContainer.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -635,11 +634,11 @@
     reticle.style.transform = 'translate(-50%, -50%)';
     reticle.classList.add('show');
     
-    // TRAVAR sistema - não atualiza mais até RESET
-    staticLocked = true;
+    // CONGELAR sistema - não atualiza mais até RESET
+    staticFrozen = true;
     
     console.log('📍 Ponto selecionado:', x.toFixed(0), y.toFixed(0));
-    console.log('🔒 SISTEMA TRAVADO - Clique em RESET ESTÁTICO para nova análise');
+    console.log('🔒 SISTEMA CONGELADO - Clique em RESET ESTÁTICO para nova análise');
   });
   
   // ═══════════════════════════════════════════════════════════════════
@@ -649,7 +648,7 @@
     if (currentMode !== 'estatico') return;
     
     staticPosition = null;
-    staticLocked = false;
+    staticFrozen = false;
     reticle.classList.remove('show');
     
     // Limpar displays
@@ -1152,23 +1151,14 @@
     
     let pixels;
     
-    if (currentMode === 'estatico') {
-      // MODO ESTÁTICO: só processa se tiver posição E não estiver travado
-      if (!staticPosition) {
-        // Espera clicar
-        requestAnimationFrame(update);
-        return;
-      }
-      // Se está travado, continua mostrando os últimos dados (não atualiza)
-      if (staticLocked) {
-        requestAnimationFrame(update);
-        return;
-      }
-      pixels = samplePixelsEstatico(staticPosition.x, staticPosition.y);
-    } else if (currentMode === 'livre') {
+    if (currentMode === 'livre') {
       // MODO LIVRE: centro fixo (original v2.2)
       pixels = samplePixels();
+    } else if (currentMode === 'estatico' && staticPosition) {
+      // MODO ESTÁTICO: posição clicada
+      pixels = samplePixelsEstatico(staticPosition.x, staticPosition.y);
     } else {
+      // Espera clicar ou modo não definido
       requestAnimationFrame(update);
       return;
     }
@@ -1208,7 +1198,12 @@
       // Modo LIVRE: lógica original com histerese
       shouldUpdate = forceUpdate || shouldUpdateColor(stable.hsv.h, classification.name, stable.rgb, stable.hsv.s, variance);
     }
-    // Modo ESTÁTICO (não travado): atualiza até clicar, depois trava
+    // Modo ESTÁTICO: sempre atualiza (menos quando congelado)
+    
+    // Se congelado, não atualiza
+    if (staticFrozen && currentMode === 'estatico') {
+      shouldUpdate = false;
+    }
     
     if (shouldUpdate) {
       if (forceUpdate) {
@@ -1559,9 +1554,9 @@
   console.log('╚═══════════════════════════════════════════════════════════╝');
   console.log('');
   console.log('🎯 MODO LIVRE: Mira fixa no centro, análise contínua');
-  console.log('📍 MODO ESTÁTICO: Clique para analisar (travado até RESET)');
-  console.log('◆ Calibrar Branco: 30 frames (PRO integrado)');
-  console.log('◆ Calibrar Preto: 30 frames (PRO integrado)');
+  console.log('📍 MODO ESTÁTICO: Clique para analisar (congela após clique)');
+  console.log('◆ Calibrar Branco: 30 frames (integrado)');
+  console.log('◆ Calibrar Preto: 30 frames (integrado)');
   console.log('');
 </script>
 </body>
