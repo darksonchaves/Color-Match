@@ -1,1635 +1,2977 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Motor de Cor - Sistema de Modos v2.6</title>
+
 <style>
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
   body {
+
     background: #0a0a0f;
+
     color: #e0e0f0;
+
     font-family: 'Segoe UI', system-ui, sans-serif;
+
     height: 100vh;
+
     overflow: hidden;
+
     display: flex;
+
     flex-direction: column;
+
   }
+
   #header {
+
     background: rgba(10,10,20,0.88);
+
     padding: 5px 12px;
+
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
+
     border-bottom: 1px solid rgba(100,100,255,0.15);
+
     z-index: 30;
+
     position: relative;
+
     flex-shrink: 0;
+
   }
+
   #btn-system {
+
     padding: 5px 12px;
+
     border: none;
+
     border-radius: 5px;
+
     cursor: pointer;
+
     font-size: 0.68rem;
+
     font-weight: 700;
+
     letter-spacing: 1.5px;
+
     text-transform: uppercase;
+
     transition: all 0.2s ease;
+
   }
+
   #btn-system.system-on {
+
     background: linear-gradient(135deg, #1a4a2e, #2a7a4e);
+
     color: #6effa0;
+
     border: 1px solid rgba(60,200,100,0.45);
+
     box-shadow: 0 0 8px rgba(60,200,100,0.25);
+
   }
+
   #btn-system.system-off {
+
     background: linear-gradient(135deg, #3a1a1a, #5a2020);
+
     color: #ff5050;
+
     border: 1px solid rgba(200,50,50,0.45);
+
     box-shadow: 0 0 8px rgba(200,50,50,0.2);
+
   }
+
   #top-bar {
+
     background: rgba(8,8,20,0.86);
+
     border-bottom: 1px solid rgba(100,100,255,0.12);
+
     padding: 5px 10px;
+
     display: flex;
+
     align-items: center;
+
     gap: 10px;
+
     z-index: 25;
+
     position: relative;
+
     flex-shrink: 0;
+
     backdrop-filter: blur(6px);
+
     -webkit-backdrop-filter: blur(6px);
+
     flex-wrap: wrap;
+
   }
 
   .mode-selector { position: relative; }
+
   #btn-modes {
+
     padding: 6px 12px;
+
     border: 2px solid rgba(100,100,255,0.4);
+
     border-radius: 6px;
+
     cursor: pointer;
+
     font-size: 0.7rem;
+
     font-weight: 700;
+
     letter-spacing: 0.8px;
+
     text-transform: uppercase;
+
     transition: all 0.2s ease;
+
     background: linear-gradient(135deg, #2a2a4e, #3a3a6e);
+
     color: #aac;
+
     display: flex;
+
     align-items: center;
+
     gap: 6px;
+
   }
+
   #btn-modes:hover {
+
     background: linear-gradient(135deg, #3a3a6e, #4a4a8e);
+
     border-color: rgba(150,150,255,0.6);
+
   }
+
   #btn-modes.mode-livre {
+
     background: linear-gradient(135deg, #1a4a2e, #2a7a4e);
+
     border-color: rgba(60,200,100,0.5);
+
     color: #6effa0;
+
   }
+
   #btn-modes.mode-estatico {
+
     background: linear-gradient(135deg, #1a2a4e, #2a4a7e);
+
     border-color: rgba(60,150,255,0.5);
+
     color: #6eb0ff;
+
   }
+
   #btn-modes.mode-comparacao {
+
     background: linear-gradient(135deg, #4a2a1e, #6a4a30);
+
     border-color: rgba(200,150,80,0.5);
+
     color: #ffcc80;
+
   }
+
   #mode-dropdown {
+
     position: absolute;
+
     top: 100%;
+
     left: 0;
+
     margin-top: 4px;
+
     background: rgba(20,20,40,0.98);
+
     border: 1px solid rgba(100,100,255,0.3);
+
     border-radius: 6px;
+
     overflow: hidden;
+
     display: none;
+
     min-width: 200px;
+
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+
     z-index: 100;
+
   }
+
   #mode-dropdown.show { display: block; }
+
   .mode-option {
+
     padding: 10px 14px;
+
     cursor: pointer;
+
     font-size: 0.68rem;
+
     font-weight: 600;
+
     letter-spacing: 0.5px;
+
     transition: all 0.15s ease;
+
     border-bottom: 1px solid rgba(100,100,255,0.1);
+
     display: flex;
+
     align-items: center;
+
     gap: 8px;
+
   }
+
   .mode-option:last-child { border-bottom: none; }
+
   .mode-option:hover { background: rgba(100,100,255,0.15); }
+
   .mode-option.active { background: rgba(60,200,100,0.2); color: #6effa0; }
 
   #color-swatch {
+
     width: 28px;
+
     height: 28px;
+
     border-radius: 5px;
+
     border: 1px solid rgba(255,255,255,0.12);
+
     flex-shrink: 0;
+
     transition: background 0.25s ease;
+
     box-shadow: 0 0 8px rgba(0,0,0,0.5);
+
   }
+
   #color-name { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.4px; min-width: 120px; }
+
   #confidence-display { font-size: 0.58rem; color: #6a6; white-space: nowrap; }
+
   .sep { color: rgba(100,100,255,0.3); font-size: 0.7rem; flex-shrink: 0; }
+
   .data-inline { font-size: 0.64rem; font-family: 'Courier New', monospace; color: #aab; white-space: nowrap; }
+
   .data-inline .lbl { color: #558; margin-right: 1px; }
+
   #base-info { font-size: 0.58rem; color: #446; white-space: nowrap; }
+
   .btn-top {
+
     padding: 4px 8px;
+
     border: none;
+
     border-radius: 5px;
+
     cursor: pointer;
+
     font-size: 0.6rem;
+
     font-weight: 600;
+
     letter-spacing: 0.5px;
+
     text-transform: uppercase;
+
     transition: all 0.18s ease;
+
     white-space: nowrap;
+
     flex-shrink: 0;
+
   }
+
   .btn-top:disabled { opacity: 0.25; cursor: not-allowed; }
+
   #btn-calibrate-white {
+
     background: linear-gradient(135deg, #2a2a6e, #3a3a9e);
+
     color: #aac;
+
     border: 1px solid rgba(100,100,255,0.3);
+
   }
+
   #btn-calibrate-white:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a8e, #5a5abe); color: #eef; }
+
   #btn-calibrate-white.calibrated {
+
     background: linear-gradient(135deg, #1a4a2e, #2a7a4e);
+
     border-color: rgba(50,200,100,0.4);
+
     color: #8fc;
+
   }
+
   #btn-calibrate-black {
+
     background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
+
     color: #aaa;
+
     border: 1px solid rgba(100,100,100,0.3);
+
   }
+
   #btn-calibrate-black:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a3a, #5a5a5a); color: #ddd; }
+
   #btn-calibrate-black.calibrated {
+
     background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+
     border-color: rgba(200,200,200,0.4);
+
     color: #fff;
+
   }
+
   #btn-reset-white {
+
     background: linear-gradient(135deg, #3a2a2a, #5a3a3a);
+
     color: #d99;
+
     border: 1px solid rgba(200,100,100,0.3);
+
   }
+
   #btn-reset-white:hover:not(:disabled) { background: linear-gradient(135deg, #4a3a3a, #6a4a4a); color: #faa; }
+
   #btn-reset-black {
+
     background: linear-gradient(135deg, #2a2a3a, #3a3a5a);
+
     color: #99d;
+
     border: 1px solid rgba(100,100,200,0.3);
+
   }
+
   #btn-reset-black:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a4a, #4a4a6a); color: #aaf; }
+
   #btn-reset-estatico {
+
     background: linear-gradient(135deg, #3a2a1e, #5a4a30);
+
     color: #fa8;
+
     border: 1px solid rgba(255,150,80,0.4);
+
     display: none;
+
   }
+
   #btn-reset-estatico.show { display: inline-block; }
+
   #btn-reset-estatico:hover:not(:disabled) { background: linear-gradient(135deg, #4a3a2e, #6a5a40); color: #fca; }
 
   /* ═══════════════════════════════════════════════════════════════
+
      MODO COMPARAÇÃO PONTO A PONTO - Botões condicionais
+
      ═══════════════════════════════════════════════════════════════ */
+
   #btn-sel-ref, #btn-sel-sample, #btn-reset-ref, #btn-reset-sample, #btn-reset-comparacao {
+
     display: none;
+
   }
+
   #btn-sel-ref.show, #btn-sel-sample.show, #btn-reset-ref.show, #btn-reset-sample.show, #btn-reset-comparacao.show {
+
     display: inline-block;
+
   }
+
   #btn-sel-ref {
+
     background: linear-gradient(135deg, #1a3a4e, #2a5a7e);
+
     color: #8ec;
+
     border: 1px solid rgba(80,200,180,0.4);
+
   }
+
   #btn-sel-ref:hover:not(:disabled) { background: linear-gradient(135deg, #2a5a7e, #3a7a9e); color: #cef; }
+
   #btn-sel-sample {
+
     background: linear-gradient(135deg, #3a3a1e, #5a5a30);
+
     color: #dd8;
+
     border: 1px solid rgba(200,200,80,0.4);
+
   }
+
   #btn-sel-sample:hover:not(:disabled) { background: linear-gradient(135deg, #4a4a2e, #6a6a40); color: #ffc; }
+
   #btn-reset-ref {
+
     background: linear-gradient(135deg, #3a2a2a, #5a3a3a);
+
     color: #d99;
+
     border: 1px solid rgba(200,100,100,0.3);
+
   }
+
   #btn-reset-ref:hover:not(:disabled) { background: linear-gradient(135deg, #4a3a3a, #6a4a4a); color: #faa; }
+
   #btn-reset-sample {
+
     background: linear-gradient(135deg, #2a2a3a, #3a3a5a);
+
     color: #99d;
+
     border: 1px solid rgba(100,100,200,0.3);
+
   }
+
   #btn-reset-sample:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a4a, #4a4a6a); color: #aaf; }
+
   #btn-reset-comparacao {
+
     background: linear-gradient(135deg, #4a2a1e, #6a4a30);
+
     color: #ffcc80;
+
     border: 1px solid rgba(200,150,80,0.45);
+
   }
+
   #btn-reset-comparacao:hover:not(:disabled) { background: linear-gradient(135deg, #5a3a2e, #7a5a40); color: #ffe0a0; }
 
   #btn-camera {
+
     background: linear-gradient(135deg, #2a1a3e, #4a2a6e);
+
     color: #bac;
+
     border: 1px solid rgba(180,100,255,0.3);
+
   }
+
   #btn-camera:hover:not(:disabled) { background: linear-gradient(135deg, #3a2a5e, #6a4a9e); color: #edf; }
+
   #btn-audio {
+
     background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
+
     color: #446;
+
     border: 1px solid rgba(100,100,150,0.2);
+
   }
+
   #btn-audio:hover:not(:disabled) { background: linear-gradient(135deg, #252535, #353550); color: #778; }
+
   #btn-audio.audio-on {
+
     background: linear-gradient(135deg, #163a1e, #1f6030);
+
     color: #6effa0;
+
     border: 1px solid rgba(60,200,100,0.45);
+
     box-shadow: 0 0 6px rgba(60,200,100,0.2);
+
   }
+
   #btn-universal {
+
     background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
+
     color: #446;
+
     border: 1px solid rgba(100,100,150,0.2);
+
   }
+
   #btn-universal:hover:not(:disabled) { background: linear-gradient(135deg, #252535, #353550); color: #778; }
+
   #btn-universal.universal-on {
+
     background: linear-gradient(135deg, #3a2a1e, #6a4a30);
+
     color: #ffa060;
+
     border: 1px solid rgba(200,100,60,0.45);
+
     box-shadow: 0 0 6px rgba(200,100,60,0.2);
+
   }
 
   #main { flex: 1; position: relative; overflow: hidden; }
+
   #camera-container { position: absolute; inset: 0; background: #000; }
+
   #videoEl {
+
     position: absolute;
+
     inset: 0;
+
     width: 100%;
+
     height: 100%;
+
     object-fit: cover;
+
     z-index: 1;
+
   }
+
   #canvasEl { display: none; }
 
   #reticle {
+
     position: absolute;
+
     top: 50%;
+
     left: 50%;
+
     transform: translate(-50%, -50%);
+
     width: 60px;
+
     height: 60px;
+
     pointer-events: none;
+
     z-index: 20;
+
     display: none;
+
   }
+
   #reticle.show { display: block; }
+
   .reticle-h {
+
     position: absolute;
+
     top: 50%;
+
     left: 0;
+
     width: 100%;
+
     height: 2px;
+
     background: rgba(120,220,255,0.9);
+
     transform: translateY(-50%);
+
     box-shadow: 0 0 4px rgba(120,220,255,0.5);
+
   }
+
   .reticle-v {
+
     position: absolute;
+
     left: 50%;
+
     top: 0;
+
     height: 100%;
+
     width: 2px;
+
     background: rgba(120,220,255,0.9);
+
     transform: translateX(-50%);
+
     box-shadow: 0 0 4px rgba(120,220,255,0.5);
+
   }
+
   .reticle-box {
+
     position: absolute;
+
     top: 50%;
+
     left: 50%;
+
     transform: translate(-50%, -50%);
+
     width: 22px;
+
     height: 22px;
+
     border: 1.5px solid rgba(120,220,255,0.5);
+
   }
+
   .reticle-sample-circle {
+
     position: absolute;
+
     top: 50%;
+
     left: 50%;
+
     transform: translate(-50%, -50%);
+
     width: 20px;
+
     height: 20px;
+
     border-radius: 50%;
+
     border: 1px dashed rgba(120,220,255,0.55);
+
   }
+
   .reticle-dot {
+
     position: absolute;
+
     top: 50%;
+
     left: 50%;
+
     transform: translate(-50%, -50%);
+
     width: 4px;
+
     height: 4px;
+
     border-radius: 50%;
+
     background: rgba(120,220,255,0.9);
+
     box-shadow: 0 0 4px rgba(120,220,255,0.8);
+
   }
 
   #mode-select-overlay {
+
     position: absolute;
+
     inset: 0;
+
     background: rgba(0,0,0,0.92);
+
     display: flex;
+
     flex-direction: column;
+
     align-items: center;
+
     justify-content: center;
+
     z-index: 35;
+
     gap: 20px;
+
   }
+
   #mode-select-overlay.hide { display: none; }
+
   #mode-select-overlay h2 {
+
     color: #aac;
+
     font-size: 1.3rem;
+
     letter-spacing: 1px;
+
     font-weight: 600;
+
   }
+
   #mode-select-overlay p {
+
     color: #778;
+
     font-size: 0.9rem;
+
     text-align: center;
+
     max-width: 420px;
+
     line-height: 1.5;
+
   }
 
   #start-overlay {
+
     position: absolute;
+
     inset: 0;
+
     background: rgba(0,0,0,0.85);
+
     display: flex;
+
     flex-direction: column;
+
     align-items: center;
+
     justify-content: center;
+
     z-index: 30;
+
     gap: 14px;
+
   }
+
   #start-overlay.hide { display: none; }
+
   #start-overlay p { color: #778; font-size: 0.88rem; }
+
   #btn-start {
+
     padding: 13px 30px;
+
     background: linear-gradient(135deg, #3a3a9e, #7b5ce8);
+
     color: #fff;
+
     border: none;
+
     border-radius: 10px;
+
     font-size: 0.95rem;
+
     font-weight: 700;
+
     cursor: pointer;
+
     letter-spacing: 1px;
+
     transition: all 0.2s;
+
   }
+
   #btn-start:hover { transform: scale(1.05); }
 
   /* ═══════════════════════════════════════════════════════════════
+
      MODO COMPARAÇÃO PONTO A PONTO - Painel inferior
+
      ═══════════════════════════════════════════════════════════════ */
+
   #comparison-panel {
+
     position: absolute;
+
     bottom: 0;
+
     left: 0;
+
     right: 0;
+
     background: rgba(8,8,20,0.94);
+
     border-top: 1px solid rgba(100,100,255,0.2);
+
     padding: 10px 16px 14px;
+
     display: none;
+
     align-items: center;
+
     justify-content: center;
+
     gap: 14px;
+
     z-index: 22;
+
     backdrop-filter: blur(8px);
+
     -webkit-backdrop-filter: blur(8px);
+
   }
+
   #comparison-panel.show { display: flex; }
+
   .comp-block {
+
     display: flex;
+
     flex-direction: column;
+
     align-items: center;
+
     gap: 6px;
+
     flex: 1;
+
     max-width: 140px;
+
   }
+
   .comp-block.comp-center {
+
     flex: 0 0 auto;
+
     min-width: 110px;
+
     gap: 4px;
+
   }
+
   .comp-label {
+
     font-size: 0.6rem;
+
     font-weight: 700;
+
     letter-spacing: 1px;
+
     color: #778;
+
     text-transform: uppercase;
+
   }
+
   .comp-img-wrap {
+
     position: relative;
+
     width: 100%;
+
     aspect-ratio: 4/3;
+
     border-radius: 8px;
+
     overflow: hidden;
+
     border: 1px solid rgba(100,100,255,0.25);
+
     background: #000;
+
   }
+
   .comp-thumb {
+
     width: 100%;
+
     height: 100%;
+
     object-fit: cover;
+
     display: block;
+
   }
+
   .comp-marker {
+
     position: absolute;
+
     top: 50%;
+
     left: 50%;
+
     transform: translate(-50%, -50%);
+
     width: 20px;
+
     height: 20px;
+
     border: 2px solid rgba(120,220,255,0.9);
+
     border-radius: 50%;
+
     pointer-events: none;
+
     box-shadow: 0 0 6px rgba(120,220,255,0.6);
+
   }
+
   .comp-marker::before, .comp-marker::after {
+
     content: '';
+
     position: absolute;
+
     background: rgba(120,220,255,0.9);
+
   }
+
   .comp-marker::before {
+
     top: 50%;
+
     left: -6px;
+
     width: calc(100% + 12px);
+
     height: 2px;
+
     transform: translateY(-50%);
+
   }
+
   .comp-marker::after {
+
     left: 50%;
+
     top: -6px;
+
     height: calc(100% + 12px);
+
     width: 2px;
+
     transform: translateX(-50%);
+
   }
+
   .comp-color-name {
+
     font-size: 0.72rem;
+
     font-weight: 700;
+
     color: #aac;
+
     text-align: center;
+
     min-height: 16px;
+
   }
+
   .comp-percent-label {
+
     font-size: 0.55rem;
+
     font-weight: 700;
+
     letter-spacing: 1.2px;
+
     color: #557;
+
     text-transform: uppercase;
+
     text-align: center;
+
   }
+
   .comp-percent {
+
     font-size: 1.6rem;
+
     font-weight: 800;
+
     color: #6effa0;
+
     text-align: center;
+
     text-shadow: 0 0 10px rgba(110,255,160,0.35);
+
     line-height: 1;
+
   }
+
   .comp-percent.low { color: #ff5050; text-shadow: 0 0 10px rgba(255,80,80,0.35); }
+
   .comp-percent.medium { color: #ffcc60; text-shadow: 0 0 10px rgba(255,200,80,0.35); }
 
   @media (max-width: 768px) {
+
     #header { padding: 4px 8px; }
+
     #btn-system { font-size: 0.6rem; padding: 4px 9px; }
+
     #top-bar { gap: 6px; padding: 4px 8px; }
+
     .btn-top { padding: 3px 6px; font-size: 0.55rem; }
+
     #btn-modes { padding: 4px 8px; font-size: 0.62rem; }
+
     #color-name { font-size: 0.74rem; min-width: 100px; }
+
     .data-inline { font-size: 0.58rem; }
+
     #base-info { font-size: 0.54rem; }
+
     #comparison-panel { padding: 8px 10px 10px; gap: 8px; }
+
     .comp-block { max-width: 110px; }
+
     .comp-block.comp-center { min-width: 80px; }
+
     .comp-percent { font-size: 1.3rem; }
+
     .comp-label { font-size: 0.55rem; }
+
     .comp-color-name { font-size: 0.65rem; }
+
   }
+
 </style>
+
 </head>
+
 <body>
+
 <div id="header">
+
   <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
+
   <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v2.6 - Modos LIVRE/ESTÁTICO/COMPARAÇÃO</span>
+
 </div>
+
 <div id="top-bar">
+
   <div class="mode-selector">
+
     <button id="btn-modes" onclick="toggleModeDropdown()">
+
       <span id="mode-label">MODOS</span>
+
       <span style="font-size:0.5rem;">▼</span>
+
     </button>
+
     <div id="mode-dropdown">
+
       <div class="mode-option" onclick="selectMode('livre')">
+
         <span>🎯</span>
+
         <span>LIVRE</span>
+
       </div>
+
       <div class="mode-option" onclick="selectMode('estatico')">
+
         <span>📍</span>
+
         <span>ESTÁTICO</span>
+
       </div>
+
       <div class="mode-option" onclick="selectMode('comparacao')">
+
         <span>⚖️</span>
+
         <span>COMPARAÇÃO</span>
+
       </div>
+
     </div>
+
   </div>
 
   <div id="color-swatch" style="background:#1a1a2e;"></div>
+
   <div id="color-name" style="color:#445;">---</div>
+
   <div id="confidence-display"></div>
+
   <span class="sep">│</span>
+
   <div class="data-inline" id="hsv-line">
+
     <span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---
+
   </div>
+
   <span class="sep">│</span>
+
   <div class="data-inline" id="rgb-line">
+
     <span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---
+
   </div>
+
   <span class="sep">│</span>
+
   <div id="base-info">Base: não calibrada</div>
+
   <span class="sep">│</span>
+
   <button class="btn-top" id="btn-calibrate-white" onclick="calibrateWhite()">&#9670; Calibrar Branco</button>
+
   <button class="btn-top" id="btn-calibrate-black" onclick="calibrateBlack()">&#9670; Calibrar Preto</button>
+
   <button class="btn-top" id="btn-reset-white" onclick="resetWhite()">&#10006; Resetar Branco</button>
+
   <button class="btn-top" id="btn-reset-black" onclick="resetBlack()">&#10006; Resetar Preto</button>
+
   <button class="btn-top" id="btn-reset-estatico" onclick="resetEstatico()">&#8635; Resetar Estático</button>
 
   <!-- Botões do Modo Comparação (inicialmente ocultos) -->
+
   <button class="btn-top" id="btn-sel-ref" onclick="startRefSelection()">⚖️ Selecionar Referência</button>
+
   <button class="btn-top" id="btn-sel-sample" onclick="startSampleSelection()">⚖️ Selecionar Amostra</button>
+
   <button class="btn-top" id="btn-reset-ref" onclick="resetRef()">&#10006; Resetar Referência</button>
+
   <button class="btn-top" id="btn-reset-sample" onclick="resetSample()">&#10006; Resetar Amostra</button>
+
   <button class="btn-top" id="btn-reset-comparacao" onclick="resetComparison()">&#8635; Reset Comparação</button>
 
   <button class="btn-top" id="btn-camera" onclick="switchCamera()">&#8635; Câmera</button>
+
   <button class="btn-top" id="btn-audio" onclick="toggleAudio()">&#128263; Áudio</button>
+
   <button class="btn-top" id="btn-universal" onclick="toggleUniversalMode()">&#9733; Universal</button>
+
 </div>
+
 <div id="main">
+
   <div id="camera-container">
+
     <video id="videoEl" autoplay playsinline muted></video>
+
     <canvas id="canvasEl"></canvas>
+
     <div id="reticle">
+
       <div class="reticle-h"></div>
+
       <div class="reticle-v"></div>
+
       <div class="reticle-box"></div>
+
       <div class="reticle-sample-circle"></div>
+
       <div class="reticle-dot"></div>
+
     </div>
 
     <!-- Painel de Comparação (inferior) -->
+
     <div id="comparison-panel">
+
       <div class="comp-block">
+
         <div class="comp-label">REFERÊNCIA</div>
+
         <div class="comp-img-wrap">
+
           <img id="ref-thumb" class="comp-thumb" src="" alt="">
+
           <div id="ref-reticle-marker" class="comp-marker" style="display:none;"></div>
+
         </div>
+
         <div id="ref-color-name" class="comp-color-name">---</div>
+
       </div>
+
       <div class="comp-block comp-center">
+
         <div class="comp-percent-label">COMPATIBILIDADE</div>
+
         <div id="compatibility-percent" class="comp-percent">---</div>
+
       </div>
+
       <div class="comp-block">
+
         <div class="comp-label">AMOSTRA</div>
+
         <div class="comp-img-wrap">
+
           <img id="sample-thumb" class="comp-thumb" src="" alt="">
+
           <div id="sample-reticle-marker" class="comp-marker" style="display:none;"></div>
+
         </div>
+
         <div id="sample-color-name" class="comp-color-name">---</div>
+
       </div>
+
     </div>
 
     <!-- OVERLAY - SELEÇÃO DE MODO INICIAL -->
+
     <div id="mode-select-overlay">
+
       <h2>SELECIONE O MODO</h2>
+
       <p>🎯 <strong>LIVRE</strong> - Mira fixa no centro, análise contínua<br>
+
          📍 <strong>ESTÁTICO</strong> - Clique na tela para analisar ponto específico<br>
+
          ⚖️ <strong>COMPARAÇÃO</strong> - Capture dois pontos e compare a compatibilidade entre eles</p>
+
     </div>
 
     <!-- OVERLAY - INICIAR CÂMERA -->
+
     <div id="start-overlay">
+
       <p>Toque para iniciar a câmera</p>
+
       <button id="btn-start" onclick="startCamera()">&#9654; Iniciar Câmera</button>
+
     </div>
+
   </div>
+
 </div>
+
 <script>
+
   const video = document.getElementById('videoEl');
+
   const canvas = document.getElementById('canvasEl');
+
   const ctx = canvas.getContext('2d');
+
   const reticle = document.getElementById('reticle');
+
   const cameraContainer = document.getElementById('camera-container');
 
   let stream = null, devices = [], deviceIndex = 0, running = false, universalMode = false;
+
   let systemOn = true;
 
   // ═══════════════════════════════════════════════════════════════════
+
   // SISTEMA DE MODOS
+
   // ═══════════════════════════════════════════════════════════════════
+
   let currentMode = null;
+
   let staticPosition = null;
+
   let staticAnalysisActive = false;
+
   let staticFrozen = false; // v2.4: trava APÓS estabilização (não no clique)
+
   // ═══════════════════════════════════════════════════════════════════
 
   let whiteCalibration = null;
+
   let blackCalibration = null;
+
   let isWhiteCalibrated = false;
+
   let isBlackCalibrated = false;
 
   let colorTemperatureBias = { r: 0, g: 0, b: 0 };
+
   let hasColorTempCompensation = false;
 
   const SAMPLE_SIZE = 2;
+
   const BUFFER_SIZE = 8;
+
   const HYSTERESIS_THRESHOLD = 6;
+
   const RGB_CHANGE_THRESHOLD = 55;
 
   let colorBuffer = [];
+
   let lastStableColorName = '';
+
   let lastStableHue = 0;
+
   let lastStableRGB = { r: 0, g: 0, b: 0 };
+
   let lastStableVariance = 0;
 
   let mismatchCounter = 0;
+
   const MISMATCH_FORCE_UPDATE = 5;
 
   let audioEnabled = false, lastSpokenName = '', pendingName = '', stableTimer = null;
+
   const STABLE_SPEECH_MS = 600;
 
   let consecutiveFrameCounter = 0;
+
   const MIN_CONSECUTIVE_FRAMES = 7;
 
   // ═══════════════════════════════════════════════════════════════════
+
   // MODO COMPARAÇÃO PONTO A PONTO - Variáveis de estado
+
   // ═══════════════════════════════════════════════════════════════════
+
   let comparisonRef = null;
+
   let comparisonSample = null;
+
   let selectingRef = false;
+
   let selectingSample = false;
+
   // ═══════════════════════════════════════════════════════════════════
 
   function toggleModeDropdown() {
+
     const dropdown = document.getElementById('mode-dropdown');
+
     dropdown.classList.toggle('show');
+
   }
 
   document.addEventListener('click', function(e) {
+
     const dropdown = document.getElementById('mode-dropdown');
+
     const btnModes = document.getElementById('btn-modes');
+
     if (!btnModes.contains(e.target) && !dropdown.contains(e.target)) {
+
       dropdown.classList.remove('show');
+
     }
+
   });
 
   // ═══════════════════════════════════════════════════════════════════
+
   // v2.4: CORRIGIDO - overlay de seleção é escondido ao escolher modo
+
   //       Calibração preservada ao trocar de modo
+
   // ═══════════════════════════════════════════════════════════════════
+
   function selectMode(mode) {
+
     currentMode = mode;
+
     const dropdown = document.getElementById('mode-dropdown');
+
     const btnModes = document.getElementById('btn-modes');
+
     const modeLabel = document.getElementById('mode-label');
+
     const modeSelectOverlay = document.getElementById('mode-select-overlay');
+
     const btnResetEstatico = document.getElementById('btn-reset-estatico');
 
     // ════════════════════════════════════════════════════════════════
+
     // MODO COMPARAÇÃO: Esconder painel e botões ao trocar de modo
+
     // ════════════════════════════════════════════════════════════════
+
     document.getElementById('btn-sel-ref').classList.remove('show');
+
     document.getElementById('btn-sel-sample').classList.remove('show');
+
     document.getElementById('btn-reset-ref').classList.remove('show');
+
     document.getElementById('btn-reset-sample').classList.remove('show');
+
     document.getElementById('btn-reset-comparacao').classList.remove('show');
+
     document.getElementById('comparison-panel').classList.remove('show');
 
     dropdown.classList.remove('show');
 
     // ════════════════════════════════════════════════════════════════
+
     // CORREÇÃO CRÍTICA v2.4: esconder overlay de seleção
+
     // ════════════════════════════════════════════════════════════════
+
     modeSelectOverlay.classList.add('hide');
 
     btnModes.classList.remove('mode-livre', 'mode-estatico', 'mode-comparacao');
 
     if (mode === 'livre') {
+
       btnModes.classList.add('mode-livre');
+
       modeLabel.textContent = 'MODO: 🎯 LIVRE';
 
       // v2.4: Mira obrigatoriamente no CENTRO ao entrar no modo LIVRE
+
       reticle.style.left = '50%';
+
       reticle.style.top = '50%';
+
       reticle.style.transform = 'translate(-50%, -50%)';
+
       reticle.classList.add('show');
 
       btnResetEstatico.classList.remove('show');
+
       staticAnalysisActive = false;
+
       staticPosition = null;
+
       staticFrozen = false;
 
       console.log('✅ MODO LIVRE ATIVADO - Mira fixa no centro (calibração preservada)');
+
     } else if (mode === 'estatico') {
+
       btnModes.classList.add('mode-estatico');
+
       modeLabel.textContent = 'MODO: 📍 ESTÁTICO';
+
       reticle.classList.remove('show');
+
       btnResetEstatico.classList.add('show');
+
       staticAnalysisActive = false;
+
       staticPosition = null;
+
       staticFrozen = false;
 
       console.log('✅ MODO ESTÁTICO ATIVADO - Clique na tela para analisar (calibração preservada)');
+
     } else if (mode === 'comparacao') {
+
       btnModes.classList.add('mode-comparacao');
+
       modeLabel.textContent = 'MODO: ⚖️ COMPARAÇÃO';
+
       reticle.classList.remove('show');
+
       btnResetEstatico.classList.remove('show');
+
       staticAnalysisActive = false;
+
       staticPosition = null;
+
       staticFrozen = false;
 
       // Mostrar botões e painel do modo comparação
+
       document.getElementById('btn-sel-ref').classList.add('show');
+
       document.getElementById('btn-sel-sample').classList.add('show');
+
       document.getElementById('btn-reset-ref').classList.add('show');
+
       document.getElementById('btn-reset-sample').classList.add('show');
+
       document.getElementById('btn-reset-comparacao').classList.add('show');
+
       document.getElementById('comparison-panel').classList.add('show');
 
       console.log('✅ MODO COMPARAÇÃO ATIVADO - Selecione Referência e Amostra (calibração preservada)');
+
     }
 
     const options = dropdown.querySelectorAll('.mode-option');
+
     options.forEach(opt => opt.classList.remove('active'));
+
     if (mode === 'livre') options[0].classList.add('active');
+
     if (mode === 'estatico') options[1].classList.add('active');
+
     if (mode === 'comparacao') options[2].classList.add('active');
+
   }
 
   // ═══════════════════════════════════════════════════════════════════
+
   // MODO ESTÁTICO - CLIQUE NA TELA
+
   // v2.4: Ao clicar, ativa análise. Após estabilizar (buffer cheio),
+
   //       congela. Só destrava com RESET ESTÁTICO.
+
   // ═══════════════════════════════════════════════════════════════════
+
   cameraContainer.addEventListener('click', function(e) {
+
     // ════════════════════════════════════════════════════════════════
+
     // MODO COMPARAÇÃO - CAPTURA DE REFERÊNCIA OU AMOSTRA
+
     // ════════════════════════════════════════════════════════════════
+
     if (currentMode === 'comparacao' && running) {
+
       const rect = cameraContainer.getBoundingClientRect();
+
       const x = e.clientX - rect.left;
+
       const y = e.clientY - rect.top;
 
       if (selectingRef) {
+
         captureRef(x, y);
+
         selectingRef = false;
+
         return;
+
       }
+
       if (selectingSample) {
+
         captureSample(x, y);
+
         selectingSample = false;
+
         return;
+
       }
+
       return;
+
     }
 
     if (currentMode !== 'estatico' || !running) return;
 
     // v2.4: Se já está congelado, ignora novo clique
+
     if (staticFrozen) {
+
       console.log('🔒 Modo ESTÁTICO travado - Use RESET ESTÁTICO para nova análise');
+
       return;
+
     }
 
     const rect = cameraContainer.getBoundingClientRect();
+
     const x = e.clientX - rect.left;
+
     const y = e.clientY - rect.top;
 
     staticPosition = { x, y };
+
     staticAnalysisActive = true;
+
     staticFrozen = false;
 
     // Posicionar mira no ponto clicado
+
     reticle.style.left = x + 'px';
+
     reticle.style.top = y + 'px';
+
     reticle.style.transform = 'translate(-50%, -50%)';
+
     reticle.classList.add('show');
 
     console.log('📍 Ponto selecionado:', x.toFixed(0), y.toFixed(0));
+
   });
 
   // ═══════════════════════════════════════════════════════════════════
+
   // RESET ESTÁTICO - LIBERAR NOVA ANÁLISE
+
   // v2.5: Adicionado reset de lastSpokenName/pendingName para que
+
   //       a próxima cor seja falada mesmo que seja a mesma anterior
+
   // ═══════════════════════════════════════════════════════════════════
+
   function resetEstatico() {
+
     if (currentMode !== 'estatico') return;
 
     staticPosition = null;
+
     staticAnalysisActive = false;
+
     staticFrozen = false;
+
     reticle.classList.remove('show');
 
     document.getElementById('color-name').textContent = '---';
+
     document.getElementById('color-name').style.color = '#445';
+
     document.getElementById('confidence-display').textContent = '';
+
     document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
+
     document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
+
     document.getElementById('color-swatch').style.background = '#1a1a2e';
 
     colorBuffer = [];
+
     lastStableColorName = '';
+
     lastStableRGB = { r: 0, g: 0, b: 0 };
+
     mismatchCounter = 0;
+
     consecutiveFrameCounter = 0;
 
     // ════════════════════════════════════════════════════════════════
+
     // v2.5: Reset das variáveis de áudio para forçar nova fala
+
     //       mesmo que a cor selecionada seja a mesma anterior
+
     // ════════════════════════════════════════════════════════════════
+
     lastSpokenName = '';
+
     pendingName = '';
+
     if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
 
     console.log('🔄 MODO ESTÁTICO RESETADO - Selecione novo ponto');
+
   }
+
   // ═══════════════════════════════════════════════════════════════════
 
   // ═══════════════════════════════════════════════════════════════════
+
   // MODO COMPARAÇÃO PONTO A PONTO - Funções de captura e cálculo
+
   // ═══════════════════════════════════════════════════════════════════
+
   function startRefSelection() {
+
     if (!systemOn || !running || currentMode !== 'comparacao') return;
+
     selectingRef = true;
+
     selectingSample = false;
+
     document.getElementById('color-name').textContent = 'Toque na tela: REFERÊNCIA';
+
     document.getElementById('color-name').style.color = '#8ec';
+
     console.log('⚖️ Aguardando clique para capturar REFERÊNCIA...');
+
   }
 
   function startSampleSelection() {
+
     if (!systemOn || !running || currentMode !== 'comparacao') return;
+
     selectingSample = true;
+
     selectingRef = false;
+
     document.getElementById('color-name').textContent = 'Toque na tela: AMOSTRA';
+
     document.getElementById('color-name').style.color = '#dd8';
+
     console.log('⚖️ Aguardando clique para capturar AMOSTRA...');
+
   }
 
   function captureRef(x, y) {
+
     const result = capturePoint(x, y, 'ref-thumb', 'ref-reticle-marker', 'ref-color-name');
+
     if (result) {
+
       comparisonRef = result;
+
       console.log('✅ REFERÊNCIA capturada:', result.name, 'RGB:', result.rgb, 'HSV:', result.hsv);
+
       updateComparison();
+
       if (audioEnabled) speakColor(result.name);
+
     }
+
   }
 
   function captureSample(x, y) {
+
     const result = capturePoint(x, y, 'sample-thumb', 'sample-reticle-marker', 'sample-color-name');
+
     if (result) {
+
       comparisonSample = result;
+
       console.log('✅ AMOSTRA capturada:', result.name, 'RGB:', result.rgb, 'HSV:', result.hsv);
+
       updateComparison();
+
       if (audioEnabled) speakColor(result.name);
+
     }
+
   }
 
   function capturePoint(x, y, thumbId, markerId, nameId) {
+
     const vw = video.videoWidth, vh = video.videoHeight;
+
     if (!vw || !vh) return null;
 
     // ── 1) Amostrar cor no ponto (canvas nativo oculto, preciso cirúrgico) ──
+
     canvas.width = vw;
+
     canvas.height = vh;
+
     ctx.drawImage(video, 0, 0, vw, vh);
 
     const cw = video.clientWidth, ch = video.clientHeight;
+
     const scale = Math.max(cw / vw, ch / vh);
+
     const offsetX = (vw * scale - cw) / 2;
+
     const offsetY = (vh * scale - ch) / 2;
 
     const nativeX = Math.round((x + offsetX) / scale);
+
     const nativeY = Math.round((y + offsetY) / scale);
+
     const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
 
     const x0 = Math.max(0, Math.min(vw - nativeSample * 2, nativeX - nativeSample));
+
     const y0 = Math.max(0, Math.min(vh - nativeSample * 2, nativeY - nativeSample));
-    const data = ctx.getImageData(x0, y0, nativeSample * 2, nativeSample * 2).data;
+
+    const data = ctx.getImageData(x0, y0, nativeSample  *2, nativeSample*  2).data;
 
     let rSum = 0, gSum = 0, bSum = 0, count = 0;
+
     for (let i = 0; i < data.length; i += 4) {
+
       rSum += data[i]; gSum += data[i + 1]; bSum += data[i + 2]; count++;
+
     }
+
     const rgb = {
+
       r: Math.round(rSum / count),
+
       g: Math.round(gSum / count),
+
       b: Math.round(bSum / count)
+
     };
 
     const rgbComp = applyColorTempCompensation(rgb);
+
     const hsv = rgbToHSV(rgbComp.r, rgbComp.g, rgbComp.b);
+
     const classification = classifyColorWithRuler(hsv, rgbComp, 0);
 
     // ── 2) Gerar thumbnail leve (max 400px) para não travar o mobile ──
+
     const MAX_THUMB_W = 400;
+
     const thumbW = Math.min(vw, MAX_THUMB_W);
+
     const thumbH = Math.round(thumbW * (vh / vw));
+
     const thumbScale = thumbW / vw;
 
     const thumbCanvas = document.createElement('canvas');
+
     thumbCanvas.width = thumbW;
+
     thumbCanvas.height = thumbH;
+
     const tCtx = thumbCanvas.getContext('2d');
 
     // Desenha frame reduzido
+
     tCtx.drawImage(video, 0, 0, thumbW, thumbH);
 
     // Coordenadas proporcionais no thumbnail
+
     const tx = nativeX * thumbScale;
+
     const ty = nativeY * thumbScale;
 
     // Desenha mira idêntica aos outros modos (cruz + caixa + círculo + dot)
+
     tCtx.strokeStyle = 'rgba(120,220,255,0.95)';
+
     tCtx.lineWidth = 2.5;
+
     tCtx.lineCap = 'round';
 
     // Cruz (reticle-h + reticle-v)
+
     const crossLen = 16 * thumbScale;
+
     tCtx.beginPath();
+
     tCtx.moveTo(tx - crossLen, ty);
+
     tCtx.lineTo(tx + crossLen, ty);
+
     tCtx.moveTo(tx, ty - crossLen);
+
     tCtx.lineTo(tx, ty + crossLen);
+
     tCtx.stroke();
 
     // Caixa (reticle-box) ~22px nativo
+
     const boxSize = 22 * thumbScale;
+
     tCtx.lineWidth = 1.8;
+
     tCtx.strokeRect(tx - boxSize / 2, ty - boxSize / 2, boxSize, boxSize);
 
     // Círculo tracejado (reticle-sample-circle) ~20px nativo
+
     const circRadius = 10 * thumbScale;
+
     tCtx.beginPath();
+
     tCtx.setLineDash([3, 3]);
+
     tCtx.arc(tx, ty, circRadius, 0, Math.PI * 2);
+
     tCtx.stroke();
+
     tCtx.setLineDash([]);
 
     // Dot central (reticle-dot) ~4px nativo
+
     const dotRadius = Math.max(2, 2.5 * thumbScale);
+
     tCtx.fillStyle = 'rgba(120,220,255,0.95)';
+
     tCtx.beginPath();
+
     tCtx.arc(tx, ty, dotRadius, 0, Math.PI * 2);
+
     tCtx.fill();
 
     // ── 3) Atualizar DOM com imagem leve e nome da cor ──
+
     document.getElementById(thumbId).src = thumbCanvas.toDataURL('image/jpeg', 0.7);
+
     document.getElementById(thumbId).style.display = 'block';
+
     document.getElementById(markerId).style.display = 'none'; // mira já está desenhada na imagem
+
     document.getElementById(nameId).textContent = classification.name;
+
     document.getElementById(nameId).style.color = classification.color;
 
     // Restaurar header
+
     document.getElementById('color-name').textContent = '---';
+
     document.getElementById('color-name').style.color = '#445';
 
     return {
+
       x, y,
+
       rgb: rgbComp,
+
       hsv,
+
       name: classification.name,
+
       color: classification.color
+
     };
+
   }
 
   function resetRef() {
+
     if (currentMode !== 'comparacao') return;
+
     comparisonRef = null;
+
     document.getElementById('ref-thumb').src = '';
+
     document.getElementById('ref-thumb').style.display = 'none';
+
     document.getElementById('ref-reticle-marker').style.display = 'none';
+
     document.getElementById('ref-color-name').textContent = '---';
+
     document.getElementById('ref-color-name').style.color = '#aac';
+
     updateComparison();
+
     console.log('🔄 REFERÊNCIA resetada');
+
   }
 
   function resetSample() {
+
     if (currentMode !== 'comparacao') return;
+
     comparisonSample = null;
+
     document.getElementById('sample-thumb').src = '';
+
     document.getElementById('sample-thumb').style.display = 'none';
+
     document.getElementById('sample-reticle-marker').style.display = 'none';
+
     document.getElementById('sample-color-name').textContent = '---';
+
     document.getElementById('sample-color-name').style.color = '#aac';
+
     updateComparison();
+
     console.log('🔄 AMOSTRA resetada');
+
   }
 
   function resetComparison() {
+
     if (currentMode !== 'comparacao') return;
+
     resetRef();
+
     resetSample();
+
     document.getElementById('color-name').textContent = '---';
+
     document.getElementById('color-name').style.color = '#445';
+
     console.log('🔄 COMPARAÇÃO COMPLETA RESETADA');
+
   }
 
   function getBaseColorName(name) {
+
     return name.replace(' Escuro', '').replace(' Claro', '');
+
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+
+  // MODO COMPARAÇÃO - Mapa espectral e cálculo de compatibilidade v2.7
+
+  // ═══════════════════════════════════════════════════════════════════
+
+  const SPECTRAL_ORDER = [
+
+    'Vermelho', 'Rosa', 'Magenta', 'Roxo', 'Azul', 'Ciano', 'Verde', 'Amarelo', 'Laranja'
+
+  ];
+
+  function getSpectralIndex(baseName) {
+
+    return SPECTRAL_ORDER.indexOf(baseName);
+
+  }
+
+  function areSpectralNeighbors(idx1, idx2) {
+
+    if (idx1 === -1 || idx2 === -1) return false;
+
+    if (idx1 === idx2) return true; // mesma cor
+
+    const len = SPECTRAL_ORDER.length;
+
+    const diff = Math.abs(idx1 - idx2);
+
+    return diff === 1 || diff === len - 1;
+
   }
 
   function calculateCompatibility(ref, sample) {
+
     const neutros = ['Preto', 'Cinza', 'Branco'];
+
     const refBase = getBaseColorName(ref.name);
+
     const sampleBase = getBaseColorName(sample.name);
+
     const refIsNeutro = neutros.includes(refBase);
+
     const sampleIsNeutro = neutros.includes(sampleBase);
 
-    // Ambos neutros: comparar por proximidade de valor/luminosidade
-    if (refIsNeutro && sampleIsNeutro) {
-      const diffV = Math.abs(ref.hsv.v - sample.hsv.v) / 100;
-      const distRGB = Math.sqrt(
-        Math.pow(ref.rgb.r - sample.rgb.r, 2) +
-        Math.pow(ref.rgb.g - sample.rgb.g, 2) +
-        Math.pow(ref.rgb.b - sample.rgb.b, 2)
-      ) / 441.67;
-      const dist = diffV * 0.6 + distRGB * 0.4;
-      return Math.max(0, Math.round(100 - dist * 100));
-    }
+    // ── 1) NEUTROS x COLORIDOS = 0% ──
 
-    // Um neutro e outro colorido: baixíssima compatibilidade
     if (refIsNeutro !== sampleIsNeutro) {
-      // Calcular mesmo assim, mas o resultado natural será baixo
-      // por causa da distância de Hue grande
+
+      return 0;
+
     }
 
-    // Calcular distância de Hue (circular)
+    // ── 2) AMBOS NEUTROS ──
+
+    if (refIsNeutro && sampleIsNeutro) {
+
+      // Opostos extremos = 0% obrigatório
+
+      if ((refBase === 'Branco' && sampleBase === 'Preto') || (refBase === 'Preto' && sampleBase === 'Branco')) {
+
+        return 0;
+
+      }
+
+      // Demais neutros: proximidade por V e RGB puro (sem floor artificial)
+
+      const maxRGBDist = Math.sqrt(3 * Math.pow(255, 2));
+
+      const rgbDist = Math.sqrt(
+
+        Math.pow(ref.rgb.r - sample.rgb.r, 2) +
+
+        Math.pow(ref.rgb.g - sample.rgb.g, 2) +
+
+        Math.pow(ref.rgb.b - sample.rgb.b, 2)
+
+      ) / maxRGBDist;
+
+      const vDist = Math.abs(ref.hsv.v - sample.hsv.v) / 100;
+
+      // Para neutros, Hue/Sat não são relevantes; usamos 60% V + 40% RGB
+
+      const dist = vDist * 0.60 + rgbDist * 0.40;
+
+      return Math.max(0, Math.round((1 - dist) * 100));
+
+    }
+
+    // ── 3) AMBOS COLORIDOS ──
+
+    const idxRef = getSpectralIndex(refBase);
+
+    const idxSample = getSpectralIndex(sampleBase);
+
+    // Se não são mesma cor nem vizinhos diretos no espectro = 0%
+
+    if (!areSpectralNeighbors(idxRef, idxSample)) {
+
+      return 0;
+
+    }
+
+    // Se chegou aqui: mesma cor ou vizinhos espectrais diretos
+
     let hueDiff = Math.abs(ref.hsv.h - sample.hsv.h);
+
     if (hueDiff > 180) hueDiff = 360 - hueDiff;
 
-    // Se diferença de Hue > 120 graus: cores opostas no espectro = 0%
-    if (hueDiff > 120) return 0;
-
-    // Cores de famílias completamente diferentes (pelo nome base) = penalidade extra
-    if (refBase !== sampleBase) {
-      // Se não são nem da mesma família nem "vizinhos aceitáveis" no espectro
-      // Usamos hueDiff como principal indicador; > 60 com nomes diferentes = 0
-      if (hueDiff > 60) return 0;
-    }
-
-    // Distâncias normalizadas
     const maxRGBDist = Math.sqrt(3 * Math.pow(255, 2));
+
     const rgbDist = Math.sqrt(
+
       Math.pow(ref.rgb.r - sample.rgb.r, 2) +
+
       Math.pow(ref.rgb.g - sample.rgb.g, 2) +
+
       Math.pow(ref.rgb.b - sample.rgb.b, 2)
+
     ) / maxRGBDist;
 
     const sDist = Math.abs(ref.hsv.s - sample.hsv.s) / 100;
+
     const vDist = Math.abs(ref.hsv.v - sample.hsv.v) / 100;
+
     const hDist = hueDiff / 180;
 
     // Pesos: RGB 40%, Hue 30%, Sat 15%, Val 15%
+
     const weightedDist = rgbDist * 0.40 + hDist * 0.30 + sDist * 0.15 + vDist * 0.15;
 
     let compat = Math.max(0, Math.round((1 - weightedDist) * 100));
 
-    // Mesma família de cor: garantir mínimo de compatibilidade se valores forem razoáveis
-    if (refBase === sampleBase && compat < 40) {
-      compat = 40 + Math.floor(compat / 3);
-    }
-
     return compat;
+
   }
 
   function updateComparison() {
+
     const percentEl = document.getElementById('compatibility-percent');
+
     if (!comparisonRef || !comparisonSample) {
+
       percentEl.textContent = '---';
+
       percentEl.className = 'comp-percent';
+
       return;
+
     }
 
     const compat = calculateCompatibility(comparisonRef, comparisonSample);
+
     percentEl.textContent = compat + '%';
 
     percentEl.className = 'comp-percent';
+
     if (compat === 0) {
+
       percentEl.classList.add('low');
+
     } else if (compat < 50) {
+
       percentEl.classList.add('medium');
+
     }
 
     console.log('⚖️ COMPATIBILIDADE:', compat + '%',
+
       '| Ref:', comparisonRef.name,
+
       '| Amostra:', comparisonSample.name);
+
   }
+
   // ═══════════════════════════════════════════════════════════════════
 
   function toggleSystem() {
+
     systemOn = !systemOn;
+
     const btn = document.getElementById('btn-system');
+
     const btns = ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black',
+
                   'btn-camera', 'btn-audio', 'btn-universal', 'btn-modes', 'btn-reset-estatico',
+
                   'btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao'];
 
     if (systemOn) {
+
       btn.textContent = 'SISTEMA/ON';
+
       btn.className = 'system-on';
+
       btns.forEach(id => {
+
         const el = document.getElementById(id);
+
         if (el) el.disabled = false;
+
       });
+
     } else {
+
       btn.textContent = 'SISTEMA/OFF';
+
       btn.className = 'system-off';
+
       btns.forEach(id => {
+
         const el = document.getElementById(id);
+
         if (el) el.disabled = true;
+
       });
+
       if (window.speechSynthesis) window.speechSynthesis.cancel();
+
       if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
+
       document.getElementById('color-name').textContent = '---';
+
       document.getElementById('color-name').style.color = '#445';
+
       document.getElementById('confidence-display').textContent = '';
+
       document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
+
       document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
+
       document.getElementById('color-swatch').style.background = '#1a1a2e';
+
     }
+
   }
 
   function rgbToHSV(r, g, b) {
+
     r /= 255; g /= 255; b /= 255;
+
     const max = Math.max(r, g, b), min = Math.min(r, g, b), delta = max - min;
+
     let h = 0, s = 0, v = max;
+
     if (delta !== 0) {
+
       s = delta / max;
+
       if (max === r) h = ((g - b) / delta + (g < b ? 6 : 0)) / 6;
+
       else if (max === g) h = ((b - r) / delta + 2) / 6;
+
       else h = ((r - g) / delta + 4) / 6;
+
     }
+
     return { h: h*360, s: s*100, v: v*100 };
+
   }
 
   function detectColorTemperature(rgb) {
+
     const avg = (rgb.r + rgb.g + rgb.b) / 3;
+
     const rDev = rgb.r - avg;
+
     const gDev = rgb.g - avg;
+
     const bDev = rgb.b - avg;
 
     let lightType = 'Neutra';
+
     if (bDev > 10 && bDev > rDev) {
+
       lightType = 'Fria (Azulada)';
+
     } else if (rDev > 10 && rDev > bDev) {
+
       lightType = 'Quente (Amarelada)';
+
     }
 
     colorTemperatureBias = { r: -rDev, g: -gDev, b: -bDev };
+
     hasColorTempCompensation = true;
 
     return { lightType, bias: colorTemperatureBias };
+
   }
 
   function applyColorTempCompensation(rgb) {
+
     if (!hasColorTempCompensation) return rgb;
+
     return {
+
       r: Math.max(0, Math.min(255, Math.round(rgb.r + colorTemperatureBias.r))),
+
       g: Math.max(0, Math.min(255, Math.round(rgb.g + colorTemperatureBias.g))),
+
       b: Math.max(0, Math.min(255, Math.round(rgb.b + colorTemperatureBias.b)))
+
     };
+
   }
 
   function normalizeV(vRaw) {
+
     if (!isWhiteCalibrated || !isBlackCalibrated) return vRaw;
+
     const vWhite = whiteCalibration.hsv.v;
+
     const vBlack = blackCalibration.hsv.v;
+
     const vNormalized = ((vRaw - vBlack) / (vWhite - vBlack)) * 100;
+
     return Math.max(0, Math.min(100, vNormalized));
+
   }
 
   function calculateVariance(buffer) {
+
     if (buffer.length < 3) return 0;
+
     const values = buffer.map(item => item.hsv.v);
+
     const mean = values.reduce((a, b) => a + b, 0) / values.length;
+
     const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+
     return Math.sqrt(variance);
+
   }
 
   function isCalibrationWhite(hsv, rgb) {
+
     if (!isWhiteCalibrated || !whiteCalibration) return false;
+
     const base = whiteCalibration;
+
     const dr = rgb.r - base.rgb.r;
+
     const dg = rgb.g - base.rgb.g;
+
     const db = rgb.b - base.rgb.b;
+
     const rgbDistance = Math.sqrt(dr*dr + dg*dg + db*db);
+
     const vDiff = Math.abs(hsv.v - base.hsv.v);
+
     const isSLow = hsv.s <= 30;
+
     if (rgbDistance <= 50 || (vDiff <= 15 && isSLow)) return true;
+
     if (hsv.v >= base.hsv.v && hsv.s <= 20) return true;
+
     return false;
+
   }
 
   function isCalibrationBlack(hsv, rgb) {
+
     if (!isBlackCalibrated || !blackCalibration) return false;
+
     const base = blackCalibration;
+
     const dr = rgb.r - base.rgb.r;
+
     const dg = rgb.g - base.rgb.g;
+
     const db = rgb.b - base.rgb.b;
+
     const rgbDistance = Math.sqrt(dr*dr + dg*dg + db*db);
+
     const vDiff = Math.abs(hsv.v - base.hsv.v);
+
     const isSLow = hsv.s <= 35;
+
     if (rgbDistance <= 40 || (vDiff <= 12 && isSLow)) return true;
+
     const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
+
     if (maxRGB <= base.rgb.r + 20 && maxRGB <= base.rgb.g + 20 && maxRGB <= base.rgb.b + 20 && hsv.s <= 35) return true;
+
     return false;
+
   }
 
   function classifyColorWithRuler(hsv, rgb, variance) {
+
     const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
+
     const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
 
     if (maxRGB <= 15 || avgRGB <= 10) {
+
       return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
+
     }
+
     if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) {
+
       return { name: 'Branco', color: '#ffffff', confidence: 99 };
+
     }
+
     if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) {
+
       return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
+
     }
 
     const { h, s } = hsv;
+
     const v = normalizeV(hsv.v);
+
     const r = rgb.r, g = rgb.g, b = rgb.b;
 
     if (v < 22 && s < 35) {
+
       return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+
     }
+
     if (maxRGB < 50 && s < 40) {
+
       return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+
     }
 
     if (s < 15) {
+
       if (isWhiteCalibrated && isBlackCalibrated) {
+
         if (v >= 85) return { name: 'Branco', color: '#ffffff', confidence: 98 };
+
         else if (v <= 20) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+
         else return { name: 'Cinza', color: '#9999aa', confidence: 96 };
+
       } else if (isWhiteCalibrated) {
+
         const baseV = whiteCalibration.hsv.v;
+
         if (v >= baseV - 10) return { name: 'Branco', color: '#ffffff', confidence: 98 };
+
         else if (v < baseV * 0.4) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+
         else return { name: 'Cinza', color: '#9999aa', confidence: 96 };
+
       } else {
+
         if (v >= 72) return { name: 'Branco', color: '#ffffff', confidence: 98 };
+
         else if (v <= 28) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+
         return { name: 'Cinza', color: '#9999aa', confidence: 96 };
+
       }
+
     }
 
     let baseName = '', baseColor = '', confidence = 98;
 
     if ((h >= 290) || (h < 20)) {
+
       if (r > Math.max(g, b) && b >= 60 && s >= 20) {
+
         baseName = 'Rosa'; baseColor = '#ff88aa'; confidence = 95;
+
       } else if (r > Math.max(g, b) && b < 60 && s >= 30) {
+
         baseName = 'Vermelho'; baseColor = '#ef4444'; confidence = 98;
+
       } else {
+
         baseName = 'Magenta'; baseColor = '#d946ef'; confidence = 95;
+
       }
+
     }
+
     else if (h >= 255 && h < 290 && s >= 25) {
+
       if (b > r && v < 65) {
+
         baseName = 'Roxo'; baseColor = '#a855f7'; confidence = 98;
+
       } else {
+
         baseName = 'Magenta'; baseColor = '#d946ef'; confidence = 95;
+
       }
+
     }
+
     else if (h >= 20 && h < 35) { baseName = 'Laranja'; baseColor = '#f97316'; }
+
     else if (h >= 35 && h < 70) { baseName = 'Amarelo'; baseColor = '#fbbf24'; }
+
     else if (h >= 70 && h < 165) { baseName = 'Verde'; baseColor = '#22c55e'; }
+
     else if (h >= 165 && h < 190) { baseName = 'Ciano'; baseColor = '#06b6d4'; }
+
     else if (h >= 190 && h < 255) { baseName = 'Azul'; baseColor = '#3b82f6'; }
 
     let modifier = '';
+
     if (!universalMode) {
+
       if (v < 28) modifier = ' Escuro';
+
       else if (v > 82 && s < 45) modifier = ' Claro';
+
     }
 
     return { name: baseName + modifier, color: baseColor, confidence };
+
   }
 
   function addToBuffer(hsv, rgb) {
+
     colorBuffer.push({ hsv, rgb });
+
     if (colorBuffer.length > BUFFER_SIZE) colorBuffer.shift();
+
   }
 
   function getStableColor() {
+
     if (colorBuffer.length < 3) return null;
+
     const filteredBuffer = filterOutliers(colorBuffer);
+
     if (filteredBuffer.length === 0) return null;
 
     let avgH = 0, avgS = 0, avgV = 0, avgR = 0, avgG = 0, avgB = 0;
+
     let sinSum = 0, cosSum = 0;
 
     filteredBuffer.forEach(item => {
+
       const radH = item.hsv.h * Math.PI / 180;
+
       sinSum += Math.sin(radH);
+
       cosSum += Math.cos(radH);
+
       avgS += item.hsv.s;
+
       avgV += item.hsv.v;
+
       avgR += item.rgb.r;
+
       avgG += item.rgb.g;
+
       avgB += item.rgb.b;
+
     });
 
     const len = filteredBuffer.length;
+
     avgH = Math.atan2(sinSum / len, cosSum / len) * 180 / Math.PI;
+
     if (avgH < 0) avgH += 360;
+
     avgS /= len; avgV /= len;
+
     avgR = Math.round(avgR / len);
+
     avgG = Math.round(avgG / len);
+
     avgB = Math.round(avgB / len);
 
     return { hsv: { h: avgH, s: avgS, v: avgV }, rgb: { r: avgR, g: avgG, b: avgB } };
+
   }
 
   function filterOutliers(buffer) {
+
     if (buffer.length < 5) return buffer;
+
     const vValues = buffer.map(item => item.hsv.v).sort((a, b) => a - b);
+
     const median = vValues[Math.floor(vValues.length / 2)];
+
     return buffer.filter(item => Math.abs(item.hsv.v - median) < 30);
+
   }
 
   function detectObjectChange(newRGB) {
+
     if (!lastStableRGB.r && !lastStableRGB.g && !lastStableRGB.b) return false;
+
     const deltaR = Math.abs(newRGB.r - lastStableRGB.r);
+
     const deltaG = Math.abs(newRGB.g - lastStableRGB.g);
+
     const deltaB = Math.abs(newRGB.b - lastStableRGB.b);
+
     const rgbDistance = Math.sqrt(deltaR*deltaR + deltaG*deltaG + deltaB*deltaB);
+
     return rgbDistance > RGB_CHANGE_THRESHOLD;
+
   }
 
   function shouldUpdateColor(newHue, newColorName, newRGB, newSat, newVariance) {
+
     if (!lastStableColorName) return true;
+
     if (detectObjectChange(newRGB)) {
+
       consecutiveFrameCounter = 0;
+
       return true;
+
     }
+
     if (Math.abs(newVariance - lastStableVariance) > 10) return true;
 
     if (newColorName !== lastStableColorName) {
+
       let diff = Math.abs(newHue - lastStableHue);
+
       if (diff > 180) diff = 360 - diff;
+
       const hueDiffSignificant = diff >= HYSTERESIS_THRESHOLD;
+
       const saturationChange = Math.abs(newSat - (colorBuffer[colorBuffer.length - 1]?.hsv.s || 0)) > 18;
 
       if (hueDiffSignificant || saturationChange) {
+
         consecutiveFrameCounter++;
+
         return consecutiveFrameCounter >= MIN_CONSECUTIVE_FRAMES;
+
       } else {
+
         consecutiveFrameCounter = 0;
+
         return false;
+
       }
+
     }
 
     consecutiveFrameCounter = 0;
+
     return true;
+
   }
 
   // ═══════════════════════════════════════════════════════════════════
+
   // SAMPLE PIXELS - ORIGINAL v2.2 (centro fixo, precisão cirúrgica)
+
   // ═══════════════════════════════════════════════════════════════════
+
   function samplePixels() {
+
     const vw = video.videoWidth, vh = video.videoHeight;
+
     if (!vw || !vh) return null;
+
     const cw = video.clientWidth, ch = video.clientHeight;
+
     const scale = Math.max(cw / vw, ch / vh);
+
     const offsetX = (vw * scale - cw) / 2;
+
     const offsetY = (vh * scale - ch) / 2;
+
     const nativeCX = Math.round((cw / 2 + offsetX) / scale);
+
     const nativeCY = Math.round((ch / 2 + offsetY) / scale);
+
     const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
 
     canvas.width = vw; canvas.height = vh;
+
     ctx.drawImage(video, 0, 0);
 
     const x0 = Math.max(0, nativeCX - nativeSample);
+
     const y0 = Math.max(0, nativeCY - nativeSample);
+
     const data = ctx.getImageData(x0, y0, nativeSample*2, nativeSample*2).data;
 
     let rSum = 0, gSum = 0, bSum = 0, count = 0;
+
     for (let i = 0; i < data.length; i += 4) {
+
       rSum += data[i]; gSum += data[i + 1]; bSum += data[i + 2]; count++;
+
     }
+
     return { r: Math.round(rSum / count), g: Math.round(gSum / count), b: Math.round(bSum / count) };
+
   }
 
   // Função separada para modo estático (mesma lógica com coordenadas customizadas)
+
   function samplePixelsEstatico(x, y) {
+
     const vw = video.videoWidth, vh = video.videoHeight;
+
     if (!vw || !vh) return null;
 
     // Usa MESMO cálculo de escala do modo LIVRE para consistência
+
     const cw = video.clientWidth, ch = video.clientHeight;
+
     const scale = Math.max(cw / vw, ch / vh);
+
     const offsetX = (vw * scale - cw) / 2;
+
     const offsetY = (vh * scale - ch) / 2;
 
     const nativeCX = Math.round((x + offsetX) / scale);
+
     const nativeCY = Math.round((y + offsetY) / scale);
+
     const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
 
     canvas.width = vw; canvas.height = vh;
+
     ctx.drawImage(video, 0, 0);
 
     const x0 = Math.max(0, Math.min(vw - nativeSample * 2, nativeCX - nativeSample));
+
     const y0 = Math.max(0, Math.min(vh - nativeSample * 2, nativeCY - nativeSample));
+
     const data = ctx.getImageData(x0, y0, nativeSample*2, nativeSample*2).data;
 
     let rSum = 0, gSum = 0, bSum = 0, count = 0;
+
     for (let i = 0; i < data.length; i += 4) {
+
       rSum += data[i]; gSum += data[i + 1]; bSum += data[i + 2]; count++;
+
     }
+
     return { r: Math.round(rSum / count), g: Math.round(gSum / count), b: Math.round(bSum / count) };
+
   }
+
   // ═══════════════════════════════════════════════════════════════════
 
   function toggleAudio() {
+
     if (!systemOn) return;
+
     if (window.speechSynthesis) window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+
     audioEnabled = !audioEnabled;
+
     const btn = document.getElementById('btn-audio');
+
     if (audioEnabled) {
+
       btn.textContent = '🔊 Áudio'; btn.classList.add('audio-on');
+
     } else {
+
       btn.textContent = '🔇 Áudio'; btn.classList.remove('audio-on');
+
       if (window.speechSynthesis) window.speechSynthesis.cancel();
+
       if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
+
       pendingName = ''; lastSpokenName = '';
+
     }
+
   }
 
   function toggleUniversalMode() {
+
     if (!systemOn) return;
+
     universalMode = !universalMode;
+
     const btn = document.getElementById('btn-universal');
+
     btn.textContent = universalMode ? '⭐ Universal' : '☆ Universal';
+
     btn.classList.toggle('universal-on', universalMode);
+
     lastSpokenName = ''; pendingName = '';
+
     if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
+
   }
 
   function speakColor(name) {
+
     if (!window.speechSynthesis) return;
+
     window.speechSynthesis.cancel();
+
     setTimeout(() => {
+
       if (!audioEnabled) return;
+
       const utt = new SpeechSynthesisUtterance(name);
+
       utt.lang = 'pt-BR'; utt.rate = 1.1; utt.pitch = 1.0;
+
       window.speechSynthesis.speak(utt);
+
     }, 60);
+
   }
 
   function triggerAudioIfChanged(name) {
+
     if (!audioEnabled) return;
+
     if (name === lastSpokenName) {
+
       if (pendingName !== name && stableTimer) {
+
         clearTimeout(stableTimer); stableTimer = null; pendingName = '';
+
       }
+
       return;
+
     }
+
     if (name !== pendingName) {
+
       pendingName = name;
+
       if (stableTimer) clearTimeout(stableTimer);
+
       stableTimer = setTimeout(() => {
+
         if (!audioEnabled) { stableTimer = null; return; }
+
         lastSpokenName = pendingName;
+
         speakColor(pendingName);
+
         stableTimer = null;
+
       }, STABLE_SPEECH_MS);
+
     }
+
   }
 
   // v2.4: Status simplificado (sem distinção PRO/Normal)
+
   function updateCalibrationStatus() {
+
     let statusText = 'Base: ';
 
     if (isWhiteCalibrated && isBlackCalibrated) {
+
       const vRange = whiteCalibration.hsv.v - blackCalibration.hsv.v;
+
       statusText += `Régua Completa (${vRange.toFixed(0)}% range)`;
+
     } else if (isWhiteCalibrated) {
+
       statusText += `Branco V:${whiteCalibration.hsv.v.toFixed(0)}%`;
+
     } else if (isBlackCalibrated) {
+
       statusText += `Preto V:${blackCalibration.hsv.v.toFixed(0)}%`;
+
     } else {
+
       statusText += 'não calibrada';
+
     }
 
     document.getElementById('base-info').textContent = statusText;
+
   }
 
   function update() {
+
     if (!running || video.readyState < 2) {
+
       requestAnimationFrame(update);
+
       return;
+
     }
 
     if (!systemOn) {
+
       requestAnimationFrame(update);
+
       return;
+
     }
 
     // ════════════════════════════════════════════════════════════════
+
     // MODO COMPARAÇÃO: Não executa análise contínua de cor
+
     // Apenas mantém o vídeo em fluxo aguardando cliques de captura
+
     // ════════════════════════════════════════════════════════════════
+
     if (currentMode === 'comparacao') {
+
       requestAnimationFrame(update);
+
       return;
+
     }
 
     let pixels;
 
     if (currentMode === 'livre') {
+
       // MODO LIVRE: centro fixo (original v2.2)
+
       pixels = samplePixels();
+
     } else if (currentMode === 'estatico' && staticPosition) {
+
       // MODO ESTÁTICO: posição clicada
+
       pixels = samplePixelsEstatico(staticPosition.x, staticPosition.y);
+
     } else {
+
       // Espera clicar ou modo não definido
+
       requestAnimationFrame(update);
+
       return;
+
     }
 
     // ═══════════════════════════════════════════════════════════════════
+
     // v2.4: MODO ESTÁTICO CONGELADO - não processa mais frames
+
     //       Displays permanecem travados na última leitura
+
     //       Mira permanece fixa no ponto selecionado
+
     // ═══════════════════════════════════════════════════════════════════
+
     if (currentMode === 'estatico' && staticFrozen) {
+
       requestAnimationFrame(update);
+
       return;
+
     }
 
     if (!pixels) {
+
       requestAnimationFrame(update);
+
       return;
+
     }
 
     pixels = applyColorTempCompensation(pixels);
 
     const { r, g, b } = pixels;
+
     const rawHsv = rgbToHSV(r, g, b);
 
     addToBuffer(rawHsv, { r, g, b });
 
     const stable = getStableColor();
+
     if (!stable) {
+
       requestAnimationFrame(update);
+
       return;
+
     }
 
     const variance = calculateVariance(colorBuffer);
+
     const classification = classifyColorWithRuler(stable.hsv, stable.rgb, variance);
 
     if (classification.name !== lastStableColorName && lastStableColorName !== '') {
+
       mismatchCounter++;
+
     } else {
+
       mismatchCounter = 0;
+
     }
 
     const forceUpdate = mismatchCounter >= MISMATCH_FORCE_UPDATE;
@@ -1637,175 +2979,303 @@
     let shouldUpdate = true;
 
     if (currentMode === 'livre') {
+
       shouldUpdate = forceUpdate || shouldUpdateColor(stable.hsv.h, classification.name, stable.rgb, stable.hsv.s, variance);
+
     }
 
     if (shouldUpdate) {
+
       if (forceUpdate) {
+
         colorBuffer = colorBuffer.slice(-3);
+
         mismatchCounter = 0;
+
         consecutiveFrameCounter = 0;
+
       }
 
       if (detectObjectChange(stable.rgb)) {
+
         colorBuffer = colorBuffer.slice(-2);
+
         consecutiveFrameCounter = 0;
+
       }
 
       lastStableColorName = classification.name;
+
       lastStableHue = stable.hsv.h;
+
       lastStableRGB = { ...stable.rgb };
+
       lastStableVariance = variance;
 
       document.getElementById('color-name').textContent = classification.name;
+
       document.getElementById('color-name').style.color = classification.color;
+
       document.getElementById('confidence-display').textContent = `${classification.confidence}%`;
+
       document.getElementById('confidence-display').style.color =
+
         classification.confidence > 95 ? '#6a6' :
+
         classification.confidence > 85 ? '#fa0' : '#f66';
 
       triggerAudioIfChanged(classification.name);
 
       // ═══════════════════════════════════════════════════════════════════
+
       // v2.4: MODO ESTÁTICO - Após buffer encher (BUFFER_SIZE frames)
+
       //       e classificação estabilizar, CONGELA a leitura.
+
       //       Só destrava com botão RESET ESTÁTICO.
+
       // ═══════════════════════════════════════════════════════════════════
+
       if (currentMode === 'estatico' && colorBuffer.length >= BUFFER_SIZE) {
+
         staticFrozen = true;
+
         console.log('🔒 Modo ESTÁTICO CONGELADO - Use RESET ESTÁTICO para nova análise');
+
         console.log('   Cor detectada:', classification.name, 'Confiança:', classification.confidence + '%');
+
       }
+
     }
 
     document.getElementById('rgb-line').innerHTML =
+
       `<span class="lbl">R:</span>${stable.rgb.r} <span class="lbl">G:</span>${stable.rgb.g} <span class="lbl">B:</span>${stable.rgb.b}`;
+
     document.getElementById('hsv-line').innerHTML =
+
       `<span class="lbl">H:</span>${stable.hsv.h.toFixed(0)}° <span class="lbl">S:</span>${stable.hsv.s.toFixed(0)}% <span class="lbl">V:</span>${stable.hsv.v.toFixed(0)}%`;
+
     document.getElementById('color-swatch').style.background =
+
       `rgb(${stable.rgb.r},${stable.rgb.g},${stable.rgb.b})`;
 
     requestAnimationFrame(update);
+
   }
 
   async function getDevices() {
+
     const devs = await navigator.mediaDevices.enumerateDevices();
+
     devices = devs.filter(d => d.kind === 'videoinput');
+
   }
 
   async function openCamera(preferredDeviceId) {
+
     if (stream) stream.getTracks().forEach(t => t.stop());
+
     const tryOpen = async (constraints) => {
+
       stream = await navigator.mediaDevices.getUserMedia(constraints);
+
       video.srcObject = stream;
+
     };
+
     if (preferredDeviceId) {
+
       try {
+
         await tryOpen({ video: { deviceId: { exact: preferredDeviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
+
         return;
+
       } catch (_) {}
+
     }
+
     try {
+
       await tryOpen({ video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
+
       return;
+
     } catch (_) {}
+
     try {
+
       await tryOpen({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } });
+
       return;
+
     } catch (_) {}
+
     try {
+
       await tryOpen({ video: true });
+
     } catch (e) {
+
       alert('Erro ao acessar a câmera: ' + e.message);
+
     }
+
   }
 
   async function startCamera() {
+
     if (!systemOn) return;
+
     document.getElementById('start-overlay').classList.add('hide');
+
     await getDevices();
+
     await openCamera();
+
     running = true;
+
     requestAnimationFrame(update);
+
   }
 
   async function switchCamera() {
+
     if (!systemOn) return;
+
     if (devices.length < 2) {
+
       alert('Apenas uma câmera disponível.');
+
       return;
+
     }
+
     deviceIndex = (deviceIndex + 1) % devices.length;
+
     await openCamera(devices[deviceIndex].deviceId);
+
   }
 
   // ═══════════════════════════════════════════════════════════════════
+
   // v2.4: CALIBRAR BRANCO - Lógica PRO unificada (sempre 30 frames)
+
   // ═══════════════════════════════════════════════════════════════════
+
   async function calibrateWhite() {
+
     if (!systemOn) return;
+
     if (!running) {
+
       alert('Inicie a câmera primeiro.');
+
       return;
+
     }
+
     if (!currentMode) {
+
       alert('Selecione um modo (LIVRE ou ESTÁTICO) primeiro.');
+
       return;
+
     }
 
     let samples = [];
+
     const numFrames = 30;
 
     for (let i = 0; i < numFrames; i++) {
+
       let pixels;
+
       if (currentMode === 'estatico' && staticPosition) {
+
         pixels = samplePixelsEstatico(staticPosition.x, staticPosition.y);
+
       } else {
+
         pixels = samplePixels();
+
       }
+
       if (pixels) {
+
         const hsv = rgbToHSV(pixels.r, pixels.g, pixels.b);
+
         samples.push({ hsv, rgb: pixels });
+
       }
+
       await new Promise(resolve => setTimeout(resolve, 33));
+
     }
 
     if (samples.length > 5) {
+
       const vValues = samples.map(s => s.hsv.v).sort((a, b) => a - b);
+
       const median = vValues[Math.floor(vValues.length / 2)];
+
       samples = samples.filter(s => Math.abs(s.hsv.v - median) < 20);
+
     }
 
     if (samples.length === 0) {
+
       alert('Erro na calibração. Tente novamente.');
+
       return;
+
     }
 
     let avgH = 0, avgS = 0, avgV = 0, avgR = 0, avgG = 0, avgB = 0;
+
     let sinSum = 0, cosSum = 0;
 
     samples.forEach(item => {
+
       const radH = item.hsv.h * Math.PI / 180;
+
       sinSum += Math.sin(radH);
+
       cosSum += Math.cos(radH);
+
       avgS += item.hsv.s;
+
       avgV += item.hsv.v;
+
       avgR += item.rgb.r;
+
       avgG += item.rgb.g;
+
       avgB += item.rgb.b;
+
     });
 
     const len = samples.length;
+
     avgH = Math.atan2(sinSum / len, cosSum / len) * 180 / Math.PI;
+
     if (avgH < 0) avgH += 360;
+
     avgS /= len; avgV /= len;
+
     avgR = Math.round(avgR / len);
+
     avgG = Math.round(avgG / len);
+
     avgB = Math.round(avgB / len);
 
     whiteCalibration = {
+
       hsv: { h: avgH, s: avgS, v: avgV },
+
       rgb: { r: avgR, g: avgG, b: avgB }
+
     };
 
     isWhiteCalibrated = true;
@@ -1813,6 +3283,7 @@
     const tempResult = detectColorTemperature(whiteCalibration.rgb);
 
     document.getElementById('color-name').textContent = 'Branco';
+
     document.getElementById('color-name').style.color = '#ffffff';
 
     document.getElementById('btn-calibrate-white').classList.add('calibrated');
@@ -1820,103 +3291,175 @@
     updateCalibrationStatus();
 
     colorBuffer = [];
+
     lastStableColorName = 'Branco';
+
     lastStableHue = avgH;
+
     lastStableRGB = { r: avgR, g: avgG, b: avgB };
+
     lastStableVariance = 0;
+
     mismatchCounter = 0;
+
     consecutiveFrameCounter = 0;
 
     if (audioEnabled) {
+
       speakColor('Branco calibrado');
+
     }
 
     console.log('═══════════════════════════════════════════════');
+
     console.log('✓ BRANCO CALIBRADO (30 frames + filtro outliers)');
+
     console.log('   Amostras:', len);
+
     console.log('   RGB:', whiteCalibration.rgb);
+
     console.log('   V:', whiteCalibration.hsv.v.toFixed(1) + '%');
+
     console.log('   Tipo de Luz:', tempResult.lightType);
+
     console.log('   Compensação:',
+
       'R' + (tempResult.bias.r >= 0 ? '+' : '') + tempResult.bias.r.toFixed(1),
+
       'G' + (tempResult.bias.g >= 0 ? '+' : '') + tempResult.bias.g.toFixed(1),
+
       'B' + (tempResult.bias.b >= 0 ? '+' : '') + tempResult.bias.b.toFixed(1)
+
     );
+
     console.log('═══════════════════════════════════════════════');
+
   }
 
   // ═══════════════════════════════════════════════════════════════════
+
   // v2.4: CALIBRAR PRETO - Lógica PRO unificada (sempre 30 frames)
+
   // ═══════════════════════════════════════════════════════════════════
+
   async function calibrateBlack() {
+
     if (!systemOn) return;
+
     if (!running) {
+
       alert('Inicie a câmera primeiro.');
+
       return;
+
     }
+
     if (!currentMode) {
+
       alert('Selecione um modo (LIVRE ou ESTÁTICO) primeiro.');
+
       return;
+
     }
 
     let samples = [];
+
     const numFrames = 30;
 
     for (let i = 0; i < numFrames; i++) {
+
       let pixels;
+
       if (currentMode === 'estatico' && staticPosition) {
+
         pixels = samplePixelsEstatico(staticPosition.x, staticPosition.y);
+
       } else {
+
         pixels = samplePixels();
+
       }
+
       if (pixels) {
+
         const hsv = rgbToHSV(pixels.r, pixels.g, pixels.b);
+
         samples.push({ hsv, rgb: pixels });
+
       }
+
       await new Promise(resolve => setTimeout(resolve, 33));
+
     }
 
     if (samples.length > 5) {
+
       const vValues = samples.map(s => s.hsv.v).sort((a, b) => a - b);
+
       const median = vValues[Math.floor(vValues.length / 2)];
+
       samples = samples.filter(s => Math.abs(s.hsv.v - median) < 20);
+
     }
 
     if (samples.length === 0) {
+
       alert('Erro na calibração. Tente novamente.');
+
       return;
+
     }
 
     let avgH = 0, avgS = 0, avgV = 0, avgR = 0, avgG = 0, avgB = 0;
+
     let sinSum = 0, cosSum = 0;
 
     samples.forEach(item => {
+
       const radH = item.hsv.h * Math.PI / 180;
+
       sinSum += Math.sin(radH);
+
       cosSum += Math.cos(radH);
+
       avgS += item.hsv.s;
+
       avgV += item.hsv.v;
+
       avgR += item.rgb.r;
+
       avgG += item.rgb.g;
+
       avgB += item.rgb.b;
+
     });
 
     const len = samples.length;
+
     avgH = Math.atan2(sinSum / len, cosSum / len) * 180 / Math.PI;
+
     if (avgH < 0) avgH += 360;
+
     avgS /= len; avgV /= len;
+
     avgR = Math.round(avgR / len);
+
     avgG = Math.round(avgG / len);
+
     avgB = Math.round(avgB / len);
 
     blackCalibration = {
+
       hsv: { h: avgH, s: avgS, v: avgV },
+
       rgb: { r: avgR, g: avgG, b: avgB }
+
     };
 
     isBlackCalibrated = true;
 
     document.getElementById('color-name').textContent = 'Preto';
+
     document.getElementById('color-name').style.color = '#1a1a2a';
 
     document.getElementById('btn-calibrate-black').classList.add('calibrated');
@@ -1924,37 +3467,59 @@
     updateCalibrationStatus();
 
     colorBuffer = [];
+
     lastStableColorName = 'Preto';
+
     lastStableHue = avgH;
+
     lastStableRGB = { r: avgR, g: avgG, b: avgB };
+
     lastStableVariance = 0;
+
     mismatchCounter = 0;
+
     consecutiveFrameCounter = 0;
 
     if (audioEnabled) {
+
       speakColor('Preto calibrado');
+
     }
 
     console.log('═══════════════════════════════════════════════');
+
     console.log('✓ PRETO CALIBRADO (30 frames + filtro outliers)');
+
     console.log('   Amostras:', len);
+
     console.log('   RGB:', blackCalibration.rgb);
+
     console.log('   V:', blackCalibration.hsv.v.toFixed(1) + '%');
+
     if (isWhiteCalibrated) {
+
       const range = whiteCalibration.hsv.v - blackCalibration.hsv.v;
+
       console.log('   RÉGUA COMPLETA: Range de', range.toFixed(1) + '%');
+
     }
+
     console.log('═══════════════════════════════════════════════');
+
   }
+
   // ═══════════════════════════════════════════════════════════════════
 
   function resetWhite() {
+
     if (!systemOn) return;
 
     whiteCalibration = null;
+
     isWhiteCalibrated = false;
 
     colorTemperatureBias = { r: 0, g: 0, b: 0 };
+
     hasColorTempCompensation = false;
 
     document.getElementById('btn-calibrate-white').classList.remove('calibrated');
@@ -1962,21 +3527,29 @@
     updateCalibrationStatus();
 
     colorBuffer = [];
+
     lastStableColorName = '';
+
     mismatchCounter = 0;
+
     consecutiveFrameCounter = 0;
 
     if (audioEnabled) {
+
       speakColor('Branco resetado');
+
     }
 
     console.log('✗ CALIBRAÇÃO DE BRANCO RESETADA');
+
   }
 
   function resetBlack() {
+
     if (!systemOn) return;
 
     blackCalibration = null;
+
     isBlackCalibrated = false;
 
     document.getElementById('btn-calibrate-black').classList.remove('calibrated');
@@ -1984,31 +3557,53 @@
     updateCalibrationStatus();
 
     colorBuffer = [];
+
     lastStableColorName = '';
+
     mismatchCounter = 0;
+
     consecutiveFrameCounter = 0;
 
     if (audioEnabled) {
+
       speakColor('Preto resetado');
+
     }
 
     console.log('✗ CALIBRAÇÃO DE PRETO RESETADA');
+
   }
 
   console.log('╔═══════════════════════════════════════════════════════════╗');
-  console.log('║    MOTOR DE CORES v2.6 - COMPARAÇÃO PONTO A PONTO       ║');
-  console.log('║    Nomenclaturas atualizadas + fala após reset estático  ║');
+
+  console.log('║    MOTOR DE CORES v2.7 - COMPARAÇÃO ESPECTRAL REFINADA  ║');
+
+  console.log('║    Cutoff 0% para opostos + vizinhança espectral        ║');
+
   console.log('║    + NOVO MODO: Comparação de duas amostras              ║');
+
   console.log('╚═══════════════════════════════════════════════════════════╝');
+
   console.log('');
+
   console.log('🎯 MODO LIVRE: Mira fixa no centro, análise contínua');
+
   console.log('📍 MODO ESTÁTICO: Clique para analisar (congela após estabilizar)');
+
   console.log('⚖️ MODO COMPARAÇÃO: Capture REFERÊNCIA e AMOSTRA, veja % de compatibilidade');
+
   console.log('◆ Calibrar Branco: 30 frames (lógica PRO unificada)');
+
   console.log('◆ Calibrar Preto: 30 frames (lógica PRO unificada)');
+
   console.log('🔒 Resetar Estático: Única forma de destravar modo ESTÁTICO');
+
   console.log('🔊 v2.5: Após resetar estático, cor é falada mesmo que repetida');
+
   console.log('');
+
 </script>
+
 </body>
+
 </html>
