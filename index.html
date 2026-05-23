@@ -206,10 +206,10 @@
   /* ═══════════════════════════════════════════════════════════════
      MODO COMPARAÇÃO PONTO A PONTO - Botões condicionais
      ═══════════════════════════════════════════════════════════════ */
-  #btn-sel-ref, #btn-sel-sample, #btn-reset-ref, #btn-reset-sample {
+  #btn-sel-ref, #btn-sel-sample, #btn-reset-ref, #btn-reset-sample, #btn-reset-comparacao {
     display: none;
   }
-  #btn-sel-ref.show, #btn-sel-sample.show, #btn-reset-ref.show, #btn-reset-sample.show {
+  #btn-sel-ref.show, #btn-sel-sample.show, #btn-reset-ref.show, #btn-reset-sample.show, #btn-reset-comparacao.show {
     display: inline-block;
   }
   #btn-sel-ref {
@@ -236,6 +236,12 @@
     border: 1px solid rgba(100,100,200,0.3);
   }
   #btn-reset-sample:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a4a, #4a4a6a); color: #aaf; }
+  #btn-reset-comparacao {
+    background: linear-gradient(135deg, #4a2a1e, #6a4a30);
+    color: #ffcc80;
+    border: 1px solid rgba(200,150,80,0.45);
+  }
+  #btn-reset-comparacao:hover:not(:disabled) { background: linear-gradient(135deg, #5a3a2e, #7a5a40); color: #ffe0a0; }
 
   #btn-camera {
     background: linear-gradient(135deg, #2a1a3e, #4a2a6e);
@@ -578,6 +584,7 @@
   <button class="btn-top" id="btn-sel-sample" onclick="startSampleSelection()">⚖️ Selecionar Amostra</button>
   <button class="btn-top" id="btn-reset-ref" onclick="resetRef()">&#10006; Resetar Referência</button>
   <button class="btn-top" id="btn-reset-sample" onclick="resetSample()">&#10006; Resetar Amostra</button>
+  <button class="btn-top" id="btn-reset-comparacao" onclick="resetComparison()">&#8635; Reset Comparação</button>
 
   <button class="btn-top" id="btn-camera" onclick="switchCamera()">&#8635; Câmera</button>
   <button class="btn-top" id="btn-audio" onclick="toggleAudio()">&#128263; Áudio</button>
@@ -722,6 +729,7 @@
     document.getElementById('btn-sel-sample').classList.remove('show');
     document.getElementById('btn-reset-ref').classList.remove('show');
     document.getElementById('btn-reset-sample').classList.remove('show');
+    document.getElementById('btn-reset-comparacao').classList.remove('show');
     document.getElementById('comparison-panel').classList.remove('show');
 
     dropdown.classList.remove('show');
@@ -773,6 +781,7 @@
       document.getElementById('btn-sel-sample').classList.add('show');
       document.getElementById('btn-reset-ref').classList.add('show');
       document.getElementById('btn-reset-sample').classList.add('show');
+      document.getElementById('btn-reset-comparacao').classList.add('show');
       document.getElementById('comparison-panel').classList.add('show');
 
       console.log('✅ MODO COMPARAÇÃO ATIVADO - Selecione Referência e Amostra (calibração preservada)');
@@ -882,7 +891,8 @@
     if (!systemOn || !running || currentMode !== 'comparacao') return;
     selectingRef = true;
     selectingSample = false;
-    alert('Toque na tela para selecionar o ponto de REFERÊNCIA');
+    document.getElementById('color-name').textContent = 'Toque na tela: REFERÊNCIA';
+    document.getElementById('color-name').style.color = '#8ec';
     console.log('⚖️ Aguardando clique para capturar REFERÊNCIA...');
   }
 
@@ -890,7 +900,8 @@
     if (!systemOn || !running || currentMode !== 'comparacao') return;
     selectingSample = true;
     selectingRef = false;
-    alert('Toque na tela para selecionar o ponto de AMOSTRA');
+    document.getElementById('color-name').textContent = 'Toque na tela: AMOSTRA';
+    document.getElementById('color-name').style.color = '#dd8';
     console.log('⚖️ Aguardando clique para capturar AMOSTRA...');
   }
 
@@ -900,6 +911,7 @@
       comparisonRef = result;
       console.log('✅ REFERÊNCIA capturada:', result.name, 'RGB:', result.rgb, 'HSV:', result.hsv);
       updateComparison();
+      if (audioEnabled) speakColor(result.name);
     }
   }
 
@@ -909,6 +921,7 @@
       comparisonSample = result;
       console.log('✅ AMOSTRA capturada:', result.name, 'RGB:', result.rgb, 'HSV:', result.hsv);
       updateComparison();
+      if (audioEnabled) speakColor(result.name);
     }
   }
 
@@ -916,39 +929,23 @@
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw || !vh) return null;
 
-    // Capturar frame como imagem com marcador
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = vw;
-    tempCanvas.height = vh;
-    const tCtx = tempCanvas.getContext('2d');
-    tCtx.drawImage(video, 0, 0, vw, vh);
+    // ── 1) Amostrar cor no ponto (canvas nativo oculto, preciso cirúrgico) ──
+    canvas.width = vw;
+    canvas.height = vh;
+    ctx.drawImage(video, 0, 0, vw, vh);
 
-    // Converter coordenadas da tela para coordenadas do vídeo
     const cw = video.clientWidth, ch = video.clientHeight;
     const scale = Math.max(cw / vw, ch / vh);
     const offsetX = (vw * scale - cw) / 2;
     const offsetY = (vh * scale - ch) / 2;
+
     const nativeX = Math.round((x + offsetX) / scale);
     const nativeY = Math.round((y + offsetY) / scale);
-
-    // Desenhar marcador no vídeo
-    tCtx.strokeStyle = 'rgba(120,220,255,0.95)';
-    tCtx.lineWidth = 3;
-    tCtx.beginPath();
-    tCtx.arc(nativeX, nativeY, 18, 0, Math.PI * 2);
-    tCtx.stroke();
-    tCtx.beginPath();
-    tCtx.moveTo(nativeX - 24, nativeY);
-    tCtx.lineTo(nativeX + 24, nativeY);
-    tCtx.moveTo(nativeX, nativeY - 24);
-    tCtx.lineTo(nativeX, nativeY + 24);
-    tCtx.stroke();
-
-    // Amostrar cor no ponto (usando mesma lógica do estático)
     const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
+
     const x0 = Math.max(0, Math.min(vw - nativeSample * 2, nativeX - nativeSample));
     const y0 = Math.max(0, Math.min(vh - nativeSample * 2, nativeY - nativeSample));
-    const data = tCtx.getImageData(x0, y0, nativeSample * 2, nativeSample * 2).data;
+    const data = ctx.getImageData(x0, y0, nativeSample * 2, nativeSample * 2).data;
 
     let rSum = 0, gSum = 0, bSum = 0, count = 0;
     for (let i = 0; i < data.length; i += 4) {
@@ -960,19 +957,72 @@
       b: Math.round(bSum / count)
     };
 
-    // Aplicar compensação de temperatura se existir
     const rgbComp = applyColorTempCompensation(rgb);
     const hsv = rgbToHSV(rgbComp.r, rgbComp.g, rgbComp.b);
-
-    // Classificar cor
     const classification = classifyColorWithRuler(hsv, rgbComp, 0);
 
-    // Atualizar thumbnail
-    document.getElementById(thumbId).src = tempCanvas.toDataURL('image/jpeg', 0.9);
+    // ── 2) Gerar thumbnail leve (max 400px) para não travar o mobile ──
+    const MAX_THUMB_W = 400;
+    const thumbW = Math.min(vw, MAX_THUMB_W);
+    const thumbH = Math.round(thumbW * (vh / vw));
+    const thumbScale = thumbW / vw;
+
+    const thumbCanvas = document.createElement('canvas');
+    thumbCanvas.width = thumbW;
+    thumbCanvas.height = thumbH;
+    const tCtx = thumbCanvas.getContext('2d');
+
+    // Desenha frame reduzido
+    tCtx.drawImage(video, 0, 0, thumbW, thumbH);
+
+    // Coordenadas proporcionais no thumbnail
+    const tx = nativeX * thumbScale;
+    const ty = nativeY * thumbScale;
+
+    // Desenha mira idêntica aos outros modos (cruz + caixa + círculo + dot)
+    tCtx.strokeStyle = 'rgba(120,220,255,0.95)';
+    tCtx.lineWidth = 2.5;
+    tCtx.lineCap = 'round';
+
+    // Cruz (reticle-h + reticle-v)
+    const crossLen = 16 * thumbScale;
+    tCtx.beginPath();
+    tCtx.moveTo(tx - crossLen, ty);
+    tCtx.lineTo(tx + crossLen, ty);
+    tCtx.moveTo(tx, ty - crossLen);
+    tCtx.lineTo(tx, ty + crossLen);
+    tCtx.stroke();
+
+    // Caixa (reticle-box) ~22px nativo
+    const boxSize = 22 * thumbScale;
+    tCtx.lineWidth = 1.8;
+    tCtx.strokeRect(tx - boxSize / 2, ty - boxSize / 2, boxSize, boxSize);
+
+    // Círculo tracejado (reticle-sample-circle) ~20px nativo
+    const circRadius = 10 * thumbScale;
+    tCtx.beginPath();
+    tCtx.setLineDash([3, 3]);
+    tCtx.arc(tx, ty, circRadius, 0, Math.PI * 2);
+    tCtx.stroke();
+    tCtx.setLineDash([]);
+
+    // Dot central (reticle-dot) ~4px nativo
+    const dotRadius = Math.max(2, 2.5 * thumbScale);
+    tCtx.fillStyle = 'rgba(120,220,255,0.95)';
+    tCtx.beginPath();
+    tCtx.arc(tx, ty, dotRadius, 0, Math.PI * 2);
+    tCtx.fill();
+
+    // ── 3) Atualizar DOM com imagem leve e nome da cor ──
+    document.getElementById(thumbId).src = thumbCanvas.toDataURL('image/jpeg', 0.7);
     document.getElementById(thumbId).style.display = 'block';
-    document.getElementById(markerId).style.display = 'block';
+    document.getElementById(markerId).style.display = 'none'; // mira já está desenhada na imagem
     document.getElementById(nameId).textContent = classification.name;
     document.getElementById(nameId).style.color = classification.color;
+
+    // Restaurar header
+    document.getElementById('color-name').textContent = '---';
+    document.getElementById('color-name').style.color = '#445';
 
     return {
       x, y,
@@ -1005,6 +1055,15 @@
     document.getElementById('sample-color-name').style.color = '#aac';
     updateComparison();
     console.log('🔄 AMOSTRA resetada');
+  }
+
+  function resetComparison() {
+    if (currentMode !== 'comparacao') return;
+    resetRef();
+    resetSample();
+    document.getElementById('color-name').textContent = '---';
+    document.getElementById('color-name').style.color = '#445';
+    console.log('🔄 COMPARAÇÃO COMPLETA RESETADA');
   }
 
   function getBaseColorName(name) {
@@ -1104,7 +1163,7 @@
     const btn = document.getElementById('btn-system');
     const btns = ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black',
                   'btn-camera', 'btn-audio', 'btn-universal', 'btn-modes', 'btn-reset-estatico',
-                  'btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample'];
+                  'btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao'];
 
     if (systemOn) {
       btn.textContent = 'SISTEMA/ON';
