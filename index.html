@@ -1,4 +1,318 @@
-<!DOCTYPE html>
+CHECKPOINT — MOTOR DE CORES v2.8
+Sistema de Interpretação de Cores por Câmera (Web/Mobile)
+GitHub Pages: darksonchaves.github.io
+Data do checkpoint: 23/05/2026
+Versão estável no ar: v2.8
+Próxima fase: Lapidação do Modo Normal + Criação do Modo Ampliado
+═══════════════════════════════════════════════════════════════════════════════
+
+1. IDENTIDADE DO PROJETO
+─────────────────────────
+Aplicativo web (HTML5/CSS3/JS vanilla) que interpreta cores em tempo real
+usando a câmera do dispositivo. O sistema prioriza precisão sobre velocidade.
+Não há backend; roda 100% client-side via GitHub Pages.
+
+2. PILARES FILOSÓFICOS (imutáveis)
+───────────────────────────────────
+1. QUALIDADE E PRECISÃO — interpretação correta acima de tudo.
+2. FIDELIDADE — resultado confiável e consistente.
+3. SISTEMA SE ADAPTA AO USUÁRIO — acessibilidade e flexibilidade.
+   Velocidade é consequência, nunca objetivo.
+
+3. STACK TÉCNICO
+────────────────
+- Linguagem: JavaScript (ES6+), sem frameworks.
+- Estilo: CSS3 puro, mobile-first, viewport lockado.
+- API: getUserMedia (WebRTC), Web Speech API (TTS pt-BR).
+- Canvas: getImageData para amostragem cirúrgica de pixels.
+- Deploy: GitHub Pages (arquivo único index.html).
+
+4. ARQUITETURA DE MODOS (implementados e validados)
+─────────────────────────────────────────────────────
+MODO LIVRE: mira fixa no centro da tela. Análise contínua em loop de
+requestAnimationFrame. O usuário apenas aponta e lê o resultado.
+
+MODO ESTÁTICO: usuário toca na tela para definir um ponto de análise.
+O sistema captura, preenche o buffer de estabilidade e TRAVA a leitura.
+Somente o botão "Resetar Estático" libera uma nova análise. Isso evita
+oscilação por tremor de mão ou mudança de luz.
+
+MODO COMPARAÇÃO: captura dois pontos independentes (REFERÊNCIA e AMOSTRA)
+e exibe um percentual de compatibilidade espectral. Possui painel inferior
+próprio com thumbnails das capturas, nome das cores e % central.
+
+MODO UNIVERSAL (toggle independente): quando ativo, suprime os adjetivos
+"Claro" e "Escuro", retornando apenas o nome base da cor (ex: "Azul").
+Quando inativo (Modo Normal), adjetivos são aplicados por thresholds de V.
+
+5. SISTEMA DE ESTABILIDADE (validado e operacional)
+─────────────────────────────────────────────────────
+- Buffer circular de 8 frames (BUFFER_SIZE = 8).
+- Mínimo de 7 frames consecutivos para alterar o nome da cor exibido.
+- Histerese de 6 graus (HYSTERESIS_THRESHOLD = 6) no eixo Hue.
+- Threshold de mudança de objeto por distância RGB = 55.
+- Filtro de outliers por mediana dos valores V no buffer.
+- Cálculo de Hue por média vetorial (atan2 de senos/cossenos) para evitar
+  wrap-around (ex: 359° → 1°).
+
+6. CALIBRAÇÃO PRO (unificada, sempre 30 frames)
+───────────────────────────────────────────────
+Calibração de BRANCO e PRETO independentes. Cada uma amostra 30 frames
+em ~1 segundo, filtra outliers afastados da mediana de V, e calcula RGB/HSV
+médio via média vetorial de H. Após calibração:
+- Detecta temperatura de cor (fria/quente/neutra) automaticamente.
+- Aplica compensação de temperatura de cor em todas as amostras futuras.
+- Normaliza o eixo V (Value) usando a régua branco-preto quando ambos
+  calibrados.
+- Status exibido no topo: "Base: não calibrada", "Branco V:XX%", "Preto V:XX%"
+  ou "Régua Completa (XX% range)".
+
+7. ÁUDIO / TTS
+──────────────
+- Botão independente "Áudio" (on/off).
+- Só fala após 600ms de estabilidade (STABLE_SPEECH_MS).
+- Não repete a mesma cor em sequência, a menos que um reset ocorra.
+- Cancela fila de fala anterior antes de nova utterance.
+- Idioma: pt-BR, rate 1.1.
+
+8. MODO COMPARAÇÃO — LÓGICA ESPECTRAL v2.7 (validada)
+──────────────────────────────────────────────────────
+Ordem espectral circular fixa:
+Vermelho → Rosa → Magenta → Roxo → Azul → Ciano → Verde → Amarelo → Laranja
+
+Regras de compatibilidade implementadas e testadas:
+- Mesma cor ou vizinhos DIRETOS no espectro → calcula % por proximidade
+  de RGB (40%), Hue (30%), Saturation (15%) e Value (15%).
+- Cores não-vizinhas ou opostas no espectro → 0% obrigatório.
+- Neutro vs Colorido → 0% obrigatório.
+- Branco vs Preto (opostos absolutos de luminosidade) → 0% obrigatório.
+- Demais neutros (Cinza claro vs Cinza escuro) → calculado por V e RGB,
+  sem floor artificial (pode dar 0% se muito distantes).
+- Painel inferior exibe thumbnails com miras desenhadas, nomes das cores
+  capturadas abaixo de cada imagem, e % central colorida:
+  verde (>49%), amarelo (1-49%), vermelho (0%).
+
+9. HISTÓRICO DE VERSÕES (o que cada uma trouxe)
+────────────────────────────────────────────────
+v2.2: amostragem cirúrgica nativa no canvas oculto, compensação de escala
+      entre CSS pixels e nativos.
+v2.4: Modo Estático com congelamento pós-buffer, mira posicionável por toque,
+      overlay de modo inicial com persistência de calibração ao trocar de modo.
+v2.5: Correção de áudio para falar cor após reset estático, mesmo que igual
+      à anterior.
+v2.6: Introdução do Modo Comparação com painel inferior.
+v2.7: Refatoração completa do cálculo de compatibilidade para modelo
+      espectral com cutoff 0% para não-vizinhos (eliminou o bug de 32%
+      entre branco e preto).
+v2.8: Áudio instrucional no Modo Comparação ("selecione a área de referencia",
+      "selecione a área de amostra"), nomes das cores garantidos abaixo das
+      thumbnails, botão FLASH independente com applyConstraints(torch).
+
+10. ESTADO ATUAL — O QUE ESTÁ FUNCIONANDO (testado e validado)
+───────────────────────────────────────────────────────────────
+- Interpretação de cores primárias, secundárias e terciárias com alta
+  fidelidade quando calibrado.
+- Cutoff espectral de 0% para cores opostas ou distantes no Modo Comparação.
+- Sistema de calibração branco/preto com compensação de temperatura de cor.
+- Modo Universal: nomes puros sem adjetivos funcionam corretamente.
+- Modo Estático: congelamento pós-buffer funciona; não gera oscilação.
+- Áudio com TTS funcional em todos os pontos de interesse.
+- Flash independente funcional em dispositivos compatíveis.
+- Interface responsiva para mobile.
+
+11. ESTADO ATUAL — O QUE PRECISA DE LAPIDAÇÃO (pendente)
+─────────────────────────────────────────────────────────
+MODO NORMAL (não-universal):
+Atualmente o sistema aplica adjetivos "Claro" e "Escuro" por thresholds
+fixos de V (V < 28 = Escuro; V > 82 e S < 45 = Claro). Porém, isso não
+está refinado: um Azul nitidamente escuro ainda pode ser lido como "Azul"
+sem o adjetivo "Escuro" em determinadas condições de luz ambiente, pois
+a normalização da régua ou a compensação de temperatura podem empurrar V
+para fora da faixa de corte. É necessário revisar os thresholds ou aplicar
+uma lógica relativa à régua de calibração para que os adjetivos sejam
+mais consistentes em TODAS as cores do espectro.
+
+12. PRÓXIMA FASE — MODO AMPLIADO (novo, ainda não implementado)
+──────────────────────────────────────────────────────────────────
+Criar um quarto modo de operação chamado AMPLIADO (ou outro nome a definir).
+Este modo expande o classificador com cores nuances que não existem no
+espectro base:
+- Bege
+- Marrom
+- Creme
+- Vinho
+- Azul Marinho
+- Ocre
+- Salmon
+- (outros tecidos/tintas)
+
+REGRAS DE NEGÓCIO PARA O MODO AMPLIADO:
+- Deve ser um classificador SEPARADO (classifyColorExtended), nunca mesclado
+  ao classifyColorWithRuler principal, para preservar a estabilidade do
+  Modo Universal e Modo Normal.
+- Deve manter adjetivos "Claro" e "Escuro" para TODAS as cores, inclusive
+  as novas.
+- O sistema precisa distinguir quando um tom desviado de Amarelo vira Bege,
+  quando um Vermelho escuro vira Vinho, e quando um Laranja/Amarelo escuro
+  vira Marrom. Isso é feito por análise combinada de H+S+V, não só de H.
+- Preocupação do usuário: se a faixa de Hue for muito ampla, Amarelo pode
+  colidir com Bege ou Laranja. A solução é definir janelas espectrais de
+  entrada (Hue ranges) e, dentro delas, sub-classificar por S e V.
+- Este modo é voltado para análise de tecidos, tintas, design de interiores
+  e outras aplicações onde nuance de cor é mais importante que velocidade.
+
+13. REGRA DE OURO DO PROJETO (aplicada a todas as modificações futuras)
+─────────────────────────────────────────────────────────────────────────
+- Toda modificação é incremental. Linhas que não precisam ser alteradas
+  PERMANECEM intactas.
+- Antes de alterar, listar explicitamente funções e linhas envolvidas.
+- Confirmar o que NÃO será alterado.
+- Entregar arquivo COMPLETO após modificação.
+- Nunca remover comentários, condensar código, renomear variáveis ou
+  alterar estrutura sem autorização expressa.
+- Se uma mudança causar regressão, reverter antes de tentar novamente.
+
+14. ÚLTIMO CÓDIGO ENTREGUE E FUNCIONAL
+───────────────────────────────────────
+O arquivo único HTML v2.8 contém:
+- CSS completo com media queries mobile.
+- Estrutura de modos LIVRE/ESTÁTICO/COMPARAÇÃO.
+- Variáveis globais de estado, calibração e buffers.
+- Sistema espectral SPECTRAL_ORDER + areSpectralNeighbors.
+- Funções: toggleSystem, selectMode, samplePixels, samplePixelsEstatico,
+  calibrateWhite, calibrateBlack, resetWhite, resetBlack, update,
+  capturePoint, calculateCompatibility, updateComparison, toggleAudio,
+  toggleFlash, toggleUniversalMode, rgbToHSV, applyColorTempCompensation,
+  detectColorTemperature, classifyColorWithRuler, getStableColor,
+  filterOutliers, detectObjectChange, shouldUpdateColor, speakColor,
+  triggerAudioIfChanged, startRefSelection, startSampleSelection, etc.
+- Console.log de inicialização em bloco ASCII art.
+- Título da página: "Motor de Cor - Sistema de Modos v2.8".
+
+15. CONTEXTO IMEDIATO DA CONVERSA
+─────────────────────────────────
+O usuário validou que o espectro primário/secundário/terciário está
+funcionando corretamente no Modo Universal. A próxima tarefa é:
+(A) decidir se primeiro lapidamos os adjetivos Claro/Escuro do Modo Normal,
+    ou se partimos direto para a especificação do Modo Ampliado;
+(B) definir os ranges HSV exatos para Bege, Marrom, Vinho, Creme, Azul
+    Marinho, Ocre e Salmon dentro de um classificador estendido;
+(C) garantir que o novo modo não interfira nos modos existentes.
+
+═══════════════════════════════════════════════════════════════════════════════
+FIM DO CHECKPOINT
+Para continuar, cole este texto inteiro e solicite a próxima ação.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Então vamos la, como voce mesmo mensionou essa nova fase do projeto vai ser a crianção do que vamos começar a chamar agora de forma "oficial" e vai permanecer até a conclusão do projeto dessa forma, nos temos os "modos", (LIVRE), (ESTÁTICO) e (COMPARAÇÃO), esses são os "modos" existentes, e temos tambem até o momento a "função" (UNIVERSAL)  e agora iremos implementar mais uma que sera a "função" ( AMPLIADO), na "função" (UNIVERSAL) as cores interpretadas elas nao tem variação como por exemplo a cor "azul", independente da tonalidade seja "azul claro"," azul escuro",  "azul marinho"...e todos os outros eles são sempre interpretados como sendo "azul" pela "função"(UNIVERSAL), agora iremos criar a "função" (AMPLIADO) onde ela tera um leque maior de cores e abrangência, onde a cor "azul" podera ser clarssificada como diversas outras formas como vou deixar o exemplo para voce:  (1. Tons Vibrantes e Primários
+
+
+
+
+
+Azul Royal: Tom de azul forte, intenso e muito brilhante. Também chamado de Azul Klein ou Azul Bic.
+
+
+
+Azul Cobalto: Tom profundo, vivo e sólido, muito usado em artes e tecidos.
+
+
+
+Azul Elétrico: Um azul extremamente vivo e luminoso, que remete a neon.
+
+
+
+Ciano: Um azul bem claro e brilhante, quase misturado com verde (uma das cores primárias da impressão).
+
+Figma +4
+
+2. Tons Claros e Suaves
+
+
+
+
+
+Azul Bebê (ou Azul Claro): Tom suave, pastel e delicado.
+
+
+
+Azul Celeste: Um tom leve que lembra o céu em um dia limpo.
+
+
+
+Azul Pastel: Uma versão bem clara, suave e fosca.
+
+Wikipedia +3
+
+3. Tons Escuros e Fechados
+
+
+
+
+
+Azul Marinho: Um azul clássico, sóbrio e muito escuro.
+
+
+
+Azul Meia-Noite: Um tom extremamente escuro, quase preto, que lembra o céu noturno.
+
+
+
+Azul Petróleo: Um azul escuro e fechado, que recebe uma gotinha extra de pigmento verde.
+
+
+
+Azul Prussiano: Um tom de azul escuro, histórico e profundo.
+
+
+
+Azul Aço: Um tom escuro e acinzentado.
+
+Wikipedia +4
+
+4. Misturas (Azul com Verde/Amarelo)
+
+
+
+
+
+Azul Turquesa: Um tom vibrante entre o azul e o verde.
+
+
+
+Azul Tiffany: Um tom de azul-turquesa clarinho e muito famoso, associado à marca de joias de mesmo nome.
+
+
+
+Azul Anil: Um tom clássico que transita entre o azul e o roxo (frequentemente associado ao jeans).) essa cor que usei é um exemplo mais isso deve ser considerado de forma igualitaria para todas as demais cores que para que nenhuma se sobressaia sobre a outra, nesse projeto todas as cores são tratadas de forma igual, procurando trazer e extrair ao maximo a qualidade, a fidelidade a realidade humana, e a precisão, esses são os 3 pilares desse projeto, vou estar te enviando o projeto oficial (<!DOCTYPE html>
 
 <html lang="pt-BR">
 
@@ -1828,7 +2142,7 @@
 
     const y0 = Math.max(0, Math.min(vh - nativeSample * 2, nativeY - nativeSample));
 
-    const data = ctx.getImageData(x0, y0, nativeSample  *2, nativeSample*  2).data;
+    const data = ctx.getImageData(x0, y0, nativeSample  2, nativeSample  2).data;
 
     let rSum = 0, gSum = 0, bSum = 0, count = 0;
 
@@ -2122,7 +2436,7 @@
 
       // Para neutros, Hue/Sat não são relevantes; usamos 60% V + 40% RGB
 
-      const dist = vDist *0.60 + rgbDist* 0.40;
+      const dist = vDist 0.60 + rgbDist 0.40;
 
       return Math.max(0, Math.round((1 - dist) * 100));
 
@@ -2168,7 +2482,7 @@
 
     // Pesos: RGB 40%, Hue 30%, Sat 15%, Val 15%
 
-    const weightedDist = rgbDist *0.40 + hDist* 0.30 + sDist *0.15 + vDist* 0.15;
+    const weightedDist = rgbDist 0.40 + hDist 0.30 + sDist 0.15 + vDist 0.15;
 
     let compat = Math.max(0, Math.round((1 - weightedDist) * 100));
 
@@ -2956,15 +3270,15 @@
 
       const vRange = whiteCalibration.hsv.v - blackCalibration.hsv.v;
 
-      statusText += `Régua Completa (${vRange.toFixed(0)}% range)`;
+      statusText += Régua Completa (${vRange.toFixed(0)}% range);
 
     } else if (isWhiteCalibrated) {
 
-      statusText += `Branco V:${whiteCalibration.hsv.v.toFixed(0)}%`;
+      statusText += Branco V:${whiteCalibration.hsv.v.toFixed(0)}%;
 
     } else if (isBlackCalibrated) {
 
-      statusText += `Preto V:${blackCalibration.hsv.v.toFixed(0)}%`;
+      statusText += Preto V:${blackCalibration.hsv.v.toFixed(0)}%;
 
     } else {
 
@@ -3134,7 +3448,7 @@
 
       document.getElementById('color-name').style.color = classification.color;
 
-      document.getElementById('confidence-display').textContent = `${classification.confidence}%`;
+      document.getElementById('confidence-display').textContent = ${classification.confidence}%;
 
       document.getElementById('confidence-display').style.color =
 
@@ -3168,15 +3482,15 @@
 
     document.getElementById('rgb-line').innerHTML =
 
-      `<span class="lbl">R:</span>${stable.rgb.r} <span class="lbl">G:</span>${stable.rgb.g} <span class="lbl">B:</span>${stable.rgb.b}`;
+      <span class="lbl">R:</span>${stable.rgb.r} <span class="lbl">G:</span>${stable.rgb.g} <span class="lbl">B:</span>${stable.rgb.b};
 
     document.getElementById('hsv-line').innerHTML =
 
-      `<span class="lbl">H:</span>${stable.hsv.h.toFixed(0)}° <span class="lbl">S:</span>${stable.hsv.s.toFixed(0)}% <span class="lbl">V:</span>${stable.hsv.v.toFixed(0)}%`;
+      <span class="lbl">H:</span>${stable.hsv.h.toFixed(0)}° <span class="lbl">S:</span>${stable.hsv.s.toFixed(0)}% <span class="lbl">V:</span>${stable.hsv.v.toFixed(0)}%;
 
     document.getElementById('color-swatch').style.background =
 
-      `rgb(${stable.rgb.r},${stable.rgb.g},${stable.rgb.b})`;
+      rgb(${stable.rgb.r},${stable.rgb.g},${stable.rgb.b});
 
     requestAnimationFrame(update);
 
@@ -3739,3 +4053,7 @@
 </body>
 
 </html>
+
+) reescreva o adicionando as modificações e mudanças comentadas acima e me envie de forma completa por mensagem no chat assim como eu te envie esse modelo para ser modificado em cima dele para que eu possa somente copiar e colar para realizar os testes necessários e validar se tudo esta funcionando de forma correta. Estou aguardando a atualização completa adicionada todas as modificações e mudanças necessarias para estar copiando e colando para realizar os testes e validar se tudo esta funcionando de forma correta, lembrando que so deve ser modificado o que foi comentado acima e o restante deve se manter da "exata" forma que se encontra para que nao ocorra nenhum erro ou atrase o progresso do projeto!
+
+ficou com alguma duvida? se caso nao tenha ficado me informe que vou te solicitar o codigo completo e modificado em seguida.
