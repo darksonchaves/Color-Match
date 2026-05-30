@@ -423,7 +423,7 @@
   #btn-start:hover { transform: scale(1.05); }
   /* ═══════════════════════════════════════════════════════════════
      MODO COMPARAÇÃO PONTO A PONTO - Painel inferior
-     v3.0 FIX: Reduzido tamanhos para caber tudo na tela
+     v3.0.1: Sistema responsivo baseado em proporções para todos os dispositivos
      ═══════════════════════════════════════════════════════════════ */
   #comparison-panel {
     position: absolute;
@@ -432,16 +432,16 @@
     right: 0;
     background: rgba(8,8,20,0.94);
     border-top: 1px solid rgba(100,100,255,0.2);
-    padding: 8px 12px 10px;
+    padding: 1.2vh 1.5vw;
     display: none;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 0.8vh;
     z-index: 22;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    max-height: 42vh;
+    max-height: 40vh;
     overflow-y: auto;
   }
   #comparison-panel.show { display: flex; }
@@ -449,24 +449,25 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 1.5vw;
     width: 100%;
+    flex-shrink: 0;
   }
   .comp-block {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 0.5vh;
     flex: 1;
-    max-width: 120px;
+    max-width: 18vw;
   }
   .comp-block.comp-center {
     flex: 0 0 auto;
-    min-width: 90px;
-    gap: 3px;
+    min-width: 14vw;
+    gap: 0.3vh;
   }
   .comp-label {
-    font-size: 0.55rem;
+    font-size: clamp(0.5rem, 1.8vw, 0.55rem);
     font-weight: 700;
     letter-spacing: 0.8px;
     color: #778;
@@ -519,14 +520,15 @@
     transform: translateX(-50%);
   }
   .comp-color-name {
-    font-size: 0.68rem;
+    font-size: clamp(0.6rem, 2vw, 0.68rem);
     font-weight: 700;
     color: #aac;
     text-align: center;
-    min-height: 14px;
+    min-height: 1.2em;
+    line-height: 1.2;
   }
   .comp-percent-label {
-    font-size: 0.52rem;
+    font-size: clamp(0.48rem, 1.6vw, 0.52rem);
     font-weight: 700;
     letter-spacing: 1px;
     color: #557;
@@ -534,7 +536,7 @@
     text-align: center;
   }
   .comp-percent {
-    font-size: 1.4rem;
+    font-size: clamp(1.1rem, 4vw, 1.4rem);
     font-weight: 800;
     color: #6effa0;
     text-align: center;
@@ -544,28 +546,29 @@
   .comp-percent.low { color: #ff5050; text-shadow: 0 0 10px rgba(255,80,80,0.35); }
   .comp-percent.medium { color: #ffcc60; text-shadow: 0 0 10px rgba(255,200,80,0.35); }
   /* ═══════════════════════════════════════════════════════════════
-     v3.0: SUGESTÃO DE PIGMENTOS - Área redimensionada
+     v3.0.1: SUGESTÃO DE PIGMENTOS - Sistema proporcional responsivo
      ═══════════════════════════════════════════════════════════════ */
   .comp-suggestion {
     width: 100%;
-    max-width: 480px;
-    padding: 8px 12px;
+    max-width: 90vw;
+    padding: 1vh 2vw;
     background: rgba(15,15,30,0.85);
     border: 1px solid rgba(120,220,255,0.3);
     border-radius: 6px;
-    margin-top: 2px;
+    margin-top: 0.3vh;
+    flex-shrink: 0;
   }
   .comp-suggestion-label {
-    font-size: 0.54rem;
+    font-size: clamp(0.48rem, 1.6vw, 0.54rem);
     font-weight: 700;
     letter-spacing: 1.3px;
     color: #667;
     text-transform: uppercase;
     text-align: center;
-    margin-bottom: 4px;
+    margin-bottom: 0.5vh;
   }
   .comp-suggestion-text {
-    font-size: 0.72rem;
+    font-size: clamp(0.62rem, 2.2vw, 0.72rem);
     font-weight: 600;
     color: #8ec;
     text-align: center;
@@ -589,23 +592,56 @@
     #color-name { font-size: 0.74rem; min-width: 150px; }
     .data-inline { font-size: 0.58rem; }
     #base-info { font-size: 0.54rem; }
-    #comparison-panel { padding: 6px 8px 8px; gap: 6px; max-height: 38vh; }
-    .comp-row { gap: 8px; }
-    .comp-block { max-width: 100px; gap: 3px; }
-    .comp-block.comp-center { min-width: 75px; }
-    .comp-percent { font-size: 1.2rem; }
-    .comp-label { font-size: 0.5rem; }
-    .comp-color-name { font-size: 0.62rem; }
-    .comp-suggestion { padding: 6px 10px; max-width: 95%; }
-    .comp-suggestion-label { font-size: 0.48rem; }
-    .comp-suggestion-text { font-size: 0.65rem; }
+    #comparison-panel { 
+      padding: 0.8vh 2vw; 
+      gap: 0.6vh; 
+      max-height: 36vh; 
+    }
+    .comp-row { gap: 2vw; }
+    .comp-block { max-width: 26vw; gap: 0.4vh; }
+    .comp-block.comp-center { min-width: 18vw; }
+    .comp-label {
+      font-size: clamp(0.45rem, 2vw, 0.5rem);
+    }
+    .comp-color-name {
+      font-size: clamp(0.58rem, 2.4vw, 0.62rem);
+    }
+    .comp-percent {
+      font-size: clamp(1rem, 4.5vw, 1.2rem);
+    }
+    .comp-percent-label {
+      font-size: clamp(0.44rem, 1.8vw, 0.48rem);
+    }
+    .comp-suggestion { 
+      padding: 0.8vh 3vw; 
+      max-width: 94vw;
+      margin-top: 0.4vh;
+    }
+    .comp-suggestion-label {
+      font-size: clamp(0.44rem, 1.8vw, 0.48rem);
+      margin-bottom: 0.4vh;
+    }
+    .comp-suggestion-text {
+      font-size: clamp(0.58rem, 2.5vw, 0.65rem);
+      line-height: 1.25;
+    }
+  }
+  /* Ajuste específico para iPhones e dispositivos com telas longas */
+  @media (max-width: 428px) and (min-height: 800px) {
+    #comparison-panel {
+      max-height: 34vh;
+      padding: 0.6vh 2.5vw;
+    }
+    .comp-suggestion {
+      padding: 0.7vh 3.5vw;
+    }
   }
 </style>
 </head>
 <body>
 <div id="header">
   <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v3.0 - SUGESTÃO DE PIGMENTOS</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v3.0.1 - RESPONSIVO</span>
 </div>
 <div id="top-bar">
   <div class="mode-selector">
@@ -693,7 +729,7 @@
           <div id="sample-color-name" class="comp-color-name">---</div>
         </div>
       </div>
-      <!-- v3.0: ÁREA DE SUGESTÃO DE PIGMENTOS -->
+      <!-- v3.0.1: ÁREA DE SUGESTÃO DE PIGMENTOS - Sempre visível quando há dados -->
       <div class="comp-suggestion" id="pigment-suggestion" style="display:none;">
         <div class="comp-suggestion-label">🎨 AJUSTE SUGERIDO</div>
         <div class="comp-suggestion-text" id="pigment-suggestion-text">---</div>
@@ -750,7 +786,6 @@
   let comparisonSample = null;
   let selectingRef = false;
   let selectingSample = false;
-
   function toggleModeDropdown() {
     const dropdown = document.getElementById('mode-dropdown');
     dropdown.classList.toggle('show');
@@ -762,7 +797,6 @@
       dropdown.classList.remove('show');
     }
   });
-
   function selectMode(mode) {
     currentMode = mode;
     const dropdown = document.getElementById('mode-dropdown');
@@ -822,7 +856,6 @@
     if (mode === 'estatico') options[1].classList.add('active');
     if (mode === 'comparacao') options[2].classList.add('active');
   }
-
   cameraContainer.addEventListener('click', function(e) {
     if (currentMode === 'comparacao' && running) {
       const rect = cameraContainer.getBoundingClientRect();
@@ -857,7 +890,6 @@
     reticle.classList.add('show');
     console.log('📍 Ponto selecionado:', x.toFixed(0), y.toFixed(0));
   });
-
   function resetEstatico() {
     if (currentMode !== 'estatico') return;
     staticPosition = null;
@@ -880,7 +912,6 @@
     if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
     console.log('🔄 MODO ESTÁTICO RESETADO - Selecione novo ponto');
   }
-
   function startRefSelection() {
     if (!systemOn || !running || currentMode !== 'comparacao') return;
     selectingRef = true;
@@ -897,7 +928,6 @@
     }
     console.log('⚖️ Aguardando clique para capturar REFERÊNCIA...');
   }
-
   function startSampleSelection() {
     if (!systemOn || !running || currentMode !== 'comparacao') return;
     selectingSample = true;
@@ -914,7 +944,6 @@
     }
     console.log('⚖️ Aguardando clique para capturar AMOSTRA...');
   }
-
   function captureRef(x, y) {
     const result = capturePoint(x, y, 'ref-thumb', 'ref-reticle-marker', 'ref-color-name');
     if (result) {
@@ -924,7 +953,6 @@
       if (audioEnabled) speakColor(result.name);
     }
   }
-
   function captureSample(x, y) {
     const result = capturePoint(x, y, 'sample-thumb', 'sample-reticle-marker', 'sample-color-name');
     if (result) {
@@ -934,7 +962,6 @@
       if (audioEnabled) speakColor(result.name);
     }
   }
-
   function capturePoint(x, y, thumbId, markerId, nameId) {
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw || !vh) return null;
@@ -1013,7 +1040,6 @@
       color: classification.color
     };
   }
-
   function resetRef() {
     if (currentMode !== 'comparacao') return;
     comparisonRef = null;
@@ -1025,7 +1051,6 @@
     updateComparison();
     console.log('🔄 REFERÊNCIA resetada');
   }
-
   function resetSample() {
     if (currentMode !== 'comparacao') return;
     comparisonSample = null;
@@ -1037,7 +1062,6 @@
     updateComparison();
     console.log('🔄 AMOSTRA resetada');
   }
-
   function resetComparison() {
     if (currentMode !== 'comparacao') return;
     resetRef();
@@ -1046,7 +1070,6 @@
     document.getElementById('color-name').style.color = '#445';
     console.log('🔄 COMPARAÇÃO COMPLETA RESETADA');
   }
-
   function getBaseColorName(name) {
     return name
       .replace(' Escuro', '').replace(' Claro', '')
@@ -1063,15 +1086,12 @@
       .replace(' Fúcsia', '').replace(' Vinho', '').replace(' Tangerina', '')
       .replace(' Bege', '').replace(' Mostarda', '').replace(' Ocre', '');
   }
-
   const SPECTRAL_ORDER = [
     'Vermelho', 'Rosa', 'Magenta', 'Roxo', 'Azul', 'Ciano', 'Verde', 'Amarelo', 'Laranja'
   ];
-
   function getSpectralIndex(baseName) {
     return SPECTRAL_ORDER.indexOf(baseName);
   }
-
   function areSpectralNeighbors(idx1, idx2) {
     if (idx1 === -1 || idx2 === -1) return false;
     if (idx1 === idx2) return true;
@@ -1079,7 +1099,6 @@
     const diff = Math.abs(idx1 - idx2);
     return diff === 1 || diff === len - 1;
   }
-
   function calculateCompatibility(ref, sample) {
     const neutros = ['Preto', 'Cinza', 'Branco'];
     const refBase = getBaseColorName(ref.name);
@@ -1123,14 +1142,12 @@
     let compat = Math.max(0, Math.round((1 - weightedDist) * 100));
     return compat;
   }
-
   function suggestPigmentAdjustment(ref, sample) {
     const neutros = ['Preto', 'Cinza', 'Branco'];
     const refBase = getBaseColorName(ref.name);
     const sampleBase = getBaseColorName(sample.name);
     const refIsNeutro = neutros.includes(refBase);
     const sampleIsNeutro = neutros.includes(sampleBase);
-
     const compat = calculateCompatibility(ref, sample);
     if (compat >= 95) {
       return {
@@ -1138,14 +1155,12 @@
         cssClass: 'perfect'
       };
     }
-
     if (refIsNeutro !== sampleIsNeutro) {
       return {
         text: 'Cores incompatíveis (Neutro x Colorido)',
         cssClass: 'incompatible'
       };
     }
-
     const idxRef = getSpectralIndex(refBase);
     const idxSample = getSpectralIndex(sampleBase);
     if (!refIsNeutro && !areSpectralNeighbors(idxRef, idxSample)) {
@@ -1154,7 +1169,6 @@
         cssClass: 'incompatible'
       };
     }
-
     if (refIsNeutro && sampleIsNeutro) {
       const vDiff = ref.hsv.v - sample.hsv.v;
       
@@ -1165,14 +1179,12 @@
           cssClass: 'incompatible'
         };
       }
-
       if (Math.abs(vDiff) < 8) {
         return {
           text: 'Neutros muito próximos - Ajuste mínimo necessário',
           cssClass: 'perfect'
         };
       }
-
       if (vDiff > 0) {
         if (vDiff > 30) {
           return {
@@ -1199,15 +1211,12 @@
         }
       }
     }
-
     const vDiff = ref.hsv.v - sample.hsv.v;
     const sDiff = ref.hsv.s - sample.hsv.s;
     let hueDiff = ref.hsv.h - sample.hsv.h;
     if (hueDiff > 180) hueDiff -= 360;
     if (hueDiff < -180) hueDiff += 360;
-
     let suggestions = [];
-
     if (Math.abs(vDiff) > 15) {
       if (vDiff > 0) {
         if (vDiff > 35) {
@@ -1223,7 +1232,6 @@
         }
       }
     }
-
     if (Math.abs(sDiff) > 18) {
       if (sDiff > 0) {
         suggestions.push(`${refBase} puro para saturar`);
@@ -1233,20 +1241,17 @@
         }
       }
     }
-
     if (Math.abs(hueDiff) > 12 && Math.abs(hueDiff) < 40) {
       if (idxRef !== idxSample && areSpectralNeighbors(idxRef, idxSample)) {
         suggestions.push(`${refBase} para ajustar tonalidade`);
       }
     }
-
     if (suggestions.length === 0) {
       return {
         text: 'Ajuste fino necessário - Cores muito próximas',
         cssClass: 'perfect'
       };
     }
-
     let finalText = 'Adicione ';
     if (suggestions.length === 1) {
       finalText += suggestions[0];
@@ -1256,25 +1261,21 @@
       finalText += suggestions.slice(0, -1).join(', ') + ' e ' + suggestions[suggestions.length - 1];
     }
     finalText += ' à amostra';
-
     return {
       text: finalText,
       cssClass: ''
     };
   }
-
   function updateComparison() {
     const percentEl = document.getElementById('compatibility-percent');
     const suggestionBox = document.getElementById('pigment-suggestion');
     const suggestionText = document.getElementById('pigment-suggestion-text');
-
     if (!comparisonRef || !comparisonSample) {
       percentEl.textContent = '---';
       percentEl.className = 'comp-percent';
       suggestionBox.style.display = 'none';
       return;
     }
-
     const compat = calculateCompatibility(comparisonRef, comparisonSample);
     percentEl.textContent = compat + '%';
     percentEl.className = 'comp-percent';
@@ -1283,18 +1284,15 @@
     } else if (compat < 50) {
       percentEl.classList.add('medium');
     }
-
     const suggestion = suggestPigmentAdjustment(comparisonRef, comparisonSample);
     suggestionText.textContent = suggestion.text;
     suggestionText.className = 'comp-suggestion-text ' + suggestion.cssClass;
     suggestionBox.style.display = 'block';
-
     console.log('⚖️ COMPATIBILIDADE:', compat + '%',
       '| Ref:', comparisonRef.name,
       '| Amostra:', comparisonSample.name);
     console.log('🎨 SUGESTÃO:', suggestion.text);
   }
-
   function toggleSystem() {
     systemOn = !systemOn;
     const btn = document.getElementById('btn-system');
@@ -1325,7 +1323,6 @@
       document.getElementById('color-swatch').style.background = '#1a1a2e';
     }
   }
-
   function rgbToHSV(r, g, b) {
     r /= 255; g /= 255; b /= 255;
     const max = Math.max(r, g, b), min = Math.min(r, g, b), delta = max - min;
@@ -1338,7 +1335,6 @@
     }
     return { h: h*360, s: s*100, v: v*100 };
   }
-
   function detectColorTemperature(rgb) {
     const avg = (rgb.r + rgb.g + rgb.b) / 3;
     const rDev = rgb.r - avg;
@@ -1354,7 +1350,6 @@
     hasColorTempCompensation = true;
     return { lightType, bias: colorTemperatureBias };
   }
-
   function applyColorTempCompensation(rgb) {
     if (!hasColorTempCompensation) return rgb;
     return {
@@ -1363,7 +1358,6 @@
       b: Math.max(0, Math.min(255, Math.round(rgb.b + colorTemperatureBias.b)))
     };
   }
-
   function normalizeV(vRaw) {
     if (!isWhiteCalibrated || !isBlackCalibrated) return vRaw;
     const vWhite = whiteCalibration.hsv.v;
@@ -1371,7 +1365,6 @@
     const vNormalized = ((vRaw - vBlack) / (vWhite - vBlack)) * 100;
     return Math.max(0, Math.min(100, vNormalized));
   }
-
   function calculateVariance(buffer) {
     if (buffer.length < 3) return 0;
     const values = buffer.map(item => item.hsv.v);
@@ -1379,7 +1372,6 @@
     const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
     return Math.sqrt(variance);
   }
-
   function isCalibrationWhite(hsv, rgb) {
     if (!isWhiteCalibrated || !whiteCalibration) return false;
     const base = whiteCalibration;
@@ -1393,7 +1385,6 @@
     if (hsv.v >= base.hsv.v && hsv.s <= 20) return true;
     return false;
   }
-
   function isCalibrationBlack(hsv, rgb) {
     if (!isBlackCalibrated || !blackCalibration) return false;
     const base = blackCalibration;
@@ -1408,7 +1399,6 @@
     if (maxRGB <= base.rgb.r + 20 && maxRGB <= base.rgb.g + 20 && maxRGB <= base.rgb.b + 20 && hsv.s <= 35) return true;
     return false;
   }
-
   function classifyColorWithRuler(hsv, rgb, variance) {
     const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
     const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
@@ -1475,7 +1465,6 @@
     }
     return { name: baseName + modifier, color: baseColor, confidence };
   }
-
   function classifyColorExtended(hsv, rgb, variance) {
     const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
     const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
@@ -1635,12 +1624,10 @@
     }
     return { name: baseName, color: baseColor, confidence };
   }
-
   function addToBuffer(hsv, rgb) {
     colorBuffer.push({ hsv, rgb });
     if (colorBuffer.length > BUFFER_SIZE) colorBuffer.shift();
   }
-
   function getStableColor() {
     if (colorBuffer.length < 3) return null;
     const filteredBuffer = filterOutliers(colorBuffer);
@@ -1666,14 +1653,12 @@
     avgB = Math.round(avgB / len);
     return { hsv: { h: avgH, s: avgS, v: avgV }, rgb: { r: avgR, g: avgG, b: avgB } };
   }
-
   function filterOutliers(buffer) {
     if (buffer.length < 5) return buffer;
     const vValues = buffer.map(item => item.hsv.v).sort((a, b) => a - b);
     const median = vValues[Math.floor(vValues.length / 2)];
     return buffer.filter(item => Math.abs(item.hsv.v - median) < 30);
   }
-
   function detectObjectChange(newRGB) {
     if (!lastStableRGB.r && !lastStableRGB.g && !lastStableRGB.b) return false;
     const deltaR = Math.abs(newRGB.r - lastStableRGB.r);
@@ -1682,7 +1667,6 @@
     const rgbDistance = Math.sqrt(deltaR*deltaR + deltaG*deltaG + deltaB*deltaB);
     return rgbDistance > RGB_CHANGE_THRESHOLD;
   }
-
   function shouldUpdateColor(newHue, newColorName, newRGB, newSat, newVariance) {
     if (!lastStableColorName) return true;
     if (detectObjectChange(newRGB)) {
@@ -1706,7 +1690,6 @@
     consecutiveFrameCounter = 0;
     return true;
   }
-
   function samplePixels() {
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw || !vh) return null;
@@ -1728,7 +1711,6 @@
     }
     return { r: Math.round(rSum / count), g: Math.round(gSum / count), b: Math.round(bSum / count) };
   }
-
   function samplePixelsEstatico(x, y) {
     const vw = video.videoWidth, vh = video.videoHeight;
     if (!vw || !vh) return null;
@@ -1750,7 +1732,6 @@
     }
     return { r: Math.round(rSum / count), g: Math.round(gSum / count), b: Math.round(bSum / count) };
   }
-
   function toggleAudio() {
     if (!systemOn) return;
     if (window.speechSynthesis) window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
@@ -1765,7 +1746,6 @@
       pendingName = ''; lastSpokenName = '';
     }
   }
-
   async function toggleFlash() {
     if (!systemOn) return;
     flashEnabled = !flashEnabled;
@@ -1791,7 +1771,6 @@
       }
     }
   }
-
   function toggleUniversalMode() {
     if (!systemOn) return;
     universalMode = !universalMode;
@@ -1802,7 +1781,6 @@
     if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
     console.log(universalMode ? '🌟 FUNÇÃO UNIVERSAL ATIVADA - Cores sem adjetivos' : '🌟 FUNÇÃO UNIVERSAL DESATIVADA - Adjetivos restaurados');
   }
-
   function toggleAmpliatedMode() {
     if (!systemOn) return;
     ampliatedMode = !ampliatedMode;
@@ -1817,7 +1795,6 @@
     consecutiveFrameCounter = 0;
     console.log(ampliatedMode ? '🔬 FUNÇÃO AMPLIADO ATIVADA - Nuances detalhadas de cores' : '🔬 FUNÇÃO AMPLIADO DESATIVADA - Classificação padrão');
   }
-
   function speakColor(name) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
@@ -1828,7 +1805,6 @@
       window.speechSynthesis.speak(utt);
     }, 60);
   }
-
   function triggerAudioIfChanged(name) {
     if (!audioEnabled) return;
     if (name === lastSpokenName) {
@@ -1848,7 +1824,6 @@
       }, STABLE_SPEECH_MS);
     }
   }
-
   function updateCalibrationStatus() {
     let statusText = 'Base: ';
     if (isWhiteCalibrated && isBlackCalibrated) {
@@ -1863,7 +1838,6 @@
     }
     document.getElementById('base-info').textContent = statusText;
   }
-
   function update() {
     if (!running || video.readyState < 2) {
       requestAnimationFrame(update);
@@ -1950,12 +1924,10 @@
       `rgb(${stable.rgb.r},${stable.rgb.g},${stable.rgb.b})`;
     requestAnimationFrame(update);
   }
-
   async function getDevices() {
     const devs = await navigator.mediaDevices.enumerateDevices();
     devices = devs.filter(d => d.kind === 'videoinput');
   }
-
   async function openCamera(preferredDeviceId) {
     if (stream) stream.getTracks().forEach(t => t.stop());
     const tryOpen = async (constraints) => {
@@ -1988,7 +1960,6 @@
       alert('Erro ao acessar a câmera: ' + e.message);
     }
   }
-
   async function startCamera() {
     if (!systemOn) return;
     document.getElementById('start-overlay').classList.add('hide');
@@ -1997,7 +1968,6 @@
     running = true;
     requestAnimationFrame(update);
   }
-
   async function switchCamera() {
     if (!systemOn) return;
     if (devices.length < 2) {
@@ -2007,7 +1977,6 @@
     deviceIndex = (deviceIndex + 1) % devices.length;
     await openCamera(devices[deviceIndex].deviceId);
   }
-
   async function calibrateWhite() {
     if (!systemOn) return;
     if (!running) {
@@ -2094,7 +2063,6 @@
     );
     console.log('═══════════════════════════════════════════════');
   }
-
   async function calibrateBlack() {
     if (!systemOn) return;
     if (!running) {
@@ -2178,7 +2146,6 @@
     }
     console.log('═══════════════════════════════════════════════');
   }
-
   function resetWhite() {
     if (!systemOn) return;
     whiteCalibration = null;
@@ -2196,7 +2163,6 @@
     }
     console.log('✗ CALIBRAÇÃO DE BRANCO RESETADA');
   }
-
   function resetBlack() {
     if (!systemOn) return;
     blackCalibration = null;
@@ -2212,11 +2178,11 @@
     }
     console.log('✗ CALIBRAÇÃO DE PRETO RESETADA');
   }
-
   console.log('╔═══════════════════════════════════════════════════════════╗');
-  console.log('║  MOTOR DE CORES v3.0 FIX - SUGESTÃO DE PIGMENTOS        ║');
-  console.log('║  ✓ Painel de comparação otimizado                       ║');
-  console.log('║  ✓ Mira estável (sem tremor ao trocar cores)            ║');
+  console.log('║  MOTOR DE CORES v3.0.1 - SISTEMA RESPONSIVO UNIVERSAL   ║');
+  console.log('║  ✓ Layout baseado em proporções (vw/vh/clamp)           ║');
+  console.log('║  ✓ Sugestão de pigmentos visível em TODOS os devices    ║');
+  console.log('║  ✓ Otimizado para iPhone 12 Pro Max e similares         ║');
   console.log('╚═══════════════════════════════════════════════════════════╝');
   console.log('');
   console.log('🎯 MODO LIVRE: Mira fixa no centro, análise contínua');
@@ -2226,7 +2192,7 @@
   console.log('   → Receba sugestão de pigmento para ajustar amostra');
   console.log('⭐ FUNÇÃO UNIVERSAL: Remove adjetivos');
   console.log('🔬 FUNÇÃO AMPLIADO: Nuances detalhadas (Azul Royal, Vinho, etc.)');
-  console.log('🎨 v3.0: SUGESTÃO DE PIGMENTOS implementada!');
+  console.log('🎨 v3.0.1: RESPONSIVO - Funciona em qualquer tamanho de tela!');
   console.log('');
 </script>
 </body>
