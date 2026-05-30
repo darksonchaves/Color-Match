@@ -138,7 +138,14 @@
     transition: background 0.25s ease;
     box-shadow: 0 0 8px rgba(0,0,0,0.5);
   }
-  #color-name { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.4px; min-width: 120px; }
+  /* v3.0 FIX: Aumentar min-width para evitar tremor da mira ao trocar nomes longos/curtos */
+  #color-name { 
+    font-size: 0.82rem; 
+    font-weight: 700; 
+    letter-spacing: 0.4px; 
+    min-width: 180px;
+    text-align: left;
+  }
   #confidence-display { font-size: 0.58rem; color: #6a6; white-space: nowrap; }
   .sep { color: rgba(100,100,255,0.3); font-size: 0.7rem; flex-shrink: 0; }
   .data-inline { font-size: 0.64rem; font-family: 'Courier New', monospace; color: #aab; white-space: nowrap; }
@@ -416,6 +423,7 @@
   #btn-start:hover { transform: scale(1.05); }
   /* ═══════════════════════════════════════════════════════════════
      MODO COMPARAÇÃO PONTO A PONTO - Painel inferior
+     v3.0 FIX: Reduzido tamanhos para caber tudo na tela
      ═══════════════════════════════════════════════════════════════ */
   #comparison-panel {
     position: absolute;
@@ -424,41 +432,43 @@
     right: 0;
     background: rgba(8,8,20,0.94);
     border-top: 1px solid rgba(100,100,255,0.2);
-    padding: 10px 16px 14px;
+    padding: 8px 12px 10px;
     display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
     z-index: 22;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    max-height: 42vh;
+    overflow-y: auto;
   }
   #comparison-panel.show { display: flex; }
   .comp-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 14px;
+    gap: 10px;
     width: 100%;
   }
   .comp-block {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     flex: 1;
-    max-width: 140px;
+    max-width: 120px;
   }
   .comp-block.comp-center {
     flex: 0 0 auto;
-    min-width: 110px;
-    gap: 4px;
+    min-width: 90px;
+    gap: 3px;
   }
   .comp-label {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     font-weight: 700;
-    letter-spacing: 1px;
+    letter-spacing: 0.8px;
     color: #778;
     text-transform: uppercase;
   }
@@ -466,7 +476,7 @@
     position: relative;
     width: 100%;
     aspect-ratio: 4/3;
-    border-radius: 8px;
+    border-radius: 6px;
     overflow: hidden;
     border: 1px solid rgba(100,100,255,0.25);
     background: #000;
@@ -509,22 +519,22 @@
     transform: translateX(-50%);
   }
   .comp-color-name {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 700;
     color: #aac;
     text-align: center;
-    min-height: 16px;
+    min-height: 14px;
   }
   .comp-percent-label {
-    font-size: 0.55rem;
+    font-size: 0.52rem;
     font-weight: 700;
-    letter-spacing: 1.2px;
+    letter-spacing: 1px;
     color: #557;
     text-transform: uppercase;
     text-align: center;
   }
   .comp-percent {
-    font-size: 1.6rem;
+    font-size: 1.4rem;
     font-weight: 800;
     color: #6effa0;
     text-align: center;
@@ -534,32 +544,32 @@
   .comp-percent.low { color: #ff5050; text-shadow: 0 0 10px rgba(255,80,80,0.35); }
   .comp-percent.medium { color: #ffcc60; text-shadow: 0 0 10px rgba(255,200,80,0.35); }
   /* ═══════════════════════════════════════════════════════════════
-     v3.0: SUGESTÃO DE PIGMENTOS - Nova área no painel
+     v3.0: SUGESTÃO DE PIGMENTOS - Área redimensionada
      ═══════════════════════════════════════════════════════════════ */
   .comp-suggestion {
     width: 100%;
-    max-width: 500px;
-    padding: 10px 16px;
+    max-width: 480px;
+    padding: 8px 12px;
     background: rgba(15,15,30,0.85);
     border: 1px solid rgba(120,220,255,0.3);
-    border-radius: 8px;
-    margin-top: 4px;
+    border-radius: 6px;
+    margin-top: 2px;
   }
   .comp-suggestion-label {
-    font-size: 0.58rem;
+    font-size: 0.54rem;
     font-weight: 700;
-    letter-spacing: 1.5px;
+    letter-spacing: 1.3px;
     color: #667;
     text-transform: uppercase;
     text-align: center;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
   .comp-suggestion-text {
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 600;
     color: #8ec;
     text-align: center;
-    line-height: 1.4;
+    line-height: 1.3;
     text-shadow: 0 0 8px rgba(120,220,255,0.2);
   }
   .comp-suggestion-text.perfect {
@@ -576,18 +586,19 @@
     #top-bar { gap: 6px; padding: 4px 8px; }
     .btn-top { padding: 3px 6px; font-size: 0.55rem; }
     #btn-modes { padding: 4px 8px; font-size: 0.62rem; }
-    #color-name { font-size: 0.74rem; min-width: 100px; }
+    #color-name { font-size: 0.74rem; min-width: 150px; }
     .data-inline { font-size: 0.58rem; }
     #base-info { font-size: 0.54rem; }
-    #comparison-panel { padding: 8px 10px 10px; gap: 8px; }
-    .comp-block { max-width: 110px; }
-    .comp-block.comp-center { min-width: 80px; }
-    .comp-percent { font-size: 1.3rem; }
-    .comp-label { font-size: 0.55rem; }
-    .comp-color-name { font-size: 0.65rem; }
-    .comp-suggestion { padding: 8px 12px; }
-    .comp-suggestion-label { font-size: 0.52rem; }
-    .comp-suggestion-text { font-size: 0.7rem; }
+    #comparison-panel { padding: 6px 8px 8px; gap: 6px; max-height: 38vh; }
+    .comp-row { gap: 8px; }
+    .comp-block { max-width: 100px; gap: 3px; }
+    .comp-block.comp-center { min-width: 75px; }
+    .comp-percent { font-size: 1.2rem; }
+    .comp-label { font-size: 0.5rem; }
+    .comp-color-name { font-size: 0.62rem; }
+    .comp-suggestion { padding: 6px 10px; max-width: 95%; }
+    .comp-suggestion-label { font-size: 0.48rem; }
+    .comp-suggestion-text { font-size: 0.65rem; }
   }
 </style>
 </head>
@@ -1113,11 +1124,6 @@
     return compat;
   }
 
-  // ═══════════════════════════════════════════════════════════════════
-  // v3.0: FUNÇÃO NOVA - SUGESTÃO DE PIGMENTOS
-  // Analisa diferenças HSV/RGB e sugere qual pigmento adicionar à AMOSTRA
-  // para igualar à REFERÊNCIA
-  // ═══════════════════════════════════════════════════════════════════
   function suggestPigmentAdjustment(ref, sample) {
     const neutros = ['Preto', 'Cinza', 'Branco'];
     const refBase = getBaseColorName(ref.name);
@@ -1125,7 +1131,6 @@
     const refIsNeutro = neutros.includes(refBase);
     const sampleIsNeutro = neutros.includes(sampleBase);
 
-    // ── CASO 1: Cores idênticas (compatibilidade > 95%) ──
     const compat = calculateCompatibility(ref, sample);
     if (compat >= 95) {
       return {
@@ -1134,7 +1139,6 @@
       };
     }
 
-    // ── CASO 2: Cores incompatíveis (neutro x colorido OU famílias diferentes) ──
     if (refIsNeutro !== sampleIsNeutro) {
       return {
         text: 'Cores incompatíveis (Neutro x Colorido)',
@@ -1151,11 +1155,9 @@
       };
     }
 
-    // ── CASO 3: NEUTROS (mesmo grupo) ──
     if (refIsNeutro && sampleIsNeutro) {
       const vDiff = ref.hsv.v - sample.hsv.v;
       
-      // Branco vs Preto (opostos)
       if ((refBase === 'Branco' && sampleBase === 'Preto') || 
           (refBase === 'Preto' && sampleBase === 'Branco')) {
         return {
@@ -1164,7 +1166,6 @@
         };
       }
 
-      // Ajuste de luminosidade entre neutros
       if (Math.abs(vDiff) < 8) {
         return {
           text: 'Neutros muito próximos - Ajuste mínimo necessário',
@@ -1173,7 +1174,6 @@
       }
 
       if (vDiff > 0) {
-        // Referência mais clara
         if (vDiff > 30) {
           return {
             text: 'Adicione Branco gradualmente à amostra',
@@ -1186,7 +1186,6 @@
           };
         }
       } else {
-        // Referência mais escura
         if (vDiff < -30) {
           return {
             text: 'Adicione Preto gradualmente à amostra',
@@ -1201,7 +1200,6 @@
       }
     }
 
-    // ── CASO 4: CORES CROMÁTICAS (mesma família ou vizinhas) ──
     const vDiff = ref.hsv.v - sample.hsv.v;
     const sDiff = ref.hsv.s - sample.hsv.s;
     let hueDiff = ref.hsv.h - sample.hsv.h;
@@ -1210,17 +1208,14 @@
 
     let suggestions = [];
 
-    // Análise de Value (Luminosidade)
     if (Math.abs(vDiff) > 15) {
       if (vDiff > 0) {
-        // Referência mais clara
         if (vDiff > 35) {
           suggestions.push('Branco');
         } else if (vDiff > 20) {
           suggestions.push('um pouco de Branco');
         }
       } else {
-        // Referência mais escura
         if (vDiff < -35) {
           suggestions.push('Preto');
         } else if (vDiff < -20) {
@@ -1229,28 +1224,22 @@
       }
     }
 
-    // Análise de Saturação
     if (Math.abs(sDiff) > 18) {
       if (sDiff > 0) {
-        // Referência mais saturada
         suggestions.push(`${refBase} puro para saturar`);
       } else {
-        // Referência menos saturada
         if (suggestions.length === 0 || !suggestions.some(s => s.includes('Branco'))) {
           suggestions.push('Branco ou Cinza para dessaturar');
         }
       }
     }
 
-    // Análise de Matiz (pequenos ajustes de tonalidade)
     if (Math.abs(hueDiff) > 12 && Math.abs(hueDiff) < 40) {
-      // Pequeno desvio de tonalidade - sugerir pigmento da cor vizinha
       if (idxRef !== idxSample && areSpectralNeighbors(idxRef, idxSample)) {
         suggestions.push(`${refBase} para ajustar tonalidade`);
       }
     }
 
-    // Montar texto final
     if (suggestions.length === 0) {
       return {
         text: 'Ajuste fino necessário - Cores muito próximas',
@@ -1295,7 +1284,6 @@
       percentEl.classList.add('medium');
     }
 
-    // v3.0: GERAR E EXIBIR SUGESTÃO DE PIGMENTO
     const suggestion = suggestPigmentAdjustment(comparisonRef, comparisonSample);
     suggestionText.textContent = suggestion.text;
     suggestionText.className = 'comp-suggestion-text ' + suggestion.cssClass;
@@ -2226,9 +2214,9 @@
   }
 
   console.log('╔═══════════════════════════════════════════════════════════╗');
-  console.log('║    MOTOR DE CORES v3.0 - SUGESTÃO DE PIGMENTOS          ║');
-  console.log('║    + Análise HSV/RGB + Recomendação Inteligente         ║');
-  console.log('║    + Compatibilidade Espectral + Ajuste Gradual         ║');
+  console.log('║  MOTOR DE CORES v3.0 FIX - SUGESTÃO DE PIGMENTOS        ║');
+  console.log('║  ✓ Painel de comparação otimizado                       ║');
+  console.log('║  ✓ Mira estável (sem tremor ao trocar cores)            ║');
   console.log('╚═══════════════════════════════════════════════════════════╝');
   console.log('');
   console.log('🎯 MODO LIVRE: Mira fixa no centro, análise contínua');
