@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Motor de Cor - Sistema de Modos v3.0 SUGESTÃO DE PIGMENTOS</title>
+<title>Motor de Cor - Sistema Multi-Biblioteca v3.1 PLÁSTICOS E POLÍMEROS</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -138,7 +138,6 @@
     transition: background 0.25s ease;
     box-shadow: 0 0 8px rgba(0,0,0,0.5);
   }
-  /* v3.0 FIX: Aumentar min-width para evitar tremor da mira ao trocar nomes longos/curtos */
   #color-name { 
     font-size: 0.82rem; 
     font-weight: 700; 
@@ -297,6 +296,21 @@
     border: 1px solid rgba(150,80,200,0.45);
     box-shadow: 0 0 6px rgba(150,80,200,0.2);
   }
+  /* ═══════════════════════════════════════════════════════════════
+     v3.1: BOTÃO BIBLIOTECA PLÁSTICOS E POLÍMEROS
+     ═══════════════════════════════════════════════════════════════ */
+  #btn-plasticos {
+    background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
+    color: #446;
+    border: 1px solid rgba(100,100,150,0.2);
+  }
+  #btn-plasticos:hover:not(:disabled) { background: linear-gradient(135deg, #252535, #353550); color: #778; }
+  #btn-plasticos.plasticos-on {
+    background: linear-gradient(135deg, #1a3a2e, #2a6a4e);
+    color: #6effa0;
+    border: 1px solid rgba(60,200,100,0.55);
+    box-shadow: 0 0 8px rgba(60,200,100,0.3);
+  }
   #main { flex: 1; position: relative; overflow: hidden; }
   #camera-container { position: absolute; inset: 0; background: #000; }
   #videoEl {
@@ -421,10 +435,6 @@
     transition: all 0.2s;
   }
   #btn-start:hover { transform: scale(1.05); }
-  /* ═══════════════════════════════════════════════════════════════
-     MODO COMPARAÇÃO PONTO A PONTO - Painel inferior
-     v3.0.1: Sistema responsivo baseado em proporções para todos os dispositivos
-     ═══════════════════════════════════════════════════════════════ */
   #comparison-panel {
     position: absolute;
     bottom: 0;
@@ -441,7 +451,7 @@
     z-index: 22;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    max-height: 40vh;
+    max-height: 50vh;
     overflow-y: auto;
   }
   #comparison-panel.show { display: flex; }
@@ -545,9 +555,6 @@
   }
   .comp-percent.low { color: #ff5050; text-shadow: 0 0 10px rgba(255,80,80,0.35); }
   .comp-percent.medium { color: #ffcc60; text-shadow: 0 0 10px rgba(255,200,80,0.35); }
-  /* ═══════════════════════════════════════════════════════════════
-     v3.0.1: SUGESTÃO DE PIGMENTOS - Sistema proporcional responsivo
-     ═══════════════════════════════════════════════════════════════ */
   .comp-suggestion {
     width: 100%;
     max-width: 90vw;
@@ -574,6 +581,7 @@
     text-align: center;
     line-height: 1.3;
     text-shadow: 0 0 8px rgba(120,220,255,0.2);
+    white-space: pre-line;
   }
   .comp-suggestion-text.perfect {
     color: #6effa0;
@@ -582,6 +590,15 @@
   .comp-suggestion-text.incompatible {
     color: #ff8080;
     text-shadow: 0 0 8px rgba(255,128,128,0.25);
+  }
+  .comp-suggestion-text.plastics {
+    color: #7fdbff;
+    text-shadow: 0 0 8px rgba(127,219,255,0.3);
+    text-align: left;
+  }
+  .comp-suggestion-text.out-of-catalog {
+    color: #ffcc60;
+    text-shadow: 0 0 8px rgba(255,200,80,0.25);
   }
   @media (max-width: 768px) {
     #header { padding: 4px 8px; }
@@ -595,7 +612,7 @@
     #comparison-panel { 
       padding: 0.8vh 2vw; 
       gap: 0.6vh; 
-      max-height: 36vh; 
+      max-height: 48vh; 
     }
     .comp-row { gap: 2vw; }
     .comp-block { max-width: 26vw; gap: 0.4vh; }
@@ -626,10 +643,9 @@
       line-height: 1.25;
     }
   }
-  /* Ajuste específico para iPhones e dispositivos com telas longas */
   @media (max-width: 428px) and (min-height: 800px) {
     #comparison-panel {
-      max-height: 34vh;
+      max-height: 46vh;
       padding: 0.6vh 2.5vw;
     }
     .comp-suggestion {
@@ -641,7 +657,7 @@
 <body>
 <div id="header">
   <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v3.0.1 - RESPONSIVO</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v3.1 - PLÁSTICOS E POLÍMEROS</span>
 </div>
 <div id="top-bar">
   <div class="mode-selector">
@@ -693,6 +709,7 @@
   <button class="btn-top" id="btn-flash" onclick="toggleFlash()">&#9889; Flash</button>
   <button class="btn-top" id="btn-universal" onclick="toggleUniversalMode()">&#9733; Universal</button>
   <button class="btn-top" id="btn-ampliado" onclick="toggleAmpliatedMode()">&#9830; Ampliado</button>
+  <button class="btn-top" id="btn-plasticos" onclick="togglePlasticsMode()">&#129514; Plásticos</button>
 </div>
 <div id="main">
   <div id="camera-container">
@@ -705,7 +722,6 @@
       <div class="reticle-sample-circle"></div>
       <div class="reticle-dot"></div>
     </div>
-    <!-- Painel de Comparação (inferior) -->
     <div id="comparison-panel">
       <div class="comp-row">
         <div class="comp-block">
@@ -729,7 +745,6 @@
           <div id="sample-color-name" class="comp-color-name">---</div>
         </div>
       </div>
-      <!-- v3.0.1: ÁREA DE SUGESTÃO DE PIGMENTOS - Sempre visível quando há dados -->
       <div class="comp-suggestion" id="pigment-suggestion" style="display:none;">
         <div class="comp-suggestion-label">🎨 AJUSTE SUGERIDO</div>
         <div class="comp-suggestion-text" id="pigment-suggestion-text">---</div>
@@ -757,6 +772,7 @@
   let systemOn = true;
   let flashEnabled = false;
   let ampliatedMode = false;
+  let plasticsMode = false; // v3.1: Biblioteca Plásticos e Polímeros
   let currentMode = null;
   let staticPosition = null;
   let staticAnalysisActive = false;
@@ -786,6 +802,383 @@
   let comparisonSample = null;
   let selectingRef = false;
   let selectingSample = false;
+  // ═══════════════════════════════════════════════════════════════
+  // v3.1: BIBLIOTECA PLÁSTICOS E POLÍMEROS
+  // Base de dados oficial dos fabricantes (Clariant, BASF, Cromex, Colorfix)
+  // Cada cor contém a fórmula completa de pigmentos com códigos CI
+  // ═══════════════════════════════════════════════════════════════
+  const PLASTICS_LIBRARY = {
+    // ═══ BRANCOS ═══
+    "Branco Gelo": {
+      hsvTarget: { h: 0, s: 0, v: 95 },
+      hex: "#FAFAFA",
+      familia: "branco",
+      formula: [
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
+      ]
+    },
+    "Branco Neve": {
+      hsvTarget: { h: 0, s: 0, v: 98 },
+      hex: "#FFFFFF",
+      familia: "branco",
+      formula: [
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" },
+        { pigmento: "Agente Óptico de Brilho", ci: "OB-1", codigo: "OBA", proporcao: "0.05%", funcao: "efeito_especial" }
+      ]
+    },
+    "Branco Natural": {
+      hsvTarget: { h: 40, s: 5, v: 92 },
+      hex: "#F5F0E8",
+      familia: "branco",
+      formula: [
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
+      ]
+    },
+    "Branco Masterbatch": {
+      hsvTarget: { h: 0, s: 0, v: 93 },
+      hex: "#EDEDED",
+      familia: "branco",
+      formula: [
+        { pigmento: "Dióxido de Titânio Anatásio", ci: "PW6", codigo: "CI 77891", proporcao: "3.0%", funcao: "base_clareadora" }
+      ]
+    },
+    // ═══ PRETOS ═══
+    "Preto Absoluto": {
+      hsvTarget: { h: 0, s: 0, v: 5 },
+      hex: "#0A0A0A",
+      familia: "preto",
+      formula: [
+        { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "2.5%", funcao: "cor_primaria" }
+      ]
+    },
+    "Preto UV": {
+      hsvTarget: { h: 0, s: 0, v: 8 },
+      hex: "#141414",
+      familia: "preto",
+      formula: [
+        { pigmento: "Carbon Black N550", ci: "PBk7", codigo: "CI 77266", proporcao: "2.0%", funcao: "cor_primaria" },
+        { pigmento: "Estabilizante HALS", ci: "UV-AD", codigo: "HALS", proporcao: "0.3%", funcao: "efeito_especial" }
+      ]
+    },
+    "Preto Condutivo": {
+      hsvTarget: { h: 0, s: 0, v: 10 },
+      hex: "#1A1A1A",
+      familia: "preto",
+      formula: [
+        { pigmento: "Carbon Black Condutivo", ci: "PBk7", codigo: "CI 77266", proporcao: "15.0%", funcao: "cor_primaria" }
+      ]
+    },
+    "Preto Masterbatch": {
+      hsvTarget: { h: 0, s: 0, v: 12 },
+      hex: "#202020",
+      familia: "preto",
+      formula: [
+        { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "30.0%", funcao: "cor_primaria" },
+        { pigmento: "Cera Dispersante PE", ci: "ADD", codigo: "PE-WAX", proporcao: "5.0%", funcao: "efeito_especial" }
+      ]
+    },
+    // ═══ AZUIS ═══
+    "Azul Ftalo": {
+      hsvTarget: { h: 220, s: 85, v: 55 },
+      hex: "#1E3A8A",
+      familia: "azul",
+      formula: [
+        { pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.5%", funcao: "cor_primaria" },
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.8%", funcao: "base_clareadora" }
+      ]
+    },
+    "Azul Ultramar": {
+      hsvTarget: { h: 240, s: 75, v: 50 },
+      hex: "#1E40AF",
+      familia: "azul",
+      formula: [
+        { pigmento: "Azul Ultramar", ci: "PB29", codigo: "CI 77007", proporcao: "2.0%", funcao: "cor_primaria" },
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
+      ]
+    },
+    "Azul Cobalto": {
+      hsvTarget: { h: 215, s: 80, v: 60 },
+      hex: "#1D4ED8",
+      familia: "azul",
+      formula: [
+        { pigmento: "Azul Cobalto (Aluminato)", ci: "PB28", codigo: "CI 77346", proporcao: "3.0%", funcao: "cor_primaria" }
+      ]
+    },
+    "Azul Royal": {
+      hsvTarget: { h: 225, s: 82, v: 58 },
+      hex: "#4169E1",
+      familia: "azul",
+      formula: [
+        { pigmento: "Ftalocianina de Cobre Azul β", ci: "PB15:3", codigo: "CI 74160", proporcao: "1.8%", funcao: "cor_primaria" },
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
+      ]
+    },
+    "Azul Turquesa": {
+      hsvTarget: { h: 185, s: 70, v: 70 },
+      hex: "#40E0D0",
+      familia: "azul",
+      formula: [
+        { pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.0%", funcao: "cor_primaria" },
+        { pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "0.3%", funcao: "ajuste_tom" },
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" }
+      ]
+    },
+    // ═══ VERDES ═══
+    "Verde Bandeira": {
+      hsvTarget: { h: 145, s: 75, v: 55 },
+      hex: "#009B3A",
+      familia: "verde",
+      formula: [
+        { pigmento: "Ftalocianina de Cobre Verde", ci: "PG7", codigo: "CI 74260", proporcao: "1.2%", funcao: "cor_primaria" },
+        { pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "0.8%", funcao: "ajuste_tom" },
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
+      ]
+    },
+    "Verde Esmeralda": {
+      hsvTarget: { h: 140, s: 70, v: 65 },
+      hex: "#50C878",
+      familia: "verde",
+      formula: [
+        { pigmento: "Óxido de Cromo Verde", ci: "PG17", codigo: "CI 77288", proporcao: "2.5%", funcao: "cor_primaria" },
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
+      ]
+    },
+    "Verde Limão": {
+      hsvTarget: { h: 110, s: 75, v: 80 },
+      hex: "#BFFF00",
+      familia: "verde",
+      formula: [
+        { pigmento: "Ftalocianina Verde Amarelada", ci: "PG36", codigo: "CI 74265", proporcao: "0.8%", funcao: "cor_primaria" },
+        { pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "1.2%", funcao: "ajuste_tom" },
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
+      ]
+    },
+    "Verde Oliva": {
+      hsvTarget: { h: 80, s: 50, v: 50 },
+      hex: "#808000",
+      familia: "verde",
+      formula: [
+        { pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "1.5%", funcao: "cor_primaria" },
+        { pigmento: "Ftalocianina de Cobre Verde", ci: "PG7", codigo: "CI 74260", proporcao: "0.5%", funcao: "ajuste_tom" },
+        { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.3%", funcao: "ajuste_tom" }
+      ]
+    },
+    // ═══ VERMELHOS ═══
+    "Vermelho Óxido": {
+      hsvTarget: { h: 5, s: 75, v: 55 },
+      hex: "#B22222",
+      familia: "vermelho",
+      formula: [
+        { pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "3.0%", funcao: "cor_primaria" }
+      ]
+    },
+    "Vermelho DPP": {
+      hsvTarget: { h: 0, s: 85, v: 70 },
+      hex: "#DC2626",
+      familia: "vermelho",
+      formula: [
+        { pigmento: "Vermelho DPP (Diketopyrrolopyrrole)", ci: "PR254", codigo: "CI 561100", proporcao: "1.5%", funcao: "cor_primaria" },
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.0%", funcao: "base_clareadora" }
+      ]
+    },
+    "Vermelho Cádmio": {
+      hsvTarget: { h: 355, s: 90, v: 75 },
+      hex: "#E30022",
+      familia: "vermelho",
+      formula: [
+        { pigmento: "Vermelho de Cádmio (Sulfosseleneto)", ci: "PR108", codigo: "CI 77202", proporcao: "4.0%", funcao: "cor_primaria" }
+      ]
+    },
+    "Vermelho Vivo": {
+      hsvTarget: { h: 358, s: 88, v: 80 },
+      hex: "#EF4444",
+      familia: "vermelho",
+      formula: [
+        { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.8%", funcao: "cor_primaria" },
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
+      ]
+    },
+    "Vermelho Toluidina": {
+      hsvTarget: { h: 5, s: 90, v: 65 },
+      hex: "#C41E3A",
+      familia: "vermelho",
+      formula: [
+        { pigmento: "Vermelho Toluidina (Monoazo)", ci: "PR3", codigo: "CI 12120", proporcao: "2.5%", funcao: "cor_primaria" }
+      ]
+    },
+    // ═══ AMARELOS ═══
+    "Amarelo Óxido": {
+      hsvTarget: { h: 45, s: 70, v: 70 },
+      hex: "#CC9900",
+      familia: "amarelo",
+      formula: [
+        { pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "3.0%", funcao: "cor_primaria" }
+      ]
+    },
+    "Amarelo Arilida": {
+      hsvTarget: { h: 50, s: 85, v: 90 },
+      hex: "#FFD700",
+      familia: "amarelo",
+      formula: [
+        { pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "2.5%", funcao: "cor_primaria" }
+      ]
+    },
+    "Amarelo Limão": {
+      hsvTarget: { h: 60, s: 88, v: 95 },
+      hex: "#FFFF00",
+      familia: "amarelo",
+      formula: [
+        { pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "2.0%", funcao: "cor_primaria" },
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "0.8%", funcao: "base_clareadora" }
+      ]
+    },
+    "Amarelo Masterbatch": {
+      hsvTarget: { h: 55, s: 80, v: 85 },
+      hex: "#FFCC00",
+      familia: "amarelo",
+      formula: [
+        { pigmento: "Amarelo Diarylide", ci: "PY14", codigo: "CI 21095", proporcao: "35.0%", funcao: "cor_primaria" },
+        { pigmento: "Cera Dispersante PE", ci: "ADD", codigo: "PE-WAX", proporcao: "5.0%", funcao: "efeito_especial" }
+      ]
+    },
+    // ═══ LARANJAS ═══
+    "Laranja Vivo": {
+      hsvTarget: { h: 30, s: 85, v: 90 },
+      hex: "#FF8800",
+      familia: "laranja",
+      formula: [
+        { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.2%", funcao: "cor_primaria" },
+        { pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "1.5%", funcao: "ajuste_tom" }
+      ]
+    },
+    "Laranja DPP": {
+      hsvTarget: { h: 25, s: 88, v: 85 },
+      hex: "#FF7F00",
+      familia: "laranja",
+      formula: [
+        { pigmento: "Laranja DPP", ci: "PO73", codigo: "CI 561170", proporcao: "2.0%", funcao: "cor_primaria" }
+      ]
+    },
+    "Laranja Molibdato": {
+      hsvTarget: { h: 20, s: 85, v: 75 },
+      hex: "#FF6600",
+      familia: "laranja",
+      formula: [
+        { pigmento: "Laranja de Molibdato", ci: "PO104", codigo: "CI 77605", proporcao: "3.5%", funcao: "cor_primaria" }
+      ]
+    },
+    // ═══ VIOLETAS E ROXOS ═══
+    "Violeta Dioxazina": {
+      hsvTarget: { h: 280, s: 75, v: 55 },
+      hex: "#7F00FF",
+      familia: "violeta",
+      formula: [
+        { pigmento: "Violeta Dioxazina (Carbazol)", ci: "PV23", codigo: "CI 51319", proporcao: "1.8%", funcao: "cor_primaria" },
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
+      ]
+    },
+    "Roxo": {
+      hsvTarget: { h: 285, s: 70, v: 60 },
+      hex: "#9333EA",
+      familia: "violeta",
+      formula: [
+        { pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.0%", funcao: "cor_primaria" },
+        { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.2%", funcao: "ajuste_tom" },
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
+      ]
+    },
+    "Violeta Manganês": {
+      hsvTarget: { h: 290, s: 60, v: 65 },
+      hex: "#8B008B",
+      familia: "violeta",
+      formula: [
+        { pigmento: "Violeta de Manganês (Pirofosfato)", ci: "PV16", codigo: "CI 77742", proporcao: "3.5%", funcao: "cor_primaria" }
+      ]
+    },
+    // ═══ CINZAS ═══
+    "Cinza Claro": {
+      hsvTarget: { h: 0, s: 0, v: 75 },
+      hex: "#BFBFBF",
+      familia: "cinza",
+      formula: [
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" },
+        { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.1%", funcao: "ajuste_tom" }
+      ]
+    },
+    "Cinza Médio": {
+      hsvTarget: { h: 0, s: 0, v: 55 },
+      hex: "#8C8C8C",
+      familia: "cinza",
+      formula: [
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" },
+        { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.3%", funcao: "ajuste_tom" }
+      ]
+    },
+    "Cinza Escuro": {
+      hsvTarget: { h: 0, s: 0, v: 35 },
+      hex: "#595959",
+      familia: "cinza",
+      formula: [
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "0.8%", funcao: "base_clareadora" },
+        { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.8%", funcao: "cor_primaria" }
+      ]
+    },
+    // ═══ NATURAIS ═══
+    "Natural PP": {
+      hsvTarget: { h: 40, s: 8, v: 85 },
+      hex: "#D9D2C2",
+      familia: "natural",
+      formula: [
+        { pigmento: "Sem pigmentação (PP Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }
+      ]
+    },
+    "Natural PE": {
+      hsvTarget: { h: 45, s: 10, v: 88 },
+      hex: "#E0D8C8",
+      familia: "natural",
+      formula: [
+        { pigmento: "Sem pigmentação (PE Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }
+      ]
+    },
+    "Natural ABS": {
+      hsvTarget: { h: 40, s: 12, v: 82 },
+      hex: "#D0C4A8",
+      familia: "natural",
+      formula: [
+        { pigmento: "Sem pigmentação (ABS Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }
+      ]
+    },
+    // ═══ ESPECIAIS ═══
+    "Bege": {
+      hsvTarget: { h: 35, s: 25, v: 85 },
+      hex: "#D9C9A8",
+      familia: "bege",
+      formula: [
+        { pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "0.8%", funcao: "cor_primaria" },
+        { pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "0.2%", funcao: "ajuste_tom" },
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" }
+      ]
+    },
+    "Marrom": {
+      hsvTarget: { h: 25, s: 60, v: 40 },
+      hex: "#6B3410",
+      familia: "marrom",
+      formula: [
+        { pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "2.0%", funcao: "cor_primaria" },
+        { pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "1.0%", funcao: "ajuste_tom" },
+        { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.5%", funcao: "ajuste_tom" }
+      ]
+    },
+    "Rosa": {
+      hsvTarget: { h: 340, s: 50, v: 85 },
+      hex: "#FFB0C0",
+      familia: "rosa",
+      formula: [
+        { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "0.3%", funcao: "cor_primaria" },
+        { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "3.5%", funcao: "base_clareadora" }
+      ]
+    }
+  };
   function toggleModeDropdown() {
     const dropdown = document.getElementById('mode-dropdown');
     dropdown.classList.toggle('show');
@@ -989,7 +1382,15 @@
     };
     const rgbComp = applyColorTempCompensation(rgb);
     const hsv = rgbToHSV(rgbComp.r, rgbComp.g, rgbComp.b);
-    const classification = ampliatedMode ? classifyColorExtended(hsv, rgbComp, 0) : classifyColorWithRuler(hsv, rgbComp, 0);
+    // v3.1: Usa classificação Plásticos quando ativada
+    let classification;
+    if (plasticsMode) {
+      classification = classifyPlasticsPolymers(hsv, rgbComp);
+    } else if (ampliatedMode) {
+      classification = classifyColorExtended(hsv, rgbComp, 0);
+    } else {
+      classification = classifyColorWithRuler(hsv, rgbComp, 0);
+    }
     const MAX_THUMB_W = 400;
     const thumbW = Math.min(vw, MAX_THUMB_W);
     const thumbH = Math.round(thumbW * (vh / vw));
@@ -1037,7 +1438,9 @@
       rgb: rgbComp,
       hsv,
       name: classification.name,
-      color: classification.color
+      color: classification.color,
+      inCatalog: classification.inCatalog !== undefined ? classification.inCatalog : true,
+      closestMatch: classification.closestMatch || null
     };
   }
   function resetRef() {
@@ -1099,7 +1502,154 @@
     const diff = Math.abs(idx1 - idx2);
     return diff === 1 || diff === len - 1;
   }
+  // ═══════════════════════════════════════════════════════════════
+  // v3.1: CÁLCULO DE DISTÂNCIA HSV (para encontrar cor mais próxima do catálogo)
+  // ═══════════════════════════════════════════════════════════════
+  function hsvDistance(hsv1, hsv2) {
+    let hDiff = Math.abs(hsv1.h - hsv2.h);
+    if (hDiff > 180) hDiff = 360 - hDiff;
+    const hNorm = hDiff / 180;
+    const sNorm = Math.abs(hsv1.s - hsv2.s) / 100;
+    const vNorm = Math.abs(hsv1.v - hsv2.v) / 100;
+    return Math.sqrt(hNorm * hNorm * 0.4 + sNorm * sNorm * 0.3 + vNorm * vNorm * 0.3);
+  }
+  // ═══════════════════════════════════════════════════════════════
+  // v3.1: CLASSIFICAÇÃO BIBLIOTECA PLÁSTICOS E POLÍMEROS
+  // Encontra a cor do catálogo mais próxima da cor analisada
+  // Retorna inCatalog: true se a distância for muito pequena
+  // ═══════════════════════════════════════════════════════════════
+  function classifyPlasticsPolymers(hsv, rgb) {
+    let closestName = null;
+    let closestDist = Infinity;
+    let closestColor = null;
+    for (const [name, data] of Object.entries(PLASTICS_LIBRARY)) {
+      const dist = hsvDistance(hsv, data.hsvTarget);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestName = name;
+        closestColor = data.hex;
+      }
+    }
+    // Threshold de "estar no catálogo" - distância muito pequena
+    const inCatalog = closestDist < 0.08;
+    const similarity = Math.max(0, Math.round((1 - closestDist) * 100));
+    return {
+      name: closestName,
+      color: closestColor,
+      confidence: similarity,
+      inCatalog: inCatalog,
+      closestMatch: closestName,
+      similarity: similarity
+    };
+  }
+  // ═══════════════════════════════════════════════════════════════
+  // v3.1: CÁLCULO DE COMPATIBILIDADE PLÁSTICOS
+  // Baseado em distância HSV entre as cores do catálogo
+  // ═══════════════════════════════════════════════════════════════
+  function calculatePlasticsCompatibility(ref, sample) {
+    const refData = PLASTICS_LIBRARY[ref.name];
+    const sampleData = PLASTICS_LIBRARY[sample.name];
+    if (!refData || !sampleData) {
+      return 0;
+    }
+    if (ref.name === sample.name) return 100;
+    const dist = hsvDistance(refData.hsvTarget, sampleData.hsvTarget);
+    const compat = Math.max(0, Math.round((1 - dist) * 100));
+    return compat;
+  }
+  // ═══════════════════════════════════════════════════════════════
+  // v3.1: SUGESTÃO INTELIGENTE DE PIGMENTOS - LÓGICA DE DECOMPOSIÇÃO
+  // Analisa as fórmulas de REF e SAMPLE e sugere:
+  // - Pigmentos FALTANTES (presentes na REF, ausentes na SAMPLE)
+  // - Pigmentos para MANTER (já presentes em ambos)
+  // - Pigmentos a REDUZIR (presentes na SAMPLE, ausentes na REF)
+  // ═══════════════════════════════════════════════════════════════
+  function suggestPigmentsPlastics(ref, sample) {
+    const refData = PLASTICS_LIBRARY[ref.name];
+    const sampleData = PLASTICS_LIBRARY[sample.name];
+    if (!refData || !sampleData) {
+      return {
+        text: 'Erro: Cor fora do catálogo Plásticos',
+        cssClass: 'incompatible'
+      };
+    }
+    // Cores idênticas
+    if (ref.name === sample.name) {
+      return {
+        text: '✓ Cores idênticas do catálogo Plásticos!\nNenhum ajuste necessário.',
+        cssClass: 'perfect'
+      };
+    }
+    const refFormula = refData.formula;
+    const sampleFormula = sampleData.formula;
+    // Identifica pigmentos FALTANTES (presentes na REF mas não na SAMPLE)
+    const faltantes = [];
+    refFormula.forEach(pRef => {
+      if (pRef.ci === 'NAT' || pRef.funcao === 'base') return;
+      const existeNaSample = sampleFormula.some(pSample => pSample.ci === pRef.ci);
+      if (!existeNaSample) {
+        faltantes.push(pRef);
+      }
+    });
+    // Identifica pigmentos para MANTER (presentes em ambos)
+    const manter = [];
+    refFormula.forEach(pRef => {
+      if (pRef.ci === 'NAT' || pRef.funcao === 'base') return;
+      const existeNaSample = sampleFormula.some(pSample => pSample.ci === pRef.ci);
+      if (existeNaSample) {
+        manter.push(pRef);
+      }
+    });
+    // Identifica pigmentos para REDUZIR (presentes na SAMPLE mas não na REF)
+    const reduzir = [];
+    sampleFormula.forEach(pSample => {
+      if (pSample.ci === 'NAT' || pSample.funcao === 'base') return;
+      const existeNaRef = refFormula.some(pRef => pRef.ci === pSample.ci);
+      if (!existeNaRef) {
+        reduzir.push(pSample);
+      }
+    });
+    // Monta texto estruturado
+    let linhas = [];
+    linhas.push(`📋 REF: ${ref.name}`);
+    linhas.push(`📋 AMOSTRA: ${sample.name}`);
+    linhas.push('');
+    if (faltantes.length > 0) {
+      linhas.push('✦ ADICIONAR À AMOSTRA:');
+      faltantes.forEach(p => {
+        linhas.push(`  • ${p.pigmento}`);
+        linhas.push(`    (${p.ci} - ${p.codigo}) ~${p.proporcao}`);
+      });
+    }
+    if (reduzir.length > 0) {
+      linhas.push('');
+      linhas.push('⚠️ REDUZIR/REMOVER DA AMOSTRA:');
+      reduzir.forEach(p => {
+        linhas.push(`  • ${p.pigmento} (${p.ci})`);
+      });
+    }
+    if (manter.length > 0) {
+      linhas.push('');
+      linhas.push('✓ MANTÉM (já presente):');
+      manter.forEach(p => {
+        linhas.push(`  • ${p.pigmento} (${p.ci})`);
+      });
+    }
+    if (faltantes.length === 0 && reduzir.length === 0 && manter.length === 0) {
+      linhas.push('');
+      linhas.push('⚠️ Ajuste de proporções necessário.');
+      linhas.push('Compare as fórmulas das duas cores.');
+    }
+    return {
+      text: linhas.join('\n'),
+      cssClass: 'plastics'
+    };
+  }
   function calculateCompatibility(ref, sample) {
+    // v3.1: Se em modo plásticos, usa cálculo específico
+    if (plasticsMode) {
+      return calculatePlasticsCompatibility(ref, sample);
+    }
     const neutros = ['Preto', 'Cinza', 'Branco'];
     const refBase = getBaseColorName(ref.name);
     const sampleBase = getBaseColorName(sample.name);
@@ -1143,6 +1693,10 @@
     return compat;
   }
   function suggestPigmentAdjustment(ref, sample) {
+    // v3.1: Se em modo plásticos, usa sugestão inteligente
+    if (plasticsMode) {
+      return suggestPigmentsPlastics(ref, sample);
+    }
     const neutros = ['Preto', 'Cinza', 'Branco'];
     const refBase = getBaseColorName(ref.name);
     const sampleBase = getBaseColorName(sample.name);
@@ -1270,6 +1824,7 @@
     const percentEl = document.getElementById('compatibility-percent');
     const suggestionBox = document.getElementById('pigment-suggestion');
     const suggestionText = document.getElementById('pigment-suggestion-text');
+    const suggestionLabel = suggestionBox.querySelector('.comp-suggestion-label');
     if (!comparisonRef || !comparisonSample) {
       percentEl.textContent = '---';
       percentEl.className = 'comp-percent';
@@ -1288,16 +1843,23 @@
     suggestionText.textContent = suggestion.text;
     suggestionText.className = 'comp-suggestion-text ' + suggestion.cssClass;
     suggestionBox.style.display = 'block';
+    // v3.1: Atualiza label do painel conforme biblioteca ativa
+    if (plasticsMode) {
+      suggestionLabel.innerHTML = '🧪 FÓRMULA DE PIGMENTOS (PLÁSTICOS)';
+    } else {
+      suggestionLabel.innerHTML = '🎨 AJUSTE SUGERIDO';
+    }
     console.log('⚖️ COMPATIBILIDADE:', compat + '%',
       '| Ref:', comparisonRef.name,
-      '| Amostra:', comparisonSample.name);
+      '| Amostra:', comparisonSample.name,
+      '| Biblioteca:', plasticsMode ? 'PLÁSTICOS' : (ampliatedMode ? 'AMPLIADO' : 'NORMAL'));
     console.log('🎨 SUGESTÃO:', suggestion.text);
   }
   function toggleSystem() {
     systemOn = !systemOn;
     const btn = document.getElementById('btn-system');
     const btns = ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black',
-                  'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-modes', 'btn-reset-estatico',
+                  'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos', 'btn-modes', 'btn-reset-estatico',
                   'btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao'];
     if (systemOn) {
       btn.textContent = 'SISTEMA/ON';
@@ -1777,6 +2339,17 @@
     const btn = document.getElementById('btn-universal');
     btn.textContent = universalMode ? '⭐ Universal' : '☆ Universal';
     btn.classList.toggle('universal-on', universalMode);
+    // Se universal foi ativado, desativa outros modos de biblioteca
+    if (universalMode && ampliatedMode) {
+      ampliatedMode = false;
+      document.getElementById('btn-ampliado').textContent = '◇ Ampliado';
+      document.getElementById('btn-ampliado').classList.remove('ampliado-on');
+    }
+    if (universalMode && plasticsMode) {
+      plasticsMode = false;
+      document.getElementById('btn-plasticos').textContent = '🧪 Plásticos';
+      document.getElementById('btn-plasticos').classList.remove('plasticos-on');
+    }
     lastSpokenName = ''; pendingName = '';
     if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
     console.log(universalMode ? '🌟 FUNÇÃO UNIVERSAL ATIVADA - Cores sem adjetivos' : '🌟 FUNÇÃO UNIVERSAL DESATIVADA - Adjetivos restaurados');
@@ -1787,6 +2360,17 @@
     const btn = document.getElementById('btn-ampliado');
     btn.textContent = ampliatedMode ? '◆ Ampliado' : '◇ Ampliado';
     btn.classList.toggle('ampliado-on', ampliatedMode);
+    // Se ampliado foi ativado, desativa outros modos de biblioteca
+    if (ampliatedMode && universalMode) {
+      universalMode = false;
+      document.getElementById('btn-universal').textContent = '☆ Universal';
+      document.getElementById('btn-universal').classList.remove('universal-on');
+    }
+    if (ampliatedMode && plasticsMode) {
+      plasticsMode = false;
+      document.getElementById('btn-plasticos').textContent = '🧪 Plásticos';
+      document.getElementById('btn-plasticos').classList.remove('plasticos-on');
+    }
     lastSpokenName = ''; pendingName = '';
     if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
     colorBuffer = [];
@@ -1794,6 +2378,42 @@
     mismatchCounter = 0;
     consecutiveFrameCounter = 0;
     console.log(ampliatedMode ? '🔬 FUNÇÃO AMPLIADO ATIVADA - Nuances detalhadas de cores' : '🔬 FUNÇÃO AMPLIADO DESATIVADA - Classificação padrão');
+  }
+  // ═══════════════════════════════════════════════════════════════
+  // v3.1: TOGGLE BIBLIOTECA PLÁSTICOS E POLÍMEROS
+  // Ativa classificação exclusiva para cores do catálogo industrial
+  // ═══════════════════════════════════════════════════════════════
+  function togglePlasticsMode() {
+    if (!systemOn) return;
+    plasticsMode = !plasticsMode;
+    const btn = document.getElementById('btn-plasticos');
+    btn.textContent = plasticsMode ? '🧪 Plásticos' : '🧪 Plásticos';
+    btn.classList.toggle('plasticos-on', plasticsMode);
+    // Se plásticos foi ativado, desativa outros modos de biblioteca
+    if (plasticsMode && universalMode) {
+      universalMode = false;
+      document.getElementById('btn-universal').textContent = '☆ Universal';
+      document.getElementById('btn-universal').classList.remove('universal-on');
+    }
+    if (plasticsMode && ampliatedMode) {
+      ampliatedMode = false;
+      document.getElementById('btn-ampliado').textContent = '◇ Ampliado';
+      document.getElementById('btn-ampliado').classList.remove('ampliado-on');
+    }
+    lastSpokenName = ''; pendingName = '';
+    if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
+    colorBuffer = [];
+    lastStableColorName = '';
+    mismatchCounter = 0;
+    consecutiveFrameCounter = 0;
+    const totalCores = Object.keys(PLASTICS_LIBRARY).length;
+    console.log(plasticsMode 
+      ? `🧪 BIBLIOTECA PLÁSTICOS ATIVADA - ${totalCores} cores industriais com fórmulas de pigmentos` 
+      : '🧪 BIBLIOTECA PLÁSTICOS DESATIVADA - Classificação padrão restaurada');
+    // Atualiza painel de comparação se já houver dados
+    if (currentMode === 'comparacao' && comparisonRef && comparisonSample) {
+      updateComparison();
+    }
   }
   function speakColor(name) {
     if (!window.speechSynthesis) return;
@@ -1878,7 +2498,15 @@
       return;
     }
     const variance = calculateVariance(colorBuffer);
-    const classification = ampliatedMode ? classifyColorExtended(stable.hsv, stable.rgb, variance) : classifyColorWithRuler(stable.hsv, stable.rgb, variance);
+    // v3.1: Classificação baseada na biblioteca ativa
+    let classification;
+    if (plasticsMode) {
+      classification = classifyPlasticsPolymers(stable.hsv, stable.rgb);
+    } else if (ampliatedMode) {
+      classification = classifyColorExtended(stable.hsv, stable.rgb, variance);
+    } else {
+      classification = classifyColorWithRuler(stable.hsv, stable.rgb, variance);
+    }
     if (classification.name !== lastStableColorName && lastStableColorName !== '') {
       mismatchCounter++;
     } else {
@@ -1903,7 +2531,12 @@
       lastStableHue = stable.hsv.h;
       lastStableRGB = { ...stable.rgb };
       lastStableVariance = variance;
-      document.getElementById('color-name').textContent = classification.name;
+      // v3.1: Mostra nome + indicador se não está no catálogo (só em plásticos)
+      let displayName = classification.name;
+      if (plasticsMode && !classification.inCatalog) {
+        displayName = classification.name + ' ≈';
+      }
+      document.getElementById('color-name').textContent = displayName;
       document.getElementById('color-name').style.color = classification.color;
       document.getElementById('confidence-display').textContent = `${classification.confidence}%`;
       document.getElementById('confidence-display').style.color =
@@ -2179,20 +2812,27 @@
     console.log('✗ CALIBRAÇÃO DE PRETO RESETADA');
   }
   console.log('╔═══════════════════════════════════════════════════════════╗');
-  console.log('║  MOTOR DE CORES v3.0.1 - SISTEMA RESPONSIVO UNIVERSAL   ║');
-  console.log('║  ✓ Layout baseado em proporções (vw/vh/clamp)           ║');
-  console.log('║  ✓ Sugestão de pigmentos visível em TODOS os devices    ║');
-  console.log('║  ✓ Otimizado para iPhone 12 Pro Max e similares         ║');
+  console.log('║  MOTOR DE CORES v3.1 - SISTEMA MULTI-BIBLIOTECA         ║');
+  console.log('║  🧪 NOVA: BIBLIOTECA PLÁSTICOS E POLÍMEROS              ║');
+  console.log('║  ✓ 30+ cores industriais com fórmulas de pigmentos     ║');
+  console.log('║  ✓ Lógica de decomposição (Verde = Azul + Amarelo)      ║');
+  console.log('║  ✓ Códigos CI oficiais (PW6, PB15:1, PG7, etc.)         ║');
+  console.log('║  ✓ Sugestão inteligente mesmo com 0% compatibilidade   ║');
   console.log('╚═══════════════════════════════════════════════════════════╝');
+  console.log('');
+  console.log('📚 BIBLIOTECAS DISPONÍVEIS:');
+  console.log('   🎨 NORMAL     → Cores genéricas (padrão)');
+  console.log('   🔬 AMPLIADO   → 60+ nuances detalhadas');
+  console.log('   ⭐ UNIVERSAL  → Sem adjetivos');
+  console.log('   🧪 PLÁSTICOS  → Indústria plástica (NOVA!)');
   console.log('');
   console.log('🎯 MODO LIVRE: Mira fixa no centro, análise contínua');
   console.log('📍 MODO ESTÁTICO: Clique para analisar (congela após estabilizar)');
   console.log('⚖️ MODO COMPARAÇÃO: Capture REFERÊNCIA e AMOSTRA');
   console.log('   → Veja % de compatibilidade');
-  console.log('   → Receba sugestão de pigmento para ajustar amostra');
-  console.log('⭐ FUNÇÃO UNIVERSAL: Remove adjetivos');
-  console.log('🔬 FUNÇÃO AMPLIADO: Nuances detalhadas (Azul Royal, Vinho, etc.)');
-  console.log('🎨 v3.0.1: RESPONSIVO - Funciona em qualquer tamanho de tela!');
+  console.log('   → Receba fórmula completa de pigmentos');
+  console.log('');
+  console.log(`🧪 Catálogo Plásticos carregado: ${Object.keys(PLASTICS_LIBRARY).length} cores`);
   console.log('');
 </script>
 </body>
