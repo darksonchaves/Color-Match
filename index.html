@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Motor de Cor - Sistema Multi-Biblioteca v3.1.1 PLÁSTICOS E POLÍMEROS</title>
+<title>Motor de Cor - Sistema Multi-Biblioteca v3.1.2 PLÁSTICOS E POLÍMEROS</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -296,9 +296,6 @@
     border: 1px solid rgba(150,80,200,0.45);
     box-shadow: 0 0 6px rgba(150,80,200,0.2);
   }
-  /* ═══════════════════════════════════════════════════════════════
-     v3.1: BOTÃO BIBLIOTECA PLÁSTICOS E POLÍMEROS
-     ═══════════════════════════════════════════════════════════════ */
   #btn-plasticos {
     background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
     color: #446;
@@ -657,7 +654,7 @@
 <body>
 <div id="header">
   <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v3.1.1 - PLÁSTICOS E POLÍMEROS (FIX)</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v3.1.2 - PLÁSTICOS (FAMÍLIA DE COR)</span>
 </div>
 <div id="top-bar">
   <div class="mode-selector">
@@ -802,11 +799,6 @@
   let comparisonSample = null;
   let selectingRef = false;
   let selectingSample = false;
-  // ═══════════════════════════════════════════════════════════════
-  // v3.1: BIBLIOTECA PLÁSTICOS E POLÍMEROS
-  // Base de dados oficial dos fabricantes (Clariant, BASF, Cromex, Colorfix)
-  // Cada cor contém a fórmula completa de pigmentos com códigos CI
-  // ═══════════════════════════════════════════════════════════════
   const PLASTICS_LIBRARY = {
     "Branco Gelo": {
       hsvTarget: { h: 0, s: 0, v: 95 },
@@ -1499,12 +1491,39 @@
     return Math.sqrt(hNorm * hNorm * 0.4 + sNorm * sNorm * 0.3 + vNorm * vNorm * 0.3);
   }
   // ═══════════════════════════════════════════════════════════════
-  // v3.1.1 FIX: CLASSIFICAÇÃO BIBLIOTECA PLÁSTICOS E POLÍMEROS
-  // CORREÇÃO CRÍTICA: Respeita calibração Preto/Branco e normaliza V pela régua
+  // v3.1.2: IDENTIFICA FAMÍLIA DE COR PELO H (HUE)
+  // Corrige problema de verde sendo lido como amarelo
+  // ═══════════════════════════════════════════════════════════════
+  function getColorFamily(h) {
+    if (h < 15 || h >= 345) return 'vermelho';
+    if (h >= 15 && h < 45) return 'laranja';
+    if (h >= 45 && h < 70) return 'amarelo';
+    if (h >= 70 && h < 165) return 'verde';
+    if (h >= 165 && h < 195) return 'ciano';
+    if (h >= 195 && h < 255) return 'azul';
+    if (h >= 255 && h < 290) return 'violeta';
+    return 'rosa';
+  }
+  // ═══════════════════════════════════════════════════════════════
+  // v3.1.2 FIX: CLASSIFICAÇÃO BIBLIOTECA PLÁSTICOS E POLÍMEROS
+  // CORREÇÕES APLICADAS:
+  // 1. Detecta preto absoluto (lente tampada) ANTES da calibração
+  // 2. Identifica família de cor pelo H (Hue)
+  // 3. Só compara com cores da MESMA família
+  // 4. Respeita calibração Branco/Preto
+  // 5. Normaliza V pela régua de calibração
   // ═══════════════════════════════════════════════════════════════
   function classifyPlasticsPolymers(hsv, rgb) {
-    // ✅ CORREÇÃO 1: RESPEITAR CALIBRAÇÃO DE PRETO
-    if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) {
+    // ✅ CORREÇÃO 1: NORMALIZAR O V PELA RÉGUA DE CALIBRAÇÃO (primeiro passo)
+    const normalizedHsv = {
+      h: hsv.h,
+      s: hsv.s,
+      v: normalizeV(hsv.v)
+    };
+    
+    // ✅ CORREÇÃO 2: PRETO ABSOLUTO (lente tampada / sem luz)
+    // Se V normalizado for muito baixo e saturação baixa → Preto Absoluto
+    if (normalizedHsv.v < 8 && normalizedHsv.s < 35) {
       return { 
         name: 'Preto Absoluto', 
         color: '#0A0A0A', 
@@ -1513,7 +1532,7 @@
       };
     }
     
-    // ✅ CORREÇÃO 2: RESPEITAR CALIBRAÇÃO DE BRANCO
+    // ✅ CORREÇÃO 3: RESPEITAR CALIBRAÇÃO DE BRANCO
     if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) {
       return { 
         name: 'Branco Gelo', 
@@ -1523,19 +1542,40 @@
       };
     }
     
-    // ✅ CORREÇÃO 3: NORMALIZAR O V PELA RÉGUA DE CALIBRAÇÃO
-    const normalizedHsv = {
-      h: hsv.h,
-      s: hsv.s,
-      v: normalizeV(hsv.v)
-    };
+    // ✅ CORREÇÃO 4: RESPEITAR CALIBRAÇÃO DE PRETO
+    if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) {
+      return { 
+        name: 'Preto Absoluto', 
+        color: '#0A0A0A', 
+        confidence: 99,
+        inCatalog: true 
+      };
+    }
     
-    // Busca no catálogo com HSV NORMALIZADO (exclui Preto/Branco já tratados)
+    // ✅ CORREÇÃO 5: CINZA (saturação muito baixa)
+    if (normalizedHsv.s < 12) {
+      if (normalizedHsv.v >= 80) return { name: 'Branco Gelo', color: '#FAFAFA', confidence: 97, inCatalog: true };
+      if (normalizedHsv.v >= 65) return { name: 'Cinza Claro', color: '#BFBFBF', confidence: 95, inCatalog: true };
+      if (normalizedHsv.v >= 45) return { name: 'Cinza Médio', color: '#8C8C8C', confidence: 95, inCatalog: true };
+      if (normalizedHsv.v >= 25) return { name: 'Cinza Escuro', color: '#595959', confidence: 95, inCatalog: true };
+      return { name: 'Preto Absoluto', color: '#0A0A0A', confidence: 98, inCatalog: true };
+    }
+    
+    // ✅ CORREÇÃO 6: IDENTIFICA FAMÍLIA DE COR PELO H (HUE)
+    const detectedFamily = getColorFamily(normalizedHsv.h);
+    console.log(`🔍 Família detectada: ${detectedFamily} (H: ${normalizedHsv.h.toFixed(0)}°)`);
+    
+    // ✅ CORREÇÃO 7: SÓ COMPARA COM CORES DA MESMA FAMÍLIA!
     let closestName = null;
     let closestDist = Infinity;
     let closestColor = null;
     for (const [name, data] of Object.entries(PLASTICS_LIBRARY)) {
-      if (data.familia === 'preto' || data.familia === 'branco') continue;
+      // Ignora branco/preto/cinza/natural (já tratados acima)
+      if (data.familia === 'preto' || data.familia === 'branco' || 
+          data.familia === 'cinza' || data.familia === 'natural') continue;
+      
+      // FILTRO CRÍTICO: só compara com cores da MESMA família!
+      if (data.familia !== detectedFamily) continue;
       
       const dist = hsvDistance(normalizedHsv, data.hsvTarget);
       if (dist < closestDist) {
@@ -1543,6 +1583,29 @@
         closestName = name;
         closestColor = data.hex;
       }
+    }
+    
+    // Se não encontrou nenhuma cor da mesma família, retorna a cor base da família
+    if (closestName === null) {
+      const familyMap = {
+        'vermelho': { name: 'Vermelho DPP', color: '#DC2626' },
+        'laranja': { name: 'Laranja Vivo', color: '#FF8800' },
+        'amarelo': { name: 'Amarelo Arilida', color: '#FFD700' },
+        'verde': { name: 'Verde Bandeira', color: '#009B3A' },
+        'ciano': { name: 'Azul Turquesa', color: '#40E0D0' },
+        'azul': { name: 'Azul Ftalo', color: '#1E3A8A' },
+        'violeta': { name: 'Violeta Dioxazina', color: '#7F00FF' },
+        'rosa': { name: 'Rosa', color: '#FFB0C0' }
+      };
+      const fallback = familyMap[detectedFamily] || { name: 'Desconhecido', color: '#888888' };
+      return {
+        name: fallback.name,
+        color: fallback.color,
+        confidence: 70,
+        inCatalog: false,
+        closestMatch: fallback.name,
+        similarity: 70
+      };
     }
     
     // Threshold ajustado (mais flexível após normalização)
@@ -2799,14 +2862,13 @@
     console.log('✗ CALIBRAÇÃO DE PRETO RESETADA');
   }
   console.log('╔═══════════════════════════════════════════════════════════╗');
-  console.log('║  MOTOR DE CORES v3.1.1 FIX - CALIBRAÇÃO CORRIGIDA        ║');
+  console.log('║  MOTOR DE CORES v3.1.2 - FAMÍLIA DE COR                   ║');
   console.log('║  🧪 BIBLIOTECA PLÁSTICOS E POLÍMEROS                     ║');
-  console.log('║  ✅ FIX: Respeita calibração Preto/Branco                 ║');
-  console.log('║  ✅ FIX: Normaliza V pela régua de calibração             ║');
+  console.log('║  ✅ FIX 1: Preto absoluto (lente tampada) detectado       ║');
+  console.log('║  ✅ FIX 2: Família de cor pelo H (Hue)                   ║');
+  console.log('║  ✅ FIX 3: Só compara cores da MESMA família              ║');
+  console.log('║  ✓ Verde agora é VERDE (não amarelo!)                     ║');
   console.log('║  ✓ 38 cores industriais com fórmulas de pigmentos         ║');
-  console.log('║  ✓ Lógica de decomposição (Verde = Azul + Amarelo)        ║');
-  console.log('║  ✓ Códigos CI oficiais (PW6, PB15:1, PG7, etc.)           ║');
-  console.log('║  ✓ Sugestão inteligente mesmo com 0% compatibilidade      ║');
   console.log('╚═══════════════════════════════════════════════════════════╝');
   console.log('');
   console.log('📚 BIBLIOTECAS DISPONÍVEIS:');
@@ -2815,19 +2877,11 @@
   console.log('   ⭐ UNIVERSAL  → Sem adjetivos');
   console.log('   🧪 PLÁSTICOS  → Indústria plástica (NOVA!)');
   console.log('');
-  console.log('🎯 MODO LIVRE: Mira fixa no centro, análise contínua');
-  console.log('📍 MODO ESTÁTICO: Clique para analisar (congela após estabilizar)');
-  console.log('⚖️ MODO COMPARAÇÃO: Capture REFERÊNCIA e AMOSTRA');
-  console.log('   → Veja % de compatibilidade');
-  console.log('   → Receba fórmula completa de pigmentos');
-  console.log('');
-  console.log(`🧪 Catálogo Plásticos carregado: ${Object.keys(PLASTICS_LIBRARY).length} cores`);
-  console.log('');
-  console.log('🔧 v3.1.1 FIX:');
-  console.log('   • Calibração Preto/Branco agora é verificada PRIMEIRO');
-  console.log('   • V (luminosidade) é normalizado pela régua de calibração');
-  console.log('   • Preto calibrado = "Preto Absoluto" (correto!)');
-  console.log('   • Branco calibrado = "Branco Gelo" (correto!)');
+  console.log('🔧 v3.1.2 CORREÇÕES CRÍTICAS:');
+  console.log('   1. Preto absoluto (V<8, S<35) → Preto Absoluto');
+  console.log('   2. Família detectada pelo H (Hue)');
+  console.log('   3. Verde só compara com verdes (não amarelos!)');
+  console.log('   4. Azul só compara com azuis (não roxos!)');
   console.log('');
 </script>
 </body>
