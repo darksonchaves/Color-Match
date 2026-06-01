@@ -97,7 +97,7 @@
   .btn-top:disabled { opacity: 0.25; cursor: not-allowed; }
   #btn-calibrate-white { background: linear-gradient(135deg, #2a2a6e, #3a3a9e); color: #aac; border: 1px solid rgba(100,100,255,0.3); }
   #btn-calibrate-white:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a8e, #5a5abe); color: #eef; }
-  #btn-calibrate-white.calibrated { background: linear-gradient(135deg, #1a4a2e, #2a7a4e); border-color: rgba(50,200,100,0.4); color: #8fc; }
+  #btn-calibrate-white.calibrated { background: linear-gradient(135deg, #1a4a2e, #2a7a4e); border-color: rgba(50,200,100,0.4); color: #8; }
   #btn-calibrate-black { background: linear-gradient(135deg, #2a2a2a, #3a3a3a); color: #aaa; border: 1px solid rgba(100,100,100,0.3); }
   #btn-calibrate-black:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a3a, #5a5a5a); color: #ddd; }
   #btn-calibrate-black.calibrated { background: linear-gradient(135deg, #1a1a1a, #2a2a2a); border-color: rgba(200,200,200,0.4); color: #fff; }
@@ -163,6 +163,23 @@
   #start-overlay p { color: #778; font-size: 0.88rem; }
   #btn-start { padding: 13px 30px; background: linear-gradient(135deg, #3a3a9e, #7b5ce8); color: #fff; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; letter-spacing: 1px; transition: all 0.2s; }
   #btn-start:hover { transform: scale(1.05); }
+  #formula-panel {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(8,8,20,0.94);
+    border-top: 1px solid rgba(100,100,255,0.2);
+    padding: 1.2vh 1.5vw; display: none;
+    flex-direction: column; align-items: flex-start; justify-content: flex-start;
+    gap: 0.8vh; z-index: 22;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    max-height: 45vh; overflow-y: auto;
+  }
+  #formula-panel.show { display: flex; }
+  .formula-section { width: 100%; margin-bottom: 0.5vh; }
+  .formula-title { font-size: 0.65rem; font-weight: 700; letter-spacing: 1.2px; color: #6ac; text-transform: uppercase; margin-bottom: 0.4vh; }
+  .formula-content { font-size: 0.6rem; color: #aac; line-height: 1.4; font-family: 'Courier New', monospace; }
+  .formula-item { margin-bottom: 0.2vh; padding-left: 1em; }
+  .adjustment-text { font-size: 0.62rem; color: #8ec; line-height: 1.35; white-space: pre-line; }
+  .adjustment-text.perfect { color: #6effa0; }
   #comparison-panel {
     position: absolute; bottom: 0; left: 0; right: 0;
     background: rgba(8,8,20,0.94);
@@ -189,6 +206,12 @@
   .comp-percent { font-size: clamp(1.1rem, 4vw, 1.4rem); font-weight: 800; color: #6effa0; text-align: center; text-shadow: 0 0 10px rgba(110,255,160,0.35); line-height: 1; }
   .comp-percent.low { color: #ff5050; text-shadow: 0 0 10px rgba(255,80,80,0.35); }
   .comp-percent.medium { color: #ffcc60; text-shadow: 0 0 10px rgba(255,200,80,0.35); }
+  .comp-formulas-section { width: 100%; max-width: 92vw; padding: 1vh 2vw; background: rgba(15,15,30,0.85); border: 1px solid rgba(120,220,255,0.3); border-radius: 6px; margin-top: 0.3vh; flex-shrink: 0; }
+  .comp-formulas-title { font-size: clamp(0.48rem, 1.6vw, 0.54rem); font-weight: 700; letter-spacing: 1.3px; color: #667; text-transform: uppercase; text-align: center; margin-bottom: 0.8vh; }
+  .comp-formulas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5vw; }
+  .comp-formula-block { }
+  .comp-formula-label { font-size: clamp(0.5rem, 1.7vw, 0.58rem); font-weight: 700; color: #8ac; margin-bottom: 0.4vh; }
+  .comp-formula-list { font-size: clamp(0.52rem, 1.8vw, 0.6rem); color: #aac; line-height: 1.4; font-family: 'Courier New', monospace; }
   .comp-suggestion { width: 100%; max-width: 92vw; padding: 1vh 2vw; background: rgba(15,15,30,0.85); border: 1px solid rgba(120,220,255,0.3); border-radius: 6px; margin-top: 0.3vh; flex-shrink: 0; }
   .comp-suggestion-label { font-size: clamp(0.48rem, 1.6vw, 0.54rem); font-weight: 700; letter-spacing: 1.3px; color: #667; text-transform: uppercase; text-align: center; margin-bottom: 0.5vh; }
   .comp-suggestion-text { font-size: clamp(0.62rem, 2.2vw, 0.72rem); font-weight: 600; color: #8ec; text-align: left; line-height: 1.35; text-shadow: 0 0 8px rgba(120,220,255,0.2); white-space: pre-line; }
@@ -208,13 +231,14 @@
     .comp-row { gap: 2vw; }
     .comp-block { max-width: 26vw; gap: 0.4vh; }
     .comp-block.comp-center { min-width: 18vw; }
+    .comp-formulas-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 <div id="header">
   <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v3.5 PRO++ - TRAVA VISUAL DE SEGURANÇA</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v3.5 PRO++ - CATÁLOGO DIGITAL MÁXIMA COMPATIBILIDADE</span>
 </div>
 <div id="top-bar">
   <div class="mode-selector">
@@ -266,6 +290,16 @@
       <div class="reticle-sample-circle"></div>
       <div class="reticle-dot"></div>
     </div>
+    <div id="formula-panel">
+      <div class="formula-section">
+        <div class="formula-title">🧪 FÓRMULA DE REFERÊNCIA (Catálogo)</div>
+        <div class="formula-content" id="formula-content">---</div>
+      </div>
+      <div class="formula-section">
+        <div class="formula-title">🎨 AJUSTE SUGERIDO</div>
+        <div class="adjustment-text" id="adjustment-text">---</div>
+      </div>
+    </div>
     <div id="comparison-panel">
       <div class="comp-row">
         <div class="comp-block">
@@ -287,6 +321,19 @@
             <div id="sample-reticle-marker" class="comp-marker" style="display:none;"></div>
           </div>
           <div id="sample-color-name" class="comp-color-name">---</div>
+        </div>
+      </div>
+      <div class="comp-formulas-section" id="comp-formulas-section" style="display:none;">
+        <div class="comp-formulas-title">🧪 FÓRMULAS DAS CORES CAPTURADAS</div>
+        <div class="comp-formulas-grid">
+          <div class="comp-formula-block">
+            <div class="comp-formula-label">REFERÊNCIA:</div>
+            <div class="comp-formula-list" id="ref-formula-list">---</div>
+          </div>
+          <div class="comp-formula-block">
+            <div class="comp-formula-label">AMOSTRA:</div>
+            <div class="comp-formula-list" id="sample-formula-list">---</div>
+          </div>
         </div>
       </div>
       <div class="comp-suggestion" id="pigment-suggestion" style="display:none;">
@@ -646,7 +693,7 @@ const PLASTICS_LIBRARY = {
 };
 
 // ════════════════════════════════════════════════════════════════
-// 🔒 TRAVA DE SEGURANÇA MÁXIMA (CROSS-VALIDATION VISUAL)
+// 🔒 FUNÇÕES AUXILIARES (RGB/HSV)
 // ════════════════════════════════════════════════════════════════
 function hexToRGB(hex) {
   if (!hex || typeof hex !== 'string') return { r: 0, g: 0, b: 0 };
@@ -679,12 +726,9 @@ function rgbToHSV(r, g, b) {
     v: Math.round(v * 1000) / 10
   };
 }
-
-/**
- * TRAVA VISUAL DE SEGURANÇA
- * Calcula Score de Similaridade entre a Leitura Real e o HEX do Catálogo.
- * Retorna 0 se a diferença for humanamente perceptível (REJEITADO).
- */
+// ════════════════════════════════════════════════════════════════
+// 🔒 TRAVA DE SEGURANÇA MÁXIMA (CATÁLOGO DIGITAL)
+// ════════════════════════════════════════════════════════════════
 function calculateVisualScore(readHSV, readRGB, hex) {
   const candRGB = hexToRGB(hex);
   const candHSV = rgbToHSV(candRGB.r, candRGB.g, candRGB.b);
@@ -701,24 +745,24 @@ function calculateVisualScore(readHSV, readRGB, hex) {
   const sDiff = Math.abs(readHSV.s - candHSV.s);
   const vDiff = Math.abs(readHSV.v - candHSV.v);
 
-  // ⛔ LIMITES EXTREMAMENTE RIGOROSOS
-  if (rgbDist > 65) return 0;
-  if (vDiff > 18) return 0;
-  if (sDiff > 25) return 0;
-  if (hDiff > 15) return 0;
+  const maxRGBDist = Math.sqrt(3 * Math.pow(255, 2));
+  const normalizedRGBDist = rgbDist / maxRGBDist;
+  const normalizedHDiff = hDiff / 180;
+  const normalizedSDiff = sDiff / 100;
+  const normalizedVDiff = vDiff / 100;
 
   const score = 100 - (
-    (rgbDist / 65) * 45 +
-    (vDiff / 18) * 25 +
-    (hDiff / 15) * 20 +
-    (sDiff / 25) * 10
+    normalizedRGBDist * 45 +
+    normalizedVDiff * 25 +
+    normalizedHDiff * 20 +
+    normalizedSDiff * 10
   );
 
-  return Math.max(0, score);
+  return Math.max(0, Math.min(100, score));
 }
 
-function getColorFamily(h) {
-  if (h < 0 || h > 360) h = Math.max(0, Math.min(360, h || 0));
+function getColorFamily(h, s) {
+  if (s < 15) return 'neutro';
   if (h >= 0 && h < 15) return 'vermelho';
   if (h >= 15 && h < 45) return 'laranja';
   if (h >= 45 && h < 70) return 'amarelo';
@@ -727,53 +771,55 @@ function getColorFamily(h) {
   if (h >= 195 && h < 255) return 'azul';
   if (h >= 255 && h < 290) return 'violeta';
   if (h >= 290 && h < 345) return 'rosa';
-  return 'vermelho';
+  if (h >= 345) return 'vermelho';
+  return 'neutro';
 }
 
-function isInHsvRange(hsv, range) {
-  if (!hsv || !range) return false;
-  const hInRange = range.hMin <= range.hMax
-    ? (hsv.h >= range.hMin && hsv.h <= range.hMax)
-    : (hsv.h >= range.hMin || hsv.h <= range.hMax);
-  return hInRange && hsv.s >= range.sMin && hsv.s <= range.sMax && hsv.v >= range.vMin && hsv.v <= range.vMax;
-}
-
-function hsvDistance(hsv1, hsv2) {
-  if (!hsv1 || !hsv2) return Infinity;
-  let hDiff = Math.abs(hsv1.h - hsv2.h);
-  if (hDiff > 180) hDiff = 360 - hDiff;
-  return Math.sqrt(
-    Math.pow(hDiff / 60, 2) * 0.5 +
-    Math.pow(Math.abs(hsv1.s - hsv2.s) / 100, 2) * 0.25 +
-    Math.pow(Math.abs(hsv1.v - hsv2.v) / 100, 2) * 0.25
-  );
-}
 // ════════════════════════════════════════════════════════════════
-// 🧪 CLASSIFICADOR COM TRAVA DE SEGURANÇA (PLÁSTICOS)
+// 🧪 CLASSIFICADOR COM CATÁLOGO DIGITAL (PLÁSTICOS)
 // ════════════════════════════════════════════════════════════════
 function classifyPlasticsPolymers(hsv, rgb, variance) {
-  if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0, inCatalog: false };
+  if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0, formula: [] };
 
   const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
   const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
 
-  if (maxRGB <= 15 || avgRGB <= 10) return { name: 'Preto Absoluto', color: '#0A0A0A', confidence: 99, inCatalog: true };
-  if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) return { name: 'Branco Gelo', color: '#FAFAFA', confidence: 99, inCatalog: true };
-  if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) return { name: 'Preto Absoluto', color: '#0A0A0A', confidence: 99, inCatalog: true };
+  if (maxRGB <= 15 || avgRGB <= 10) {
+    const preto = PLASTICS_LIBRARY["Preto Absoluto"];
+    return { name: 'Preto Absoluto', color: preto.hex, confidence: 99, formula: preto.formula };
+  }
+  if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) {
+    const branco = PLASTICS_LIBRARY["Branco Gelo"];
+    return { name: 'Branco Gelo', color: branco.hex, confidence: 99, formula: branco.formula };
+  }
+  if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) {
+    const preto = PLASTICS_LIBRARY["Preto Absoluto"];
+    return { name: 'Preto Absoluto', color: preto.hex, confidence: 99, formula: preto.formula };
+  }
 
   const normalizedHsv = { h: hsv.h, s: hsv.s, v: normalizeV(hsv.v) };
-  if (normalizedHsv.v < 18 && normalizedHsv.s < 30) return { name: 'Preto Absoluto', color: '#0A0A0A', confidence: 98, inCatalog: true };
-  if (maxRGB < 50 && normalizedHsv.s < 40) return { name: 'Preto Absoluto', color: '#0A0A0A', confidence: 98, inCatalog: true };
+  if (normalizedHsv.v < 18 && normalizedHsv.s < 30) {
+    const preto = PLASTICS_LIBRARY["Preto Absoluto"];
+    return { name: 'Preto Absoluto', color: preto.hex, confidence: 98, formula: preto.formula };
+  }
+  if (maxRGB < 50 && normalizedHsv.s < 40) {
+    const preto = PLASTICS_LIBRARY["Preto Absoluto"];
+    return { name: 'Preto Absoluto', color: preto.hex, confidence: 98, formula: preto.formula };
+  }
 
-  // 🔒 TESTE DE SEGURANÇA MÁXIMA EM TODA A BIBLIOTECA
+  const detectedFamily = getColorFamily(normalizedHsv.h, normalizedHsv.s);
+  
   let bestMatch = null;
   let bestScore = -1;
 
   for (const [name, data] of Object.entries(PLASTICS_LIBRARY)) {
-    // Evita forçar cores vivas quando lê tons acinzentados
-    if (normalizedHsv.s < 12 && !['branco', 'preto', 'cinza', 'natural'].includes(data.familia)) continue;
+    if (detectedFamily === 'neutro') {
+      if (!['branco', 'preto', 'cinza', 'natural', 'bege'].includes(data.familia)) continue;
+    } else {
+      if (normalizedHsv.s < 12 && !['branco', 'preto', 'cinza', 'natural'].includes(data.familia)) continue;
+      if (data.familia !== detectedFamily && !['branco', 'preto', 'cinza'].includes(data.familia)) continue;
+    }
 
-    // Tira-Teima Visual
     const score = calculateVisualScore(normalizedHsv, rgb, data.hex);
 
     if (score > bestScore) {
@@ -782,45 +828,17 @@ function classifyPlasticsPolymers(hsv, rgb, variance) {
     }
   }
 
-  // ✅ PASSOU NA TRAVA DE SEGURANÇA
-  if (bestMatch && bestScore > 0) {
-    const finalConfidence = Math.min(99, Math.round(80 + (bestScore * 0.2)));
-    const matchIcon = bestScore > 85 ? " ✓" : " ≈";
+  if (bestMatch && bestScore >= 0) {
+    const finalConfidence = Math.min(99, Math.round(bestScore));
     return {
-      name: bestMatch.name + matchIcon,
+      name: bestMatch.name,
       color: bestMatch.data.hex,
       confidence: finalConfidence,
-      inCatalog: true,
-      closestMatch: bestMatch.name,
-      similarity: bestScore
+      formula: bestMatch.data.formula || []
     };
   }
 
-  // ❌ CAIU NA TRAVA DE SEGURANÇA
-  const detectedFamily = getColorFamily(normalizedHsv.h);
-  let fallbackMatch = null;
-  let minFallbackDist = Infinity;
-
-  for (const [name, data] of Object.entries(PLASTICS_LIBRARY)) {
-    if (data.familia === detectedFamily) {
-      const dist = hsvDistance(normalizedHsv, data.hsvTarget);
-      if (dist < minFallbackDist) {
-        minFallbackDist = dist;
-        fallbackMatch = { name, data };
-      }
-    }
-  }
-
-  if (fallbackMatch) {
-    return {
-      name: fallbackMatch.name + " ⚠ (Incompatível)",
-      color: fallbackMatch.data.hex,
-      confidence: Math.max(50, Math.round(100 - minFallbackDist * 100)),
-      inCatalog: false
-    };
-  }
-
-  return { name: 'Desconhecido', color: '#888888', confidence: 0, inCatalog: false };
+  return { name: 'Desconhecido', color: '#888888', confidence: 0, formula: [] };
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1024,6 +1042,65 @@ function classifyColorWithRuler(hsv, rgb, variance) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// 🎨 GERADOR DE AJUSTES
+// ════════════════════════════════════════════════════════════════
+function generateAdjustmentSuggestion(readRGB, readHSV, refHex, refName) {
+  const refRGB = hexToRGB(refHex);
+  const refHSV = rgbToHSV(refRGB.r, refRGB.g, refRGB.b);
+  
+  const score = calculateVisualScore(readHSV, readRGB, refHex);
+  
+  if (score >= 95) {
+    return { text: '✅ PRATICAMENTE PERFEITO!\nObjeto está ' + score.toFixed(0) + '% compatível com a referência.\nAjuste mínimo ou desnecessário.', cssClass: 'perfect' };
+  }
+  
+  const vDiff = refHSV.v - readHSV.v;
+  const sDiff = refHSV.s - readHSV.s;
+  let hueDiff = refHSV.h - readHSV.h;
+  if (hueDiff > 180) hueDiff -= 360;
+  if (hueDiff < -180) hueDiff += 360;
+  
+  const suggestions = [];
+  
+  if (Math.abs(vDiff) > 15) {
+    if (vDiff > 35) suggestions.push('Branco (clarear significativamente)');
+    else if (vDiff > 20) suggestions.push('um pouco de Branco');
+    else if (vDiff < -35) suggestions.push('Preto (escurecer significativamente)');
+    else if (vDiff < -20) suggestions.push('um pouco de Preto');
+  }
+  
+  if (Math.abs(sDiff) > 18) {
+    if (sDiff > 0) {
+      const baseName = refName.replace(/ Vivo| Puro| Claro| Escuro/g, '').trim();
+      suggestions.push(baseName + ' puro para saturar');
+    } else {
+      if (!suggestions.some(s => s.includes('Branco'))) {
+        suggestions.push('Branco ou Cinza para dessaturar');
+      }
+    }
+  }
+  
+  if (Math.abs(hueDiff) > 12) {
+    const baseName = refName.replace(/ Vivo| Puro| Claro| Escuro/g, '').trim();
+    if (!suggestions.some(s => s.includes(baseName))) {
+      suggestions.push(baseName + ' para ajustar tonalidade');
+    }
+  }
+  
+  if (suggestions.length === 0) {
+    return { text: '⚙️ AJUSTE FINO (para ' + score.toFixed(0) + '% → 100%):\nPara igualar exatamente à referência ' + refHex + ':\nAjuste mínimo de tonalidade necessário.', cssClass: '' };
+  }
+  
+  let finalText = score < 75 ? '⚠️ AJUSTE NECESSÁRIO (para ' + score.toFixed(0) + '% → 100%):\n' : '🎨 AJUSTE FINO (para ' + score.toFixed(0) + '% → 100%):\n';
+  finalText += 'Para igualar exatamente à referência ' + refHex + ':\n';
+  
+  if (suggestions.length === 1) finalText += '• Adicione ' + suggestions[0];
+  else if (suggestions.length === 2) finalText += '• Adicione ' + suggestions[0] + '\n• Adicione ' + suggestions[1];
+  else finalText += suggestions.map(s => '• Adicione ' + s).join('\n');
+  
+  return { text: finalText, cssClass: '' };
+}
+// ════════════════════════════════════════════════════════════════
 // 📊 MODO COMPARAÇÃO - ALGORITMOS
 // ════════════════════════════════════════════════════════════════
 function getBaseColorName(name) {
@@ -1042,7 +1119,6 @@ function getBaseColorName(name) {
     .replace(/ Lavanda/g, '').replace(/ Violeta/g, '').replace(/ Ametista/g, '')
     .replace(/ Fúcsia/g, '').replace(/ Vinho/g, '').replace(/ Tangerina/g, '')
     .replace(/ Bege/g, '').replace(/ Mostarda/g, '').replace(/ Ocre/g, '')
-    .replace(/ ✓| ≈| ⚠.*$/g, '')
     .trim();
 }
 
@@ -1060,66 +1136,11 @@ function areSpectralNeighbors(idx1, idx2) {
 
 function calculatePlasticsCompatibility(ref, sample) {
   if (!ref || !sample) return 0;
-  const refData = PLASTICS_LIBRARY[ref.name.replace(/ ✓| ≈| ⚠.*$/g, '')];
-  const sampleData = PLASTICS_LIBRARY[sample.name.replace(/ ✓| ≈| ⚠.*$/g, '')];
-  if (!refData || !sampleData) return 0;
-  if (ref.name.replace(/ ✓| ≈| ⚠.*$/g, '') === sample.name.replace(/ ✓| ≈| ⚠.*$/g, '')) return 100;
-  const dist = hsvDistance(refData.hsvTarget, sampleData.hsvTarget);
-  return Math.max(0, Math.round((1 - dist) * 100));
-}
-
-function suggestPigmentsPlastics(ref, sample) {
-  if (!ref || !sample) return { text: 'Erro: Parâmetros inválidos', cssClass: 'incompatible' };
-  const refName = ref.name.replace(/ ✓| ≈| ⚠.*$/g, '');
-  const sampleName = sample.name.replace(/ ✓| ≈| ⚠.*$/g, '');
-  const refData = PLASTICS_LIBRARY[refName];
-  const sampleData = PLASTICS_LIBRARY[sampleName];
-  if (!refData || !sampleData) return { text: 'Erro: Cor fora do catálogo Plásticos', cssClass: 'incompatible' };
-  if (refName === sampleName) return { text: '✓ Cores idênticas do catálogo Plásticos!\nNenhum ajuste necessário.', cssClass: 'perfect' };
-
-  const refFormula = refData.formula || [];
-  const sampleFormula = sampleData.formula || [];
-  const faltantes = [];
-  const manter = [];
-  const reduzir = [];
-
-  refFormula.forEach(pRef => {
-    if (pRef.ci === 'NAT' || pRef.funcao === 'base') return;
-    const existe = sampleFormula.some(pSample => pSample.ci === pRef.ci);
-    if (!existe) faltantes.push(pRef);
-    else manter.push(pRef);
-  });
-  sampleFormula.forEach(pSample => {
-    if (pSample.ci === 'NAT' || pSample.funcao === 'base') return;
-    const existe = refFormula.some(pRef => pRef.ci === pSample.ci);
-    if (!existe) reduzir.push(pSample);
-  });
-
-  const linhas = [];
-  linhas.push(`📋 REF: ${refName}`);
-  linhas.push(`📋 AMOSTRA: ${sampleName}`);
-  linhas.push('');
-  if (faltantes.length > 0) {
-    linhas.push('✦ ADICIONAR À AMOSTRA:');
-    faltantes.forEach(p => {
-      linhas.push(`  • ${p.pigmento}`);
-      linhas.push(`    (${p.ci} - ${p.codigo}) ~${p.proporcao}`);
-    });
-  }
-  if (reduzir.length > 0) {
-    linhas.push('');
-    linhas.push('⚠️ REDUZIR/REMOVER DA AMOSTRA:');
-    reduzir.forEach(p => linhas.push(`  • ${p.pigmento} (${p.ci})`));
-  }
-  if (manter.length > 0) {
-    linhas.push('');
-    linhas.push('✓ MANTÉM (já presente):');
-    manter.forEach(p => linhas.push(`  • ${p.pigmento} (${p.ci})`));
-  }
-  if (faltantes.length === 0 && reduzir.length === 0 && manter.length === 0) {
-    linhas.push('⚠️ Ajuste de proporções necessário. Compare as fórmulas.');
-  }
-  return { text: linhas.join('\n'), cssClass: 'plastics' };
+  const refHex = ref.color;
+  const sampleHex = sample.color;
+  if (refHex === sampleHex) return 100;
+  const score = calculateVisualScore(sample.hsv, sample.rgb, refHex);
+  return Math.max(0, Math.round(score));
 }
 
 function calculateCompatibility(ref, sample) {
@@ -1168,7 +1189,6 @@ function calculateCompatibility(ref, sample) {
 
 function suggestPigmentAdjustment(ref, sample) {
   if (!ref || !sample) return { text: 'Erro: Parâmetros inválidos', cssClass: 'incompatible' };
-  if (plasticsMode) return suggestPigmentsPlastics(ref, sample);
 
   const neutros = ['Preto', 'Cinza', 'Branco'];
   const refBase = getBaseColorName(ref.name);
@@ -1283,6 +1303,7 @@ function isCalibrationBlack(hsv, rgb) {
   if (Math.max(rgb.r, rgb.g, rgb.b) <= Math.max(base.rgb.r, base.rgb.g, base.rgb.b) + 20 && hsv.s <= 35) return true;
   return false;
 }
+
 // ════════════════════════════════════════════════════════════════
 // 📊 BUFFER E ESTABILIZAÇÃO
 // ════════════════════════════════════════════════════════════════
@@ -1351,7 +1372,7 @@ function shouldUpdateColor(newHue, newColorName, newRGB, newSat, newVariance) {
 }
 
 // ════════════════════════════════════════════════════════════════
-// 🎤 ÁUDIO
+// 🎤 ÁUDIO (TTS) - SISTEMA COMPLETO
 // ════════════════════════════════════════════════════════════════
 function speakColor(name) {
   if (!window.speechSynthesis || !name || !audioEnabled) return;
@@ -1360,6 +1381,19 @@ function speakColor(name) {
   setTimeout(() => {
     try {
       const utt = new SpeechSynthesisUtterance(cleanName);
+      utt.lang = 'pt-BR';
+      utt.rate = 1.1;
+      window.speechSynthesis.speak(utt);
+    } catch (e) { console.error(e); }
+  }, 60);
+}
+
+function speakImmediate(text) {
+  if (!window.speechSynthesis || !text || !audioEnabled) return;
+  window.speechSynthesis.cancel();
+  setTimeout(() => {
+    try {
+      const utt = new SpeechSynthesisUtterance(text);
       utt.lang = 'pt-BR';
       utt.rate = 1.1;
       window.speechSynthesis.speak(utt);
@@ -1461,7 +1495,7 @@ function capturePoint(x, y, thumbId, markerId, nameId) {
   document.getElementById(markerId).style.display = 'none';
   document.getElementById(nameId).textContent = classification.name;
   document.getElementById(nameId).style.color = classification.color;
-  return { x, y, rgb, hsv, name: classification.name, color: classification.color, inCatalog: classification.inCatalog !== false };
+  return { x, y, rgb, hsv, name: classification.name, color: classification.color, formula: classification.formula || [] };
 }
 
 async function getDevices() {
@@ -1490,6 +1524,7 @@ async function openCamera(preferredDeviceId) {
   if (await tryOpen({ video: true })) return;
   alert('Erro ao acessar a câmera.');
 }
+
 // ════════════════════════════════════════════════════════════════
 // 🎛️ INTERFACE
 // ════════════════════════════════════════════════════════════════
@@ -1500,6 +1535,7 @@ function toggleSystem() {
   if (systemOn) {
     btn.textContent = 'SISTEMA/ON'; btn.className = 'system-on';
     btns.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = false; });
+    speakImmediate('Sistema ativado');
   } else {
     btn.textContent = 'SISTEMA/OFF'; btn.className = 'system-off';
     btns.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = true; });
@@ -1510,6 +1546,7 @@ function toggleSystem() {
     document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
     document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
     document.getElementById('color-swatch').style.background = '#1a1a2e';
+    speakImmediate('Sistema desativado');
   }
 }
 
@@ -1524,6 +1561,7 @@ function selectMode(mode) {
   document.querySelectorAll('.mode-option').forEach(opt => opt.classList.remove('active'));
   ['btn-sel-ref','btn-sel-sample','btn-reset-ref','btn-reset-sample','btn-reset-comparacao'].forEach(id => document.getElementById(id).classList.remove('show'));
   document.getElementById('comparison-panel').classList.remove('show');
+  document.getElementById('formula-panel').classList.remove('show');
 
   if (mode === 'livre') {
     btnModes.classList.add('mode-livre');
@@ -1532,13 +1570,17 @@ function selectMode(mode) {
     reticle.style.transform = 'translate(-50%, -50%)';
     reticle.classList.add('show');
     document.getElementById('btn-reset-estatico').classList.remove('show');
+    if (plasticsMode) document.getElementById('formula-panel').classList.add('show');
     document.querySelectorAll('.mode-option')[0].classList.add('active');
+    speakImmediate('Modo Livre selecionado');
   } else if (mode === 'estatico') {
     btnModes.classList.add('mode-estatico');
     document.getElementById('mode-label').textContent = 'MODO: 📍 ESTÁTICO';
     reticle.classList.remove('show');
     document.getElementById('btn-reset-estatico').classList.add('show');
+    if (plasticsMode) document.getElementById('formula-panel').classList.add('show');
     document.querySelectorAll('.mode-option')[1].classList.add('active');
+    speakImmediate('Modo Estático selecionado');
   } else if (mode === 'comparacao') {
     btnModes.classList.add('mode-comparacao');
     document.getElementById('mode-label').textContent = 'MODO: ⚖️ COMPARAÇÃO';
@@ -1547,6 +1589,7 @@ function selectMode(mode) {
     ['btn-sel-ref','btn-sel-sample','btn-reset-ref','btn-reset-sample','btn-reset-comparacao'].forEach(id => document.getElementById(id).classList.add('show'));
     document.getElementById('comparison-panel').classList.add('show');
     document.querySelectorAll('.mode-option')[2].classList.add('active');
+    speakImmediate('Modo Comparação selecionado');
   }
   staticAnalysisActive = false; staticFrozen = false; staticPosition = null;
 }
@@ -1561,6 +1604,8 @@ function resetEstatico() {
   document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
   document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
   document.getElementById('color-swatch').style.background = '#1a1a2e';
+  document.getElementById('formula-content').textContent = '---';
+  document.getElementById('adjustment-text').textContent = '---';
   colorBuffer = []; lastStableColorName = ''; lastStableRGB = { r: 0, g: 0, b: 0 };
   mismatchCounter = 0; consecutiveFrameCounter = 0;
   lastSpokenName = ''; pendingName = '';
@@ -1572,6 +1617,7 @@ function startRefSelection() {
   selectingRef = true; selectingSample = false;
   document.getElementById('color-name').textContent = 'Toque na tela: REFERÊNCIA';
   document.getElementById('color-name').style.color = '#8ec';
+  speakImmediate('Selecione a referência');
 }
 
 function startSampleSelection() {
@@ -1579,16 +1625,25 @@ function startSampleSelection() {
   selectingSample = true; selectingRef = false;
   document.getElementById('color-name').textContent = 'Toque na tela: AMOSTRA';
   document.getElementById('color-name').style.color = '#dd8';
+  speakImmediate('Selecione a amostra');
 }
 
 function captureRef(x, y) {
   const r = capturePoint(x, y, 'ref-thumb', 'ref-reticle-marker', 'ref-color-name');
-  if (r) { comparisonRef = r; updateComparison(); }
+  if (r) { 
+    comparisonRef = r; 
+    updateComparison();
+    speakImmediate('Referência capturada, ' + r.name);
+  }
 }
 
 function captureSample(x, y) {
   const r = capturePoint(x, y, 'sample-thumb', 'sample-reticle-marker', 'sample-color-name');
-  if (r) { comparisonSample = r; updateComparison(); }
+  if (r) { 
+    comparisonSample = r; 
+    updateComparison();
+    speakImmediate('Amostra capturada, ' + r.name);
+  }
 }
 
 function resetRef() {
@@ -1599,6 +1654,7 @@ function resetRef() {
   document.getElementById('ref-reticle-marker').style.display = 'none';
   document.getElementById('ref-color-name').textContent = '---';
   document.getElementById('ref-color-name').style.color = '#aac';
+  document.getElementById('ref-formula-list').textContent = '---';
   updateComparison();
 }
 
@@ -1610,6 +1666,7 @@ function resetSample() {
   document.getElementById('sample-reticle-marker').style.display = 'none';
   document.getElementById('sample-color-name').textContent = '---';
   document.getElementById('sample-color-name').style.color = '#aac';
+  document.getElementById('sample-formula-list').textContent = '---';
   updateComparison();
 }
 
@@ -1620,26 +1677,45 @@ function resetComparison() {
   document.getElementById('color-name').style.color = '#445';
 }
 
+function formatFormula(formula) {
+  if (!formula || formula.length === 0) return 'Sem fórmula disponível';
+  return formula.map(p => `• ${p.pigmento}\n  (${p.ci} - ${p.codigo}) ~${p.proporcao}`).join('\n');
+}
+
 function updateComparison() {
   const percentEl = document.getElementById('compatibility-percent');
   const suggestionBox = document.getElementById('pigment-suggestion');
   const suggestionText = document.getElementById('pigment-suggestion-text');
-  const suggestionLabel = suggestionBox.querySelector('.comp-suggestion-label');
+  const formulasSection = document.getElementById('comp-formulas-section');
+  const refFormulaList = document.getElementById('ref-formula-list');
+  const sampleFormulaList = document.getElementById('sample-formula-list');
+
   if (!comparisonRef || !comparisonSample) {
     percentEl.textContent = '---';
     percentEl.className = 'comp-percent';
     suggestionBox.style.display = 'none';
+    formulasSection.style.display = 'none';
     return;
   }
+
   const compat = calculateCompatibility(comparisonRef, comparisonSample);
   percentEl.textContent = compat + '%';
   percentEl.className = 'comp-percent' + (compat === 0 ? ' low' : (compat < 50 ? ' medium' : ''));
+
+  if (plasticsMode && comparisonRef.formula && comparisonSample.formula) {
+    formulasSection.style.display = 'block';
+    refFormulaList.textContent = formatFormula(comparisonRef.formula);
+    sampleFormulaList.textContent = formatFormula(comparisonSample.formula);
+  } else {
+    formulasSection.style.display = 'none';
+  }
+
   const sug = suggestPigmentAdjustment(comparisonRef, comparisonSample);
   suggestionText.textContent = sug.text;
   suggestionText.className = 'comp-suggestion-text ' + sug.cssClass;
   suggestionBox.style.display = 'block';
-  if (plasticsMode) suggestionLabel.innerHTML = '🧪 FÓRMULA DE PIGMENTOS (PLÁSTICOS)';
-  else suggestionLabel.innerHTML = '🎨 AJUSTE SUGERIDO';
+
+  speakImmediate('Compatibilidade, ' + compat + ' por cento');
 }
 
 async function switchCamera() {
@@ -1654,9 +1730,14 @@ function toggleAudio() {
   if (window.speechSynthesis) window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
   audioEnabled = !audioEnabled;
   const btn = document.getElementById('btn-audio');
-  if (audioEnabled) { btn.textContent = '🔊 Áudio'; btn.classList.add('audio-on'); }
+  if (audioEnabled) { 
+    btn.textContent = '🔊 Áudio'; 
+    btn.classList.add('audio-on');
+    speakImmediate('Áudio ativado');
+  }
   else {
-    btn.textContent = '🔇 Áudio'; btn.classList.remove('audio-on');
+    btn.textContent = '🔇 Áudio'; 
+    btn.classList.remove('audio-on');
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
     pendingName = ''; lastSpokenName = '';
@@ -1689,6 +1770,10 @@ function toggleUniversalMode() {
     document.getElementById('btn-ampliado').classList.remove('ampliado-on');
     document.getElementById('btn-plasticos').textContent = '🧪 Plásticos';
     document.getElementById('btn-plasticos').classList.remove('plasticos-on');
+    document.getElementById('formula-panel').classList.remove('show');
+    speakImmediate('Modo Universal ativado');
+  } else {
+    speakImmediate('Modo Universal desativado');
   }
   lastSpokenName = ''; pendingName = '';
   if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
@@ -1706,6 +1791,10 @@ function toggleAmpliatedMode() {
     document.getElementById('btn-universal').classList.remove('universal-on');
     document.getElementById('btn-plasticos').textContent = '🧪 Plásticos';
     document.getElementById('btn-plasticos').classList.remove('plasticos-on');
+    document.getElementById('formula-panel').classList.remove('show');
+    speakImmediate('Modo Ampliado ativado');
+  } else {
+    speakImmediate('Modo Ampliado desativado');
   }
   lastSpokenName = ''; pendingName = '';
   if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
@@ -1723,6 +1812,13 @@ function togglePlasticsMode() {
     document.getElementById('btn-universal').classList.remove('universal-on');
     document.getElementById('btn-ampliado').textContent = '◇ Ampliado';
     document.getElementById('btn-ampliado').classList.remove('ampliado-on');
+    if (currentMode === 'livre' || currentMode === 'estatico') {
+      document.getElementById('formula-panel').classList.add('show');
+    }
+    speakImmediate('Modo Plásticos ativado');
+  } else {
+    document.getElementById('formula-panel').classList.remove('show');
+    speakImmediate('Modo Plásticos desativado');
   }
   lastSpokenName = ''; pendingName = '';
   if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
@@ -1780,7 +1876,7 @@ async function calibrateWhite() {
   updateCalibrationStatus();
   colorBuffer = []; lastStableColorName = 'Branco'; lastStableHue = avgH;
   lastStableRGB = { r: avgR, g: avgG, b: avgB };
-  if (audioEnabled) speakColor('Branco calibrado');
+  speakImmediate('Branco calibrado');
 }
 
 async function calibrateBlack() {
@@ -1820,7 +1916,7 @@ async function calibrateBlack() {
   updateCalibrationStatus();
   colorBuffer = []; lastStableColorName = 'Preto'; lastStableHue = avgH;
   lastStableRGB = { r: avgR, g: avgG, b: avgB };
-  if (audioEnabled) speakColor('Preto calibrado');
+  speakImmediate('Preto calibrado');
 }
 
 function resetWhite() {
@@ -1830,7 +1926,7 @@ function resetWhite() {
   document.getElementById('btn-calibrate-white').classList.remove('calibrated');
   updateCalibrationStatus();
   colorBuffer = []; lastStableColorName = ''; mismatchCounter = 0; consecutiveFrameCounter = 0;
-  if (audioEnabled) speakColor('Branco resetado');
+  speakImmediate('Branco resetado');
 }
 
 function resetBlack() {
@@ -1839,7 +1935,7 @@ function resetBlack() {
   document.getElementById('btn-calibrate-black').classList.remove('calibrated');
   updateCalibrationStatus();
   colorBuffer = []; lastStableColorName = ''; mismatchCounter = 0; consecutiveFrameCounter = 0;
-  if (audioEnabled) speakColor('Preto resetado');
+  speakImmediate('Preto resetado');
 }
 
 async function startCamera() {
@@ -1893,7 +1989,15 @@ function update() {
     document.getElementById('confidence-display').textContent = `${classification.confidence}%`;
     document.getElementById('confidence-display').style.color =
       classification.confidence > 95 ? '#6a6' : (classification.confidence > 85 ? '#fa0' : '#f66');
-    triggerAudioIfChanged(classification.name);
+    
+    if (plasticsMode && (currentMode === 'livre' || currentMode === 'estatico')) {
+      document.getElementById('formula-content').textContent = formatFormula(classification.formula);
+      const adjustment = generateAdjustmentSuggestion(stable.rgb, stable.hsv, classification.color, classification.name);
+      document.getElementById('adjustment-text').textContent = adjustment.text;
+      document.getElementById('adjustment-text').className = 'adjustment-text ' + adjustment.cssClass;
+    }
+    
+    triggerAudioIfChanged(classification.name + ', ' + classification.confidence + ' por cento');
 
     if (currentMode === 'estatico' && colorBuffer.length >= BUFFER_SIZE) staticFrozen = true;
   }
@@ -1938,9 +2042,10 @@ cameraContainer.addEventListener('click', function(e) {
 // ════════════════════════════════════════════════════════════════
 // ✅ SISTEMA CARREGADO
 // ════════════════════════════════════════════════════════════════
-console.log('%c🎨 Motor de Cores v3.5 PRO++ - TRAVA VISUAL ATIVADA!', 'color: #6effa0; font-size: 14px; font-weight: bold;');
+console.log('%c🎨 Motor de Cores v3.5 PRO++ - CATÁLOGO DIGITAL ATIVADO!', 'color: #6effa0; font-size: 14px; font-weight: bold;');
 console.log('%c📚 Biblioteca Plásticos: ' + Object.keys(PLASTICS_LIBRARY).length + ' cores', 'color: #7fdbff; font-size: 12px;');
-console.log('%c🔒 Validação Cruzada RGB+HSV: ATIVA', 'color: #ffcc60; font-size: 12px;');
+console.log('%c🔒 Validação por Maior Score: ATIVA', 'color: #ffcc60; font-size: 12px;');
+console.log('%c🎤 Sistema de Áudio Completo: ATIVO', 'color: #ff88aa; font-size: 12px;');
 </script>
 </body>
 </html>
