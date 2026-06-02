@@ -1,9 +1,24 @@
+acabei de realizar os testes com a nova atualização e vou estar te passando alguns pontos críticos que ficaram com erros gravíssimos. 1 ponto- devido as modificações que foram realizadas, quando o dispositivo informa o nome da cor ele faz com que a mira central se movimente sozinha saindo do local do foco, além dessa trepidação fazer com que os nomes e a interpretação fique de forma maluca porque usa o centro da mira como referencia, é necessário um redimentisonamento do nome para que isso não ocorra.2 ponto- o áudio esta uma loucura o correto estava assim não sei porque você alterou sem me consultar também, é falar o nome da cor uma vez e so tornar a falar quando trocasse de cor, se não o sistema fica doido falando nome infinitamente como esta isso não pode acontecer de forma alguma.3 ponto- mesmo com a lente totalmente coberta, ele fica apresentando nomes aleatórios como verde, interpretações de cores amarelas, enfim tudo que não seja o correto que deveria ser único e exclusivo "preto" porque se nao tem luz entrando dentro do receptor como ele pode informar que ta apresentando algo, esta totalmente errado e além disso tudo informa uma % ridicula de baixa que nem deveria se enquadrar em alguma cor, se ele tem 19% de compatibilidade é quase a comparação de "branco" com preto" nao tem quase nada de proximidade.Reescreva o adicionando as modificaçoes e mudanças comentadas acima e me envie "em 2 partes" .Estou aguardando a atualização adicionada todas as modificações e mudanças necessarias para estar copiando e colando para realizar os testes e validar se tudo esta funcionando de forma correta, lembrando que so deve ser modificado o que foi comentado acima e o restante deve se manter da "exata" forma que se encontra para que nao ocorra nenhum erro ou atrase o progresso do projeto! Me envie no chat!!!!!!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Motor de Cor - Sistema Multi-Biblioteca v4.2 PLÁSTICOS PRO++</title>
+<title>Motor de Cor - Sistema Multi-Biblioteca v4.3 PLÁSTICOS PRO++</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -36,7 +51,6 @@
     color: #ff5050; border: 1px solid rgba(200,50,50,0.45);
     box-shadow: 0 0 8px rgba(200,50,50,0.2);
   }
-  /* CORREÇÃO 1: top-bar com flex-wrap para mostrar botões em múltiplas linhas sem deslocar a câmera */
   #top-bar {
     background: rgba(8,8,20,0.86);
     border-bottom: 1px solid rgba(100,100,255,0.12);
@@ -83,12 +97,13 @@
     transition: background 0.25s ease;
     box-shadow: 0 0 8px rgba(0,0,0,0.5);
   }
-  /* CORREÇÃO 1: largura fixa no color-name para não deslocar a mira */
   #color-name {
     font-size: 0.82rem; font-weight: 700; letter-spacing: 0.4px;
     width: 280px; min-width: 280px; max-width: 280px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     text-align: left; flex-shrink: 0;
+    /* v4.3: texto com sombra para legibilidade em qualquer cor de fundo */
+    text-shadow: 0 0 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
   }
   #confidence-display { font-size: 0.58rem; color: #6a6; white-space: nowrap; font-weight: 600; }
   .sep { color: rgba(100,100,255,0.3); font-size: 0.7rem; flex-shrink: 0; }
@@ -147,7 +162,13 @@
   #btn-plasticos.plasticos-on { background: linear-gradient(135deg, #1a3a2e, #2a6a4e); color: #6effa0; border: 1px solid rgba(60,200,100,0.55); box-shadow: 0 0 8px rgba(60,200,100,0.3); }
   #main { flex: 1; position: relative; overflow: hidden; }
   #camera-container { position: absolute; inset: 0; background: #000; }
-  #videoEl { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+  #videoEl {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    /* v4.3 CORREÇÃO FOCO/DESFOQUE: object-fit contain evita distorção nas bordas (efeito modo retrato) */
+    object-fit: contain;
+    background: #000;
+    z-index: 1;
+  }
   #canvasEl { display: none; }
   #reticle {
     position: absolute; top: 50%; left: 50%;
@@ -183,10 +204,11 @@
   #formula-panel.show { display: flex; }
   .formula-section { width: 100%; margin-bottom: 0.5vh; }
   .formula-title { font-size: 0.65rem; font-weight: 700; letter-spacing: 1.2px; color: #6ac; text-transform: uppercase; margin-bottom: 0.4vh; }
-  .formula-content { font-size: 0.6rem; color: #aac; line-height: 1.4; font-family: 'Courier New', monospace; }
+  .formula-content { font-size: 0.6rem; color: #aac; line-height: 1.4; font-family: 'Courier New', monospace; white-space: pre-line; }
   .formula-item { margin-bottom: 0.2vh; padding-left: 1em; }
   .adjustment-text { font-size: 0.62rem; color: #8ec; line-height: 1.35; white-space: pre-line; }
   .adjustment-text.perfect { color: #6effa0; }
+  .adjustment-text.not-found { color: #ffcc60; }
   #comparison-panel {
     position: absolute; bottom: 0; left: 0; right: 0;
     background: rgba(8,8,20,0.94);
@@ -218,7 +240,7 @@
   .comp-formulas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5vw; }
   .comp-formula-block { }
   .comp-formula-label { font-size: clamp(0.5rem, 1.7vw, 0.58rem); font-weight: 700; color: #8ac; margin-bottom: 0.4vh; }
-  .comp-formula-list { font-size: clamp(0.52rem, 1.8vw, 0.6rem); color: #aac; line-height: 1.4; font-family: 'Courier New', monospace; }
+  .comp-formula-list { font-size: clamp(0.52rem, 1.8vw, 0.6rem); color: #aac; line-height: 1.4; font-family: 'Courier New', monospace; white-space: pre-line; }
   .comp-suggestion { width: 100%; max-width: 92vw; padding: 1vh 2vw; background: rgba(15,15,30,0.85); border: 1px solid rgba(120,220,255,0.3); border-radius: 6px; margin-top: 0.3vh; flex-shrink: 0; }
   .comp-suggestion-label { font-size: clamp(0.48rem, 1.6vw, 0.54rem); font-weight: 700; letter-spacing: 1.3px; color: #667; text-transform: uppercase; text-align: center; margin-bottom: 0.5vh; }
   .comp-suggestion-text { font-size: clamp(0.62rem, 2.2vw, 0.72rem); font-weight: 600; color: #8ec; text-align: left; line-height: 1.35; text-shadow: 0 0 8px rgba(120,220,255,0.2); white-space: pre-line; }
@@ -245,7 +267,7 @@
 <body>
 <div id="header">
   <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v4.2 PRO++ - RAL PLASTICS + DELTA E</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v4.3 PRO++ - RAL PLASTICS + DELTA E + VALIDAÇÃO VISUAL</span>
 </div>
 <div id="top-bar">
   <div class="mode-selector">
@@ -388,6 +410,8 @@ let isWhiteCalibrated = false;
 let isBlackCalibrated = false;
 let colorTemperatureBias = { r: 0, g: 0, b: 0 };
 let hasColorTempCompensation = false;
+// v4.3: trava de foco manual ativada
+let manualFocusApplied = false;
 const SAMPLE_SIZE = 2;
 const BUFFER_SIZE = 8;
 const HYSTERESIS_THRESHOLD = 6;
@@ -399,6 +423,8 @@ let lastStableRGB = { r: 0, g: 0, b: 0 };
 let lastStableVariance = 0;
 let mismatchCounter = 0;
 const MISMATCH_FORCE_UPDATE = 5;
+// v4.3 CORREÇÃO CLASSIFICAÇÃO: threshold de compatibilidade mínima para aceitar
+const MIN_COMPATIBILITY_THRESHOLD = 80;
 // CORREÇÃO 2: variáveis de controle de áudio - fala apenas quando a cor muda
 let lastSpokenName = '';
 let pendingName = '';
@@ -427,6 +453,39 @@ function forceBlackClassification() {
     formula: [{ pigmento: 'Carbon Black', ci: 'PBk7', codigo: 'CI 77266', proporcao: '100%', funcao: 'cor_primaria' }],
     forcedBlack: true,
     adjustment: 'Sem luz suficiente no receptor.\nClassificação forçada para Preto.\nNenhuma outra cor deve ser considerada nesta condição.'
+  };
+}
+// ════════════════════════════════════════════════════════════════
+// v4.3 NOVO: Retorna mensagem de cor não identificada
+// ════════════════════════════════════════════════════════════════
+function notFoundClassification() {
+  return {
+    name: '⚠ COR NÃO IDENTIFICADA',
+    color: '#ffcc60',
+    confidence: 0,
+    formula: [],
+    notFound: true,
+    adjustment: 'Cor fora da biblioteca RAL Plastics.\nPossíveis causas:\n• Objeto com cor metálica/perolizada\n• Iluminação inadequada\n• Recalibrar base (branco/preto)\n• Objeto fora do catálogo RAL'
+  };
+}
+function notFoundClassification() {
+  return {
+    name: '⚠ COR NÃO IDENTIFICADA',
+    color: '#ffcc60',
+    confidence: 0,
+    formula: [],
+    notFound: true,
+    adjustment: 'Cor fora da biblioteca RAL Plastics.\nPossíveis causas:\n• Objeto com cor metálica/perolizada\n• Iluminação inadequada\n• Recalibrar base (branco/preto)\n• Objeto fora do catálogo RAL'
+  };
+}
+function notFoundClassification() {
+  return {
+    name: '⚠ COR NÃO IDENTIFICADA',
+    color: '#ffcc60',
+    confidence: 0,
+    formula: [],
+    notFound: true,
+    adjustment: 'Cor fora da biblioteca RAL Plastics.\nPossíveis causas:\n• Objeto com cor metálica/perolizada\n• Iluminação inadequada\n• Recalibrar base (branco/preto)\n• Objeto fora do catálogo RAL'
   };
 }
 // ════════════════════════════════════════════════════════════════
@@ -474,9 +533,9 @@ const RAL_P1 = [
   { code: "RAL 4007-P", name: "Roxo escuro", hex: "#4A192C", familia: "violeta" },
   { code: "RAL 4008-P", name: "Roxo segurança", hex: "#924E7D", familia: "violeta" },
   { code: "RAL 4009-P", name: "Roxo pastel", hex: "#A18594", familia: "violeta" },
-  { code: "RAL 5002-P", name: "Azul marinho", hex: "#20214F", familia: "azul" },
+  { code: "RAL 5002-P", name: "Azul ultramar", hex: "#20214F", familia: "azul" },
   { code: "RAL 5005-P", name: "Azul segurança", hex: "#004389", familia: "azul" },
-  { code: "RAL 5009-P", name: "Azul", hex: "#025669", familia: "azul" },
+  { code: "RAL 5009-P", name: "Azul petroleo", hex: "#025669", familia: "azul" },
   { code: "RAL 5010-P", name: "Azul genciano", hex: "#0E294B", familia: "azul" },
   { code: "RAL 5011-P", name: "Azul aço", hex: "#231A24", familia: "azul" },
   { code: "RAL 5012-P", name: "Azul claro", hex: "#3B83BD", familia: "azul" },
@@ -533,7 +592,7 @@ const RAL_P1 = [
   { code: "RAL 9016-P", name: "Branco sinalização", hex: "#F6F6F6", familia: "branco" }
 ];
 // ════════════════════════════════════════════════════════════════
-// BIBLIOTECA RAL PLASTICS P2 (grupos com nomes técnicos)
+// BIBLIOTECA RAL PLASTICS P2
 // ════════════════════════════════════════════════════════════════
 const RAL_P2 = [
   { code: "000 15 00-P", name: "Cinza carvão profundo", hex: "#272727", familia: "preto" },
@@ -697,6 +756,10 @@ const RAL_P2 = [
   { code: "360 50 40-P", name: "Bordô rosé antigo médio intenso", hex: "#A03850", familia: "vermelho" },
   { code: "360 70 15-P", name: "Bordô rosé antigo claro suave", hex: "#C07888", familia: "rosa" }
 ];
+  { code: "360 70 15-P", name: "Bordô rosé antigo claro suave", hex: "#C07888", familia: "rosa" }
+];
+  { code: "360 70 15-P", name: "Bordô rosé antigo claro suave", hex: "#C07888", familia: "rosa" }
+];
 // ════════════════════════════════════════════════════════════════
 // PIGMENTOS BASE UNIVERSAIS CI
 // ════════════════════════════════════════════════════════════════
@@ -759,6 +822,9 @@ function hexToRGB(hex) {
   const g = parseInt(hex.substring(2, 4), 16);
   const b = parseInt(hex.substring(4, 6), 16);
   return { r: isNaN(r) ? 0 : r, g: isNaN(g) ? 0 : g, b: isNaN(b) ? 0 : b };
+}
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 function rgbToHSV(r, g, b) {
   if (arguments.length === 1 && typeof r === 'object') { g = r.g; b = r.b; r = r.r; }
@@ -852,8 +918,42 @@ function getColorFamily(h, s) {
   if (h >= 345) return 'vermelho';
   return 'neutro';
 }
+function getColorFamily(h, s) {
+  if (s < 15) return 'neutro';
+  if (h >= 0 && h < 15) return 'vermelho';
+  if (h >= 15 && h < 45) return 'laranja';
+  if (h >= 45 && h < 70) return 'amarelo';
+  if (h >= 70 && h < 165) return 'verde';
+  if (h >= 165 && h < 195) return 'ciano';
+  if (h >= 195 && h < 255) return 'azul';
+  if (h >= 255 && h < 290) return 'violeta';
+  if (h >= 290 && h < 345) return 'rosa';
+  if (h >= 345) return 'vermelho';
+  return 'neutro';
+}
+function getColorFamily(h, s) {
+  if (s < 15) return 'neutro';
+  if (h >= 0 && h < 15) return 'vermelho';
+  if (h >= 15 && h < 45) return 'laranja';
+  if (h >= 45 && h < 70) return 'amarelo';
+  if (h >= 70 && h < 165) return 'verde';
+  if (h >= 165 && h < 195) return 'ciano';
+  if (h >= 195 && h < 255) return 'azul';
+  if (h >= 255 && h < 290) return 'violeta';
+  if (h >= 290 && h < 345) return 'rosa';
+  if (h >= 345) return 'vermelho';
+  return 'neutro';
+}
 // ════════════════════════════════════════════════════════════════
-// CLASSIFICADOR PLÁSTICOS/POLIÉSTER (RAL + Delta E)
+// v4.3 CORREÇÃO: CLASSIFICAÇÃO PLÁSTICOS/POLIÉSTER COM VALIDAÇÃO VISUAL
+// Algoritmo:
+// 1. Detecta família da cor (azul, vermelho, etc)
+// 2. Busca TODAS as variações dessa família no catálogo
+// 3. Calcula Delta E com cada uma e seleciona a MAIS PRÓXIMA
+// 4. TRAVA DE SEGURANÇA: valida compatibilidade >= MIN_COMPATIBILITY_THRESHOLD
+//    - Se OK: retorna a cor encontrada
+//    - Se < 80%: expande busca para TODAS as famílias
+//    - Se ainda < 80%: retorna "COR NÃO IDENTIFICADA"
 // ════════════════════════════════════════════════════════════════
 function classifyPlasticsPolymers(hsv, rgb, variance) {
   if (!hsv || !rgb) return { name: 'Erro', color: '#888888', confidence: 0, formula: [] };
@@ -864,7 +964,7 @@ function classifyPlasticsPolymers(hsv, rgb, variance) {
   if (maxRGB <= 30 || avgRGB <= 18) return forceBlackClassification();
   if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) {
     const item = RAL_LIBRARY_FULL.find(c => c.familia === 'branco') || { name: 'Branco Gelo', code: 'RAL 9003-P', hex: '#F4F4F4', familia: 'branco' };
-    return { name: item.code + ' ' + item.name, color: item.hex, confidence: 99, formula: pigmentsForFamily('branco', item.name) };
+    return { name: item.code + ' ' + item.name, color: item.hex, confidence: 99, formula: pigmentsForFamily('branco', item.name), ralRef: item };
   }
   if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) return forceBlackClassification();
   const normalizedHsv = { h: hsv.h, s: hsv.s, v: normalizeV(hsv.v) };
@@ -872,40 +972,85 @@ function classifyPlasticsPolymers(hsv, rgb, variance) {
   if (maxRGB < 50 && normalizedHsv.s < 40) return forceBlackClassification();
   const lab = rgbToLab(rgb);
   const detectedFamily = getColorFamily(normalizedHsv.h, normalizedHsv.s);
-  const neutralFamilies = ['branco', 'preto', 'cinza', 'bege', 'marrom', 'natural'];
-  const candidates = RAL_LIBRARY_FULL.filter(item => {
-    if (detectedFamily === 'neutro') return neutralFamilies.includes(item.familia);
-    if (detectedFamily === 'ciano') return ['ciano', 'azul', 'verde'].includes(item.familia);
-    if (detectedFamily === 'rosa') return ['rosa', 'vermelho', 'violeta'].includes(item.familia);
-    return item.familia === detectedFamily;
-  });
-  const pool = candidates.length ? candidates : RAL_LIBRARY_FULL;
+  // ════════ PASSO 1: Buscar na família detectada ════════
+  const neutralFamilies = ['branco', 'preto', 'cinza', 'bege', 'marrom'];
+  let candidateFamilies;
+  if (detectedFamily === 'neutro') candidateFamilies = neutralFamilies;
+  else if (detectedFamily === 'ciano') candidateFamilies = ['ciano', 'azul', 'verde'];
+  else if (detectedFamily === 'rosa') candidateFamilies = ['rosa', 'vermelho', 'violeta'];
+  else candidateFamilies = [detectedFamily];
+  const candidatesByFamily = RAL_LIBRARY_FULL.filter(item => candidateFamilies.includes(item.familia));
+  // ════════ PASSO 2: Encontrar a cor mais próxima dentro da família ════════
   let best = null;
   let bestDelta = Infinity;
-  for (const item of pool) {
+  for (const item of (candidatesByFamily.length ? candidatesByFamily : RAL_LIBRARY_FULL)) {
     const d = deltaE(lab, item.lab);
     if (d < bestDelta) {
       bestDelta = d;
       best = item;
     }
   }
-  if (!best) return { name: 'Desconhecido', color: '#888888', confidence: 0, formula: [] };
-  const compat = compatibilityFromDelta(bestDelta);
+  // ════════ PASSO 3: Validar compatibilidade (TRAVA DE SEGURANÇA) ════════
+  const compatPrimary = compatibilityFromDelta(bestDelta);
+  if (best && compatPrimary >= MIN_COMPATIBILITY_THRESHOLD) {
+    return buildClassificationResult(best, compatPrimary, bestDelta);
+  }
+  // ════════ PASSO 4: Compatibilidade baixa na família - expandir para TODAS ════════
+  // O sistema descarta a cor anterior e busca em todo o catálogo
+  let bestGlobal = null;
+  let bestDeltaGlobal = Infinity;
+  for (const item of RAL_LIBRARY_FULL) {
+    const d = deltaE(lab, item.lab);
+    if (d < bestDeltaGlobal) {
+      bestDeltaGlobal = d;
+      bestGlobal = item;
+    }
+  }
+  const compatGlobal = compatibilityFromDelta(bestDeltaGlobal);
+  // ════════ PASSO 5: Se mesmo na busca global não atingir o threshold, descarta ════════
+  if (!bestGlobal || compatGlobal < MIN_COMPATIBILITY_THRESHOLD) {
+    return notFoundClassification();
+  }
+  return buildClassificationResult(bestGlobal, compatGlobal, bestDeltaGlobal);
+}
+// Helper: constrói o resultado de classificação com todos os dados
+function buildClassificationResult(item, compat, delta) {
   return {
-    name: best.code + ' ' + best.name,
-    color: best.hex,
+    name: item.code + ' ' + item.name,
+    color: item.hex,  // cor da referência RAL (usada no swatch, não no texto)
     confidence: Math.min(99, compat),
-    formula: best.pigments,
-    deltaE: bestDelta,
-    ralRef: best
+    formula: item.pigments,
+    deltaE: delta,
+    ralRef: item
+  };
+}
+// Helper: constrói o resultado de classificação com todos os dados
+function buildClassificationResult(item, compat, delta) {
+  return {
+    name: item.code + ' ' + item.name,
+    color: item.hex,  // cor da referência RAL (usada no swatch, não no texto)
+    confidence: Math.min(99, compat),
+    formula: item.pigments,
+    deltaE: delta,
+    ralRef: item
+  };
+}
+// Helper: constrói o resultado de classificação com todos os dados
+function buildClassificationResult(item, compat, delta) {
+  return {
+    name: item.code + ' ' + item.name,
+    color: item.hex,  // cor da referência RAL (usada no swatch, não no texto)
+    confidence: Math.min(99, compat),
+    formula: item.pigments,
+    deltaE: delta,
+    ralRef: item
   };
 }
 // ════════════════════════════════════════════════════════════════
-// CLASSIFICAÇÃO AMPLIADA (60+ NUANCES) - mantida do projeto base
+// CLASSIFICAÇÃO AMPLIADA (60+ NUANCES)
 // ════════════════════════════════════════════════════════════════
 function classifyColorExtended(hsv, rgb, variance) {
   if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0 };
-  // CORREÇÃO 3: trava de ausência de luz
   if (isNoLightRGB(rgb)) return forceBlackClassification();
   const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
   const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
@@ -918,21 +1063,11 @@ function classifyColorExtended(hsv, rgb, variance) {
   if (v < 22 && s < 35) return forceBlackClassification();
   if (maxRGB < 50 && s < 40) return forceBlackClassification();
   if (s < 15) {
-    if (isWhiteCalibrated && isBlackCalibrated) {
-      if (v >= 85) return { name: 'Branco', color: '#ffffff', confidence: 98 };
-      else if (v <= 20) return forceBlackClassification();
-      else {
-        if (v >= 65) return { name: 'Cinza Claro', color: '#b8b8c8', confidence: 96 };
-        else if (v <= 35) return { name: 'Cinza Escuro', color: '#5a5a6a', confidence: 96 };
-        else return { name: 'Cinza', color: '#9999aa', confidence: 96 };
-      }
-    } else {
-      if (v >= 72) return { name: 'Branco', color: '#ffffff', confidence: 98 };
-      else if (v <= 28) return forceBlackClassification();
-      if (v >= 65) return { name: 'Cinza Claro', color: '#b8b8c8', confidence: 96 };
-      else if (v <= 35) return { name: 'Cinza Escuro', color: '#5a5a6a', confidence: 96 };
-      return { name: 'Cinza', color: '#9999aa', confidence: 96 };
-    }
+    if (v >= 72) return { name: 'Branco', color: '#ffffff', confidence: 98 };
+    if (v <= 28) return forceBlackClassification();
+    if (v >= 65) return { name: 'Cinza Claro', color: '#b8b8c8', confidence: 96 };
+    if (v <= 35) return { name: 'Cinza Escuro', color: '#5a5a6a', confidence: 96 };
+    return { name: 'Cinza', color: '#9999aa', confidence: 96 };
   }
   let baseName = '', baseColor = '', confidence = 98;
   if ((h >= 345 || h < 15) && s >= 30) {
@@ -1051,7 +1186,6 @@ function classifyColorExtended(hsv, rgb, variance) {
 // ════════════════════════════════════════════════════════════════
 function classifyColorWithRuler(hsv, rgb, variance) {
   if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0 };
-  // CORREÇÃO 3: trava de ausência de luz
   if (isNoLightRGB(rgb)) return forceBlackClassification();
   const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
   const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
@@ -1064,15 +1198,9 @@ function classifyColorWithRuler(hsv, rgb, variance) {
   if (v < 22 && s < 35) return forceBlackClassification();
   if (maxRGB < 50 && s < 40) return forceBlackClassification();
   if (s < 15) {
-    if (isWhiteCalibrated && isBlackCalibrated) {
-      if (v >= 85) return { name: 'Branco', color: '#ffffff', confidence: 98 };
-      if (v <= 20) return forceBlackClassification();
-      return { name: 'Cinza', color: '#9999aa', confidence: 96 };
-    } else {
-      if (v >= 72) return { name: 'Branco', color: '#ffffff', confidence: 98 };
-      if (v <= 28) return forceBlackClassification();
-      return { name: 'Cinza', color: '#9999aa', confidence: 96 };
-    }
+    if (v >= 72) return { name: 'Branco', color: '#ffffff', confidence: 98 };
+    if (v <= 28) return forceBlackClassification();
+    return { name: 'Cinza', color: '#9999aa', confidence: 96 };
   }
   let baseName = '', baseColor = '', confidence = 98;
   if ((h >= 290) || (h < 20)) {
@@ -1097,7 +1225,7 @@ function classifyColorWithRuler(hsv, rgb, variance) {
   return { name: baseName + modifier, color: baseColor, confidence };
 }
 // ════════════════════════════════════════════════════════════════
-// GERADOR DE AJUSTES TÉCNICOS (Lab-based)
+// GERADOR DE AJUSTES TÉCNICOS (Lab-based) - v4.3 COM ANÁLISE DIRECIONAL
 // ════════════════════════════════════════════════════════════════
 function generateAdjustmentSuggestion(readRGB, readHSV, refHex, refName) {
   const refRGB = hexToRGB(refHex);
@@ -1138,6 +1266,14 @@ function generateAdjustmentSuggestion(readRGB, readHSV, refHex, refName) {
   finalText += suggestions.map(s => '• Adicione ' + s).join('\n');
   return { text: finalText, cssClass: '' };
 }
+// ════════════════════════════════════════════════════════════════
+// v4.3 CORREÇÃO: Gerador de ajustes técnicos por CI com análise DIRECIONAL Lab
+// Compara Lab da amostra capturada com Lab da cor RAL encontrada
+// Indica qual pigmento usar baseado nas diferenças:
+//   dL  → clarear/escurecer (PW6 / PBk7)
+//   dA  → verde-vermelho (PR254/PV23 vs PG7/PG36)
+//   dB  → azul-amarelo (PY151/PY110 vs PB15:3/PB29)
+// ════════════════════════════════════════════════════════════════
 function generatePlasticsAdjustmentText(readRGB, readHSV, ralRef) {
   if (!ralRef) return 'Ative o modo Plásticos para sugestões técnicas por CI.';
   const readLab = rgbToLab(readRGB);
@@ -1147,17 +1283,40 @@ function generatePlasticsAdjustmentText(readRGB, readHSV, ralRef) {
     'Ref: ' + ralRef.code + ' - ' + ralRef.name,
     'Delta E: ' + de.toFixed(1) + ' | Compatibilidade: ' + compat + '%'
   ];
+  // Se cor não identificada, não sugerir ajustes
+  if (compat < MIN_COMPATIBILITY_THRESHOLD) {
+    lines.push('⚠ Cor fora do catálogo RAL Plastics.');
+    lines.push('Objeto com cor metálica/perolizada?');
+    lines.push('Recalibrar base (branco/preto).');
+    return lines.join('\n');
+  }
   if (de <= 3) { lines.push('✅ Ajuste mínimo ou desnecessário.'); return lines.join('\n'); }
-  const dL = ralRef.lab.l - readLab.l;
-  const dA = ralRef.lab.a - readLab.a;
-  const dB = ralRef.lab.b - readLab.b;
-  if (dL > 5) lines.push('• Amostra mais escura: aumentar base branca PW6');
-  if (dL < -5) lines.push('• Amostra mais clara: reduzir PW6 ou ajustar PBk7');
-  if (dA > 4) lines.push('• Ajustar com PR254 (vermelho) ou PV23 (violeta)');
-  if (dA < -4) lines.push('• Ajustar com PG7 / PG36 (verde)');
-  if (dB > 4) lines.push('• Ajustar com PY151 / PY110 (amarelo)');
-  if (dB < -4) lines.push('• Ajustar com PB15:3 / PB29 (azul)');
-  if (lines.length === 2) lines.push('Diferença baixa: ajuste fino nas proporções da base dominante.');
+  // ════ Análise direcional por canal Lab ════
+  const dL = ralRef.lab.l - readLab.l;  // positivo = amostra mais escura, precisa clarear
+  const dA = ralRef.lab.a - readLab.a;  // positivo = amostra mais verde, precisa avermelhar
+  const dB = ralRef.lab.b - readLab.b;  // positivo = amostra mais azul, precisa amarelar
+  lines.push('');
+  lines.push('▸ Diferenças Lab (Ref − Amostra):');
+  lines.push('   ΔL*=' + dL.toFixed(1) + ' Δa*=' + dA.toFixed(1) + ' Δb*=' + dB.toFixed(1));
+  lines.push('');
+  lines.push('▸ Ajustes sugeridos:');
+  let hasAdjust = false;
+  if (dL > 5) { lines.push('  • Amostra mais ESCURA → adicionar PW6 (Dióxido de Titânio)'); hasAdjust = true; }
+  else if (dL < -5) { lines.push('  • Amostra mais CLARA → adicionar PBk7 (Carbon Black)'); hasAdjust = true; }
+  if (dA > 4) { lines.push('  • Amostra mais VERDE → adicionar PR254 (Vermelho DPP) ou PV23 (Violeta)'); hasAdjust = true; }
+  else if (dA < -4) { lines.push('  • Amostra mais VERMELHA → adicionar PG7 (Verde Ftalocianina)'); hasAdjust = true; }
+  if (dB > 4) { lines.push('  • Amostra mais AZUL → adicionar PY151 (Amarelo Benzimidazolona)'); hasAdjust = true; }
+  else if (dB < -4) { lines.push('  • Amostra mais AMARELA → adicionar PB15:3 (Azul Ftalocianina) ou PB29 (Ultramar)'); hasAdjust = true; }
+  if (!hasAdjust) lines.push('  • Diferença baixa: ajuste fino nas proporções da base dominante.');
+  lines.push('');
+  lines.push('▸ Pigmentos da família "' + ralRef.familia + '":');
+  ralRef.pigments.forEach(p => {
+    lines.push('  • ' + p.pigmento + ' (' + p.ci + ')');
+  });
+  return lines.join('\n');
+}
+ return lines.join('\n');
+}
   return lines.join('\n');
 }
 // ════════════════════════════════════════════════════════════════
@@ -1414,7 +1573,7 @@ function shouldUpdateColor(newHue, newColorName, newRGB, newSat, newVariance) {
   return true;
 }
 // ════════════════════════════════════════════════════════════════
-// CORREÇÃO 2: ÁUDIO TTS - fala apenas quando a cor muda
+// ÁUDIO TTS
 // ════════════════════════════════════════════════════════════════
 function speakColor(name) {
   if (!window.speechSynthesis || !name || !audioEnabled) return;
@@ -1441,16 +1600,49 @@ function speakImmediate(text) {
     } catch (e) { console.error(e); }
   }, 60);
 }
-// CORREÇÃO 2: triggerAudioIfChanged - compara com lastSpokenName, só fala se mudou
 function triggerAudioIfChanged(name) {
   if (!audioEnabled || !name) return;
   const cleanName = name.replace(/ ✓| ≈| ⚠|\(Aprox\)/g, '').trim();
-  // Se é exatamente o mesmo nome já falado, não faz nada
   if (cleanName === lastSpokenName) {
     if (pendingName !== cleanName && stableTimer) { clearTimeout(stableTimer); stableTimer = null; pendingName = ''; }
     return;
   }
-  // Se já está aguardando este nome, não reinicia o timer
+  if (cleanName !== pendingName) {
+    pendingName = cleanName;
+    if (stableTimer) clearTimeout(stableTimer);
+    stableTimer = setTimeout(() => {
+      if (!audioEnabled) { stableTimer = null; return; }
+      lastSpokenName = pendingName;
+      speakColor(pendingName);
+      stableTimer = null;
+    }, STABLE_SPEECH_MS);
+  }
+}
+function triggerAudioIfChanged(name) {
+  if (!audioEnabled || !name) return;
+  const cleanName = name.replace(/ ✓| ≈| ⚠|\(Aprox\)/g, '').trim();
+  if (cleanName === lastSpokenName) {
+    if (pendingName !== cleanName && stableTimer) { clearTimeout(stableTimer); stableTimer = null; pendingName = ''; }
+    return;
+  }
+  if (cleanName !== pendingName) {
+    pendingName = cleanName;
+    if (stableTimer) clearTimeout(stableTimer);
+    stableTimer = setTimeout(() => {
+      if (!audioEnabled) { stableTimer = null; return; }
+      lastSpokenName = pendingName;
+      speakColor(pendingName);
+      stableTimer = null;
+    }, STABLE_SPEECH_MS);
+  }
+}
+function triggerAudioIfChanged(name) {
+  if (!audioEnabled || !name) return;
+  const cleanName = name.replace(/ ✓| ≈| ⚠|\(Aprox\)/g, '').trim();
+  if (cleanName === lastSpokenName) {
+    if (pendingName !== cleanName && stableTimer) { clearTimeout(stableTimer); stableTimer = null; pendingName = ''; }
+    return;
+  }
   if (cleanName !== pendingName) {
     pendingName = cleanName;
     if (stableTimer) clearTimeout(stableTimer);
@@ -1468,35 +1660,64 @@ function triggerAudioIfChanged(name) {
 function samplePixels() {
   const vw = video.videoWidth, vh = video.videoHeight;
   if (!vw || !vh) return null;
-  const cw = video.clientWidth, ch = video.clientHeight, scale = Math.max(cw/vw, ch/vh);
-  const nativeCX = Math.round((cw/2 + (vw*scale-cw)/2) / scale);
-  const nativeCY = Math.round((ch/2 + (vh*scale-ch)/2) / scale);
-  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
+  // v4.3: object-fit contain - cálculo correto considerando letterboxing
+  const cw = video.clientWidth, ch = video.clientHeight;
+  const videoAspect = vw / vh, containerAspect = cw / ch;
+  let displayW, displayH, offsetX = 0, offsetY = 0;
+  if (containerAspect > videoAspect) {
+    // Container é mais largo - letterbox vertical
+    displayH = ch;
+    displayW = ch * videoAspect;
+    offsetX = (cw - displayW) / 2;
+  } else {
+    // Container é mais alto - letterbox horizontal
+    displayW = cw;
+    displayH = cw / videoAspect;
+    offsetY = (ch - displayH) / 2;
+  }
+  const scaleX = vw / displayW, scaleY = vh / displayH;
+  const nativeCX = Math.round((cw / 2 - offsetX) * scaleX);
+  const nativeCY = Math.round((ch / 2 - offsetY) * scaleY);
+  const scale = Math.min(scaleX, scaleY);
+  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE * scale));
   canvas.width = vw; canvas.height = vh;
   try { ctx.drawImage(video, 0, 0); } catch (e) { return null; }
-  const x0 = Math.max(0, nativeCX - nativeSample), y0 = Math.max(0, nativeCY - nativeSample);
+  const x0 = Math.max(0, nativeCX - nativeSample);
+  const y0 = Math.max(0, nativeCY - nativeSample);
+  const w = Math.min(nativeSample * 2, vw - x0);
+  const h = Math.min(nativeSample * 2, vh - y0);
+  if (w <= 0 || h <= 0) return null;
   try {
-    const data = ctx.getImageData(x0, y0, nativeSample*2, nativeSample*2).data;
+    const data = ctx.getImageData(x0, y0, w, h).data;
     let r = 0, g = 0, b = 0, c = 0;
-    for (let i = 0; i < data.length; i += 4) { r+=data[i]; g+=data[i+1]; b+=data[i+2]; c++; }
+    for (let i = 0; i < data.length; i += 4) { r += data[i]; g += data[i+1]; b += data[i+2]; c++; }
     return c === 0 ? null : { r: Math.round(r/c), g: Math.round(g/c), b: Math.round(b/c) };
   } catch (e) { return null; }
 }
 function samplePixelsEstatico(x, y) {
   const vw = video.videoWidth, vh = video.videoHeight;
   if (!vw || !vh) return null;
-  const scale = Math.max(video.clientWidth/vw, video.clientHeight/vh);
-  const nativeCX = Math.round((x + (vw*scale-video.clientWidth)/2) / scale);
-  const nativeCY = Math.round((y + (vh*scale-video.clientHeight)/2) / scale);
-  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
+  const cw = video.clientWidth, ch = video.clientHeight;
+  const videoAspect = vw / vh, containerAspect = cw / ch;
+  let displayW, displayH, offsetX = 0, offsetY = 0;
+  if (containerAspect > videoAspect) {
+    displayH = ch; displayW = ch * videoAspect; offsetX = (cw - displayW) / 2;
+  } else {
+    displayW = cw; displayH = cw / videoAspect; offsetY = (ch - displayH) / 2;
+  }
+  const scaleX = vw / displayW, scaleY = vh / displayH;
+  const nativeCX = Math.round((x - offsetX) * scaleX);
+  const nativeCY = Math.round((y - offsetY) * scaleY);
+  const scale = Math.min(scaleX, scaleY);
+  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE * scale));
   canvas.width = vw; canvas.height = vh;
   try { ctx.drawImage(video, 0, 0); } catch (e) { return null; }
-  const x0 = Math.max(0, Math.min(vw - nativeSample*2, nativeCX - nativeSample));
-  const y0 = Math.max(0, Math.min(vh - nativeSample*2, nativeCY - nativeSample));
+  const x0 = Math.max(0, Math.min(vw - nativeSample * 2, nativeCX - nativeSample));
+  const y0 = Math.max(0, Math.min(vh - nativeSample * 2, nativeCY - nativeSample));
   try {
-    const data = ctx.getImageData(x0, y0, nativeSample*2, nativeSample*2).data;
+    const data = ctx.getImageData(x0, y0, nativeSample * 2, nativeSample * 2).data;
     let r = 0, g = 0, b = 0, c = 0;
-    for (let i = 0; i < data.length; i += 4) { r+=data[i]; g+=data[i+1]; b+=data[i+2]; c++; }
+    for (let i = 0; i < data.length; i += 4) { r += data[i]; g += data[i+1]; b += data[i+2]; c++; }
     return c === 0 ? null : { r: Math.round(r/c), g: Math.round(g/c), b: Math.round(b/c) };
   } catch (e) { return null; }
 }
@@ -1505,16 +1726,25 @@ function capturePoint(x, y, thumbId, markerId, nameId) {
   if (!vw || !vh) return null;
   canvas.width = vw; canvas.height = vh;
   try { ctx.drawImage(video, 0, 0, vw, vh); } catch (e) { return null; }
-  const scale = Math.max(video.clientWidth/vw, video.clientHeight/vh);
-  const nativeX = Math.round((x + (vw*scale-video.clientWidth)/2) / scale);
-  const nativeY = Math.round((y + (vh*scale-video.clientHeight)/2) / scale);
-  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
-  const x0 = Math.max(0, Math.min(vw - nativeSample*2, nativeX - nativeSample));
-  const y0 = Math.max(0, Math.min(vh - nativeSample*2, nativeY - nativeSample));
+  const cw = video.clientWidth, ch = video.clientHeight;
+  const videoAspect = vw / vh, containerAspect = cw / ch;
+  let displayW, displayH, offsetX = 0, offsetY = 0;
+  if (containerAspect > videoAspect) {
+    displayH = ch; displayW = ch * videoAspect; offsetX = (cw - displayW) / 2;
+  } else {
+    displayW = cw; displayH = cw / videoAspect; offsetY = (ch - displayH) / 2;
+  }
+  const scaleX = vw / displayW, scaleY = vh / displayH;
+  const nativeX = Math.round((x - offsetX) * scaleX);
+  const nativeY = Math.round((y - offsetY) * scaleY);
+  const scale = Math.min(scaleX, scaleY);
+  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE * scale));
+  const x0 = Math.max(0, Math.min(vw - nativeSample * 2, nativeX - nativeSample));
+  const y0 = Math.max(0, Math.min(vh - nativeSample * 2, nativeY - nativeSample));
   let data;
-  try { data = ctx.getImageData(x0, y0, nativeSample*2, nativeSample*2).data; } catch (e) { return null; }
+  try { data = ctx.getImageData(x0, y0, nativeSample * 2, nativeSample * 2).data; } catch (e) { return null; }
   let r = 0, g = 0, b = 0, c = 0;
-  for (let i = 0; i < data.length; i += 4) { r+=data[i]; g+=data[i+1]; b+=data[i+2]; c++; }
+  for (let i = 0; i < data.length; i += 4) { r += data[i]; g += data[i+1]; b += data[i+2]; c++; }
   if (c === 0) return null;
   const rgb = applyColorTempCompensation({ r: Math.round(r/c), g: Math.round(g/c), b: Math.round(b/c) });
   const hsv = rgbToHSV(rgb.r, rgb.g, rgb.b);
@@ -1525,15 +1755,15 @@ function capturePoint(x, y, thumbId, markerId, nameId) {
   } else {
     classification = plasticsMode ? classifyPlasticsPolymers(hsv, rgb, 0) : (ampliatedMode ? classifyColorExtended(hsv, rgb, 0) : classifyColorWithRuler(hsv, rgb, 0));
   }
-  const thumbW = Math.min(vw, 400), thumbH = Math.round(thumbW*(vh/vw)), thumbScale = thumbW/vw;
+  const thumbW = Math.min(vw, 400), thumbH = Math.round(thumbW * (vh / vw)), thumbScale = thumbW / vw;
   const tCanv = document.createElement('canvas'); tCanv.width = thumbW; tCanv.height = thumbH;
   const tCtx = tCanv.getContext('2d');
   try { tCtx.drawImage(video, 0, 0, thumbW, thumbH); } catch (e) { return null; }
-  const tx = nativeX*thumbScale, ty = nativeY*thumbScale;
+  const tx = nativeX * thumbScale, ty = nativeY * thumbScale;
   tCtx.strokeStyle = 'rgba(120,220,255,0.95)'; tCtx.lineWidth = 2.5; tCtx.lineCap = 'round';
-  tCtx.beginPath(); tCtx.moveTo(tx-16*thumbScale, ty); tCtx.lineTo(tx+16*thumbScale, ty);
-  tCtx.moveTo(tx, ty-16*thumbScale); tCtx.lineTo(tx, ty+16*thumbScale); tCtx.stroke();
-  tCtx.lineWidth = 1.8; tCtx.strokeRect(tx-11*thumbScale, ty-11*thumbScale, 22*thumbScale, 22*thumbScale);
+  tCtx.beginPath(); tCtx.moveTo(tx - 16 * thumbScale, ty); tCtx.lineTo(tx + 16 * thumbScale, ty);
+  tCtx.moveTo(tx, ty - 16 * thumbScale); tCtx.lineTo(tx, ty + 16 * thumbScale); tCtx.stroke();
+  tCtx.lineWidth = 1.8; tCtx.strokeRect(tx - 11 * thumbScale, ty - 11 * thumbScale, 22 * thumbScale, 22 * thumbScale);
   document.getElementById(thumbId).src = tCanv.toDataURL('image/jpeg', 0.7);
   document.getElementById(thumbId).style.display = 'block';
   if (markerId) document.getElementById(markerId).style.display = 'none';
@@ -1545,8 +1775,59 @@ async function getDevices() {
   try { devices = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput'); }
   catch (e) { devices = []; }
 }
+// ════════════════════════════════════════════════════════════════
+// v4.3 CORREÇÃO: Aplicar constraints de foco manual após iniciar câmera
+// Evita efeito "modo retrato" / foco-desfoco automático
+// ════════════════════════════════════════════════════════════════
+async function applyManualFocusConstraints() {
+  if (!stream || manualFocusApplied) return;
+  try {
+    const track = stream.getVideoTracks()[0];
+    if (!track) return;
+    const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+    // Verificar se suporta foco manual
+    if (capabilities.focusMode && capabilities.focusMode.includes && capabilities.focusMode.includes('manual')) {
+      try {
+        await track.applyConstraints({
+          advanced: [{
+            focusMode: 'manual',
+            focusDistance: capabilities.focusDistance ? capabilities.focusDistance.max : undefined,
+            exposureMode: 'continuous',
+            whiteBalanceMode: 'continuous'
+          }]
+        });
+        manualFocusApplied = true;
+        console.log('✓ Foco manual aplicado (sem efeito modo-retrato)');
+      } catch (e) {
+        console.warn('Não foi possível aplicar foco manual:', e.message);
+      }
+    } else if (capabilities.focusMode) {
+      // Se não suporta manual, tenta continuous para evitar "focus breathing"
+      try {
+        await track.applyConstraints({
+          advanced: [{
+            focusMode: 'continuous',
+            exposureMode: 'continuous'
+          }]
+        });
+        console.log('✓ Foco contínuo aplicado');
+      } catch (e) { console.warn('Foco contínuo não suportado'); }
+    }
+    // Desativar zoom para evitar distorções
+    if (capabilities.zoom) {
+      try {
+        await track.applyConstraints({
+          advanced: [{ zoom: capabilities.zoom.min || 1 }]
+        });
+      } catch (e) {}
+    }
+  } catch (e) {
+    console.warn('Erro ao aplicar constraints:', e.message);
+  }
+}
 async function openCamera(preferredDeviceId) {
   if (stream) stream.getTracks().forEach(t => t.stop());
+  manualFocusApplied = false;
   const tryOpen = async (constraints) => {
     try {
       stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -1747,6 +2028,7 @@ async function switchCamera() {
   if (devices.length < 2) { alert('Apenas uma câmera disponível.'); return; }
   deviceIndex = (deviceIndex + 1) % devices.length;
   await openCamera(devices[deviceIndex].deviceId);
+  await applyManualFocusConstraints();
   speakImmediate('Câmera alternada');
 }
 function toggleAudio() {
@@ -1873,7 +2155,7 @@ async function calibrateWhite() {
     if (filtered.length > 0) { samples.length = 0; samples.push(...filtered); }
   }
   if (samples.length === 0) { alert('Erro na calibração.'); return; }
-  let avgS=0, avgV=0, avgR=0, avgG=0, avgB=0, sinSum=0, cosSum=0;
+  let avgS = 0, avgV = 0, avgR = 0, avgG = 0, avgB = 0, sinSum = 0, cosSum = 0;
   samples.forEach(item => {
     const radH = item.hsv.h * Math.PI / 180;
     sinSum += Math.sin(radH); cosSum += Math.cos(radH);
@@ -1914,7 +2196,7 @@ async function calibrateBlack() {
     if (filtered.length > 0) { samples.length = 0; samples.push(...filtered); }
   }
   if (samples.length === 0) { alert('Erro na calibração.'); return; }
-  let avgS=0, avgV=0, avgR=0, avgG=0, avgB=0, sinSum=0, cosSum=0;
+  let avgS = 0, avgV = 0, avgR = 0, avgG = 0, avgB = 0, sinSum = 0, cosSum = 0;
   samples.forEach(item => {
     const radH = item.hsv.h * Math.PI / 180;
     sinSum += Math.sin(radH); cosSum += Math.cos(radH);
@@ -1958,12 +2240,13 @@ async function startCamera() {
   document.getElementById('start-overlay').classList.add('hide');
   await getDevices();
   await openCamera();
+  await applyManualFocusConstraints();
   running = true;
   speakImmediate('Câmera iniciada');
   requestAnimationFrame(update);
 }
 // ════════════════════════════════════════════════════════════════
-// LOOP PRINCIPAL
+// LOOP PRINCIPAL - v4.3 com texto colorido pela cor CAPTURADA (não RAL)
 // ════════════════════════════════════════════════════════════════
 function update() {
   if (!running || !systemOn || currentMode === 'comparacao' || (currentMode === 'estatico' && staticFrozen) || video.readyState < 2) {
@@ -1979,7 +2262,6 @@ function update() {
   const stable = getStableColor();
   if (!stable) { requestAnimationFrame(update); return; }
   const variance = calculateVariance(colorBuffer);
-  // CORREÇÃO 3: verificar ausência de luz antes de qualquer classificação
   let classification;
   if (isNoLightRGB(stable.rgb)) {
     classification = forceBlackClassification();
@@ -2000,12 +2282,18 @@ function update() {
     lastStableRGB = { ...stable.rgb };
     lastStableVariance = variance;
     document.getElementById('color-name').textContent = classification.name;
-    document.getElementById('color-name').style.color = classification.color;
+    // v4.3 CORREÇÃO: texto colorido com a cor CAPTURADA (não cor RAL)
+    // Elimina a discrepância visual entre nome da cor e cor real
+    document.getElementById('color-name').style.color = rgbToHex(stable.rgb.r, stable.rgb.g, stable.rgb.b);
     document.getElementById('confidence-display').textContent = classification.confidence + '%';
     document.getElementById('confidence-display').style.color =
       classification.confidence > 95 ? '#6a6' : (classification.confidence > 85 ? '#fa0' : '#f66');
     if (plasticsMode && (currentMode === 'livre' || currentMode === 'estatico')) {
-      if (classification.forcedBlack) {
+      if (classification.notFound) {
+        document.getElementById('formula-content').textContent = formatFormula(classification.formula);
+        document.getElementById('adjustment-text').textContent = classification.adjustment;
+        document.getElementById('adjustment-text').className = 'adjustment-text not-found';
+      } else if (classification.forcedBlack) {
         document.getElementById('formula-content').textContent = formatFormula(classification.formula);
         document.getElementById('adjustment-text').textContent = classification.adjustment;
         document.getElementById('adjustment-text').className = 'adjustment-text';
@@ -2018,7 +2306,6 @@ function update() {
         document.getElementById('adjustment-text').className = 'adjustment-text';
       }
     }
-    // CORREÇÃO 2: só fala quando a cor muda via triggerAudioIfChanged
     triggerAudioIfChanged(classification.name);
     if (currentMode === 'estatico' && colorBuffer.length >= BUFFER_SIZE) staticFrozen = true;
   }
@@ -2057,11 +2344,13 @@ cameraContainer.addEventListener('click', function(e) {
 // ════════════════════════════════════════════════════════════════
 // SISTEMA CARREGADO
 // ════════════════════════════════════════════════════════════════
-console.log('%c🎨 Motor de Cores v4.2 PRO++ - RAL PLASTICS + DELTA E', 'color: #6effa0; font-size: 14px; font-weight: bold;');
+console.log('%c🎨 Motor de Cores v4.3 PRO++ - CLASSIFICAÇÃO VALIDADA + FOCO MANUAL', 'color: #6effa0; font-size: 14px; font-weight: bold;');
 console.log('%c📚 Biblioteca RAL P1: ' + RAL_P1.length + ' cores | RAL P2: ' + RAL_P2.length + ' cores | Total: ' + RAL_LIBRARY_FULL.length, 'color: #7fdbff; font-size: 12px;');
-console.log('%c🔒 Trava lente coberta → Preto 99%: ATIVA', 'color: #ffcc60; font-size: 12px;');
-console.log('%c🎤 Áudio: fala apenas quando a cor muda: ATIVO', 'color: #ff88aa; font-size: 12px;');
-console.log('%c📐 Mira fixa com largura fixa no color-name: ATIVO', 'color: #aac; font-size: 12px;');
+console.log('%c🔒 Validação de compatibilidade mínima: ' + MIN_COMPATIBILITY_THRESHOLD + '%', 'color: #ffcc60; font-size: 12px;');
+console.log('%c🎯 Texto colorido pela cor CAPTURADA (não RAL)', 'color: #aac; font-size: 12px;');
+console.log('%c📷 Foco manual: evita efeito modo-retrato', 'color: #ba8eff; font-size: 12px;');
+console.log('%c📷 Foco manual: evita efeito modo-retrato', 'color: #ba8eff; font-size: 12px;');
+console.log('%c📷 Foco manual: evita efeito modo-retrato', 'color: #ba8eff; font-size: 12px;');
 </script>
 </body>
 </html>
