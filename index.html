@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Motor de Cor - Sistema Multi-Biblioteca v4.3 PLÁSTICOS PRO++</title>
+<title>Motor de Cor - Sistema Multi-Biblioteca v3.5 PLÁSTICOS PRO++</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -82,13 +82,7 @@
     transition: background 0.25s ease;
     box-shadow: 0 0 8px rgba(0,0,0,0.5);
   }
-  #color-name {
-    font-size: 0.82rem; font-weight: 700; letter-spacing: 0.4px;
-    width: 280px; min-width: 280px; max-width: 280px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    text-align: left; flex-shrink: 0;
-    text-shadow: 0 0 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
-  }
+  #color-name { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.4px; min-width: 200px; text-align: left; }
   #confidence-display { font-size: 0.58rem; color: #6a6; white-space: nowrap; font-weight: 600; }
   .sep { color: rgba(100,100,255,0.3); font-size: 0.7rem; flex-shrink: 0; }
   .data-inline { font-size: 0.64rem; font-family: 'Courier New', monospace; color: #aab; white-space: nowrap; }
@@ -103,7 +97,7 @@
   .btn-top:disabled { opacity: 0.25; cursor: not-allowed; }
   #btn-calibrate-white { background: linear-gradient(135deg, #2a2a6e, #3a3a9e); color: #aac; border: 1px solid rgba(100,100,255,0.3); }
   #btn-calibrate-white:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a8e, #5a5abe); color: #eef; }
-  #btn-calibrate-white.calibrated { background: linear-gradient(135deg, #1a4a2e, #2a7a4e); border-color: rgba(50,200,100,0.4); color: #8effa0; }
+  #btn-calibrate-white.calibrated { background: linear-gradient(135deg, #1a4a2e, #2a7a4e); border-color: rgba(50,200,100,0.4); color: #8; }
   #btn-calibrate-black { background: linear-gradient(135deg, #2a2a2a, #3a3a3a); color: #aaa; border: 1px solid rgba(100,100,100,0.3); }
   #btn-calibrate-black:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a3a, #5a5a5a); color: #ddd; }
   #btn-calibrate-black.calibrated { background: linear-gradient(135deg, #1a1a1a, #2a2a2a); border-color: rgba(200,200,200,0.4); color: #fff; }
@@ -146,12 +140,7 @@
   #btn-plasticos.plasticos-on { background: linear-gradient(135deg, #1a3a2e, #2a6a4e); color: #6effa0; border: 1px solid rgba(60,200,100,0.55); box-shadow: 0 0 8px rgba(60,200,100,0.3); }
   #main { flex: 1; position: relative; overflow: hidden; }
   #camera-container { position: absolute; inset: 0; background: #000; }
-  #videoEl {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: contain;
-    background: #000;
-    z-index: 1;
-  }
+  #videoEl { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
   #canvasEl { display: none; }
   #reticle {
     position: absolute; top: 50%; left: 50%;
@@ -187,11 +176,10 @@
   #formula-panel.show { display: flex; }
   .formula-section { width: 100%; margin-bottom: 0.5vh; }
   .formula-title { font-size: 0.65rem; font-weight: 700; letter-spacing: 1.2px; color: #6ac; text-transform: uppercase; margin-bottom: 0.4vh; }
-  .formula-content { font-size: 0.6rem; color: #aac; line-height: 1.4; font-family: 'Courier New', monospace; white-space: pre-line; }
+  .formula-content { font-size: 0.6rem; color: #aac; line-height: 1.4; font-family: 'Courier New', monospace; }
   .formula-item { margin-bottom: 0.2vh; padding-left: 1em; }
   .adjustment-text { font-size: 0.62rem; color: #8ec; line-height: 1.35; white-space: pre-line; }
   .adjustment-text.perfect { color: #6effa0; }
-  .adjustment-text.not-found { color: #ffcc60; }
   #comparison-panel {
     position: absolute; bottom: 0; left: 0; right: 0;
     background: rgba(8,8,20,0.94);
@@ -223,7 +211,7 @@
   .comp-formulas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5vw; }
   .comp-formula-block { }
   .comp-formula-label { font-size: clamp(0.5rem, 1.7vw, 0.58rem); font-weight: 700; color: #8ac; margin-bottom: 0.4vh; }
-  .comp-formula-list { font-size: clamp(0.52rem, 1.8vw, 0.6rem); color: #aac; line-height: 1.4; font-family: 'Courier New', monospace; white-space: pre-line; }
+  .comp-formula-list { font-size: clamp(0.52rem, 1.8vw, 0.6rem); color: #aac; line-height: 1.4; font-family: 'Courier New', monospace; }
   .comp-suggestion { width: 100%; max-width: 92vw; padding: 1vh 2vw; background: rgba(15,15,30,0.85); border: 1px solid rgba(120,220,255,0.3); border-radius: 6px; margin-top: 0.3vh; flex-shrink: 0; }
   .comp-suggestion-label { font-size: clamp(0.48rem, 1.6vw, 0.54rem); font-weight: 700; letter-spacing: 1.3px; color: #667; text-transform: uppercase; text-align: center; margin-bottom: 0.5vh; }
   .comp-suggestion-text { font-size: clamp(0.62rem, 2.2vw, 0.72rem); font-weight: 600; color: #8ec; text-align: left; line-height: 1.35; text-shadow: 0 0 8px rgba(120,220,255,0.2); white-space: pre-line; }
@@ -236,7 +224,7 @@
     #top-bar { gap: 6px; padding: 4px 8px; }
     .btn-top { padding: 3px 6px; font-size: 0.55rem; }
     #btn-modes { padding: 4px 8px; font-size: 0.62rem; }
-    #color-name { font-size: 0.74rem; width: 180px; min-width: 180px; max-width: 180px; }
+    #color-name { font-size: 0.74rem; min-width: 150px; }
     .data-inline { font-size: 0.58rem; }
     #base-info { font-size: 0.54rem; }
     #comparison-panel { padding: 0.8vh 2vw; gap: 0.6vh; max-height: 52vh; }
@@ -250,7 +238,7 @@
 <body>
 <div id="header">
   <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v4.3 PRO++ - RAL PLASTICS + DELTA E + FOCO MANUAL</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v3.5 PRO++ - CATÁLOGO DIGITAL MÁXIMA COMPATIBILIDADE</span>
 </div>
 <div id="top-bar">
   <div class="mode-selector">
@@ -304,11 +292,11 @@
     </div>
     <div id="formula-panel">
       <div class="formula-section">
-        <div class="formula-title">&#129514; Base universal sugerida por CI</div>
+        <div class="formula-title">🧪 FÓRMULA DE REFERÊNCIA (Catálogo)</div>
         <div class="formula-content" id="formula-content">---</div>
       </div>
       <div class="formula-section">
-        <div class="formula-title">&#9881; Ajuste técnico sugerido</div>
+        <div class="formula-title">🎨 AJUSTE SUGERIDO</div>
         <div class="adjustment-text" id="adjustment-text">---</div>
       </div>
     </div>
@@ -325,7 +313,6 @@
         <div class="comp-block comp-center">
           <div class="comp-percent-label">COMPATIBILIDADE</div>
           <div id="compatibility-percent" class="comp-percent">---</div>
-          <div class="data-inline" id="delta-e-display" style="margin-top:2px;color:#6ac;font-size:0.55rem;">Delta E: ---</div>
         </div>
         <div class="comp-block">
           <div class="comp-label">AMOSTRA</div>
@@ -337,7 +324,7 @@
         </div>
       </div>
       <div class="comp-formulas-section" id="comp-formulas-section" style="display:none;">
-        <div class="comp-formulas-title">&#129514; SUGESTÃO TÉCNICA DE PIGMENTOS BASE UNIVERSAIS</div>
+        <div class="comp-formulas-title">🧪 FÓRMULAS DAS CORES CAPTURADAS</div>
         <div class="comp-formulas-grid">
           <div class="comp-formula-block">
             <div class="comp-formula-label">REFERÊNCIA:</div>
@@ -350,7 +337,7 @@
         </div>
       </div>
       <div class="comp-suggestion" id="pigment-suggestion" style="display:none;">
-        <div class="comp-suggestion-label">&#9881; AJUSTE SUGERIDO</div>
+        <div class="comp-suggestion-label">🎨 AJUSTE SUGERIDO</div>
         <div class="comp-suggestion-text" id="pigment-suggestion-text">---</div>
       </div>
     </div>
@@ -373,6 +360,7 @@ const canvas = document.getElementById('canvasEl');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const reticle = document.getElementById('reticle');
 const cameraContainer = document.getElementById('camera-container');
+
 let stream = null;
 let devices = [];
 let deviceIndex = 0;
@@ -393,11 +381,12 @@ let isWhiteCalibrated = false;
 let isBlackCalibrated = false;
 let colorTemperatureBias = { r: 0, g: 0, b: 0 };
 let hasColorTempCompensation = false;
-let manualFocusApplied = false;
+
 const SAMPLE_SIZE = 2;
 const BUFFER_SIZE = 8;
 const HYSTERESIS_THRESHOLD = 6;
 const RGB_CHANGE_THRESHOLD = 55;
+
 let colorBuffer = [];
 let lastStableColorName = '';
 let lastStableHue = 0;
@@ -405,7 +394,6 @@ let lastStableRGB = { r: 0, g: 0, b: 0 };
 let lastStableVariance = 0;
 let mismatchCounter = 0;
 const MISMATCH_FORCE_UPDATE = 5;
-const MIN_COMPATIBILITY_THRESHOLD = 80;
 let lastSpokenName = '';
 let pendingName = '';
 let stableTimer = null;
@@ -416,333 +404,297 @@ let comparisonRef = null;
 let comparisonSample = null;
 let selectingRef = false;
 let selectingSample = false;
-// ═══════════════════════════════════════════════
-function isNoLightRGB(rgb) {
-  if (!rgb) return false;
-  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
-  const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
-  return maxRGB <= 30 || avgRGB <= 18;
-}
-function forceBlackClassification() {
-  return {
-    name: 'Preto',
-    color: '#050505',
-    confidence: 99,
-    formula: [{ pigmento: 'Carbon Black', ci: 'PBk7', codigo: 'CI 77266', proporcao: '100%', funcao: 'cor_primaria' }],
-    forcedBlack: true,
-    adjustment: 'Sem luz suficiente no receptor.\nClassificação forçada para Preto.\nNenhuma outra cor deve ser considerada nesta condição.'
-  };
-}
-function notFoundClassification() {
-  return {
-    name: '⚠ COR NÃO IDENTIFICADA',
-    color: '#ffcc60',
-    confidence: 0,
-    formula: [],
-    notFound: true,
-    adjustment: 'Cor fora da biblioteca RAL Plastics.\nPossíveis causas:\n• Objeto com cor metálica/perolizada\n• Iluminação inadequada\n• Recalibrar base (branco/preto)\n• Objeto fora do catálogo RAL'
-  };
-}
-// ═══════════════════════════════════════════════
-const RAL_P1 = [
-  { code: "RAL 1000-P", name: "Bege esverdeado", hex: "#CDBA88", familia: "bege" },
-  { code: "RAL 1001-P", name: "Bege", hex: "#D0B084", familia: "bege" },
-  { code: "RAL 1002-P", name: "Amarelo areia", hex: "#D2AA6D", familia: "amarelo" },
-  { code: "RAL 1004-P", name: "Amarelo ouro", hex: "#E49E00", familia: "amarelo" },
-  { code: "RAL 1011-P", name: "Castanho", hex: "#AF804F", familia: "marrom" },
-  { code: "RAL 1012-P", name: "Amarelo limão", hex: "#DDAF27", familia: "amarelo" },
-  { code: "RAL 1013-P", name: "Pérola", hex: "#E3D9C6", familia: "branco" },
-  { code: "RAL 1015-P", name: "Marfim claro", hex: "#E6D2B5", familia: "branco" },
-  { code: "RAL 1016-P", name: "Amarelo enxofre", hex: "#F1DD38", familia: "amarelo" },
-  { code: "RAL 1017-P", name: "Amarelo açafrão", hex: "#F6A950", familia: "amarelo" },
-  { code: "RAL 1018-P", name: "Amarelo zinco", hex: "#FACA30", familia: "amarelo" },
-  { code: "RAL 1020-P", name: "Amarelo oliva", hex: "#A48F7A", familia: "bege" },
-  { code: "RAL 1021-P", name: "Amarelo canola", hex: "#F6B600", familia: "amarelo" },
-  { code: "RAL 1028-P", name: "Amarelo melão", hex: "#FFB230", familia: "amarelo" },
-  { code: "RAL 1033-P", name: "Amarelo dália", hex: "#F99A1C", familia: "laranja" },
-  { code: "RAL 2000-P", name: "Laranja escuro", hex: "#ED760E", familia: "laranja" },
-  { code: "RAL 2002-P", name: "Laranja sangue", hex: "#CB2821", familia: "vermelho" },
-  { code: "RAL 2003-P", name: "Laranja pastel", hex: "#FF7514", familia: "laranja" },
-  { code: "RAL 2004-P", name: "Laranja puro", hex: "#F44611", familia: "laranja" },
-  { code: "RAL 2008-P", name: "Laranja vermelho claro", hex: "#F75E25", familia: "laranja" },
-  { code: "RAL 2012-P", name: "Laranja salmão", hex: "#D36E70", familia: "rosa" },
-  { code: "RAL 3000-P", name: "Vermelho vivo", hex: "#AF2B1E", familia: "vermelho" },
-  { code: "RAL 3002-P", name: "Carmim", hex: "#A12312", familia: "vermelho" },
-  { code: "RAL 3003-P", name: "Vermelho rubi", hex: "#8D1D2C", familia: "vermelho" },
-  { code: "RAL 3004-P", name: "Vermelho púrpura", hex: "#701F29", familia: "vermelho" },
-  { code: "RAL 3012-P", name: "Bege avermelhado", hex: "#C1876B", familia: "bege" },
-  { code: "RAL 3014-P", name: "Rosa envelhecido", hex: "#CA8081", familia: "rosa" },
-  { code: "RAL 3015-P", name: "Rosa claro", hex: "#E8C3B9", familia: "rosa" },
-  { code: "RAL 3016-P", name: "Coral", hex: "#B32821", familia: "vermelho" },
-  { code: "RAL 3018-P", name: "Vermelho morango", hex: "#D53032", familia: "vermelho" },
-  { code: "RAL 3020-P", name: "Vermelho sinalização", hex: "#CC0605", familia: "vermelho" },
-  { code: "RAL 3027-P", name: "Vermelho framboesa", hex: "#C51D34", familia: "vermelho" },
-  { code: "RAL 3028-P", name: "Vermelho puro", hex: "#CB3234", familia: "vermelho" }
-];
-const RAL_P2 = [
-  { code: "000 15 00-P", name: "Cinza carvão profundo", hex: "#272727", familia: "preto" },
-  { code: "000 40 00-P", name: "Cinza escuro", hex: "#666666", familia: "cinza" },
-  { code: "000 55 00-P", name: "Cinza médio", hex: "#8C8C8C", familia: "cinza" },
-  { code: "000 85 00-P", name: "Cinza claro", hex: "#D9D9D9", familia: "cinza" },
-  { code: "010 30 44-P", name: "Vinho escuro intenso", hex: "#7A2040", familia: "vermelho" },
-  { code: "010 40 53-P", name: "Vinho médio intenso", hex: "#9E2850", familia: "vermelho" },
-  { code: "010 60 45-P", name: "Rosa médio claro intenso", hex: "#CC5C7A", familia: "rosa" },
-  { code: "010 80 20-P", name: "Rosa claro suave", hex: "#E8A0B0", familia: "rosa" },
-  { code: "020 20 20-P", name: "Marrom rosado escuro suave", hex: "#5A3030", familia: "marrom" },
-  { code: "020 30 40-P", name: "Terracota rosa escuro intenso", hex: "#7A4040", familia: "marrom" },
-  { code: "020 50 58-P", name: "Terracota rosa médio intenso", hex: "#A06060", familia: "marrom" },
-  { code: "020 90 10-P", name: "Terracota rosa claro suave", hex: "#E8C0B8", familia: "rosa" },
-  { code: "030 30 20-P", name: "Nude marrom rosado escuro suave", hex: "#6A4A40", familia: "marrom" },
-  { code: "030 40 30-P", name: "Nude marrom rosado médio", hex: "#8A6050", familia: "marrom" },
-  { code: "030 60 30-P", name: "Nude marrom rosado médio claro", hex: "#B08070", familia: "bege" },
-  { code: "030 80 10-P", name: "Nude rose claro suave", hex: "#DCC0B8", familia: "bege" },
-  { code: "040 30 40-P", name: "Terracota tijolo escuro intenso", hex: "#703020", familia: "vermelho" },
-  { code: "040 50 60-P", name: "Terracota tijolo médio intenso", hex: "#A05030", familia: "laranja" },
-  { code: "040 60 60-P", name: "Terracota tijolo médio claro intenso", hex: "#B86040", familia: "laranja" },
-  { code: "040 80 20-P", name: "Terracota tijolo claro suave", hex: "#DCA890", familia: "bege" },
-  { code: "050 30 30-P", name: "Laranja queimado caramelo escuro", hex: "#6A3820", familia: "marrom" },
-  { code: "050 50 50-P", name: "Laranja queimado caramelo médio", hex: "#A06030", familia: "laranja" },
-  { code: "050 50 78-P", name: "Laranja queimado caramelo médio intenso", hex: "#C06820", familia: "laranja" },
-  { code: "050 80 20-P", name: "Laranja queimado caramelo claro suave", hex: "#DDB888", familia: "bege" },
-  { code: "060 30 27-P", name: "Mostarda âmbar escuro", hex: "#604020", familia: "marrom" },
-  { code: "060 50 50-P", name: "Mostarda âmbar médio", hex: "#A07820", familia: "amarelo" },
-  { code: "060 60 80-P", name: "Mostarda âmbar médio claro intenso", hex: "#C09000", familia: "amarelo" },
-  { code: "060 80 30-P", name: "Mostarda âmbar claro", hex: "#D8C070", familia: "amarelo" },
-  { code: "070 40 40-P", name: "Amarelo ouro ocre escuro intenso", hex: "#806010", familia: "amarelo" },
-  { code: "070 70 80-P", name: "Amarelo ouro ocre médio claro intenso", hex: "#C0A000", familia: "amarelo" },
-  { code: "070 80 50-P", name: "Amarelo ouro ocre claro", hex: "#D0C060", familia: "amarelo" },
-  { code: "070 90 10-P", name: "Amarelo ouro ocre claro suave", hex: "#E0D8A0", familia: "amarelo" },
-  { code: "075 40 38-P", name: "Amarelo queimado oliva escuro", hex: "#706010", familia: "amarelo" },
-  { code: "075 60 70-P", name: "Amarelo queimado oliva médio claro intenso", hex: "#A89000", familia: "amarelo" },
-  { code: "075 80 20-P", name: "Amarelo queimado oliva claro suave", hex: "#C8C880", familia: "amarelo" },
-  { code: "075 80 60-P", name: "Amarelo queimado oliva claro intenso", hex: "#C0B800", familia: "amarelo" },
-  { code: "080 30 26-P", name: "Bege areia escuro", hex: "#6E6040", familia: "bege" },
-  { code: "080 50 40-P", name: "Bege areia médio intenso", hex: "#A09060", familia: "bege" },
-  { code: "080 70 50-P", name: "Bege areia médio claro intenso", hex: "#C0B070", familia: "bege" },
-  { code: "080 80 20-P", name: "Bege areia claro suave", hex: "#D8CCA0", familia: "bege" },
-  { code: "085 40 20-P", name: "Amarelo palha escuro suave", hex: "#807858", familia: "bege" },
-  { code: "085 60 60-P", name: "Amarelo palha médio claro intenso", hex: "#B0A840", familia: "amarelo" },
-  { code: "085 80 85-P", name: "Amarelo palha médio claro muito intenso", hex: "#D0C800", familia: "amarelo" },
-  { code: "085 90 10-P", name: "Amarelo palha claro suave", hex: "#E0DCC0", familia: "amarelo" },
-  { code: "090 50 40-P", name: "Amarelo canário médio intenso", hex: "#A0A820", familia: "amarelo" },
-  { code: "090 70 80-P", name: "Amarelo canário médio claro muito intenso", hex: "#C0CC00", familia: "amarelo" },
-  { code: "090 80 90-P", name: "Amarelo canário claro muito intenso", hex: "#D0E000", familia: "amarelo" },
-  { code: "090 90 30-P", name: "Amarelo canário claro", hex: "#E0E0A0", familia: "amarelo" },
-  { code: "095 50 50-P", name: "Verde lima pistache médio intenso", hex: "#90A820", familia: "verde" },
-  { code: "095 60 70-P", name: "Verde lima pistache médio claro intenso", hex: "#A0C000", familia: "verde" },
-  { code: "095 70 70-P", name: "Verde lima pistache médio claro intenso", hex: "#B0D010", familia: "verde" },
-  { code: "095 90 40-P", name: "Verde lima pistache claro", hex: "#D8E8A0", familia: "verde" },
-  { code: "100 40 40-P", name: "Verde oliva erva-doce escuro intenso", hex: "#607840", familia: "verde" },
-  { code: "100 60 60-P", name: "Verde oliva erva-doce médio claro intenso", hex: "#88B040", familia: "verde" },
-  { code: "100 80 70-P", name: "Verde oliva erva-doce claro intenso", hex: "#B0D060", familia: "verde" },
-  { code: "100 90 40-P", name: "Verde oliva erva-doce claro", hex: "#D0E0A0", familia: "verde" },
-  { code: "110 50 55-P", name: "Verde maçã folha médio intenso", hex: "#508840", familia: "verde" },
-  { code: "110 70 70-P", name: "Verde maçã folha médio claro intenso", hex: "#70C040", familia: "verde" },
-  { code: "110 80 70-P", name: "Verde maçã folha claro intenso", hex: "#90D060", familia: "verde" },
-  { code: "110 90 30-P", name: "Verde maçã folha claro", hex: "#C0E0A0", familia: "verde" },
-  { code: "120 40 40-P", name: "Verde musgo oliva escuro intenso", hex: "#386840", familia: "verde" },
-  { code: "120 50 40-P", name: "Verde musgo oliva médio", hex: "#487850", familia: "verde" },
-  { code: "120 60 60-P", name: "Verde musgo oliva médio claro intenso", hex: "#58A060", familia: "verde" },
-  { code: "120 80 30-P", name: "Verde musgo oliva claro", hex: "#98C890", familia: "verde" },
-  { code: "130 30 20-P", name: "Verde bandeira grama escuro suave", hex: "#285030", familia: "verde" },
-  { code: "130 60 50-P", name: "Verde bandeira grama médio claro intenso", hex: "#40A050", familia: "verde" },
-  { code: "130 80 40-P", name: "Verde bandeira grama claro", hex: "#80C890", familia: "verde" },
-  { code: "130 90 10-P", name: "Verde bandeira grama claro suave", hex: "#C0E0C0", familia: "verde" },
-  { code: "140 20 20-P", name: "Verde esmeralda escuro suave", hex: "#203828", familia: "verde" },
-  { code: "140 40 50-P", name: "Verde esmeralda escuro intenso", hex: "#207850", familia: "verde" },
-  { code: "140 60 70-P", name: "Verde esmeralda médio claro intenso", hex: "#28B070", familia: "verde" },
-  { code: "140 80 20-P", name: "Verde esmeralda claro suave", hex: "#80C8A0", familia: "verde" },
-  { code: "150 30 20-P", name: "Verde eucalipto escuro suave", hex: "#304840", familia: "verde" },
-  { code: "150 50 20-P", name: "Verde eucalipto médio suave", hex: "#507870", familia: "verde" },
-  { code: "150 60 20-P", name: "Verde eucalipto médio claro suave", hex: "#608880", familia: "verde" },
-  { code: "150 70 10-P", name: "Verde eucalipto claro suave", hex: "#88A898", familia: "verde" },
-  { code: "160 30 40-P", name: "Verde água menta escuro intenso", hex: "#206060", familia: "ciano" },
-  { code: "160 50 60-P", name: "Verde água menta médio intenso", hex: "#309898", familia: "ciano" },
-  { code: "160 70 45-P", name: "Verde água menta médio claro", hex: "#60B8B0", familia: "ciano" },
-  { code: "160 80 30-P", name: "Verde água menta claro", hex: "#90C8C0", familia: "ciano" },
-  { code: "170 30 20-P", name: "Verde petróleo oceano escuro suave", hex: "#205060", familia: "ciano" },
-  { code: "170 40 20-P", name: "Verde petróleo oceano escuro suave", hex: "#306070", familia: "ciano" },
-  { code: "170 60 20-P", name: "Verde petróleo oceano médio claro suave", hex: "#508898", familia: "ciano" },
-  { code: "170 80 10-P", name: "Verde petróleo oceano claro suave", hex: "#88B8C0", familia: "ciano" },
-  { code: "180 40 45-P", name: "Verde esmeralda malaquita escuro intenso", hex: "#187870", familia: "ciano" },
-  { code: "180 60 50-P", name: "Verde esmeralda malaquita médio claro intenso", hex: "#28A898", familia: "ciano" },
-  { code: "180 70 25-P", name: "Verde esmeralda malaquita médio claro suave", hex: "#60B0A8", familia: "ciano" },
-  { code: "180 90 10-P", name: "Verde esmeralda malaquita claro suave", hex: "#A8D0C8", familia: "ciano" },
-  { code: "190 30 20-P", name: "Verde azulado floresta escuro suave", hex: "#184860", familia: "azul" },
-  { code: "190 40 20-P", name: "Verde azulado floresta escuro suave", hex: "#205870", familia: "azul" },
-  { code: "190 50 20-P", name: "Verde azulado floresta médio suave", hex: "#306888", familia: "azul" },
-  { code: "190 70 20-P", name: "Verde azulado floresta médio claro suave", hex: "#5090A8", familia: "azul" },
-  { code: "200 30 33-P", name: "Turquesa profundo petróleo escuro", hex: "#185870", familia: "azul" },
-  { code: "200 50 45-P", name: "Turquesa profundo petróleo médio intenso", hex: "#2880A0", familia: "azul" },
-  { code: "200 60 35-P", name: "Turquesa profundo petróleo médio claro", hex: "#3898B0", familia: "azul" },
-  { code: "200 80 10-P", name: "Turquesa profundo petróleo claro suave", hex: "#80B8C8", familia: "azul" },
-  { code: "210 40 20-P", name: "Azul oceano marinha escuro suave", hex: "#204868", familia: "azul" },
-  { code: "210 50 20-P", name: "Azul oceano marinha médio suave", hex: "#305880", familia: "azul" },
-  { code: "210 60 30-P", name: "Azul oceano marinha médio claro", hex: "#407098", familia: "azul" },
-  { code: "210 70 35-P", name: "Azul oceano marinha médio claro intenso", hex: "#5088B0", familia: "azul" },
-  { code: "220 30 30-P", name: "Azul pavão cerceta escuro", hex: "#183060", familia: "azul" },
-  { code: "220 40 40-P", name: "Azul pavão cerceta escuro intenso", hex: "#184888", familia: "azul" },
-  { code: "220 50 40-P", name: "Azul pavão cerceta médio intenso", hex: "#2860A0", familia: "azul" },
-  { code: "220 70 35-P", name: "Azul pavão cerceta médio claro", hex: "#4880B8", familia: "azul" },
-  { code: "230 30 25-P", name: "Azul cobalto marinho escuro", hex: "#181840", familia: "azul" },
-  { code: "230 40 20-P", name: "Azul cobalto marinho escuro suave", hex: "#201868", familia: "azul" },
-  { code: "230 50 30-P", name: "Azul cobalto marinho médio", hex: "#302888", familia: "azul" },
-  { code: "230 70 20-P", name: "Azul cobalto marinho médio claro suave", hex: "#5050A8", familia: "azul" },
-  { code: "240 20 22-P", name: "Azul petróleo oceano muito escuro", hex: "#101830", familia: "azul" },
-  { code: "240 30 35-P", name: "Azul petróleo oceano escuro intenso", hex: "#181858", familia: "azul" },
-  { code: "240 60 40-P", name: "Azul petróleo oceano médio claro intenso", hex: "#3840A0", familia: "azul" },
-  { code: "240 80 20-P", name: "Azul petróleo oceano claro suave", hex: "#7070C0", familia: "azul" },
-  { code: "250 30 20-P", name: "Azul médio denim escuro suave", hex: "#202858", familia: "azul" },
-  { code: "250 50 30-P", name: "Azul médio denim médio", hex: "#303888", familia: "azul" },
-  { code: "250 60 30-P", name: "Azul médio denim médio claro", hex: "#4050A0", familia: "azul" },
-  { code: "250 80 20-P", name: "Azul médio denim claro suave", hex: "#7078C8", familia: "azul" },
-  { code: "260 20 20-P", name: "Azul royal safira muito escuro suave", hex: "#181828", familia: "azul" },
-  { code: "260 40 45-P", name: "Azul royal safira escuro intenso", hex: "#282898", familia: "azul" },
-  { code: "260 50 40-P", name: "Azul royal safira médio intenso", hex: "#3030B0", familia: "azul" },
-  { code: "260 80 15-P", name: "Azul royal safira claro suave", hex: "#7070C8", familia: "azul" },
-  { code: "270 30 20-P", name: "Azul acinzentado ardósia escuro suave", hex: "#282840", familia: "azul" },
-  { code: "270 40 20-P", name: "Azul acinzentado ardósia escuro suave", hex: "#383860", familia: "azul" },
-  { code: "270 60 20-P", name: "Azul acinzentado ardósia médio claro suave", hex: "#585890", familia: "azul" },
-  { code: "270 70 10-P", name: "Azul acinzentado ardósia claro suave", hex: "#7878A8", familia: "azul" },
-  { code: "280 30 40-P", name: "Azul ultramar profundo escuro intenso", hex: "#201050", familia: "violeta" },
-  { code: "280 40 40-P", name: "Azul ultramar profundo escuro intenso", hex: "#281870", familia: "violeta" },
-  { code: "280 50 30-P", name: "Azul ultramar profundo médio", hex: "#382888", familia: "violeta" },
-  { code: "280 80 10-P", name: "Azul ultramar profundo claro suave", hex: "#7070A8", familia: "violeta" },
-  { code: "290 30 30-P", name: "Azul violeta lavanda escuro", hex: "#281840", familia: "violeta" },
-  { code: "290 50 30-P", name: "Azul violeta lavanda médio", hex: "#483068", familia: "violeta" },
-  { code: "290 60 20-P", name: "Azul violeta lavanda médio claro suave", hex: "#585880", familia: "violeta" },
-  { code: "290 70 10-P", name: "Azul violeta lavanda claro suave", hex: "#787890", familia: "violeta" },
-  { code: "300 20 30-P", name: "Roxo índigo muito escuro", hex: "#200820", familia: "violeta" },
-  { code: "300 40 40-P", name: "Roxo índigo escuro intenso", hex: "#401050", familia: "violeta" },
-  { code: "300 70 20-P", name: "Roxo índigo médio claro suave", hex: "#705888", familia: "violeta" },
-  { code: "300 90 05-P", name: "Roxo índigo claro suave", hex: "#B0A8B8", familia: "violeta" },
-  { code: "310 40 20-P", name: "Violeta acinzentado lavanda escuro suave", hex: "#503858", familia: "violeta" },
-  { code: "310 50 30-P", name: "Violeta acinzentado lavanda médio", hex: "#685080", familia: "violeta" },
-  { code: "310 60 20-P", name: "Violeta acinzentado lavanda médio claro suave", hex: "#786890", familia: "violeta" },
-  { code: "310 70 10-P", name: "Violeta acinzentado lavanda claro suave", hex: "#9888A0", familia: "violeta" },
-  { code: "320 20 20-P", name: "Berinjela ameixa muito escuro suave", hex: "#381828", familia: "violeta" },
-  { code: "320 30 37-P", name: "Berinjela ameixa escuro intenso", hex: "#581840", familia: "violeta" },
-  { code: "320 50 30-P", name: "Berinjela ameixa médio", hex: "#803060", familia: "violeta" },
-  { code: "320 80 15-P", name: "Berinjela ameixa claro suave", hex: "#B880A0", familia: "rosa" },
-  { code: "330 30 20-P", name: "Magnólia malva escuro suave", hex: "#582040", familia: "violeta" },
-  { code: "330 50 40-P", name: "Magnólia malva médio intenso", hex: "#903068", familia: "violeta" },
-  { code: "330 60 20-P", name: "Magnólia malva médio claro suave", hex: "#A05080", familia: "rosa" },
-  { code: "330 70 10-P", name: "Magnólia malva claro suave", hex: "#B87898", familia: "rosa" },
-  { code: "340 30 38-P", name: "Carmim magenta escuro intenso", hex: "#701838", familia: "vermelho" },
-  { code: "340 40 45-P", name: "Carmim magenta escuro intenso", hex: "#902048", familia: "vermelho" },
-  { code: "340 60 40-P", name: "Carmim magenta médio claro intenso", hex: "#C03868", familia: "rosa" },
-  { code: "340 80 20-P", name: "Carmim magenta claro suave", hex: "#D88098", familia: "rosa" },
-  { code: "350 20 20-P", name: "Vinho rosado framboesa muito escuro suave", hex: "#501828", familia: "vermelho" },
-  { code: "350 40 20-P", name: "Vinho rosado framboesa escuro suave", hex: "#783040", familia: "vermelho" },
-  { code: "350 50 40-P", name: "Vinho rosado framboesa médio intenso", hex: "#A03858", familia: "vermelho" },
-  { code: "350 60 20-P", name: "Vinho rosado framboesa médio claro suave", hex: "#B05870", familia: "rosa" },
-  { code: "360 30 15-P", name: "Bordô rosé antigo escuro suave", hex: "#582030", familia: "vermelho" },
-  { code: "360 30 30-P", name: "Bordô rosé antigo escuro", hex: "#682030", familia: "vermelho" },
-  { code: "360 50 40-P", name: "Bordô rosé antigo médio intenso", hex: "#A03850", familia: "vermelho" },
-  { code: "360 70 15-P", name: "Bordô rosé antigo claro suave", hex: "#C07888", familia: "rosa" },
-  { code: "RAL 4001-P", name: "Roxo", hex: "#6D3F5B", familia: "violeta" },
-  { code: "RAL 4002-P", name: "Violeta avermelhado", hex: "#922B3E", familia: "violeta" },
-  { code: "RAL 4003-P", name: "Violeta rosado", hex: "#DE4C8A", familia: "rosa" },
-  { code: "RAL 4005-P", name: "Lilás", hex: "#6C4675", familia: "violeta" },
-  { code: "RAL 4006-P", name: "Roxo sinalização", hex: "#A03472", familia: "violeta" },
-  { code: "RAL 4007-P", name: "Roxo escuro", hex: "#4A192C", familia: "violeta" },
-  { code: "RAL 4008-P", name: "Roxo segurança", hex: "#924E7D", familia: "violeta" },
-  { code: "RAL 4009-P", name: "Roxo pastel", hex: "#A18594", familia: "violeta" },
-  { code: "RAL 5002-P", name: "Azul marinho", hex: "#20214F", familia: "azul" },
-  { code: "RAL 5005-P", name: "Azul segurança", hex: "#004389", familia: "azul" },
-  { code: "RAL 5009-P", name: "Azul", hex: "#025669", familia: "azul" },
-  { code: "RAL 5010-P", name: "Azul genciano", hex: "#0E294B", familia: "azul" },
-  { code: "RAL 5011-P", name: "Azul aço", hex: "#231A24", familia: "azul" },
-  { code: "RAL 5012-P", name: "Azul claro", hex: "#3B83BD", familia: "azul" },
-  { code: "RAL 5013-P", name: "Azul cobalto", hex: "#1E213D", familia: "azul" },
-  { code: "RAL 5014-P", name: "Azul pombo", hex: "#606E8C", familia: "azul" },
-  { code: "RAL 5015-P", name: "Azul celeste", hex: "#2271B3", familia: "azul" },
-  { code: "RAL 5017-P", name: "Azul sinalização", hex: "#063971", familia: "azul" },
-  { code: "RAL 5018-P", name: "Azul turquesa", hex: "#3F888F", familia: "ciano" },
-  { code: "RAL 5020-P", name: "Azul oceano", hex: "#1D334A", familia: "azul" },
-  { code: "RAL 5022-P", name: "Azul noturno", hex: "#252850", familia: "azul" },
-  { code: "RAL 5023-P", name: "Azul distante", hex: "#49678D", familia: "azul" },
-  { code: "RAL 5024-P", name: "Azul pastel", hex: "#5D9B9B", familia: "ciano" },
-  { code: "RAL 6000-P", name: "Verde platina", hex: "#327662", familia: "verde" },
-  { code: "RAL 6002-P", name: "Verde folha", hex: "#276230", familia: "verde" },
-  { code: "RAL 6003-P", name: "Verde oliva", hex: "#4E5B31", familia: "verde" },
-  { code: "RAL 6005-P", name: "Verde musgo", hex: "#0E4438", familia: "verde" },
-  { code: "RAL 6009-P", name: "Verde couve", hex: "#26392F", familia: "verde" },
-  { code: "RAL 6011-P", name: "Verde aspargo", hex: "#68825B", familia: "verde" },
-  { code: "RAL 6017-P", name: "Verde seiva", hex: "#4C9141", familia: "verde" },
-  { code: "RAL 6018-P", name: "Verde amarelado", hex: "#57A639", familia: "verde" },
-  { code: "RAL 6019-P", name: "Verde pastel", hex: "#BDECB6", familia: "verde" },
-  { code: "RAL 6024-P", name: "Verde sinalização", hex: "#008351", familia: "verde" },
-  { code: "RAL 6026-P", name: "Verde opala", hex: "#005F4E", familia: "verde" },
-  { code: "RAL 6037-P", name: "Verde vivo", hex: "#008F39", familia: "verde" },
-  { code: "RAL 7001-P", name: "Cinza prateado", hex: "#8A9597", familia: "cinza" },
-  { code: "RAL 7004-P", name: "Cinza segurança", hex: "#9C9C9C", familia: "cinza" },
-  { code: "RAL 7011-P", name: "Cinza ferro", hex: "#52595D", familia: "cinza" },
-  { code: "RAL 7012-P", name: "Cinza basalto", hex: "#575D57", familia: "cinza" },
-  { code: "RAL 7015-P", name: "Cinza ardósia", hex: "#51565C", familia: "cinza" },
-  { code: "RAL 7016-P", name: "Carvão", hex: "#383E42", familia: "cinza" },
-  { code: "RAL 7021-P", name: "Cinza escuro", hex: "#2F3234", familia: "cinza" },
-  { code: "RAL 7031-P", name: "Cinza azulado", hex: "#4B6069", familia: "cinza" },
-  { code: "RAL 7035-P", name: "Cinza claro", hex: "#CBD0CC", familia: "cinza" },
-  { code: "RAL 7037-P", name: "Cinza poeira", hex: "#7D7F7D", familia: "cinza" },
-  { code: "RAL 7038-P", name: "Cinza ágata", hex: "#B5B8B1", familia: "cinza" },
-  { code: "RAL 7040-P", name: "Cinza janela", hex: "#9DA3A6", familia: "cinza" },
-  { code: "RAL 7042-P", name: "Cinza sinalização A", hex: "#8D948D", familia: "cinza" },
-  { code: "RAL 7045-P", name: "Cinza tele 1", hex: "#91969A", familia: "cinza" },
-  { code: "RAL 8001-P", name: "Marrom ocre", hex: "#955F20", familia: "marrom" },
-  { code: "RAL 8004-P", name: "Marrom cobre", hex: "#8F4E35", familia: "marrom" },
-  { code: "RAL 8007-P", name: "Marrom alce", hex: "#6F4A2F", familia: "marrom" },
-  { code: "RAL 8008-P", name: "Marrom oliva", hex: "#6F4F28", familia: "marrom" },
-  { code: "RAL 8011-P", name: "Marrom castanha", hex: "#5B3A29", familia: "marrom" },
-  { code: "RAL 8014-P", name: "Marrom sépia", hex: "#49392D", familia: "marrom" },
-  { code: "RAL 8015-P", name: "Castanho", hex: "#633A34", familia: "marrom" },
-  { code: "RAL 8017-P", name: "Chocolate", hex: "#44322D", familia: "marrom" },
-  { code: "RAL 8023-P", name: "Marrom alaranjado", hex: "#A65E2E", familia: "marrom" },
-  { code: "RAL 8025-P", name: "Marrom pálido", hex: "#755C48", familia: "marrom" },
-  { code: "RAL 9001-P", name: "Creme", hex: "#E9E0D2", familia: "branco" },
-  { code: "RAL 9002-P", name: "Branco acinzentado", hex: "#D7D7D7", familia: "branco" },
-  { code: "RAL 9003-P", name: "Branco segurança", hex: "#F4F4F4", familia: "branco" },
-  { code: "RAL 9010-P", name: "Branco puro", hex: "#F6F6F6", familia: "branco" },
-  { code: "RAL 9011-P", name: "Grafite escuro", hex: "#27292B", familia: "preto" },
-  { code: "RAL 9016-P", name: "Branco sinalização", hex: "#F6F6F6", familia: "branco" }
-];
-// ════ PIGMENTOS CI ════
-const PIGMENTS_CI = {
-  white:       { pigmento: 'Dióxido de Titânio Rutilo',      ci: 'PW6',    codigo: 'CI 77891',       proporcao: 'base',    funcao: 'clareamento/opacidade' },
-  black:       { pigmento: 'Carbon Black',                    ci: 'PBk7',   codigo: 'CI 77266',       proporcao: 'base',    funcao: 'escurecimento/profundidade' },
-  yellow:      { pigmento: 'Amarelo Benzimidazolona',         ci: 'PY151',  codigo: 'CI 13980',       proporcao: 'ajuste',  funcao: 'amarelo base' },
-  yellowIso:   { pigmento: 'Amarelo Isoindolina',             ci: 'PY110',  codigo: 'CI 56280',       proporcao: 'ajuste',  funcao: 'amarelo avermelhado' },
-  orange:      { pigmento: 'Laranja DPP',                     ci: 'PO73',   codigo: 'CI 561170',      proporcao: 'ajuste',  funcao: 'laranja base' },
-  red:         { pigmento: 'Vermelho DPP',                    ci: 'PR254',  codigo: 'CI 56110',       proporcao: 'ajuste',  funcao: 'vermelho alto desempenho' },
-  redIron:     { pigmento: 'Óxido de Ferro Vermelho',         ci: 'PR101',  codigo: 'CI 77491',       proporcao: 'ajuste',  funcao: 'vermelho óxido/terra' },
-  blue:        { pigmento: 'Azul Ftalocianina Beta',          ci: 'PB15:3', codigo: 'CI 74160',       proporcao: 'ajuste',  funcao: 'azul base' },
-  blueAlpha:   { pigmento: 'Azul Ftalocianina Alfa',          ci: 'PB15:1', codigo: 'CI 74160',       proporcao: 'ajuste',  funcao: 'azul avermelhado' },
-  ultramarine: { pigmento: 'Azul Ultramar',                   ci: 'PB29',   codigo: 'CI 77007',       proporcao: 'ajuste',  funcao: 'azul profundo' },
-  green:       { pigmento: 'Verde Ftalocianina',              ci: 'PG7',    codigo: 'CI 74260',       proporcao: 'ajuste',  funcao: 'verde azulado' },
-  greenYellow: { pigmento: 'Verde Ftalocianina Amarelado',    ci: 'PG36',   codigo: 'CI 74265',       proporcao: 'ajuste',  funcao: 'verde amarelado' },
-  chromeGreen: { pigmento: 'Óxido de Cromo Verde',            ci: 'PG17',   codigo: 'CI 77288',       proporcao: 'ajuste',  funcao: 'verde óxido' },
-  violet:      { pigmento: 'Violeta Dioxazina',               ci: 'PV23',   codigo: 'CI 51319',       proporcao: 'ajuste',  funcao: 'violeta/ajuste de matiz' },
-  brown:       { pigmento: 'Óxidos de Ferro Amarelo/Vermelho',ci: 'PY42/PR101', codigo: 'CI 77492/77491', proporcao: 'ajuste', funcao: 'terras e marrons' }
-};
-function pigmentsForFamily(familia, name) {
-  const n = (name || '').toLowerCase();
-  switch (familia) {
-    case 'branco': case 'bege': return [PIGMENTS_CI.white, PIGMENTS_CI.yellow, PIGMENTS_CI.brown];
-    case 'preto': return [PIGMENTS_CI.black];
-    case 'cinza': return [PIGMENTS_CI.white, PIGMENTS_CI.black];
-    case 'amarelo': return [PIGMENTS_CI.yellow, n.includes('oliva') ? PIGMENTS_CI.black : PIGMENTS_CI.white];
-    case 'laranja': return [PIGMENTS_CI.orange, PIGMENTS_CI.yellow, PIGMENTS_CI.red];
-    case 'vermelho': return [(n.includes('oxide') || n.includes('óxido') || n.includes('terra')) ? PIGMENTS_CI.redIron : PIGMENTS_CI.red, PIGMENTS_CI.white, PIGMENTS_CI.black];
-    case 'rosa': return [PIGMENTS_CI.red, PIGMENTS_CI.white, PIGMENTS_CI.violet];
-    case 'violeta': return [PIGMENTS_CI.violet, PIGMENTS_CI.blueAlpha, PIGMENTS_CI.red];
-    case 'azul': return [PIGMENTS_CI.blue, PIGMENTS_CI.ultramarine, PIGMENTS_CI.white, PIGMENTS_CI.black];
-    case 'ciano': return [PIGMENTS_CI.blue, PIGMENTS_CI.green, PIGMENTS_CI.white];
-    case 'verde': return [n.includes('oliva') ? PIGMENTS_CI.chromeGreen : PIGMENTS_CI.green, PIGMENTS_CI.greenYellow, PIGMENTS_CI.yellow, PIGMENTS_CI.white];
-    case 'marrom': return [PIGMENTS_CI.brown, PIGMENTS_CI.redIron, PIGMENTS_CI.black, PIGMENTS_CI.yellow];
-    default: return [PIGMENTS_CI.white, PIGMENTS_CI.black];
+
+const PLASTICS_LIBRARY = {
+  "Branco Gelo": {
+    hsvTarget: { h: 0, s: 2, v: 95 }, hsvRange: { hMin: 0, hMax: 30, sMin: 0, sMax: 20, vMin: 88, vMax: 100 },
+    hex: "#FAFAFA", familia: "branco",
+    formula: [{ pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }]
+  },
+  "Branco Neve": {
+    hsvTarget: { h: 0, s: 0, v: 99 }, hsvRange: { hMin: 0, hMax: 30, sMin: 0, sMax: 12, vMin: 95, vMax: 100 },
+    hex: "#FFFFFF", familia: "branco",
+    formula: [
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" },
+      { pigmento: "Agente Óptico de Brilho", ci: "OB-1", codigo: "OBA", proporcao: "0.05%", funcao: "efeito_especial" }
+    ]
+  },
+  "Branco Natural": {
+    hsvTarget: { h: 40, s: 5, v: 92 }, hsvRange: { hMin: 30, hMax: 55, sMin: 0, sMax: 18, vMin: 85, vMax: 96 },
+    hex: "#F5F0E8", familia: "branco",
+    formula: [{ pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }]
+  },
+  "Branco Masterbatch": {
+    hsvTarget: { h: 0, s: 3, v: 92 }, hsvRange: { hMin: 0, hMax: 30, sMin: 0, sMax: 15, vMin: 88, vMax: 96 },
+    hex: "#EDEDED", familia: "branco",
+    formula: [{ pigmento: "Dióxido de Titânio Anatásio", ci: "PW6", codigo: "CI 77891", proporcao: "3.0%", funcao: "base_clareadora" }]
+  },
+  "Preto Absoluto": {
+    hsvTarget: { h: 0, s: 0, v: 5 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 30, vMin: 0, vMax: 15 },
+    hex: "#0A0A0A", familia: "preto",
+    formula: [{ pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "2.5%", funcao: "cor_primaria" }]
+  },
+  "Preto UV": {
+    hsvTarget: { h: 0, s: 0, v: 10 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 35, vMin: 5, vMax: 20 },
+    hex: "#141414", familia: "preto",
+    formula: [
+      { pigmento: "Carbon Black N550", ci: "PBk7", codigo: "CI 77266", proporcao: "2.0%", funcao: "cor_primaria" },
+      { pigmento: "Estabilizante HALS", ci: "UV-AD", codigo: "HALS", proporcao: "0.3%", funcao: "efeito_especial" }
+    ]
+  },
+  "Preto Condutivo": {
+    hsvTarget: { h: 0, s: 0, v: 12 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 35, vMin: 8, vMax: 22 },
+    hex: "#1A1A1A", familia: "preto",
+    formula: [{ pigmento: "Carbon Black Condutivo", ci: "PBk7", codigo: "CI 77266", proporcao: "15.0%", funcao: "cor_primaria" }]
+  },
+  "Preto Masterbatch": {
+    hsvTarget: { h: 0, s: 0, v: 15 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 35, vMin: 10, vMax: 25 },
+    hex: "#202020", familia: "preto",
+    formula: [
+      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "30.0%", funcao: "cor_primaria" },
+      { pigmento: "Cera Dispersante PE", ci: "ADD", codigo: "PE-WAX", proporcao: "5.0%", funcao: "efeito_especial" }
+    ]
+  },
+  "Vermelho Óxido": {
+    hsvTarget: { h: 5, s: 75, v: 55 }, hsvRange: { hMin: 345, hMax: 15, sMin: 55, sMax: 95, vMin: 40, vMax: 65 },
+    hex: "#B22222", familia: "vermelho",
+    formula: [{ pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "3.0%", funcao: "cor_primaria" }]
+  },
+  "Vermelho DPP": {
+    hsvTarget: { h: 0, s: 85, v: 70 }, hsvRange: { hMin: 345, hMax: 10, sMin: 65, sMax: 100, vMin: 55, vMax: 85 },
+    hex: "#DC2626", familia: "vermelho",
+    formula: [
+      { pigmento: "Vermelho DPP (Diketopyrrolopyrrole)", ci: "PR254", codigo: "CI 561100", proporcao: "1.5%", funcao: "cor_primaria" },
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.0%", funcao: "base_clareadora" }
+    ]
+  },
+  "Vermelho Cádmio": {
+    hsvTarget: { h: 355, s: 90, v: 75 }, hsvRange: { hMin: 340, hMax: 10, sMin: 75, sMax: 100, vMin: 60, vMax: 90 },
+    hex: "#E30022", familia: "vermelho",
+    formula: [{ pigmento: "Vermelho de Cádmio (Sulfosseleneto)", ci: "PR108", codigo: "CI 77202", proporcao: "4.0%", funcao: "cor_primaria" }]
+  },
+  "Vermelho Vivo": {
+    hsvTarget: { h: 358, s: 88, v: 80 }, hsvRange: { hMin: 345, hMax: 15, sMin: 70, sMax: 100, vMin: 65, vMax: 92 },
+    hex: "#EF4444", familia: "vermelho",
+    formula: [
+      { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.8%", funcao: "cor_primaria" },
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
+    ]
+  },
+  "Vermelho Toluidina": {
+    hsvTarget: { h: 5, s: 90, v: 65 }, hsvRange: { hMin: 345, hMax: 15, sMin: 75, sMax: 100, vMin: 50, vMax: 78 },
+    hex: "#C41E3A", familia: "vermelho",
+    formula: [{ pigmento: "Vermelho Toluidina (Monoazo)", ci: "PR3", codigo: "CI 12120", proporcao: "2.5%", funcao: "cor_primaria" }]
+  },
+  "Laranja Vivo": {
+    hsvTarget: { h: 30, s: 85, v: 90 }, hsvRange: { hMin: 15, hMax: 40, sMin: 70, sMax: 95, vMin: 75, vMax: 95 },
+    hex: "#FF8800", familia: "laranja",
+    formula: [
+      { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.2%", funcao: "cor_primaria" },
+      { pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "1.5%", funcao: "ajuste_tom" }
+    ]
+  },
+  "Laranja DPP": {
+    hsvTarget: { h: 25, s: 88, v: 85 }, hsvRange: { hMin: 15, hMax: 38, sMin: 75, sMax: 100, vMin: 70, vMax: 92 },
+    hex: "#FF7F00", familia: "laranja",
+    formula: [{ pigmento: "Laranja DPP", ci: "PO73", codigo: "CI 561170", proporcao: "2.0%", funcao: "cor_primaria" }]
+  },
+  "Laranja Molibdato": {
+    hsvTarget: { h: 20, s: 85, v: 75 }, hsvRange: { hMin: 12, hMax: 35, sMin: 70, sMax: 95, vMin: 60, vMax: 85 },
+    hex: "#FF6600", familia: "laranja",
+    formula: [{ pigmento: "Laranja de Molibdato", ci: "PO104", codigo: "CI 77605", proporcao: "3.5%", funcao: "cor_primaria" }]
+  },
+  "Amarelo Óxido": {
+    hsvTarget: { h: 45, s: 70, v: 70 }, hsvRange: { hMin: 38, hMax: 58, sMin: 55, sMax: 85, vMin: 55, vMax: 80 },
+    hex: "#CC9900", familia: "amarelo",
+    formula: [{ pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "3.0%", funcao: "cor_primaria" }]
+  },
+  "Amarelo Arilida": {
+    hsvTarget: { h: 50, s: 85, v: 90 }, hsvRange: { hMin: 42, hMax: 60, sMin: 70, sMax: 95, vMin: 80, vMax: 96 },
+    hex: "#FFD700", familia: "amarelo",
+    formula: [{ pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "2.5%", funcao: "cor_primaria" }]
+  },
+  "Amarelo Limão": {
+    hsvTarget: { h: 58, s: 88, v: 95 }, hsvRange: { hMin: 50, hMax: 70, sMin: 75, sMax: 98, vMin: 85, vMax: 99 },
+    hex: "#FFFF00", familia: "amarelo",
+    formula: [
+      { pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "2.0%", funcao: "cor_primaria" },
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "0.8%", funcao: "base_clareadora" }
+    ]
+  },
+  "Amarelo Masterbatch": {
+    hsvTarget: { h: 52, s: 80, v: 85 }, hsvRange: { hMin: 45, hMax: 62, sMin: 65, sMax: 92, vMin: 75, vMax: 92 },
+    hex: "#FFCC00", familia: "amarelo",
+    formula: [
+      { pigmento: "Amarelo Diarylide", ci: "PY14", codigo: "CI 21095", proporcao: "35.0%", funcao: "cor_primaria" },
+      { pigmento: "Cera Dispersante PE", ci: "ADD", codigo: "PE-WAX", proporcao: "5.0%", funcao: "efeito_especial" }
+    ]
+  },
+  "Verde Oliva": {
+    hsvTarget: { h: 80, s: 50, v: 50 }, hsvRange: { hMin: 70, hMax: 100, sMin: 35, sMax: 65, vMin: 40, vMax: 62 },
+    hex: "#808000", familia: "verde",
+    formula: [
+      { pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "1.5%", funcao: "cor_primaria" },
+      { pigmento: "Ftalocianina de Cobre Verde", ci: "PG7", codigo: "CI 74260", proporcao: "0.5%", funcao: "ajuste_tom" },
+      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.3%", funcao: "ajuste_tom" }
+    ]
+  },
+  "Verde Bandeira": {
+    hsvTarget: { h: 145, s: 75, v: 55 }, hsvRange: { hMin: 125, hMax: 160, sMin: 60, sMax: 88, vMin: 45, vMax: 68 },
+    hex: "#009B3A", familia: "verde",
+    formula: [
+      { pigmento: "Ftalocianina de Cobre Verde", ci: "PG7", codigo: "CI 74260", proporcao: "1.2%", funcao: "cor_primaria" },
+      { pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "0.8%", funcao: "ajuste_tom" },
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
+    ]
+  },
+  "Verde Esmeralda": {
+    hsvTarget: { h: 140, s: 70, v: 65 }, hsvRange: { hMin: 125, hMax: 155, sMin: 55, sMax: 82, vMin: 55, vMax: 78 },
+    hex: "#50C878", familia: "verde",
+    formula: [
+      { pigmento: "Óxido de Cromo Verde", ci: "PG17", codigo: "CI 77288", proporcao: "2.5%", funcao: "cor_primaria" },
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
+    ]
+  },
+  "Verde Limão": {
+    hsvTarget: { h: 110, s: 75, v: 80 }, hsvRange: { hMin: 90, hMax: 135, sMin: 60, sMax: 88, vMin: 70, vMax: 92 },
+    hex: "#BFFF00", familia: "verde",
+    formula: [
+      { pigmento: "Ftalocianina Verde Amarelada", ci: "PG36", codigo: "CI 74265", proporcao: "0.8%", funcao: "cor_primaria" },
+      { pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "1.2%", funcao: "ajuste_tom" },
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
+    ]
+  },
+  "Azul Turquesa": {
+    hsvTarget: { h: 180, s: 70, v: 70 }, hsvRange: { hMin: 165, hMax: 195, sMin: 55, sMax: 85, vMin: 58, vMax: 85 },
+    hex: "#40E0D0", familia: "ciano",
+    formula: [
+      { pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.0%", funcao: "cor_primaria" },
+      { pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "0.3%", funcao: "ajuste_tom" },
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" }
+    ]
+  },
+  "Azul Ftalo": {
+    hsvTarget: { h: 220, s: 85, v: 55 }, hsvRange: { hMin: 205, hMax: 235, sMin: 70, sMax: 95, vMin: 42, vMax: 65 },
+    hex: "#1E3A8A", familia: "azul",
+    formula: [
+      { pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.5%", funcao: "cor_primaria" },
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.8%", funcao: "base_clareadora" }
+    ]
+  },
+  "Azul Ultramar": {
+    hsvTarget: { h: 240, s: 75, v: 50 }, hsvRange: { hMin: 225, hMax: 255, sMin: 60, sMax: 88, vMin: 38, vMax: 62 },
+    hex: "#1E40AF", familia: "azul",
+    formula: [
+      { pigmento: "Azul Ultramar", ci: "PB29", codigo: "CI 77007", proporcao: "2.0%", funcao: "cor_primaria" },
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
+    ]
+  },
+  "Azul Cobalto": {
+    hsvTarget: { h: 215, s: 80, v: 60 }, hsvRange: { hMin: 205, hMax: 230, sMin: 65, sMax: 92, vMin: 48, vMax: 72 },
+    hex: "#1D4ED8", familia: "azul",
+    formula: [{ pigmento: "Azul Cobalto (Aluminato)", ci: "PB28", codigo: "CI 77346", proporcao: "3.0%", funcao: "cor_primaria" }]
+  },
+  "Azul Royal": {
+    hsvTarget: { h: 225, s: 82, v: 58 }, hsvRange: { hMin: 215, hMax: 245, sMin: 70, sMax: 92, vMin: 48, vMax: 70 },
+    hex: "#4169E1", familia: "azul",
+    formula: [
+      { pigmento: "Ftalocianina de Cobre Azul β", ci: "PB15:3", codigo: "CI 74160", proporcao: "1.8%", funcao: "cor_primaria" },
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
+    ]
+  },
+  "Violeta Dioxazina": {
+    hsvTarget: { h: 280, s: 75, v: 55 }, hsvRange: { hMin: 265, hMax: 290, sMin: 65, sMax: 88, vMin: 45, vMax: 68 },
+    hex: "#7F00FF", familia: "violeta",
+    formula: [
+      { pigmento: "Violeta Dioxazina (Carbazol)", ci: "PV23", codigo: "CI 51319", proporcao: "1.8%", funcao: "cor_primaria" },
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
+    ]
+  },
+  "Roxo": {
+    hsvTarget: { h: 285, s: 70, v: 60 }, hsvRange: { hMin: 270, hMax: 295, sMin: 55, sMax: 82, vMin: 50, vMax: 72 },
+    hex: "#9333EA", familia: "violeta",
+    formula: [
+      { pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.0%", funcao: "cor_primaria" },
+      { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.2%", funcao: "ajuste_tom" },
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
+    ]
+  },
+  "Violeta Manganês": {
+    hsvTarget: { h: 290, s: 60, v: 65 }, hsvRange: { hMin: 275, hMax: 295, sMin: 45, sMax: 75, vMin: 55, vMax: 75 },
+    hex: "#8B008B", familia: "violeta",
+    formula: [{ pigmento: "Violeta de Manganês (Pirofosfato)", ci: "PV16", codigo: "CI 77742", proporcao: "3.5%", funcao: "cor_primaria" }]
+  },
+  "Rosa": {
+    hsvTarget: { h: 330, s: 50, v: 85 }, hsvRange: { hMin: 315, hMax: 345, sMin: 35, sMax: 65, vMin: 75, vMax: 92 },
+    hex: "#FFB0C0", familia: "rosa",
+    formula: [
+      { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "0.3%", funcao: "cor_primaria" },
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "3.5%", funcao: "base_clareadora" }
+    ]
+  },
+  "Cinza Claro": {
+    hsvTarget: { h: 0, s: 3, v: 75 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 18, vMin: 62, vMax: 82 },
+    hex: "#BFBFBF", familia: "cinza",
+    formula: [
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" },
+      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.1%", funcao: "ajuste_tom" }
+    ]
+  },
+  "Cinza Médio": {
+    hsvTarget: { h: 0, s: 3, v: 55 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 18, vMin: 42, vMax: 62 },
+    hex: "#8C8C8C", familia: "cinza",
+    formula: [
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" },
+      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.3%", funcao: "ajuste_tom" }
+    ]
+  },
+  "Cinza Escuro": {
+    hsvTarget: { h: 0, s: 3, v: 35 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 18, vMin: 25, vMax: 42 },
+    hex: "#595959", familia: "cinza",
+    formula: [
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "0.8%", funcao: "base_clareadora" },
+      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.8%", funcao: "cor_primaria" }
+    ]
+  },
+  "Natural PP": {
+    hsvTarget: { h: 40, s: 8, v: 85 }, hsvRange: { hMin: 30, hMax: 55, sMin: 3, sMax: 18, vMin: 78, vMax: 92 },
+    hex: "#D9D2C2", familia: "natural",
+    formula: [{ pigmento: "Sem pigmentação (PP Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }]
+  },
+  "Natural PE": {
+    hsvTarget: { h: 45, s: 10, v: 88 }, hsvRange: { hMin: 30, hMax: 58, sMin: 5, sMax: 20, vMin: 80, vMax: 94 },
+    hex: "#E0D8C8", familia: "natural",
+    formula: [{ pigmento: "Sem pigmentação (PE Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }]
+  },
+  "Natural ABS": {
+    hsvTarget: { h: 40, s: 12, v: 82 }, hsvRange: { hMin: 28, hMax: 55, sMin: 8, sMax: 22, vMin: 74, vMax: 90 },
+    hex: "#D0C4A8", familia: "natural",
+    formula: [{ pigmento: "Sem pigmentação (ABS Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }]
+  },
+  "Bege": {
+    hsvTarget: { h: 38, s: 25, v: 85 }, hsvRange: { hMin: 28, hMax: 48, sMin: 15, sMax: 40, vMin: 75, vMax: 90 },
+    hex: "#D9C9A8", familia: "bege",
+    formula: [
+      { pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "0.8%", funcao: "cor_primaria" },
+      { pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "0.2%", funcao: "ajuste_tom" },
+      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" }
+    ]
+  },
+  "Marrom": {
+    hsvTarget: { h: 25, s: 60, v: 40 }, hsvRange: { hMin: 15, hMax: 40, sMin: 40, sMax: 80, vMin: 25, vMax: 55 },
+    hex: "#6B3410", familia: "marrom",
+    formula: [
+      { pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "2.0%", funcao: "cor_primaria" },
+      { pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "1.0%", funcao: "ajuste_tom" },
+      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.5%", funcao: "ajuste_tom" }
+    ]
   }
-}
-// ════ LAB / DELTA E ════
+};
+
+// ════════════════════════════════════════════════════════════════
+// 🔒 FUNÇÕES AUXILIARES (RGB/HSV)
+// ════════════════════════════════════════════════════════════════
 function hexToRGB(hex) {
   if (!hex || typeof hex !== 'string') return { r: 0, g: 0, b: 0 };
   hex = hex.replace('#', '');
@@ -752,98 +704,179 @@ function hexToRGB(hex) {
   const b = parseInt(hex.substring(4, 6), 16);
   return { r: isNaN(r) ? 0 : r, g: isNaN(g) ? 0 : g, b: isNaN(b) ? 0 : b };
 }
-function rgbToHex(r, g, b) {
-  return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('').toUpperCase();
-}
+
 function rgbToHSV(r, g, b) {
-  if (arguments.length === 1 && typeof r === 'object') { g = r.g; b = r.b; r = r.r; }
-  r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); b = Math.max(0, Math.min(255, b));
+  if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
+    r = Math.max(0, Math.min(255, r));
+    g = Math.max(0, Math.min(255, g));
+    b = Math.max(0, Math.min(255, b));
+  }
   r /= 255; g /= 255; b /= 255;
   const max = Math.max(r, g, b), min = Math.min(r, g, b), delta = max - min;
   let h = 0, s = 0, v = max;
-  if (delta !== 0) { s = delta / max; if (max === r) h = ((g - b) / delta + (g < b ? 6 : 0)) / 6; else if (max === g) h = ((b - r) / delta + 2) / 6; else h = ((r - g) / delta + 4) / 6; }
-  return { h: Math.round(h * 360 * 10) / 10, s: Math.round(s * 1000) / 10, v: Math.round(v * 1000) / 10 };
+  if (delta !== 0) {
+    s = delta / max;
+    if (max === r) h = ((g - b) / delta + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / delta + 2) / 6;
+    else h = ((r - g) / delta + 4) / 6;
+  }
+  return {
+    h: Math.round(h * 360 * 10) / 10,
+    s: Math.round(s * 1000) / 10,
+    v: Math.round(v * 1000) / 10
+  };
 }
-function pivotRGB(v) { const n = v / 255; return n <= 0.04045 ? n / 12.92 : Math.pow((n + 0.055) / 1.055, 2.4); }
-function rgbToLab(rgb) {
-  const r = pivotRGB(rgb.r), g = pivotRGB(rgb.g), b = pivotRGB(rgb.b);
-  let x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
-  let y = (r * 0.2126 + g * 0.7152 + b * 0.0722);
-  let z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
-  const f = t => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
-  return { l: 116 * f(y) - 16, a: 500 * (f(x) - f(y)), b: 200 * (f(y) - f(z)) };
-}
-function deltaE(lab1, lab2) { return Math.sqrt(Math.pow(lab1.l - lab2.l, 2) + Math.pow(lab1.a - lab2.a, 2) + Math.pow(lab1.b - lab2.b, 2)); }
-function compatibilityFromDelta(delta) { return Math.round(Math.max(0, Math.min(100, 100 / (1 + Math.pow(delta / 9, 1.45))))); }
-const RAL_LIBRARY_FULL = [...RAL_P1, ...RAL_P2].map(item => { const rgb = hexToRGB(item.hex); return { ...item, rgb, lab: rgbToLab(rgb), pigments: pigmentsForFamily(item.familia, item.name) }; });
-// ════ AUXILIARES ════
+// ════════════════════════════════════════════════════════════════
+// 🔒 TRAVA DE SEGURANÇA MÁXIMA (CATÁLOGO DIGITAL)
+// ════════════════════════════════════════════════════════════════
 function calculateVisualScore(readHSV, readRGB, hex) {
-  const candRGB = hexToRGB(hex), candHSV = rgbToHSV(candRGB.r, candRGB.g, candRGB.b);
-  const rgbDist = Math.sqrt(Math.pow(readRGB.r - candRGB.r, 2) + Math.pow(readRGB.g - candRGB.g, 2) + Math.pow(readRGB.b - candRGB.b, 2));
-  let hDiff = Math.abs(readHSV.h - candHSV.h); if (hDiff > 180) hDiff = 360 - hDiff;
-  const sDiff = Math.abs(readHSV.s - candHSV.s), vDiff = Math.abs(readHSV.v - candHSV.v);
-  return Math.max(0, Math.min(100, 100 - ((rgbDist / Math.sqrt(3 * Math.pow(255, 2))) * 45 + (vDiff / 100) * 25 + (hDiff / 180) * 20 + (sDiff / 100) * 10)));
+  const candRGB = hexToRGB(hex);
+  const candHSV = rgbToHSV(candRGB.r, candRGB.g, candRGB.b);
+
+  const rgbDist = Math.sqrt(
+    Math.pow(readRGB.r - candRGB.r, 2) +
+    Math.pow(readRGB.g - candRGB.g, 2) +
+    Math.pow(readRGB.b - candRGB.b, 2)
+  );
+
+  let hDiff = Math.abs(readHSV.h - candHSV.h);
+  if (hDiff > 180) hDiff = 360 - hDiff;
+
+  const sDiff = Math.abs(readHSV.s - candHSV.s);
+  const vDiff = Math.abs(readHSV.v - candHSV.v);
+
+  const maxRGBDist = Math.sqrt(3 * Math.pow(255, 2));
+  const normalizedRGBDist = rgbDist / maxRGBDist;
+  const normalizedHDiff = hDiff / 180;
+  const normalizedSDiff = sDiff / 100;
+  const normalizedVDiff = vDiff / 100;
+
+  const score = 100 - (
+    normalizedRGBDist * 45 +
+    normalizedVDiff * 25 +
+    normalizedHDiff * 20 +
+    normalizedSDiff * 10
+  );
+
+  return Math.max(0, Math.min(100, score));
 }
+
 function getColorFamily(h, s) {
   if (s < 15) return 'neutro';
-  if (h >= 0 && h < 15) return 'vermelho'; if (h >= 15 && h < 45) return 'laranja'; if (h >= 45 && h < 70) return 'amarelo';
-  if (h >= 70 && h < 165) return 'verde'; if (h >= 165 && h < 195) return 'ciano'; if (h >= 195 && h < 255) return 'azul';
-  if (h >= 255 && h < 290) return 'violeta'; if (h >= 290 && h < 345) return 'rosa'; if (h >= 345) return 'vermelho';
+  if (h >= 0 && h < 15) return 'vermelho';
+  if (h >= 15 && h < 45) return 'laranja';
+  if (h >= 45 && h < 70) return 'amarelo';
+  if (h >= 70 && h < 165) return 'verde';
+  if (h >= 165 && h < 195) return 'ciano';
+  if (h >= 195 && h < 255) return 'azul';
+  if (h >= 255 && h < 290) return 'violeta';
+  if (h >= 290 && h < 345) return 'rosa';
+  if (h >= 345) return 'vermelho';
   return 'neutro';
 }
-// ════ CLASSIFICAÇÃO PLÁSTICOS ════
+
+// ════════════════════════════════════════════════════════════════
+// 🧪 CLASSIFICADOR COM CATÁLOGO DIGITAL (PLÁSTICOS)
+// ════════════════════════════════════════════════════════════════
 function classifyPlasticsPolymers(hsv, rgb, variance) {
-  if (!hsv || !rgb) return { name: 'Erro', color: '#888888', confidence: 0, formula: [] };
-  if (isNoLightRGB(rgb)) return forceBlackClassification();
-  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b), avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
-  if (maxRGB <= 30 || avgRGB <= 18) return forceBlackClassification();
-  if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) {
-    const item = RAL_LIBRARY_FULL.find(c => c.familia === 'branco') || { name: 'Branco Gelo', code: 'RAL 9003-P', hex: '#F4F4F4', familia: 'branco' };
-    return { name: item.code + ' ' + item.name, color: item.hex, confidence: 99, formula: pigmentsForFamily('branco', item.name), ralRef: item };
+  if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0, formula: [] };
+
+  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
+  const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+
+  if (maxRGB <= 15 || avgRGB <= 10) {
+    const preto = PLASTICS_LIBRARY["Preto Absoluto"];
+    return { name: 'Preto Absoluto', color: preto.hex, confidence: 99, formula: preto.formula };
   }
-  if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) return forceBlackClassification();
-  const nHsv = { h: hsv.h, s: hsv.s, v: normalizeV(hsv.v) };
-  if (nHsv.v < 18 && nHsv.s < 30) return forceBlackClassification();
-  if (maxRGB < 50 && nHsv.s < 40) return forceBlackClassification();
-  const lab = rgbToLab(rgb);
-  const detectedFamily = getColorFamily(nHsv.h, nHsv.s);
-  const neutralFamilies = ['branco', 'preto', 'cinza', 'bege', 'marrom'];
-  let candidateFamilies;
-  if (detectedFamily === 'neutro') candidateFamilies = neutralFamilies;
-  else if (detectedFamily === 'ciano') candidateFamilies = ['ciano', 'azul', 'verde'];
-  else if (detectedFamily === 'rosa') candidateFamilies = ['rosa', 'vermelho', 'violeta'];
-  else candidateFamilies = [detectedFamily];
-  const candidates = RAL_LIBRARY_FULL.filter(item => candidateFamilies.includes(item.familia));
-  let best = null, bestDelta = Infinity;
-  for (const item of (candidates.length ? candidates : RAL_LIBRARY_FULL)) { const d = deltaE(lab, item.lab); if (d < bestDelta) { bestDelta = d; best = item; } }
-  const compat = compatibilityFromDelta(bestDelta);
-  if (best && compat >= MIN_COMPATIBILITY_THRESHOLD) return buildResult(best, compat, bestDelta);
-  let bestG = null, bestDG = Infinity;
-  for (const item of RAL_LIBRARY_FULL) { const d = deltaE(lab, item.lab); if (d < bestDG) { bestDG = d; bestG = item; } }
-  const compatG = compatibilityFromDelta(bestDG);
-  if (!bestG || compatG < MIN_COMPATIBILITY_THRESHOLD) return notFoundClassification();
-  return buildResult(bestG, compatG, bestDG);
+  if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) {
+    const branco = PLASTICS_LIBRARY["Branco Gelo"];
+    return { name: 'Branco Gelo', color: branco.hex, confidence: 99, formula: branco.formula };
+  }
+  if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) {
+    const preto = PLASTICS_LIBRARY["Preto Absoluto"];
+    return { name: 'Preto Absoluto', color: preto.hex, confidence: 99, formula: preto.formula };
+  }
+
+  const normalizedHsv = { h: hsv.h, s: hsv.s, v: normalizeV(hsv.v) };
+  if (normalizedHsv.v < 18 && normalizedHsv.s < 30) {
+    const preto = PLASTICS_LIBRARY["Preto Absoluto"];
+    return { name: 'Preto Absoluto', color: preto.hex, confidence: 98, formula: preto.formula };
+  }
+  if (maxRGB < 50 && normalizedHsv.s < 40) {
+    const preto = PLASTICS_LIBRARY["Preto Absoluto"];
+    return { name: 'Preto Absoluto', color: preto.hex, confidence: 98, formula: preto.formula };
+  }
+
+  const detectedFamily = getColorFamily(normalizedHsv.h, normalizedHsv.s);
+  
+  let bestMatch = null;
+  let bestScore = -1;
+
+  for (const [name, data] of Object.entries(PLASTICS_LIBRARY)) {
+    if (detectedFamily === 'neutro') {
+      if (!['branco', 'preto', 'cinza', 'natural', 'bege'].includes(data.familia)) continue;
+    } else {
+      if (normalizedHsv.s < 12 && !['branco', 'preto', 'cinza', 'natural'].includes(data.familia)) continue;
+      if (data.familia !== detectedFamily && !['branco', 'preto', 'cinza'].includes(data.familia)) continue;
+    }
+
+    const score = calculateVisualScore(normalizedHsv, rgb, data.hex);
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = { name, data, score };
+    }
+  }
+
+  if (bestMatch && bestScore >= 0) {
+    const finalConfidence = Math.min(99, Math.round(bestScore));
+    return {
+      name: bestMatch.name,
+      color: bestMatch.data.hex,
+      confidence: finalConfidence,
+      formula: bestMatch.data.formula || []
+    };
+  }
+
+  return { name: 'Desconhecido', color: '#888888', confidence: 0, formula: [] };
 }
-function buildResult(item, compat, delta) { return { name: item.code + ' ' + item.name, color: item.hex, confidence: Math.min(99, compat), formula: item.pigments, deltaE: delta, ralRef: item }; }
-// ════ CLASSIFICAÇÃO AMPLIADA ════
+
+// ════════════════════════════════════════════════════════════════
+// 🔬 CLASSIFICAÇÃO AMPLIADA (60+ NUANCES)
+// ════════════════════════════════════════════════════════════════
 function classifyColorExtended(hsv, rgb, variance) {
   if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0 };
-  if (isNoLightRGB(rgb)) return forceBlackClassification();
-  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b), avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
-  if (maxRGB <= 30 || avgRGB <= 18) return forceBlackClassification();
+  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
+  const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+  if (maxRGB <= 15 || avgRGB <= 10) return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
   if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) return { name: 'Branco', color: '#ffffff', confidence: 99 };
-  if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) return forceBlackClassification();
-  const { h, s } = hsv, v = normalizeV(hsv.v), { r, g, b } = rgb;
-  if (v < 22 && s < 35) return forceBlackClassification();
-  if (maxRGB < 50 && s < 40) return forceBlackClassification();
+  if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
+  const { h, s } = hsv;
+  const v = normalizeV(hsv.v);
+  const { r, g, b } = rgb;
+  if (v < 22 && s < 35) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+  if (maxRGB < 50 && s < 40) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+
   if (s < 15) {
-    if (v >= 72) return { name: 'Branco', color: '#ffffff', confidence: 98 };
-    if (v <= 28) return forceBlackClassification();
-    if (v >= 65) return { name: 'Cinza Claro', color: '#b8b8c8', confidence: 96 };
-    if (v <= 35) return { name: 'Cinza Escuro', color: '#5a5a6a', confidence: 96 };
-    return { name: 'Cinza', color: '#9999aa', confidence: 96 };
+    if (isWhiteCalibrated && isBlackCalibrated) {
+      if (v >= 85) return { name: 'Branco', color: '#ffffff', confidence: 98 };
+      else if (v <= 20) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+      else {
+        if (v >= 65) return { name: 'Cinza Claro', color: '#b8b8c8', confidence: 96 };
+        else if (v <= 35) return { name: 'Cinza Escuro', color: '#5a5a6a', confidence: 96 };
+        else return { name: 'Cinza', color: '#9999aa', confidence: 96 };
+      }
+    } else {
+      if (v >= 72) return { name: 'Branco', color: '#ffffff', confidence: 98 };
+      else if (v <= 28) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+      if (v >= 65) return { name: 'Cinza Claro', color: '#b8b8c8', confidence: 96 };
+      else if (v <= 35) return { name: 'Cinza Escuro', color: '#5a5a6a', confidence: 96 };
+      return { name: 'Cinza', color: '#9999aa', confidence: 96 };
+    }
   }
+
   let baseName = '', baseColor = '', confidence = 98;
+
   if ((h >= 345 || h < 15) && s >= 30) {
     if (v <= 30 && s >= 50) { baseName = 'Vinho'; baseColor = '#581c1c'; }
     else if (v >= 75 && s >= 70) { baseName = 'Vermelho Puro'; baseColor = '#ff0000'; }
@@ -852,18 +885,21 @@ function classifyColorExtended(hsv, rgb, variance) {
     else if (v <= 40) { baseName = 'Vermelho Escuro'; baseColor = '#7f1d1d'; }
     else if (s < 50 && v >= 70) { baseName = 'Vermelho Claro'; baseColor = '#fca5a5'; }
     else { baseName = 'Vermelho'; baseColor = '#dc2626'; }
-  } else if (h >= 15 && h < 25 && s >= 25) {
+  }
+  else if (h >= 15 && h < 25 && s >= 25) {
     if (s >= 60 && v >= 65) { baseName = 'Vermelho Alaranjado'; baseColor = '#ff4500'; }
     else if (v <= 35) { baseName = 'Vermelho Escuro'; baseColor = '#7f1d1d'; }
     else { baseName = 'Vermelho'; baseColor = '#dc2626'; }
-  } else if (h >= 290 && h < 345) {
+  }
+  else if (h >= 290 && h < 345) {
     if (s <= 35 && v >= 75) { baseName = 'Rosa Claro'; baseColor = '#ffc9e0'; }
     else if (s >= 40 && v >= 70) { baseName = 'Rosa Vivo'; baseColor = '#ff69b4'; }
     else if (s >= 50 && v >= 60) { baseName = 'Rosa'; baseColor = '#ff88aa'; }
     else if (v <= 35) { baseName = 'Rosa Escuro'; baseColor = '#8b4560'; }
     else if (s <= 25) { baseName = 'Rosa Pastel'; baseColor = '#ffd0e0'; }
     else { baseName = 'Rosa'; baseColor = '#ff88aa'; }
-  } else if (h >= 25 && h < 45) {
+  }
+  else if (h >= 25 && h < 45) {
     if (s >= 75 && v >= 70) { baseName = 'Laranja Vivo'; baseColor = '#ff8800'; }
     else if (s >= 60 && v >= 50 && v <= 65) { baseName = 'Laranja Queimado'; baseColor = '#d2691e'; }
     else if (s >= 55 && v >= 60) { baseName = 'Laranja'; baseColor = '#f97316'; }
@@ -871,7 +907,8 @@ function classifyColorExtended(hsv, rgb, variance) {
     else if (s <= 40 && v >= 70) { baseName = 'Laranja Claro'; baseColor = '#fed7aa'; }
     else if (s >= 50 && v >= 55 && r > 200 && g >= 100 && g <= 160) { baseName = 'Tangerina'; baseColor = '#ff9500'; }
     else { baseName = 'Laranja'; baseColor = '#f97316'; }
-  } else if (h >= 45 && h < 70) {
+  }
+  else if (h >= 45 && h < 70) {
     if (s <= 30 && v >= 70 && h >= 40 && h <= 55) { baseName = 'Bege'; baseColor = '#f5deb3'; }
     else if (s >= 60 && v >= 50 && v <= 65) { baseName = 'Mostarda'; baseColor = '#ccaa00'; }
     else if (s >= 40 && v >= 40 && v <= 55) { baseName = 'Ocre'; baseColor = '#cc7722'; }
@@ -883,7 +920,8 @@ function classifyColorExtended(hsv, rgb, variance) {
     else if (v <= 40) { baseName = 'Amarelo Escuro'; baseColor = '#713f12'; }
     else if (s <= 40 && v >= 75) { baseName = 'Amarelo Claro'; baseColor = '#fef9c3'; }
     else { baseName = 'Amarelo'; baseColor = '#eab308'; }
-  } else if (h >= 70 && h < 165) {
+  }
+  else if (h >= 70 && h < 165) {
     if (v <= 35 && s >= 40 && h >= 70 && h <= 100) { baseName = 'Verde Musgo'; baseColor = '#4a5d23'; }
     else if (s >= 40 && v >= 40 && v <= 55 && h >= 70 && h <= 95) { baseName = 'Verde Oliva'; baseColor = '#808000'; }
     else if (s >= 75 && v >= 75) { baseName = 'Verde Puro'; baseColor = '#00ff00'; }
@@ -895,7 +933,8 @@ function classifyColorExtended(hsv, rgb, variance) {
     else if (s <= 40 && v >= 70 && h >= 140 && h <= 160) { baseName = 'Verde Menta'; baseColor = '#98ff98'; }
     else if (s <= 35 && v >= 75) { baseName = 'Verde Claro'; baseColor = '#bbf7d0'; }
     else { baseName = 'Verde'; baseColor = '#16a34a'; }
-  } else if (h >= 165 && h < 195) {
+  }
+  else if (h >= 165 && h < 195) {
     if (s >= 75 && v >= 75) { baseName = 'Ciano Puro'; baseColor = '#00ffff'; }
     else if (s >= 65 && v >= 70) { baseName = 'Ciano Vivo'; baseColor = '#06b6d4'; }
     else if (s >= 55 && v >= 65 && h >= 170 && h <= 185) { baseName = 'Água'; baseColor = '#00ced1'; }
@@ -903,7 +942,8 @@ function classifyColorExtended(hsv, rgb, variance) {
     else if (v <= 40) { baseName = 'Ciano Escuro'; baseColor = '#164e63'; }
     else if (s <= 40 && v >= 75) { baseName = 'Ciano Claro'; baseColor = '#cffafe'; }
     else { baseName = 'Ciano'; baseColor = '#0891b2'; }
-  } else if (h >= 195 && h < 255) {
+  }
+  else if (h >= 195 && h < 255) {
     if (v <= 25 && s >= 40) { baseName = 'Azul Meia-Noite'; baseColor = '#191970'; }
     else if (v <= 30 && s >= 50) { baseName = 'Azul Marinho'; baseColor = '#001f3f'; }
     else if (v <= 40 && s >= 45) { baseName = 'Azul Escuro'; baseColor = '#1e3a8a'; }
@@ -923,7 +963,8 @@ function classifyColorExtended(hsv, rgb, variance) {
     else if (s <= 40 && v >= 75) { baseName = 'Azul Celeste'; baseColor = '#b0e0e6'; }
     else if (v >= 75 && s < 50) { baseName = 'Azul Claro'; baseColor = '#bfdbfe'; }
     else { baseName = 'Azul'; baseColor = '#2563eb'; }
-  } else if (h >= 255 && h < 290) {
+  }
+  else if (h >= 255 && h < 290) {
     if (s >= 60 && v >= 70 && h >= 270 && h <= 285) { baseName = 'Violeta'; baseColor = '#8a2be2'; }
     else if (s >= 50 && v >= 65 && h >= 265 && h <= 280) { baseName = 'Ametista'; baseColor = '#9966cc'; }
     else if (s >= 70 && v >= 65) { baseName = 'Roxo Vivo'; baseColor = '#a855f7'; }
@@ -932,327 +973,1079 @@ function classifyColorExtended(hsv, rgb, variance) {
     else if (s <= 40 && v >= 75) { baseName = 'Lavanda'; baseColor = '#e6e6fa'; }
     else if (s <= 35 && v >= 70) { baseName = 'Roxo Claro'; baseColor = '#ddd6fe'; }
     else { baseName = 'Roxo'; baseColor = '#9333ea'; }
-  } else if ((h >= 320 && h < 345) || (h >= 290 && h < 320)) {
+  }
+  else if ((h >= 290 && h < 320) || (h >= 320 && h < 345)) {
     if (s >= 70 && v >= 75 && h >= 320 && h <= 340) { baseName = 'Fúcsia'; baseColor = '#ff00ff'; }
     else if (s >= 75 && v >= 70) { baseName = 'Magenta Vivo'; baseColor = '#ff00ff'; }
     else if (s >= 60 && v >= 65) { baseName = 'Magenta'; baseColor = '#d946ef'; }
     else if (v <= 40) { baseName = 'Magenta Escuro'; baseColor = '#701a75'; }
     else if (s <= 40 && v >= 75) { baseName = 'Magenta Claro'; baseColor = '#fae8ff'; }
     else { baseName = 'Magenta'; baseColor = '#d946ef'; }
-  } else { baseName = 'Indeterminado'; baseColor = '#888888'; }
+  }
+  else {
+    baseName = 'Indeterminado';
+    baseColor = '#888888';
+  }
   return { name: baseName, color: baseColor, confidence };
 }
-// ════ CLASSIFICAÇÃO PADRÃO ════
+
+// ════════════════════════════════════════════════════════════════
+// 🎨 CLASSIFICAÇÃO PADRÃO (MOTOR v2.8)
+// ════════════════════════════════════════════════════════════════
 function classifyColorWithRuler(hsv, rgb, variance) {
   if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0 };
-  if (isNoLightRGB(rgb)) return forceBlackClassification();
-  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b), avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
-  if (maxRGB <= 30 || avgRGB <= 18) return forceBlackClassification();
+  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
+  const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+  if (maxRGB <= 15 || avgRGB <= 10) return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
   if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) return { name: 'Branco', color: '#ffffff', confidence: 99 };
-  if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) return forceBlackClassification();
-  const { h, s } = hsv, v = normalizeV(hsv.v), { r, g, b } = rgb;
-  if (v < 22 && s < 35) return forceBlackClassification();
-  if (maxRGB < 50 && s < 40) return forceBlackClassification();
-  if (s < 15) { if (v >= 72) return { name: 'Branco', color: '#ffffff', confidence: 98 }; if (v <= 28) return forceBlackClassification(); return { name: 'Cinza', color: '#9999aa', confidence: 96 }; }
+  if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
+  const { h, s } = hsv;
+  const v = normalizeV(hsv.v);
+  const { r, g, b } = rgb;
+  if (v < 22 && s < 35) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+  if (maxRGB < 50 && s < 40) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+
+  if (s < 15) {
+    if (isWhiteCalibrated && isBlackCalibrated) {
+      if (v >= 85) return { name: 'Branco', color: '#ffffff', confidence: 98 };
+      if (v <= 20) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+      return { name: 'Cinza', color: '#9999aa', confidence: 96 };
+    } else {
+      if (v >= 72) return { name: 'Branco', color: '#ffffff', confidence: 98 };
+      if (v <= 28) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+      return { name: 'Cinza', color: '#9999aa', confidence: 96 };
+    }
+  }
+
   let baseName = '', baseColor = '', confidence = 98;
-  if ((h >= 290) || (h < 20)) { if (r > Math.max(g, b) && b >= 60 && s >= 20) { baseName = 'Rosa'; baseColor = '#ff88aa'; confidence = 95; } else if (r > Math.max(g, b) && b < 60 && s >= 30) { baseName = 'Vermelho'; baseColor = '#ef4444'; confidence = 98; } else { baseName = 'Magenta'; baseColor = '#d946ef'; confidence = 95; } }
-  else if (h >= 255 && h < 290 && s >= 25) { if (b > r && v < 65) { baseName = 'Roxo'; baseColor = '#a855f7'; confidence = 98; } else { baseName = 'Magenta'; baseColor = '#d946ef'; confidence = 95; } }
+  if ((h >= 290) || (h < 20)) {
+    if (r > Math.max(g, b) && b >= 60 && s >= 20) { baseName = 'Rosa'; baseColor = '#ff88aa'; confidence = 95; }
+    else if (r > Math.max(g, b) && b < 60 && s >= 30) { baseName = 'Vermelho'; baseColor = '#ef4444'; confidence = 98; }
+    else { baseName = 'Magenta'; baseColor = '#d946ef'; confidence = 95; }
+  }
+  else if (h >= 255 && h < 290 && s >= 25) {
+    if (b > r && v < 65) { baseName = 'Roxo'; baseColor = '#a855f7'; confidence = 98; }
+    else { baseName = 'Magenta'; baseColor = '#d946ef'; confidence = 95; }
+  }
   else if (h >= 20 && h < 35) { baseName = 'Laranja'; baseColor = '#f97316'; }
   else if (h >= 35 && h < 70) { baseName = 'Amarelo'; baseColor = '#fbbf24'; }
   else if (h >= 70 && h < 165) { baseName = 'Verde'; baseColor = '#22c55e'; }
   else if (h >= 165 && h < 190) { baseName = 'Ciano'; baseColor = '#06b6d4'; }
   else if (h >= 190 && h < 255) { baseName = 'Azul'; baseColor = '#3b82f6'; }
-  let modifier = ''; if (!universalMode) { if (v < 28) modifier = ' Escuro'; else if (v > 82 && s < 45) modifier = ' Claro'; }
+
+  let modifier = '';
+  if (!universalMode) {
+    if (v < 28) modifier = ' Escuro';
+    else if (v > 82 && s < 45) modifier = ' Claro';
+  }
   return { name: baseName + modifier, color: baseColor, confidence };
 }
-// ════ GERADOR DE AJUSTES ════
+
+// ════════════════════════════════════════════════════════════════
+// 🎨 GERADOR DE AJUSTES
+// ════════════════════════════════════════════════════════════════
 function generateAdjustmentSuggestion(readRGB, readHSV, refHex, refName) {
-  const refRGB = hexToRGB(refHex), refHSV = rgbToHSV(refRGB.r, refRGB.g, refRGB.b), score = calculateVisualScore(readHSV, readRGB, refHex);
-  if (score >= 95) return { text: '✅ PRATICAMENTE PERFEITO!\nObjeto está ' + score.toFixed(0) + '% compatível.\nAjuste mínimo ou desnecessário.', cssClass: 'perfect' };
-  const vDiff = refHSV.v - readHSV.v, sDiff = refHSV.s - readHSV.s;
-  let hueDiff = refHSV.h - readHSV.h; if (hueDiff > 180) hueDiff -= 360; if (hueDiff < -180) hueDiff += 360;
+  const refRGB = hexToRGB(refHex);
+  const refHSV = rgbToHSV(refRGB.r, refRGB.g, refRGB.b);
+  
+  const score = calculateVisualScore(readHSV, readRGB, refHex);
+  
+  if (score >= 95) {
+    return { text: '✅ PRATICAMENTE PERFEITO!\nObjeto está ' + score.toFixed(0) + '% compatível com a referência.\nAjuste mínimo ou desnecessário.', cssClass: 'perfect' };
+  }
+  
+  const vDiff = refHSV.v - readHSV.v;
+  const sDiff = refHSV.s - readHSV.s;
+  let hueDiff = refHSV.h - readHSV.h;
+  if (hueDiff > 180) hueDiff -= 360;
+  if (hueDiff < -180) hueDiff += 360;
+  
   const suggestions = [];
-  if (Math.abs(vDiff) > 15) { if (vDiff > 35) suggestions.push('Branco PW6 (clarear significativamente)'); else if (vDiff > 20) suggestions.push('um pouco de Branco PW6'); else if (vDiff < -35) suggestions.push('Preto PBk7 (escurecer significativamente)'); else if (vDiff < -20) suggestions.push('um pouco de Preto PBk7'); }
-  if (Math.abs(sDiff) > 18) { if (sDiff > 0) { const bn = refName.replace(/ Vivo| Puro| Claro| Escuro/g, '').trim(); suggestions.push(bn + ' puro para saturar'); } else { if (!suggestions.some(s => s.includes('Branco'))) suggestions.push('Branco PW6 ou Cinza para dessaturar'); } }
-  if (Math.abs(hueDiff) > 12) { const bn = refName.replace(/ Vivo| Puro| Claro| Escuro/g, '').trim(); if (!suggestions.some(s => s.includes(bn))) suggestions.push(bn + ' para ajustar tonalidade'); }
-  if (suggestions.length === 0) return { text: '⚙️ Ajuste fino necessário (' + score.toFixed(0) + '% → 100%):\nAjuste mínimo de tonalidade.', cssClass: '' };
-  let ft = score < 75 ? '⚠️ Ajuste necessário (' + score.toFixed(0) + '% → 100%):\n' : '🎨 Ajuste fino (' + score.toFixed(0) + '% → 100%):\n';
-  ft += 'Para igualar à referência ' + refHex + ':\n'; ft += suggestions.map(s => '• Adicione ' + s).join('\n'); return { text: ft, cssClass: '' };
+  
+  if (Math.abs(vDiff) > 15) {
+    if (vDiff > 35) suggestions.push('Branco (clarear significativamente)');
+    else if (vDiff > 20) suggestions.push('um pouco de Branco');
+    else if (vDiff < -35) suggestions.push('Preto (escurecer significativamente)');
+    else if (vDiff < -20) suggestions.push('um pouco de Preto');
+  }
+  
+  if (Math.abs(sDiff) > 18) {
+    if (sDiff > 0) {
+      const baseName = refName.replace(/ Vivo| Puro| Claro| Escuro/g, '').trim();
+      suggestions.push(baseName + ' puro para saturar');
+    } else {
+      if (!suggestions.some(s => s.includes('Branco'))) {
+        suggestions.push('Branco ou Cinza para dessaturar');
+      }
+    }
+  }
+  
+  if (Math.abs(hueDiff) > 12) {
+    const baseName = refName.replace(/ Vivo| Puro| Claro| Escuro/g, '').trim();
+    if (!suggestions.some(s => s.includes(baseName))) {
+      suggestions.push(baseName + ' para ajustar tonalidade');
+    }
+  }
+  
+  if (suggestions.length === 0) {
+    return { text: '⚙️ AJUSTE FINO (para ' + score.toFixed(0) + '% → 100%):\nPara igualar exatamente à referência ' + refHex + ':\nAjuste mínimo de tonalidade necessário.', cssClass: '' };
+  }
+  
+  let finalText = score < 75 ? '⚠️ AJUSTE NECESSÁRIO (para ' + score.toFixed(0) + '% → 100%):\n' : '🎨 AJUSTE FINO (para ' + score.toFixed(0) + '% → 100%):\n';
+  finalText += 'Para igualar exatamente à referência ' + refHex + ':\n';
+  
+  if (suggestions.length === 1) finalText += '• Adicione ' + suggestions[0];
+  else if (suggestions.length === 2) finalText += '• Adicione ' + suggestions[0] + '\n• Adicione ' + suggestions[1];
+  else finalText += suggestions.map(s => '• Adicione ' + s).join('\n');
+  
+  return { text: finalText, cssClass: '' };
 }
-function generatePlasticsAdjustmentText(readRGB, readHSV, ralRef) {
-  if (!ralRef) return 'Ative o modo Plásticos para sugestões técnicas por CI.';
-  const readLab = rgbToLab(readRGB), de = deltaE(readLab, ralRef.lab), compat = compatibilityFromDelta(de);
-  const lines = ['Ref: ' + ralRef.code + ' - ' + ralRef.name, 'Delta E: ' + de.toFixed(1) + ' | Compatibilidade: ' + compat + '%'];
-  if (compat < MIN_COMPATIBILITY_THRESHOLD) { lines.push('⚠ Cor fora do catálogo RAL Plastics.'); return lines.join('\n'); }
-  if (de <= 3) { lines.push('✅ Ajuste mínimo ou desnecessário.'); return lines.join('\n'); }
-  const dL = ralRef.lab.l - readLab.l, dA = ralRef.lab.a - readLab.a, dB = ralRef.lab.b - readLab.b;
-  lines.push('', '▸ Diferenças Lab (Ref − Amostra):', '   ΔL*=' + dL.toFixed(1) + ' Δa*=' + dA.toFixed(1) + ' Δb*=' + dB.toFixed(1), '', '▸ Ajustes sugeridos:');
-  let ha = false;
-  if (dL > 5) { lines.push('  • Amostra mais ESCURA → adicionar PW6'); ha = true; } else if (dL < -5) { lines.push('  • Amostra mais CLARA → adicionar PBk7'); ha = true; }
-  if (dA > 4) { lines.push('  • Amostra mais VERDE → adicionar PR254 ou PV23'); ha = true; } else if (dA < -4) { lines.push('  • Amostra mais VERMELHA → adicionar PG7'); ha = true; }
-  if (dB > 4) { lines.push('  • Amostra mais AZUL → adicionar PY151'); ha = true; } else if (dB < -4) { lines.push('  • Amostra mais AMARELA → adicionar PB15:3 ou PB29'); ha = true; }
-  if (!ha) lines.push('  • Diferença baixa: ajuste fino nas proporções da base dominante.');
-  lines.push('', '▸ Pigmentos da família "' + ralRef.familia + '":'); ralRef.pigments.forEach(p => lines.push('  • ' + p.pigmento + ' (' + p.ci + ')'));
-  return lines.join('\n');
-}
-// ════ MODO COMPARAÇÃO ════
+// ════════════════════════════════════════════════════════════════
+// 📊 MODO COMPARAÇÃO - ALGORITMOS
+// ════════════════════════════════════════════════════════════════
 function getBaseColorName(name) {
   if (!name || typeof name !== 'string') return '';
-  return name.replace(/ Escuro| Claro| Pastel| Puro| Vivo| Royal| Cobalto| Elétrico| Bebê| Celeste| Marinho| Meia-Noite| Petróleo| Prussiano| Aço| Turquesa| Tiffany| Anil| Alaranjado| Queimado| Limão| Canário| Esmeralda| Musgo| Oliva| Menta| Jade| Água| Lavanda| Violeta| Ametista| Fúcsia| Vinho| Tangerina| Bege| Mostarda| Ocre/g, '').trim();
+  return name
+    .replace(/ Escuro/g, '').replace(/ Claro/g, '')
+    .replace(/ Pastel/g, '').replace(/ Puro/g, '').replace(/ Vivo/g, '')
+    .replace(/ Royal/g, '').replace(/ Cobalto/g, '').replace(/ Elétrico/g, '')
+    .replace(/ Bebê/g, '').replace(/ Celeste/g, '').replace(/ Marinho/g, '')
+    .replace(/ Meia-Noite/g, '').replace(/ Petróleo/g, '').replace(/ Prussiano/g, '')
+    .replace(/ Aço/g, '').replace(/ Turquesa/g, '').replace(/ Tiffany/g, '')
+    .replace(/ Anil/g, '').replace(/ Alaranjado/g, '')
+    .replace(/ Queimado/g, '').replace(/ Limão/g, '').replace(/ Canário/g, '')
+    .replace(/ Esmeralda/g, '').replace(/ Musgo/g, '').replace(/ Oliva/g, '')
+    .replace(/ Menta/g, '').replace(/ Jade/g, '').replace(/ Água/g, '')
+    .replace(/ Lavanda/g, '').replace(/ Violeta/g, '').replace(/ Ametista/g, '')
+    .replace(/ Fúcsia/g, '').replace(/ Vinho/g, '').replace(/ Tangerina/g, '')
+    .replace(/ Bege/g, '').replace(/ Mostarda/g, '').replace(/ Ocre/g, '')
+    .trim();
 }
+
 const SPECTRAL_ORDER = ['Vermelho', 'Rosa', 'Magenta', 'Roxo', 'Azul', 'Ciano', 'Verde', 'Amarelo', 'Laranja'];
-function getSpectralIndex(bn) { return SPECTRAL_ORDER.indexOf(bn); }
-function areSpectralNeighbors(i1, i2) { if (i1 === -1 || i2 === -1) return false; if (i1 === i2) return true; const d = Math.abs(i1 - i2); return d === 1 || d === SPECTRAL_ORDER.length - 1; }
+
+function getSpectralIndex(baseName) { return SPECTRAL_ORDER.indexOf(baseName); }
+
+function areSpectralNeighbors(idx1, idx2) {
+  if (idx1 === -1 || idx2 === -1) return false;
+  if (idx1 === idx2) return true;
+  const len = SPECTRAL_ORDER.length;
+  const diff = Math.abs(idx1 - idx2);
+  return diff === 1 || diff === len - 1;
+}
+
+function calculatePlasticsCompatibility(ref, sample) {
+  if (!ref || !sample) return 0;
+  const refHex = ref.color;
+  const sampleHex = sample.color;
+  if (refHex === sampleHex) return 100;
+  const score = calculateVisualScore(sample.hsv, sample.rgb, refHex);
+  return Math.max(0, Math.round(score));
+}
+
 function calculateCompatibility(ref, sample) {
   if (!ref || !sample) return 0;
-  if (plasticsMode) { if (!ref.lab || !sample.lab) return 0; return compatibilityFromDelta(deltaE(ref.lab, sample.lab)); }
-  const neutros = ['Preto', 'Cinza', 'Branco'], rB = getBaseColorName(ref.name), sB = getBaseColorName(sample.name), rN = neutros.includes(rB), sN = neutros.includes(sB);
-  if (rN !== sN) return 0;
-  if (rN && sN) {
-    if ((rB === 'Branco' && sB === 'Preto') || (rB === 'Preto' && sB === 'Branco')) return 0;
-    const mrd = Math.sqrt(3 * Math.pow(255, 2)), rd = Math.sqrt(Math.pow(ref.rgb.r - sample.rgb.r, 2) + Math.pow(ref.rgb.g - sample.rgb.g, 2) + Math.pow(ref.rgb.b - sample.rgb.b, 2)) / mrd, vd = Math.abs(ref.hsv.v - sample.hsv.v) / 100;
-    return Math.max(0, Math.round((1 - (vd * 0.60 + rd * 0.40)) * 100));
+  if (plasticsMode) return calculatePlasticsCompatibility(ref, sample);
+
+  const neutros = ['Preto', 'Cinza', 'Branco'];
+  const refBase = getBaseColorName(ref.name);
+  const sampleBase = getBaseColorName(sample.name);
+  const refIsNeutro = neutros.includes(refBase);
+  const sampleIsNeutro = neutros.includes(sampleBase);
+
+  if (refIsNeutro !== sampleIsNeutro) return 0;
+
+  if (refIsNeutro && sampleIsNeutro) {
+    if ((refBase === 'Branco' && sampleBase === 'Preto') || (refBase === 'Preto' && sampleBase === 'Branco')) return 0;
+    const maxRGBDist = Math.sqrt(3 * Math.pow(255, 2));
+    const rgbDist = Math.sqrt(
+      Math.pow(ref.rgb.r - sample.rgb.r, 2) +
+      Math.pow(ref.rgb.g - sample.rgb.g, 2) +
+      Math.pow(ref.rgb.b - sample.rgb.b, 2)
+    ) / maxRGBDist;
+    const vDist = Math.abs(ref.hsv.v - sample.hsv.v) / 100;
+    const dist = vDist * 0.60 + rgbDist * 0.40;
+    return Math.max(0, Math.round((1 - dist) * 100));
   }
-  const iR = getSpectralIndex(rB), iS = getSpectralIndex(sB); if (!areSpectralNeighbors(iR, iS)) return 0;
-  let hD = Math.abs(ref.hsv.h - sample.hsv.h); if (hD > 180) hD = 360 - hD;
-  const mrd = Math.sqrt(3 * Math.pow(255, 2)), rd = Math.sqrt(Math.pow(ref.rgb.r - sample.rgb.r, 2) + Math.pow(ref.rgb.g - sample.rgb.g, 2) + Math.pow(ref.rgb.b - sample.rgb.b, 2)) / mrd, sD = Math.abs(ref.hsv.s - sample.hsv.s) / 100, vD = Math.abs(ref.hsv.v - sample.hsv.v) / 100, hDist = hD / 180;
-  return Math.max(0, Math.round((1 - (rd * 0.40 + hDist * 0.30 + sD * 0.15 + vD * 0.15)) * 100));
+
+  const idxRef = getSpectralIndex(refBase);
+  const idxSample = getSpectralIndex(sampleBase);
+  if (!areSpectralNeighbors(idxRef, idxSample)) return 0;
+
+  let hueDiff = Math.abs(ref.hsv.h - sample.hsv.h);
+  if (hueDiff > 180) hueDiff = 360 - hueDiff;
+  const maxRGBDist = Math.sqrt(3 * Math.pow(255, 2));
+  const rgbDist = Math.sqrt(
+    Math.pow(ref.rgb.r - sample.rgb.r, 2) +
+    Math.pow(ref.rgb.g - sample.rgb.g, 2) +
+    Math.pow(ref.rgb.b - sample.rgb.b, 2)
+  ) / maxRGBDist;
+  const sDist = Math.abs(ref.hsv.s - sample.hsv.s) / 100;
+  const vDist = Math.abs(ref.hsv.v - sample.hsv.v) / 100;
+  const hDist = hueDiff / 180;
+  const weightedDist = rgbDist * 0.40 + hDist * 0.30 + sDist * 0.15 + vDist * 0.15;
+  return Math.max(0, Math.round((1 - weightedDist) * 100));
 }
+
 function suggestPigmentAdjustment(ref, sample) {
   if (!ref || !sample) return { text: 'Erro: Parâmetros inválidos', cssClass: 'incompatible' };
-  if (plasticsMode && ref.lab && sample.lab) {
-    const de = deltaE(ref.lab, sample.lab), comp = compatibilityFromDelta(de);
-    if (comp >= 95) return { text: 'Cores praticamente idênticas! ✓', cssClass: 'perfect' };
-    const lines = ['Compatibilidade Delta E: ' + de.toFixed(1) + ' (' + comp + '%)'], dL = ref.lab.l - sample.lab.l, dA = ref.lab.a - sample.lab.a, dB = ref.lab.b - sample.lab.b;
-    if (dL > 5) lines.push('• Amostra mais escura: adicionar base branca PW6'); if (dL < -5) lines.push('• Amostra mais clara: reduzir PW6 ou usar PBk7');
-    if (dA > 4) lines.push('• Ajustar com PR254 (vermelho) ou PV23 (violeta)'); if (dA < -4) lines.push('• Ajustar com PG7 / PG36 (verde)');
-    if (dB > 4) lines.push('• Ajustar com PY151 / PY110 (amarelo)'); if (dB < -4) lines.push('• Ajustar com PB15:3 / PB29 (azul)');
-    if (lines.length === 1) lines.push('Diferença baixa: ajuste fino nas proporções da base dominante.');
-    return { text: lines.join('\n'), cssClass: 'plastics' };
+
+  const neutros = ['Preto', 'Cinza', 'Branco'];
+  const refBase = getBaseColorName(ref.name);
+  const sampleBase = getBaseColorName(sample.name);
+  const refIsNeutro = neutros.includes(refBase);
+  const sampleIsNeutro = neutros.includes(sampleBase);
+  const compat = calculateCompatibility(ref, sample);
+
+  if (compat >= 95) return { text: 'Cores praticamente idênticas! ✓', cssClass: 'perfect' };
+  if (refIsNeutro !== sampleIsNeutro) return { text: 'Cores incompatíveis (Neutro x Colorido)', cssClass: 'incompatible' };
+
+  const idxRef = getSpectralIndex(refBase);
+  const idxSample = getSpectralIndex(sampleBase);
+  if (!refIsNeutro && !areSpectralNeighbors(idxRef, idxSample)) {
+    return { text: 'Cores incompatíveis (Famílias espectrais diferentes)', cssClass: 'incompatible' };
   }
-  const neutros = ['Preto', 'Cinza', 'Branco'], rB = getBaseColorName(ref.name), sB = getBaseColorName(sample.name), rN = neutros.includes(rB), sN = neutros.includes(sB), comp = calculateCompatibility(ref, sample);
-  if (comp >= 95) return { text: 'Cores praticamente idênticas! ✓', cssClass: 'perfect' };
-  if (rN !== sN) return { text: 'Cores incompatíveis (Neutro x Colorido)', cssClass: 'incompatible' };
-  const iR = getSpectralIndex(rB), iS = getSpectralIndex(sB);
-  if (!rN && !areSpectralNeighbors(iR, iS)) return { text: 'Cores incompatíveis (Famílias espectrais diferentes)', cssClass: 'incompatible' };
-  if (rN && sN) {
-    const vd = ref.hsv.v - sample.hsv.v;
-    if ((rB === 'Branco' && sB === 'Preto') || (rB === 'Preto' && sB === 'Branco')) return { text: 'Cores opostas extremas - Incompatível', cssClass: 'incompatible' };
-    if (Math.abs(vd) < 8) return { text: 'Neutros muito próximos - Ajuste mínimo necessário', cssClass: 'perfect' };
-    if (vd > 30) return { text: 'Adicione Branco PW6 gradualmente à amostra', cssClass: '' }; if (vd > 0) return { text: 'Adicione um pouco de Branco PW6 à amostra', cssClass: '' };
-    if (vd < -30) return { text: 'Adicione Preto PBk7 gradualmente à amostra', cssClass: '' }; return { text: 'Adicione um pouco de Preto PBk7 à amostra', cssClass: '' };
+
+  if (refIsNeutro && sampleIsNeutro) {
+    const vDiff = ref.hsv.v - sample.hsv.v;
+    if ((refBase === 'Branco' && sampleBase === 'Preto') || (refBase === 'Preto' && sampleBase === 'Branco')) {
+      return { text: 'Cores opostas extremas - Incompatível', cssClass: 'incompatible' };
+    }
+    if (Math.abs(vDiff) < 8) return { text: 'Neutros muito próximos - Ajuste mínimo necessário', cssClass: 'perfect' };
+    if (vDiff > 30) return { text: 'Adicione Branco gradualmente à amostra', cssClass: '' };
+    if (vDiff > 0) return { text: 'Adicione um pouco de Branco à amostra', cssClass: '' };
+    if (vDiff < -30) return { text: 'Adicione Preto gradualmente à amostra', cssClass: '' };
+    return { text: 'Adicione um pouco de Preto à amostra', cssClass: '' };
   }
-  const vd = ref.hsv.v - sample.hsv.v, sd = ref.hsv.s - sample.hsv.s; let hd = ref.hsv.h - sample.hsv.h; if (hd > 180) hd -= 360; if (hd < -180) hd += 360;
-  const sugg = [];
-  if (Math.abs(vd) > 15) { if (vd > 35) sugg.push('Branco PW6'); else if (vd > 20) sugg.push('um pouco de Branco PW6'); else if (vd < -35) sugg.push('Preto PBk7'); else if (vd < -20) sugg.push('um pouco de Preto PBk7'); }
-  if (Math.abs(sd) > 18) { if (sd > 0) sugg.push(rB + ' puro para saturar'); else if (!sugg.some(s => s.includes('Branco'))) sugg.push('Branco PW6 ou Cinza para dessaturar'); }
-  if (Math.abs(hd) > 12 && Math.abs(hd) < 40 && iR !== iS && areSpectralNeighbors(iR, iS)) sugg.push(rB + ' para ajustar tonalidade');
-  if (sugg.length === 0) return { text: 'Ajuste fino necessário - Cores muito próximas', cssClass: 'perfect' };
-  let ft = 'Adicione '; if (sugg.length === 1) ft += sugg[0]; else if (sugg.length === 2) ft += sugg[0] + ' e ' + sugg[1]; else ft += sugg.slice(0, -1).join(', ') + ' e ' + sugg[sugg.length - 1];
-  ft += ' à amostra'; return { text: ft, cssClass: '' };
+
+  const vDiff = ref.hsv.v - sample.hsv.v;
+  const sDiff = ref.hsv.s - sample.hsv.s;
+  let hueDiff = ref.hsv.h - sample.hsv.h;
+  if (hueDiff > 180) hueDiff -= 360;
+  if (hueDiff < -180) hueDiff += 360;
+
+  const suggestions = [];
+  if (Math.abs(vDiff) > 15) {
+    if (vDiff > 35) suggestions.push('Branco');
+    else if (vDiff > 20) suggestions.push('um pouco de Branco');
+    else if (vDiff < -35) suggestions.push('Preto');
+    else if (vDiff < -20) suggestions.push('um pouco de Preto');
+  }
+  if (Math.abs(sDiff) > 18) {
+    if (sDiff > 0) suggestions.push(`${refBase} puro para saturar`);
+    else if (!suggestions.some(s => s.includes('Branco'))) suggestions.push('Branco ou Cinza para dessaturar');
+  }
+  if (Math.abs(hueDiff) > 12 && Math.abs(hueDiff) < 40 && idxRef !== idxSample && areSpectralNeighbors(idxRef, idxSample)) {
+    suggestions.push(`${refBase} para ajustar tonalidade`);
+  }
+  if (suggestions.length === 0) return { text: 'Ajuste fino necessário - Cores muito próximas', cssClass: 'perfect' };
+
+  let finalText = 'Adicione ';
+  if (suggestions.length === 1) finalText += suggestions[0];
+  else if (suggestions.length === 2) finalText += suggestions[0] + ' e ' + suggestions[1];
+  else finalText += suggestions.slice(0, -1).join(', ') + ' e ' + suggestions[suggestions.length - 1];
+  finalText += ' à amostra';
+  return { text: finalText, cssClass: '' };
 }
-// ════ CALIBRAÇÃO ════
-function detectColorTemperature(rgb) { if (!rgb) return { lightType: 'Neutra', bias: { r: 0, g: 0, b: 0 } }; const avg = (rgb.r + rgb.g + rgb.b) / 3, rD = rgb.r - avg, gD = rgb.g - avg, bD = rgb.b - avg; let lt = 'Neutra'; if (bD > 10 && bD > rD) lt = 'Fria (Azulada)'; else if (rD > 10 && rD > bD) lt = 'Quente (Amarelada)'; return { lightType: lt, bias: { r: -rD, g: -gD, b: -bD } }; }
-function applyColorTempCompensation(rgb) { if (!hasColorTempCompensation || !rgb) return rgb; const maxRGB = Math.max(rgb.r, rgb.g, rgb.b), avgRGB = (rgb.r + rgb.g + rgb.b) / 3; if (maxRGB <= 25 || avgRGB <= 18) return rgb; return { r: Math.max(0, Math.min(255, Math.round(rgb.r + colorTemperatureBias.r))), g: Math.max(0, Math.min(255, Math.round(rgb.g + colorTemperatureBias.g))), b: Math.max(0, Math.min(255, Math.round(rgb.b + colorTemperatureBias.b))) }; }
-function normalizeV(vRaw) { if (!isWhiteCalibrated || !isBlackCalibrated || !whiteCalibration || !blackCalibration) return vRaw; const vW = whiteCalibration.hsv.v, vB = blackCalibration.hsv.v; if (vW <= vB) return vRaw; return Math.max(0, Math.min(100, ((vRaw - vB) / (vW - vB)) * 100)); }
-function isCalibrationWhite(hsv, rgb) { if (!isWhiteCalibrated || !whiteCalibration) return false; const b = whiteCalibration, dr = rgb.r - b.rgb.r, dg = rgb.g - b.rgb.g, db = rgb.b - b.rgb.b, rd = Math.sqrt(dr*dr + dg*dg + db*db), vd = Math.abs(hsv.v - b.hsv.v); return rd <= 50 || (vd <= 15 && hsv.s <= 30) || (hsv.v >= b.hsv.v && hsv.s <= 20); }
-function isCalibrationBlack(hsv, rgb) { if (!isBlackCalibrated || !blackCalibration) return false; const b = blackCalibration, dr = rgb.r - b.rgb.r, dg = rgb.g - b.rgb.g, db = rgb.b - b.rgb.b, rd = Math.sqrt(dr*dr + dg*dg + db*db), vd = Math.abs(hsv.v - b.hsv.v); return rd <= 40 || (vd <= 12 && hsv.s <= 35) || (Math.max(rgb.r, rgb.g, rgb.b) <= Math.max(b.rgb.r, b.rgb.g, b.rgb.b) + 20 && hsv.s <= 35); }
-// ════ BUFFER ════
-function calculateVariance(buf) { if (!buf || buf.length < 3) return 0; const vals = buf.map(i => i.hsv.v), mean = vals.reduce((a, b) => a + b, 0) / vals.length; return Math.sqrt(vals.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / vals.length); }
-function addToBuffer(hsv, rgb) { if (!hsv || !rgb) return; colorBuffer.push({ hsv, rgb }); if (colorBuffer.length > BUFFER_SIZE) colorBuffer.shift(); }
-function filterOutliers(buf) { if (!buf || buf.length < 5) return buf; const vv = buf.map(i => i.hsv.v).sort((a, b) => a - b), med = vv[Math.floor(vv.length / 2)]; return buf.filter(i => Math.abs(i.hsv.v - med) < 30); }
+
+// ════════════════════════════════════════════════════════════════
+// 🛠️ CALIBRAÇÃO E COMPENSAÇÃO
+// ════════════════════════════════════════════════════════════════
+function detectColorTemperature(rgb) {
+  if (!rgb) return { lightType: 'Neutra', bias: { r: 0, g: 0, b: 0 } };
+  const avg = (rgb.r + rgb.g + rgb.b) / 3;
+  const rDev = rgb.r - avg, gDev = rgb.g - avg, bDev = rgb.b - avg;
+  let lightType = 'Neutra';
+  if (bDev > 10 && bDev > rDev) lightType = 'Fria (Azulada)';
+  else if (rDev > 10 && rDev > bDev) lightType = 'Quente (Amarelada)';
+  return { lightType, bias: { r: -rDev, g: -gDev, b: -bDev } };
+}
+
+function applyColorTempCompensation(rgb) {
+  if (!hasColorTempCompensation || !rgb) return rgb;
+  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
+  const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+  if (maxRGB <= 25 || avgRGB <= 18) return rgb;
+  return {
+    r: Math.max(0, Math.min(255, Math.round(rgb.r + colorTemperatureBias.r))),
+    g: Math.max(0, Math.min(255, Math.round(rgb.g + colorTemperatureBias.g))),
+    b: Math.max(0, Math.min(255, Math.round(rgb.b + colorTemperatureBias.b)))
+  };
+}
+
+function normalizeV(vRaw) {
+  if (!isWhiteCalibrated || !isBlackCalibrated || !whiteCalibration || !blackCalibration) return vRaw;
+  const vWhite = whiteCalibration.hsv.v;
+  const vBlack = blackCalibration.hsv.v;
+  if (vWhite <= vBlack) return vRaw;
+  const vNormalized = ((vRaw - vBlack) / (vWhite - vBlack)) * 100;
+  return Math.max(0, Math.min(100, vNormalized));
+}
+
+function isCalibrationWhite(hsv, rgb) {
+  if (!isWhiteCalibrated || !whiteCalibration) return false;
+  const base = whiteCalibration;
+  const dr = rgb.r - base.rgb.r, dg = rgb.g - base.rgb.g, db = rgb.b - base.rgb.b;
+  const rgbDistance = Math.sqrt(dr*dr + dg*dg + db*db);
+  const vDiff = Math.abs(hsv.v - base.hsv.v);
+  if (rgbDistance <= 50 || (vDiff <= 15 && hsv.s <= 30)) return true;
+  if (hsv.v >= base.hsv.v && hsv.s <= 20) return true;
+  return false;
+}
+
+function isCalibrationBlack(hsv, rgb) {
+  if (!isBlackCalibrated || !blackCalibration) return false;
+  const base = blackCalibration;
+  const dr = rgb.r - base.rgb.r, dg = rgb.g - base.rgb.g, db = rgb.b - base.rgb.b;
+  const rgbDistance = Math.sqrt(dr*dr + dg*dg + db*db);
+  const vDiff = Math.abs(hsv.v - base.hsv.v);
+  if (rgbDistance <= 40 || (vDiff <= 12 && hsv.s <= 35)) return true;
+  if (Math.max(rgb.r, rgb.g, rgb.b) <= Math.max(base.rgb.r, base.rgb.g, base.rgb.b) + 20 && hsv.s <= 35) return true;
+  return false;
+}
+
+// ════════════════════════════════════════════════════════════════
+// 📊 BUFFER E ESTABILIZAÇÃO
+// ════════════════════════════════════════════════════════════════
+function calculateVariance(buffer) {
+  if (!buffer || buffer.length < 3) return 0;
+  const values = buffer.map(item => item.hsv.v);
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  return Math.sqrt(values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length);
+}
+
+function addToBuffer(hsv, rgb) {
+  if (!hsv || !rgb) return;
+  colorBuffer.push({ hsv, rgb });
+  if (colorBuffer.length > BUFFER_SIZE) colorBuffer.shift();
+}
+
+function filterOutliers(buffer) {
+  if (!buffer || buffer.length < 5) return buffer;
+  const vValues = buffer.map(item => item.hsv.v).sort((a, b) => a - b);
+  const median = vValues[Math.floor(vValues.length / 2)];
+  return buffer.filter(item => Math.abs(item.hsv.v - median) < 30);
+}
+
 function getStableColor() {
   if (colorBuffer.length < 3) return null;
-  const filtered = filterOutliers(colorBuffer); if (filtered.length === 0) return null;
-  let aS = 0, aV = 0, aR = 0, aG = 0, aB = 0, siS = 0, coS = 0;
-  filtered.forEach(item => { const rH = item.hsv.h * Math.PI / 180; siS += Math.sin(rH); coS += Math.cos(rH); aS += item.hsv.s; aV += item.hsv.v; aR += item.rgb.r; aG += item.rgb.g; aB += item.rgb.b; });
-  const len = filtered.length; let aH = Math.atan2(siS / len, coS / len) * 180 / Math.PI; if (aH < 0) aH += 360;
-  return { hsv: { h: aH, s: aS / len, v: aV / len }, rgb: { r: Math.round(aR / len), g: Math.round(aG / len), b: Math.round(aB / len) } };
+  const filtered = filterOutliers(colorBuffer);
+  if (filtered.length === 0) return null;
+  let avgS = 0, avgV = 0, avgR = 0, avgG = 0, avgB = 0, sinSum = 0, cosSum = 0;
+  filtered.forEach(item => {
+    const radH = item.hsv.h * Math.PI / 180;
+    sinSum += Math.sin(radH); cosSum += Math.cos(radH);
+    avgS += item.hsv.s; avgV += item.hsv.v;
+    avgR += item.rgb.r; avgG += item.rgb.g; avgB += item.rgb.b;
+  });
+  const len = filtered.length;
+  let avgH = Math.atan2(sinSum / len, cosSum / len) * 180 / Math.PI;
+  if (avgH < 0) avgH += 360;
+  return { hsv: { h: avgH, s: avgS/len, v: avgV/len }, rgb: { r: Math.round(avgR/len), g: Math.round(avgG/len), b: Math.round(avgB/len) } };
 }
-function detectObjectChange(nRGB) { if (!lastStableRGB.r && !lastStableRGB.g && !lastStableRGB.b) return false; if (!nRGB) return false; return Math.sqrt(Math.pow(nRGB.r - lastStableRGB.r, 2) + Math.pow(nRGB.g - lastStableRGB.g, 2) + Math.pow(nRGB.b - lastStableRGB.b, 2)) > RGB_CHANGE_THRESHOLD; }
-function shouldUpdateColor(nH, nN, nRGB, nS, nVar) {
+
+function detectObjectChange(newRGB) {
+  if (!lastStableRGB.r && !lastStableRGB.g && !lastStableRGB.b) return false;
+  if (!newRGB) return false;
+  return Math.sqrt(Math.pow(newRGB.r-lastStableRGB.r,2) + Math.pow(newRGB.g-lastStableRGB.g,2) + Math.pow(newRGB.b-lastStableRGB.b,2)) > RGB_CHANGE_THRESHOLD;
+}
+
+function shouldUpdateColor(newHue, newColorName, newRGB, newSat, newVariance) {
   if (!lastStableColorName) return true;
-  if (detectObjectChange(nRGB)) { consecutiveFrameCounter = 0; return true; }
-  if (Math.abs(nVar - lastStableVariance) > 10) return true;
-  if (nN !== lastStableColorName) { let d = Math.abs(nH - lastStableHue); if (d > 180) d = 360 - d; const sC = Math.abs(nS - (colorBuffer[colorBuffer.length - 1]?.hsv.s || 0)) > 18; if (d >= HYSTERESIS_THRESHOLD || sC) { consecutiveFrameCounter++; return consecutiveFrameCounter >= MIN_CONSECUTIVE_FRAMES; } else { consecutiveFrameCounter = 0; return false; } }
-  consecutiveFrameCounter = 0; return true;
+  if (detectObjectChange(newRGB)) { consecutiveFrameCounter = 0; return true; }
+  if (Math.abs(newVariance - lastStableVariance) > 10) return true;
+
+  if (newColorName !== lastStableColorName) {
+    let diff = Math.abs(newHue - lastStableHue);
+    if (diff > 180) diff = 360 - diff;
+    const satChange = Math.abs(newSat - (colorBuffer[colorBuffer.length - 1]?.hsv.s || 0)) > 18;
+    if (diff >= HYSTERESIS_THRESHOLD || satChange) {
+      consecutiveFrameCounter++;
+      return consecutiveFrameCounter >= MIN_CONSECUTIVE_FRAMES;
+    } else {
+      consecutiveFrameCounter = 0;
+      return false;
+    }
+  }
+  consecutiveFrameCounter = 0;
+  return true;
 }
-// ════ ÁUDIO ════
-function speakColor(name) { if (!window.speechSynthesis || !name || !audioEnabled) return; const cn = name.replace(/ ✓| ≈| ⚠|\(Aprox\)/g, '').trim(); window.speechSynthesis.cancel(); setTimeout(() => { try { const u = new SpeechSynthesisUtterance(cn); u.lang = 'pt-BR'; u.rate = 1.1; window.speechSynthesis.speak(u); } catch (e) {} }, 60); }
-function speakImmediate(text) { if (!window.speechSynthesis || !text || !audioEnabled) return; window.speechSynthesis.cancel(); setTimeout(() => { try { const u = new SpeechSynthesisUtterance(text); u.lang = 'pt-BR'; u.rate = 1.1; window.speechSynthesis.speak(u); } catch (e) {} }, 60); }
+
+// ════════════════════════════════════════════════════════════════
+// 🎤 ÁUDIO (TTS) - SISTEMA COMPLETO
+// ════════════════════════════════════════════════════════════════
+function speakColor(name) {
+  if (!window.speechSynthesis || !name || !audioEnabled) return;
+  const cleanName = name.replace(/ ✓| ≈| ⚠|\(Aprox\)/g, '').trim();
+  window.speechSynthesis.cancel();
+  setTimeout(() => {
+    try {
+      const utt = new SpeechSynthesisUtterance(cleanName);
+      utt.lang = 'pt-BR';
+      utt.rate = 1.1;
+      window.speechSynthesis.speak(utt);
+    } catch (e) { console.error(e); }
+  }, 60);
+}
+
+function speakImmediate(text) {
+  if (!window.speechSynthesis || !text || !audioEnabled) return;
+  window.speechSynthesis.cancel();
+  setTimeout(() => {
+    try {
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.lang = 'pt-BR';
+      utt.rate = 1.1;
+      window.speechSynthesis.speak(utt);
+    } catch (e) { console.error(e); }
+  }, 60);
+}
+
 function triggerAudioIfChanged(name) {
-  if (!audioEnabled || !name) return; const cn = name.replace(/ ✓| ≈| ⚠|\(Aprox\)/g, '').trim();
-  if (cn === lastSpokenName) { if (pendingName !== cn && stableTimer) { clearTimeout(stableTimer); stableTimer = null; pendingName = ''; } return; }
-  if (cn !== pendingName) { pendingName = cn; if (stableTimer) clearTimeout(stableTimer); stableTimer = setTimeout(() => { if (!audioEnabled) { stableTimer = null; return; } lastSpokenName = pendingName; speakColor(pendingName); stableTimer = null; }, STABLE_SPEECH_MS); }
+  if (!audioEnabled || !name) return;
+  const cleanName = name.replace(/ ✓| ≈| ⚠|\(Aprox\)/g, '').trim();
+  if (cleanName === lastSpokenName) {
+    if (pendingName !== cleanName && stableTimer) { clearTimeout(stableTimer); stableTimer = null; pendingName = ''; }
+    return;
+  }
+  if (cleanName !== pendingName) {
+    pendingName = cleanName;
+    if (stableTimer) clearTimeout(stableTimer);
+    stableTimer = setTimeout(() => {
+      if (!audioEnabled) { stableTimer = null; return; }
+      lastSpokenName = pendingName;
+      speakColor(pendingName);
+      stableTimer = null;
+    }, STABLE_SPEECH_MS);
+  }
 }
-// ════ CÂMERA ════
+
+// ════════════════════════════════════════════════════════════════
+// 🎥 CÂMERA E CAPTURA
+// ════════════════════════════════════════════════════════════════
 function samplePixels() {
-  const vw = video.videoWidth, vh = video.videoHeight; if (!vw || !vh) return null;
-  const cw = video.clientWidth, ch = video.clientHeight, va = vw / vh, ca = cw / ch;
-  let dW, dH, oX = 0, oY = 0;
-  if (ca > va) { dH = ch; dW = ch * va; oX = (cw - dW) / 2; } else { dW = cw; dH = cw / va; oY = (ch - dH) / 2; }
-  const sX = vw / dW, sY = vh / dH, nCX = Math.round((cw / 2 - oX) * sX), nCY = Math.round((ch / 2 - oY) * sY), sc = Math.min(sX, sY), nS = Math.max(1, Math.round(SAMPLE_SIZE * sc));
-  canvas.width = vw; canvas.height = vh; try { ctx.drawImage(video, 0, 0); } catch (e) { return null; }
-  const x0 = Math.max(0, nCX - nS), y0 = Math.max(0, nCY - nS), w = Math.min(nS * 2, vw - x0), h = Math.min(nS * 2, vh - y0);
-  if (w <= 0 || h <= 0) return null;
-  try { const d = ctx.getImageData(x0, y0, w, h).data; let r = 0, g = 0, b = 0, c = 0; for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; c++; } return c === 0 ? null : { r: Math.round(r / c), g: Math.round(g / c), b: Math.round(b / c) }; } catch (e) { return null; }
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw || !vh) return null;
+  const cw = video.clientWidth, ch = video.clientHeight, scale = Math.max(cw/vw, ch/vh);
+  const nativeCX = Math.round((cw/2 + (vw*scale-cw)/2) / scale);
+  const nativeCY = Math.round((ch/2 + (vh*scale-ch)/2) / scale);
+  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
+  canvas.width = vw; canvas.height = vh;
+  try { ctx.drawImage(video, 0, 0); } catch (e) { return null; }
+  const x0 = Math.max(0, nativeCX - nativeSample), y0 = Math.max(0, nativeCY - nativeSample);
+  try {
+    const data = ctx.getImageData(x0, y0, nativeSample*2, nativeSample*2).data;
+    let r = 0, g = 0, b = 0, c = 0;
+    for (let i = 0; i < data.length; i += 4) { r+=data[i]; g+=data[i+1]; b+=data[i+2]; c++; }
+    return c === 0 ? null : { r: Math.round(r/c), g: Math.round(g/c), b: Math.round(b/c) };
+  } catch (e) { return null; }
 }
+
 function samplePixelsEstatico(x, y) {
-  const vw = video.videoWidth, vh = video.videoHeight; if (!vw || !vh) return null;
-  const cw = video.clientWidth, ch = video.clientHeight, va = vw / vh, ca = cw / ch;
-  let dW, dH, oX = 0, oY = 0;
-  if (ca > va) { dH = ch; dW = ch * va; oX = (cw - dW) / 2; } else { dW = cw; dH = cw / va; oY = (ch - dH) / 2; }
-  const sX = vw / dW, sY = vh / dH, nCX = Math.round((x - oX) * sX), nCY = Math.round((y - oY) * sY), sc = Math.min(sX, sY), nS = Math.max(1, Math.round(SAMPLE_SIZE * sc));
-  canvas.width = vw; canvas.height = vh; try { ctx.drawImage(video, 0, 0); } catch (e) { return null; }
-  const x0 = Math.max(0, Math.min(vw - nS * 2, nCX - nS)), y0 = Math.max(0, Math.min(vh - nS * 2, nCY - nS));
-  try { const d = ctx.getImageData(x0, y0, nS * 2, nS * 2).data; let r = 0, g = 0, b = 0, c = 0; for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; c++; } return c === 0 ? null : { r: Math.round(r / c), g: Math.round(g / c), b: Math.round(b / c) }; } catch (e) { return null; }
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw || !vh) return null;
+  const scale = Math.max(video.clientWidth/vw, video.clientHeight/vh);
+  const nativeCX = Math.round((x + (vw*scale-video.clientWidth)/2) / scale);
+  const nativeCY = Math.round((y + (vh*scale-video.clientHeight)/2) / scale);
+  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
+  canvas.width = vw; canvas.height = vh;
+  try { ctx.drawImage(video, 0, 0); } catch (e) { return null; }
+  const x0 = Math.max(0, Math.min(vw - nativeSample*2, nativeCX - nativeSample));
+  const y0 = Math.max(0, Math.min(vh - nativeSample*2, nativeCY - nativeSample));
+  try {
+    const data = ctx.getImageData(x0, y0, nativeSample*2, nativeSample*2).data;
+    let r = 0, g = 0, b = 0, c = 0;
+    for (let i = 0; i < data.length; i += 4) { r+=data[i]; g+=data[i+1]; b+=data[i+2]; c++; }
+    return c === 0 ? null : { r: Math.round(r/c), g: Math.round(g/c), b: Math.round(b/c) };
+  } catch (e) { return null; }
 }
+
 function capturePoint(x, y, thumbId, markerId, nameId) {
-  const vw = video.videoWidth, vh = video.videoHeight; if (!vw || !vh) return null;
-  canvas.width = vw; canvas.height = vh; try { ctx.drawImage(video, 0, 0, vw, vh); } catch (e) { return null; }
-  const cw = video.clientWidth, ch = video.clientHeight, va = vw / vh, ca = cw / ch;
-  let dW, dH, oX = 0, oY = 0;
-  if (ca > va) { dH = ch; dW = ch * va; oX = (cw - dW) / 2; } else { dW = cw; dH = cw / va; oY = (ch - dH) / 2; }
-  const sX = vw / dW, sY = vh / dH, nX = Math.round((x - oX) * sX), nY = Math.round((y - oY) * sY), sc = Math.min(sX, sY), nS = Math.max(1, Math.round(SAMPLE_SIZE * sc));
-  const x0 = Math.max(0, Math.min(vw - nS * 2, nX - nS)), y0 = Math.max(0, Math.min(vh - nS * 2, nY - nS));
-  let data; try { data = ctx.getImageData(x0, y0, nS * 2, nS * 2).data; } catch (e) { return null; }
-  let r = 0, g = 0, b = 0, c = 0; for (let i = 0; i < data.length; i += 4) { r += data[i]; g += data[i + 1]; b += data[i + 2]; c++; }
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw || !vh) return null;
+  canvas.width = vw; canvas.height = vh;
+  try { ctx.drawImage(video, 0, 0, vw, vh); } catch (e) { return null; }
+  const scale = Math.max(video.clientWidth/vw, video.clientHeight/vh);
+  const nativeX = Math.round((x + (vw*scale-video.clientWidth)/2) / scale);
+  const nativeY = Math.round((y + (vh*scale-video.clientHeight)/2) / scale);
+  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
+  const x0 = Math.max(0, Math.min(vw - nativeSample*2, nativeX - nativeSample));
+  const y0 = Math.max(0, Math.min(vh - nativeSample*2, nativeY - nativeSample));
+  let data;
+  try { data = ctx.getImageData(x0, y0, nativeSample*2, nativeSample*2).data; } catch (e) { return null; }
+  let r = 0, g = 0, b = 0, c = 0;
+  for (let i = 0; i < data.length; i += 4) { r+=data[i]; g+=data[i+1]; b+=data[i+2]; c++; }
   if (c === 0) return null;
-  const rgb = applyColorTempCompensation({ r: Math.round(r / c), g: Math.round(g / c), b: Math.round(b / c) }), hsv = rgbToHSV(rgb.r, rgb.g, rgb.b), lab = rgbToLab(rgb);
-  let cl; if (isNoLightRGB(rgb)) { cl = forceBlackClassification(); } else { cl = plasticsMode ? classifyPlasticsPolymers(hsv, rgb, 0) : (ampliatedMode ? classifyColorExtended(hsv, rgb, 0) : classifyColorWithRuler(hsv, rgb, 0)); }
-  const tW = Math.min(vw, 400), tH = Math.round(tW * (vh / vw)), tS = tW / vw;
-  const tCv = document.createElement('canvas'); tCv.width = tW; tCv.height = tH; const tCx = tCv.getContext('2d');
-  try { tCx.drawImage(video, 0, 0, tW, tH); } catch (e) { return null; }
-  const tx = nX * tS, ty = nY * tS;
-  tCx.strokeStyle = 'rgba(120,220,255,0.95)'; tCx.lineWidth = 2.5; tCx.lineCap = 'round';
-  tCx.beginPath(); tCx.moveTo(tx - 16 * tS, ty); tCx.lineTo(tx + 16 * tS, ty); tCx.moveTo(tx, ty - 16 * tS); tCx.lineTo(tx, ty + 16 * tS); tCx.stroke();
-  tCx.lineWidth = 1.8; tCx.strokeRect(tx - 11 * tS, ty - 11 * tS, 22 * tS, 22 * tS);
-  document.getElementById(thumbId).src = tCv.toDataURL('image/jpeg', 0.7); document.getElementById(thumbId).style.display = 'block';
-  if (markerId) document.getElementById(markerId).style.display = 'none';
-  document.getElementById(nameId).textContent = cl.name; document.getElementById(nameId).style.color = cl.color;
-  return { x, y, rgb, hsv, lab, name: cl.name, color: cl.color, formula: cl.formula || [], ralRef: cl.ralRef || null };
+  const rgb = applyColorTempCompensation({ r: Math.round(r/c), g: Math.round(g/c), b: Math.round(b/c) });
+  const hsv = rgbToHSV(rgb.r, rgb.g, rgb.b);
+
+  let classification = plasticsMode ? classifyPlasticsPolymers(hsv, rgb, 0) : (ampliatedMode ? classifyColorExtended(hsv, rgb, 0) : classifyColorWithRuler(hsv, rgb, 0));
+
+  const thumbW = Math.min(vw, 400), thumbH = Math.round(thumbW*(vh/vw)), thumbScale = thumbW/vw;
+  const tCanv = document.createElement('canvas'); tCanv.width = thumbW; tCanv.height = thumbH;
+  const tCtx = tCanv.getContext('2d');
+  try { tCtx.drawImage(video, 0, 0, thumbW, thumbH); } catch (e) { return null; }
+  const tx = nativeX*thumbScale, ty = nativeY*thumbScale;
+  tCtx.strokeStyle = 'rgba(120,220,255,0.95)'; tCtx.lineWidth = 2.5; tCtx.lineCap = 'round';
+  tCtx.beginPath(); tCtx.moveTo(tx-16*thumbScale, ty); tCtx.lineTo(tx+16*thumbScale, ty);
+  tCtx.moveTo(tx, ty-16*thumbScale); tCtx.lineTo(tx, ty+16*thumbScale); tCtx.stroke();
+  tCtx.lineWidth = 1.8; tCtx.strokeRect(tx-11*thumbScale, ty-11*thumbScale, 22*thumbScale, 22*thumbScale);
+  document.getElementById(thumbId).src = tCanv.toDataURL('image/jpeg', 0.7);
+  document.getElementById(thumbId).style.display = 'block';
+  document.getElementById(markerId).style.display = 'none';
+  document.getElementById(nameId).textContent = classification.name;
+  document.getElementById(nameId).style.color = classification.color;
+  return { x, y, rgb, hsv, name: classification.name, color: classification.color, formula: classification.formula || [] };
 }
-async function getDevices() { try { devices = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput'); } catch (e) { devices = []; } }
+
+async function getDevices() {
+  try { devices = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput'); }
+  catch (e) { devices = []; }
+}
+
 async function openCamera(preferredDeviceId) {
   if (stream) stream.getTracks().forEach(t => t.stop());
-  const tryOpen = async (cstr) => { try { stream = await navigator.mediaDevices.getUserMedia(cstr); video.srcObject = stream; return true; } catch (e) { return false; } };
+  const tryOpen = async (constraints) => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      video.srcObject = stream;
+      if (flashEnabled) {
+        const track = stream.getVideoTracks()[0];
+        if (track && typeof track.applyConstraints === 'function') {
+          try { await track.applyConstraints({ advanced: [{ torch: true }] }); } catch (e) {}
+        }
+      }
+      return true;
+    } catch (e) { return false; }
+  };
   if (preferredDeviceId && await tryOpen({ video: { deviceId: { exact: preferredDeviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } } })) return;
   if (await tryOpen({ video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } })) return;
   if (await tryOpen({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } })) return;
   if (await tryOpen({ video: true })) return;
   alert('Erro ao acessar a câmera.');
 }
-// ════ FOCO MANUAL (NOVO) ════
-async function applyManualFocusConstraints() {
-  if (!stream || manualFocusApplied) return;
-  try {
-    const track = stream.getVideoTracks()[0]; if (!track) return;
-    const caps = track.getCapabilities ? track.getCapabilities() : {};
-    if (caps.focusMode && caps.focusMode.includes && caps.focusMode.includes('manual')) {
-      try {
-        await track.applyConstraints({ advanced: [{ focusMode: 'manual', focusDistance: caps.focusDistance ? caps.focusDistance.max : undefined, exposureMode: 'continuous', whiteBalanceMode: 'continuous' }] });
-        manualFocusApplied = true; console.log('✓ Foco manual (sem desfoque modo-retrato)');
-      } catch (e) { console.warn('Foco manual não suportado:', e.message); }
-    } else if (caps.focusMode) {
-      try { await track.applyConstraints({ advanced: [{ focusMode: 'continuous', exposureMode: 'continuous' }] }); console.log('✓ Foco contínuo'); } catch (e) {}
-    }
-    // Desativa zoom
-    if (caps.zoom) { try { await track.applyConstraints({ advanced: [{ zoom: 1.0 }] }); } catch (e) {} }
-    // Desativa efeitos de embelezamento
-    if (caps.torch !== undefined) { }
-  } catch (e) { console.warn('applyManualFocusConstraints:', e.message); }
-}
-// ════ INTERFACE ════
+
+// ════════════════════════════════════════════════════════════════
+// 🎛️ INTERFACE
+// ════════════════════════════════════════════════════════════════
 function toggleSystem() {
-  systemOn = !systemOn; const btn = document.getElementById('btn-system');
-  const btns = ['btn-calibrate-white','btn-calibrate-black','btn-reset-white','btn-reset-black','btn-camera','btn-audio','btn-flash','btn-universal','btn-ampliado','btn-plasticos','btn-modes','btn-reset-estatico','btn-sel-ref','btn-sel-sample','btn-reset-ref','btn-reset-sample','btn-reset-comparacao'];
-  if (systemOn) { btn.textContent = 'SISTEMA/ON'; btn.className = 'system-on'; btns.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = false; }); speakImmediate('Sistema ativado'); }
-  else { btn.textContent = 'SISTEMA/OFF'; btn.className = 'system-off'; btns.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = true; }); if (window.speechSynthesis) window.speechSynthesis.cancel(); document.getElementById('color-name').textContent = '---'; document.getElementById('color-name').style.color = '#445'; document.getElementById('confidence-display').textContent = ''; document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---'; document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---'; document.getElementById('color-swatch').style.background = '#1a1a2e'; speakImmediate('Sistema desativado'); }
+  systemOn = !systemOn;
+  const btn = document.getElementById('btn-system');
+  const btns = ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos', 'btn-modes', 'btn-reset-estatico', 'btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao'];
+  if (systemOn) {
+    btn.textContent = 'SISTEMA/ON'; btn.className = 'system-on';
+    btns.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = false; });
+    speakImmediate('Sistema ativado');
+  } else {
+    btn.textContent = 'SISTEMA/OFF'; btn.className = 'system-off';
+    btns.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = true; });
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    document.getElementById('color-name').textContent = '---';
+    document.getElementById('color-name').style.color = '#445';
+    document.getElementById('confidence-display').textContent = '';
+    document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
+    document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
+    document.getElementById('color-swatch').style.background = '#1a1a2e';
+    speakImmediate('Sistema desativado');
+  }
 }
+
 function toggleModeDropdown() { document.getElementById('mode-dropdown').classList.toggle('show'); }
+
 function selectMode(mode) {
-  currentMode = mode; document.getElementById('mode-select-overlay').classList.add('hide'); document.getElementById('mode-dropdown').classList.remove('show');
-  const bM = document.getElementById('btn-modes'); bM.className = ''; document.querySelectorAll('.mode-option').forEach(o => o.classList.remove('active'));
+  currentMode = mode;
+  document.getElementById('mode-select-overlay').classList.add('hide');
+  document.getElementById('mode-dropdown').classList.remove('show');
+  const btnModes = document.getElementById('btn-modes');
+  btnModes.className = '';
+  document.querySelectorAll('.mode-option').forEach(opt => opt.classList.remove('active'));
   ['btn-sel-ref','btn-sel-sample','btn-reset-ref','btn-reset-sample','btn-reset-comparacao'].forEach(id => document.getElementById(id).classList.remove('show'));
-  document.getElementById('comparison-panel').classList.remove('show'); document.getElementById('formula-panel').classList.remove('show');
-  if (mode === 'livre') { bM.classList.add('mode-livre'); document.getElementById('mode-label').textContent = 'MODO: 🎯 LIVRE'; reticle.style.left = '50%'; reticle.style.top = '50%'; reticle.style.transform = 'translate(-50%, -50%)'; reticle.classList.add('show'); document.getElementById('btn-reset-estatico').classList.remove('show'); if (plasticsMode) document.getElementById('formula-panel').classList.add('show'); document.querySelectorAll('.mode-option')[0].classList.add('active'); speakImmediate('Modo Livre selecionado'); }
-  else if (mode === 'estatico') { bM.classList.add('mode-estatico'); document.getElementById('mode-label').textContent = 'MODO: 📍 ESTÁTICO'; reticle.classList.remove('show'); document.getElementById('btn-reset-estatico').classList.add('show'); if (plasticsMode) document.getElementById('formula-panel').classList.add('show'); document.querySelectorAll('.mode-option')[1].classList.add('active'); speakImmediate('Modo Estático selecionado'); }
-  else if (mode === 'comparacao') { bM.classList.add('mode-comparacao'); document.getElementById('mode-label').textContent = 'MODO: ⚖️ COMPARAÇÃO'; reticle.classList.remove('show'); document.getElementById('btn-reset-estatico').classList.remove('show'); ['btn-sel-ref','btn-sel-sample','btn-reset-ref','btn-reset-sample','btn-reset-comparacao'].forEach(id => document.getElementById(id).classList.add('show')); document.getElementById('comparison-panel').classList.add('show'); document.querySelectorAll('.mode-option')[2].classList.add('active'); speakImmediate('Modo Comparação selecionado'); }
+  document.getElementById('comparison-panel').classList.remove('show');
+  document.getElementById('formula-panel').classList.remove('show');
+
+  if (mode === 'livre') {
+    btnModes.classList.add('mode-livre');
+    document.getElementById('mode-label').textContent = 'MODO: 🎯 LIVRE';
+    reticle.style.left = '50%'; reticle.style.top = '50%';
+    reticle.style.transform = 'translate(-50%, -50%)';
+    reticle.classList.add('show');
+    document.getElementById('btn-reset-estatico').classList.remove('show');
+    if (plasticsMode) document.getElementById('formula-panel').classList.add('show');
+    document.querySelectorAll('.mode-option')[0].classList.add('active');
+    speakImmediate('Modo Livre selecionado');
+  } else if (mode === 'estatico') {
+    btnModes.classList.add('mode-estatico');
+    document.getElementById('mode-label').textContent = 'MODO: 📍 ESTÁTICO';
+    reticle.classList.remove('show');
+    document.getElementById('btn-reset-estatico').classList.add('show');
+    if (plasticsMode) document.getElementById('formula-panel').classList.add('show');
+    document.querySelectorAll('.mode-option')[1].classList.add('active');
+    speakImmediate('Modo Estático selecionado');
+  } else if (mode === 'comparacao') {
+    btnModes.classList.add('mode-comparacao');
+    document.getElementById('mode-label').textContent = 'MODO: ⚖️ COMPARAÇÃO';
+    reticle.classList.remove('show');
+    document.getElementById('btn-reset-estatico').classList.remove('show');
+    ['btn-sel-ref','btn-sel-sample','btn-reset-ref','btn-reset-sample','btn-reset-comparacao'].forEach(id => document.getElementById(id).classList.add('show'));
+    document.getElementById('comparison-panel').classList.add('show');
+    document.querySelectorAll('.mode-option')[2].classList.add('active');
+    speakImmediate('Modo Comparação selecionado');
+  }
   staticAnalysisActive = false; staticFrozen = false; staticPosition = null;
 }
-function resetEstatico() { if (currentMode !== 'estatico') return; staticPosition = null; staticAnalysisActive = false; staticFrozen = false; reticle.classList.remove('show'); document.getElementById('color-name').textContent = '---'; document.getElementById('color-name').style.color = '#445'; document.getElementById('confidence-display').textContent = ''; document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---'; document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---'; document.getElementById('color-swatch').style.background = '#1a1a2e'; document.getElementById('formula-content').textContent = '---'; document.getElementById('adjustment-text').textContent = '---'; colorBuffer = []; lastStableColorName = ''; lastStableRGB = { r: 0, g: 0, b: 0 }; mismatchCounter = 0; consecutiveFrameCounter = 0; lastSpokenName = ''; pendingName = ''; if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; } }
-function startRefSelection() { if (!systemOn || !running || currentMode !== 'comparacao') return; selectingRef = true; selectingSample = false; document.getElementById('color-name').textContent = 'Toque na tela: REFERÊNCIA'; document.getElementById('color-name').style.color = '#8ec'; speakImmediate('Selecione a referência'); }
-function startSampleSelection() { if (!systemOn || !running || currentMode !== 'comparacao') return; selectingSample = true; selectingRef = false; document.getElementById('color-name').textContent = 'Toque na tela: AMOSTRA'; document.getElementById('color-name').style.color = '#dd8'; speakImmediate('Selecione a amostra'); }
-function captureRef(x, y) { const r = capturePoint(x, y, 'ref-thumb', 'ref-reticle-marker', 'ref-color-name'); if (r) { comparisonRef = r; updateComparison(); speakImmediate('Referência capturada, ' + r.name); } }
-function captureSample(x, y) { const r = capturePoint(x, y, 'sample-thumb', 'sample-reticle-marker', 'sample-color-name'); if (r) { comparisonSample = r; updateComparison(); speakImmediate('Amostra capturada, ' + r.name); } }
-function resetRef() { if (currentMode !== 'comparacao') return; comparisonRef = null; document.getElementById('ref-thumb').src = ''; document.getElementById('ref-thumb').style.display = 'none'; document.getElementById('ref-reticle-marker').style.display = 'none'; document.getElementById('ref-color-name').textContent = '---'; document.getElementById('ref-color-name').style.color = '#aac'; document.getElementById('ref-formula-list').textContent = '---'; updateComparison(); }
-function resetSample() { if (currentMode !== 'comparacao') return; comparisonSample = null; document.getElementById('sample-thumb').src = ''; document.getElementById('sample-thumb').style.display = 'none'; document.getElementById('sample-reticle-marker').style.display = 'none'; document.getElementById('sample-color-name').textContent = '---'; document.getElementById('sample-color-name').style.color = '#aac'; document.getElementById('sample-formula-list').textContent = '---'; updateComparison(); }
-function resetComparison() { if (currentMode !== 'comparacao') return; resetRef(); resetSample(); document.getElementById('color-name').textContent = '---'; document.getElementById('color-name').style.color = '#445'; }
-function formatFormula(f) { if (!f || f.length === 0) return 'Sem sugestão técnica disponível.'; return f.map(p => '• ' + p.pigmento + '\n  (' + p.ci + ' - ' + p.codigo + ') - ' + p.funcao).join('\n'); }
-function updateComparison() {
-  const pE = document.getElementById('compatibility-percent'), dE = document.getElementById('delta-e-display'), sB = document.getElementById('pigment-suggestion'), sT = document.getElementById('pigment-suggestion-text'), fS = document.getElementById('comp-formulas-section'), rFL = document.getElementById('ref-formula-list'), sFL = document.getElementById('sample-formula-list');
-  if (!comparisonRef || !comparisonSample) { pE.textContent = '---'; pE.className = 'comp-percent'; if (dE) dE.textContent = 'Delta E: ---'; sB.style.display = 'none'; fS.style.display = 'none'; return; }
-  const comp = calculateCompatibility(comparisonRef, comparisonSample); pE.textContent = comp + '%'; pE.className = 'comp-percent' + (comp === 0 ? ' low' : (comp < 50 ? ' medium' : ''));
-  if (dE && comparisonRef.lab && comparisonSample.lab) { dE.textContent = 'Delta E: ' + deltaE(comparisonRef.lab, comparisonSample.lab).toFixed(1); }
-  fS.style.display = 'block'; rFL.textContent = formatFormula(comparisonRef.formula); sFL.textContent = formatFormula(comparisonSample.formula);
-  const sug = suggestPigmentAdjustment(comparisonRef, comparisonSample); sT.textContent = sug.text; sT.className = 'comp-suggestion-text ' + sug.cssClass; sB.style.display = 'block';
-  speakImmediate('Compatibilidade, ' + comp + ' por cento');
+
+function resetEstatico() {
+  if (currentMode !== 'estatico') return;
+  staticPosition = null; staticAnalysisActive = false; staticFrozen = false;
+  reticle.classList.remove('show');
+  document.getElementById('color-name').textContent = '---';
+  document.getElementById('color-name').style.color = '#445';
+  document.getElementById('confidence-display').textContent = '';
+  document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
+  document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
+  document.getElementById('color-swatch').style.background = '#1a1a2e';
+  document.getElementById('formula-content').textContent = '---';
+  document.getElementById('adjustment-text').textContent = '---';
+  colorBuffer = []; lastStableColorName = ''; lastStableRGB = { r: 0, g: 0, b: 0 };
+  mismatchCounter = 0; consecutiveFrameCounter = 0;
+  lastSpokenName = ''; pendingName = '';
+  if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
 }
-async function switchCamera() { if (!systemOn) return; if (devices.length < 2) { alert('Apenas uma câmera disponível.'); return; } deviceIndex = (deviceIndex + 1) % devices.length; await openCamera(devices[deviceIndex].deviceId); manualFocusApplied = false; await applyManualFocusConstraints(); speakImmediate('Câmera alternada'); }
-function toggleAudio() { if (!systemOn) return; if (window.speechSynthesis) window.speechSynthesis.speak(new SpeechSynthesisUtterance('')); audioEnabled = !audioEnabled; const btn = document.getElementById('btn-audio'); if (audioEnabled) { btn.textContent = '🔊 Áudio'; btn.classList.add('audio-on'); speakImmediate('Áudio ativado'); } else { btn.textContent = '🔇 Áudio'; btn.classList.remove('audio-on'); if (window.speechSynthesis) window.speechSynthesis.cancel(); if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; } pendingName = ''; lastSpokenName = ''; } }
-async function toggleFlash() { if (!systemOn) return; flashEnabled = !flashEnabled; const btn = document.getElementById('btn-flash'); if (flashEnabled) btn.classList.add('flash-on'); else btn.classList.remove('flash-on'); if (stream) { const track = stream.getVideoTracks()[0]; if (track && typeof track.applyConstraints === 'function') { try { await track.applyConstraints({ advanced: [{ torch: flashEnabled }] }); } catch (e) { if (flashEnabled) { flashEnabled = false; btn.classList.remove('flash-on'); } } } } speakImmediate(flashEnabled ? 'Flash ativado' : 'Flash desativado'); }
-function toggleUniversalMode() { if (!systemOn) return; universalMode = !universalMode; const btn = document.getElementById('btn-universal'); btn.textContent = universalMode ? '⭐ Universal' : '☆ Universal'; btn.classList.toggle('universal-on', universalMode); if (universalMode) { ampliatedMode = false; plasticsMode = false; document.getElementById('btn-ampliado').textContent = '◇ Ampliado'; document.getElementById('btn-ampliado').classList.remove('ampliado-on'); document.getElementById('btn-plasticos').textContent = '🧪 Plásticos'; document.getElementById('btn-plasticos').classList.remove('plasticos-on'); document.getElementById('formula-panel').classList.remove('show'); speakImmediate('Modo Universal ativado'); } else { speakImmediate('Modo Universal desativado'); } lastSpokenName = ''; pendingName = ''; if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; } }
-function toggleAmpliatedMode() { if (!systemOn) return; ampliatedMode = !ampliatedMode; const btn = document.getElementById('btn-ampliado'); btn.textContent = ampliatedMode ? '◆ Ampliado' : '◇ Ampliado'; btn.classList.toggle('ampliado-on', ampliatedMode); if (ampliatedMode) { universalMode = false; plasticsMode = false; document.getElementById('btn-universal').textContent = '☆ Universal'; document.getElementById('btn-universal').classList.remove('universal-on'); document.getElementById('btn-plasticos').textContent = '🧪 Plásticos'; document.getElementById('btn-plasticos').classList.remove('plasticos-on'); document.getElementById('formula-panel').classList.remove('show'); speakImmediate('Modo Ampliado ativado'); } else { speakImmediate('Modo Ampliado desativado'); } lastSpokenName = ''; pendingName = ''; if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; } colorBuffer = []; lastStableColorName = ''; mismatchCounter = 0; consecutiveFrameCounter = 0; }
-function togglePlasticsMode() { if (!systemOn) return; plasticsMode = !plasticsMode; const btn = document.getElementById('btn-plasticos'); btn.textContent = plasticsMode ? '🧪 Plásticos' : '🧪 Plásticos'; btn.classList.toggle('plasticos-on', plasticsMode); if (plasticsMode) { universalMode = false; ampliatedMode = false; document.getElementById('btn-universal').textContent = '☆ Universal'; document.getElementById('btn-universal').classList.remove('universal-on'); document.getElementById('btn-ampliado').textContent = '◇ Ampliado'; document.getElementById('btn-ampliado').classList.remove('ampliado-on'); if (currentMode === 'livre' || currentMode === 'estatico') { document.getElementById('formula-panel').classList.add('show'); } speakImmediate('Modo Plásticos e Poliéster ativado'); } else { document.getElementById('formula-panel').classList.remove('show'); speakImmediate('Modo Plásticos desativado'); } lastSpokenName = ''; pendingName = ''; if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; } colorBuffer = []; lastStableColorName = ''; mismatchCounter = 0; consecutiveFrameCounter = 0; if (currentMode === 'comparacao' && comparisonRef && comparisonSample) updateComparison(); }
-function updateCalibrationStatus() { let s = 'Base: '; if (isWhiteCalibrated && isBlackCalibrated) { s += 'Régua Completa (' + (whiteCalibration.hsv.v - blackCalibration.hsv.v).toFixed(0) + '% range)'; } else if (isWhiteCalibrated) s += 'Branco V:' + whiteCalibration.hsv.v.toFixed(0) + '%'; else if (isBlackCalibrated) s += 'Preto V:' + blackCalibration.hsv.v.toFixed(0) + '%'; else s += 'não calibrada'; document.getElementById('base-info').textContent = s; }
-async function calibrateWhite() { if (!systemOn) return; if (!running) { alert('Inicie a câmera primeiro.'); return; } if (!currentMode) { alert('Selecione um modo primeiro.'); return; } const samples = []; for (let i = 0; i < 30; i++) { const px = currentMode === 'estatico' && staticPosition ? samplePixelsEstatico(staticPosition.x, staticPosition.y) : samplePixels(); if (px) samples.push({ hsv: rgbToHSV(px.r, px.g, px.b), rgb: px }); await new Promise(r => setTimeout(r, 33)); } if (samples.length > 5) { const vv = samples.map(s => s.hsv.v).sort((a, b) => a - b), med = vv[Math.floor(vv.length / 2)], flt = samples.filter(s => Math.abs(s.hsv.v - med) < 20); if (flt.length > 0) { samples.length = 0; samples.push(...flt); } } if (samples.length === 0) { alert('Erro na calibração.'); return; } let aS = 0, aV = 0, aR = 0, aG = 0, aB = 0, siS = 0, coS = 0; samples.forEach(item => { const rH = item.hsv.h * Math.PI / 180; siS += Math.sin(rH); coS += Math.cos(rH); aS += item.hsv.s; aV += item.hsv.v; aR += item.rgb.r; aG += item.rgb.g; aB += item.rgb.b; }); const len = samples.length; let aH = Math.atan2(siS / len, coS / len) * 180 / Math.PI; if (aH < 0) aH += 360; aS /= len; aV /= len; aR = Math.round(aR / len); aG = Math.round(aG / len); aB = Math.round(aB / len); whiteCalibration = { hsv: { h: aH, s: aS, v: aV }, rgb: { r: aR, g: aG, b: aB } }; isWhiteCalibrated = true; const tr = detectColorTemperature(whiteCalibration.rgb); colorTemperatureBias = tr.bias; hasColorTempCompensation = true; document.getElementById('color-name').textContent = 'Branco'; document.getElementById('color-name').style.color = '#ffffff'; document.getElementById('btn-calibrate-white').classList.add('calibrated'); updateCalibrationStatus(); colorBuffer = []; lastStableColorName = 'Branco'; lastStableHue = aH; lastStableRGB = { r: aR, g: aG, b: aB }; speakImmediate('Branco calibrado'); }
-async function calibrateBlack() { if (!systemOn) return; if (!running) { alert('Inicie a câmera primeiro.'); return; } if (!currentMode) { alert('Selecione um modo primeiro.'); return; } const samples = []; for (let i = 0; i < 30; i++) { const px = currentMode === 'estatico' && staticPosition ? samplePixelsEstatico(staticPosition.x, staticPosition.y) : samplePixels(); if (px) samples.push({ hsv: rgbToHSV(px.r, px.g, px.b), rgb: px }); await new Promise(r => setTimeout(r, 33)); } if (samples.length > 5) { const vv = samples.map(s => s.hsv.v).sort((a, b) => a - b), med = vv[Math.floor(vv.length / 2)], flt = samples.filter(s => Math.abs(s.hsv.v - med) < 20); if (flt.length > 0) { samples.length = 0; samples.push(...flt); } } if (samples.length === 0) { alert('Erro na calibração.'); return; } let aS = 0, aV = 0, aR = 0, aG = 0, aB = 0, siS = 0, coS = 0; samples.forEach(item => { const rH = item.hsv.h * Math.PI / 180; siS += Math.sin(rH); coS += Math.cos(rH); aS += item.hsv.s; aV += item.hsv.v; aR += item.rgb.r; aG += item.rgb.g; aB += item.rgb.b; }); const len = samples.length; let aH = Math.atan2(siS / len, coS / len) * 180 / Math.PI; if (aH < 0) aH += 360; aS /= len; aV /= len; aR = Math.round(aR / len); aG = Math.round(aG / len); aB = Math.round(aB / len); blackCalibration = { hsv: { h: aH, s: aS, v: aV }, rgb: { r: aR, g: aG, b: aB } }; isBlackCalibrated = true; document.getElementById('color-name').textContent = 'Preto'; document.getElementById('color-name').style.color = '#aaa'; document.getElementById('btn-calibrate-black').classList.add('calibrated'); updateCalibrationStatus(); colorBuffer = []; lastStableColorName = 'Preto'; lastStableHue = aH; lastStableRGB = { r: aR, g: aG, b: aB }; speakImmediate('Preto calibrado'); }
-function resetWhite() { if (!systemOn) return; whiteCalibration = null; isWhiteCalibrated = false; colorTemperatureBias = { r: 0, g: 0, b: 0 }; hasColorTempCompensation = false; document.getElementById('btn-calibrate-white').classList.remove('calibrated'); updateCalibrationStatus(); colorBuffer = []; lastStableColorName = ''; mismatchCounter = 0; consecutiveFrameCounter = 0; speakImmediate('Branco resetado'); }
-function resetBlack() { if (!systemOn) return; blackCalibration = null; isBlackCalibrated = false; document.getElementById('btn-calibrate-black').classList.remove('calibrated'); updateCalibrationStatus(); colorBuffer = []; lastStableColorName = ''; mismatchCounter = 0; consecutiveFrameCounter = 0; speakImmediate('Preto resetado'); }
-async function startCamera() { if (!systemOn) return; document.getElementById('start-overlay').classList.add('hide'); await getDevices(); await openCamera(); await applyManualFocusConstraints(); running = true; speakImmediate('Câmera iniciada'); requestAnimationFrame(update); }
-// ════ LOOP PRINCIPAL ════
-function update() {
-  if (!running || !systemOn || currentMode === 'comparacao' || (currentMode === 'estatico' && staticFrozen) || video.readyState < 2) { requestAnimationFrame(update); return; }
-  let px = null; if (currentMode === 'livre') px = samplePixels(); else if (currentMode === 'estatico' && staticPosition) px = samplePixelsEstatico(staticPosition.x, staticPosition.y);
-  if (!px) { requestAnimationFrame(update); return; }
-  px = applyColorTempCompensation(px); addToBuffer(rgbToHSV(px.r, px.g, px.b), px);
-  const st = getStableColor(); if (!st) { requestAnimationFrame(update); return; }
-  const variance = calculateVariance(colorBuffer);
-  let cl; if (isNoLightRGB(st.rgb)) { cl = forceBlackClassification(); } else { cl = plasticsMode ? classifyPlasticsPolymers(st.hsv, st.rgb, variance) : (ampliatedMode ? classifyColorExtended(st.hsv, st.rgb, variance) : classifyColorWithRuler(st.hsv, st.rgb, variance)); }
-  if (cl.name !== lastStableColorName && lastStableColorName !== '') mismatchCounter++; else mismatchCounter = 0;
-  const forceU = mismatchCounter >= MISMATCH_FORCE_UPDATE, shU = forceU || (currentMode === 'livre' && shouldUpdateColor(st.hsv.h, cl.name, st.rgb, st.hsv.s, variance)) || currentMode === 'estatico';
-  if (shU) {
-    if (forceU) { colorBuffer = colorBuffer.slice(-3); mismatchCounter = 0; consecutiveFrameCounter = 0; }
-    if (detectObjectChange(st.rgb)) { colorBuffer = colorBuffer.slice(-2); consecutiveFrameCounter = 0; }
-    lastStableColorName = cl.name; lastStableHue = st.hsv.h; lastStableRGB = { ...st.rgb }; lastStableVariance = variance;
-    document.getElementById('color-name').textContent = cl.name;
-    document.getElementById('color-name').style.color = rgbToHex(st.rgb.r, st.rgb.g, st.rgb.b);
-    document.getElementById('confidence-display').textContent = cl.confidence + '%';
-    document.getElementById('confidence-display').style.color = cl.confidence > 95 ? '#6a6' : (cl.confidence > 85 ? '#fa0' : '#f66');
-    if (plasticsMode && (currentMode === 'livre' || currentMode === 'estatico')) {
-      if (cl.notFound) { document.getElementById('formula-content').textContent = formatFormula(cl.formula); document.getElementById('adjustment-text').textContent = cl.adjustment; document.getElementById('adjustment-text').className = 'adjustment-text not-found'; }
-      else if (cl.forcedBlack) { document.getElementById('formula-content').textContent = formatFormula(cl.formula); document.getElementById('adjustment-text').textContent = cl.adjustment; document.getElementById('adjustment-text').className = 'adjustment-text'; }
-      else { document.getElementById('formula-content').textContent = formatFormula(cl.formula); const aT = cl.ralRef ? generatePlasticsAdjustmentText(st.rgb, st.hsv, cl.ralRef) : generateAdjustmentSuggestion(st.rgb, st.hsv, cl.color, cl.name).text; document.getElementById('adjustment-text').textContent = aT; document.getElementById('adjustment-text').className = 'adjustment-text'; }
-    }
-    triggerAudioIfChanged(cl.name); if (currentMode === 'estatico' && colorBuffer.length >= BUFFER_SIZE) staticFrozen = true;
+
+function startRefSelection() {
+  if (!systemOn || !running || currentMode !== 'comparacao') return;
+  selectingRef = true; selectingSample = false;
+  document.getElementById('color-name').textContent = 'Toque na tela: REFERÊNCIA';
+  document.getElementById('color-name').style.color = '#8ec';
+  speakImmediate('Selecione a referência');
+}
+
+function startSampleSelection() {
+  if (!systemOn || !running || currentMode !== 'comparacao') return;
+  selectingSample = true; selectingRef = false;
+  document.getElementById('color-name').textContent = 'Toque na tela: AMOSTRA';
+  document.getElementById('color-name').style.color = '#dd8';
+  speakImmediate('Selecione a amostra');
+}
+
+function captureRef(x, y) {
+  const r = capturePoint(x, y, 'ref-thumb', 'ref-reticle-marker', 'ref-color-name');
+  if (r) { 
+    comparisonRef = r; 
+    updateComparison();
+    speakImmediate('Referência capturada, ' + r.name);
   }
-  document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>' + st.rgb.r + ' <span class="lbl">G:</span>' + st.rgb.g + ' <span class="lbl">B:</span>' + st.rgb.b;
-  document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>' + st.hsv.h.toFixed(0) + '° <span class="lbl">S:</span>' + st.hsv.s.toFixed(0) + '% <span class="lbl">V:</span>' + st.hsv.v.toFixed(0) + '%';
-  document.getElementById('color-swatch').style.background = 'rgb(' + st.rgb.r + ',' + st.rgb.g + ',' + st.rgb.b + ')';
+}
+
+function captureSample(x, y) {
+  const r = capturePoint(x, y, 'sample-thumb', 'sample-reticle-marker', 'sample-color-name');
+  if (r) { 
+    comparisonSample = r; 
+    updateComparison();
+    speakImmediate('Amostra capturada, ' + r.name);
+  }
+}
+
+function resetRef() {
+  if (currentMode !== 'comparacao') return;
+  comparisonRef = null;
+  document.getElementById('ref-thumb').src = '';
+  document.getElementById('ref-thumb').style.display = 'none';
+  document.getElementById('ref-reticle-marker').style.display = 'none';
+  document.getElementById('ref-color-name').textContent = '---';
+  document.getElementById('ref-color-name').style.color = '#aac';
+  document.getElementById('ref-formula-list').textContent = '---';
+  updateComparison();
+}
+
+function resetSample() {
+  if (currentMode !== 'comparacao') return;
+  comparisonSample = null;
+  document.getElementById('sample-thumb').src = '';
+  document.getElementById('sample-thumb').style.display = 'none';
+  document.getElementById('sample-reticle-marker').style.display = 'none';
+  document.getElementById('sample-color-name').textContent = '---';
+  document.getElementById('sample-color-name').style.color = '#aac';
+  document.getElementById('sample-formula-list').textContent = '---';
+  updateComparison();
+}
+
+function resetComparison() {
+  if (currentMode !== 'comparacao') return;
+  resetRef(); resetSample();
+  document.getElementById('color-name').textContent = '---';
+  document.getElementById('color-name').style.color = '#445';
+}
+
+function formatFormula(formula) {
+  if (!formula || formula.length === 0) return 'Sem fórmula disponível';
+  return formula.map(p => `• ${p.pigmento}\n  (${p.ci} - ${p.codigo}) ~${p.proporcao}`).join('\n');
+}
+
+function updateComparison() {
+  const percentEl = document.getElementById('compatibility-percent');
+  const suggestionBox = document.getElementById('pigment-suggestion');
+  const suggestionText = document.getElementById('pigment-suggestion-text');
+  const formulasSection = document.getElementById('comp-formulas-section');
+  const refFormulaList = document.getElementById('ref-formula-list');
+  const sampleFormulaList = document.getElementById('sample-formula-list');
+
+  if (!comparisonRef || !comparisonSample) {
+    percentEl.textContent = '---';
+    percentEl.className = 'comp-percent';
+    suggestionBox.style.display = 'none';
+    formulasSection.style.display = 'none';
+    return;
+  }
+
+  const compat = calculateCompatibility(comparisonRef, comparisonSample);
+  percentEl.textContent = compat + '%';
+  percentEl.className = 'comp-percent' + (compat === 0 ? ' low' : (compat < 50 ? ' medium' : ''));
+
+  if (plasticsMode && comparisonRef.formula && comparisonSample.formula) {
+    formulasSection.style.display = 'block';
+    refFormulaList.textContent = formatFormula(comparisonRef.formula);
+    sampleFormulaList.textContent = formatFormula(comparisonSample.formula);
+  } else {
+    formulasSection.style.display = 'none';
+  }
+
+  const sug = suggestPigmentAdjustment(comparisonRef, comparisonSample);
+  suggestionText.textContent = sug.text;
+  suggestionText.className = 'comp-suggestion-text ' + sug.cssClass;
+  suggestionBox.style.display = 'block';
+
+  speakImmediate('Compatibilidade, ' + compat + ' por cento');
+}
+
+async function switchCamera() {
+  if (!systemOn) return;
+  if (devices.length < 2) { alert('Apenas uma câmera disponível.'); return; }
+  deviceIndex = (deviceIndex + 1) % devices.length;
+  await openCamera(devices[deviceIndex].deviceId);
+}
+
+function toggleAudio() {
+  if (!systemOn) return;
+  if (window.speechSynthesis) window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+  audioEnabled = !audioEnabled;
+  const btn = document.getElementById('btn-audio');
+  if (audioEnabled) { 
+    btn.textContent = '🔊 Áudio'; 
+    btn.classList.add('audio-on');
+    speakImmediate('Áudio ativado');
+  }
+  else {
+    btn.textContent = '🔇 Áudio'; 
+    btn.classList.remove('audio-on');
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
+    pendingName = ''; lastSpokenName = '';
+  }
+}
+
+async function toggleFlash() {
+  if (!systemOn) return;
+  flashEnabled = !flashEnabled;
+  const btn = document.getElementById('btn-flash');
+  if (flashEnabled) btn.classList.add('flash-on'); else btn.classList.remove('flash-on');
+  if (stream) {
+    const track = stream.getVideoTracks()[0];
+    if (track && typeof track.applyConstraints === 'function') {
+      try { await track.applyConstraints({ advanced: [{ torch: flashEnabled }] }); }
+      catch (e) { if (flashEnabled) { flashEnabled = false; btn.classList.remove('flash-on'); } }
+    }
+  }
+}
+
+function toggleUniversalMode() {
+  if (!systemOn) return;
+  universalMode = !universalMode;
+  const btn = document.getElementById('btn-universal');
+  btn.textContent = universalMode ? '⭐ Universal' : '☆ Universal';
+  btn.classList.toggle('universal-on', universalMode);
+  if (universalMode) {
+    ampliatedMode = false; plasticsMode = false;
+    document.getElementById('btn-ampliado').textContent = '◇ Ampliado';
+    document.getElementById('btn-ampliado').classList.remove('ampliado-on');
+    document.getElementById('btn-plasticos').textContent = '🧪 Plásticos';
+    document.getElementById('btn-plasticos').classList.remove('plasticos-on');
+    document.getElementById('formula-panel').classList.remove('show');
+    speakImmediate('Modo Universal ativado');
+  } else {
+    speakImmediate('Modo Universal desativado');
+  }
+  lastSpokenName = ''; pendingName = '';
+  if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
+}
+
+function toggleAmpliatedMode() {
+  if (!systemOn) return;
+  ampliatedMode = !ampliatedMode;
+  const btn = document.getElementById('btn-ampliado');
+  btn.textContent = ampliatedMode ? '◆ Ampliado' : '◇ Ampliado';
+  btn.classList.toggle('ampliado-on', ampliatedMode);
+  if (ampliatedMode) {
+    universalMode = false; plasticsMode = false;
+    document.getElementById('btn-universal').textContent = '☆ Universal';
+    document.getElementById('btn-universal').classList.remove('universal-on');
+    document.getElementById('btn-plasticos').textContent = '🧪 Plásticos';
+    document.getElementById('btn-plasticos').classList.remove('plasticos-on');
+    document.getElementById('formula-panel').classList.remove('show');
+    speakImmediate('Modo Ampliado ativado');
+  } else {
+    speakImmediate('Modo Ampliado desativado');
+  }
+  lastSpokenName = ''; pendingName = '';
+  if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
+  colorBuffer = []; lastStableColorName = ''; mismatchCounter = 0; consecutiveFrameCounter = 0;
+}
+
+function togglePlasticsMode() {
+  if (!systemOn) return;
+  plasticsMode = !plasticsMode;
+  const btn = document.getElementById('btn-plasticos');
+  btn.classList.toggle('plasticos-on', plasticsMode);
+  if (plasticsMode) {
+    universalMode = false; ampliatedMode = false;
+    document.getElementById('btn-universal').textContent = '☆ Universal';
+    document.getElementById('btn-universal').classList.remove('universal-on');
+    document.getElementById('btn-ampliado').textContent = '◇ Ampliado';
+    document.getElementById('btn-ampliado').classList.remove('ampliado-on');
+    if (currentMode === 'livre' || currentMode === 'estatico') {
+      document.getElementById('formula-panel').classList.add('show');
+    }
+    speakImmediate('Modo Plásticos ativado');
+  } else {
+    document.getElementById('formula-panel').classList.remove('show');
+    speakImmediate('Modo Plásticos desativado');
+  }
+  lastSpokenName = ''; pendingName = '';
+  if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
+  colorBuffer = []; lastStableColorName = ''; mismatchCounter = 0; consecutiveFrameCounter = 0;
+  if (currentMode === 'comparacao' && comparisonRef && comparisonSample) updateComparison();
+}
+
+function updateCalibrationStatus() {
+  let statusText = 'Base: ';
+  if (isWhiteCalibrated && isBlackCalibrated) {
+    const vRange = whiteCalibration.hsv.v - blackCalibration.hsv.v;
+    statusText += `Régua Completa (${vRange.toFixed(0)}% range)`;
+  } else if (isWhiteCalibrated) statusText += `Branco V:${whiteCalibration.hsv.v.toFixed(0)}%`;
+  else if (isBlackCalibrated) statusText += `Preto V:${blackCalibration.hsv.v.toFixed(0)}%`;
+  else statusText += 'não calibrada';
+  document.getElementById('base-info').textContent = statusText;
+}
+
+async function calibrateWhite() {
+  if (!systemOn) return;
+  if (!running) { alert('Inicie a câmera primeiro.'); return; }
+  if (!currentMode) { alert('Selecione um modo primeiro.'); return; }
+  const samples = [];
+  for (let i = 0; i < 30; i++) {
+    const pixels = currentMode === 'estatico' && staticPosition ? samplePixelsEstatico(staticPosition.x, staticPosition.y) : samplePixels();
+    if (pixels) samples.push({ hsv: rgbToHSV(pixels.r, pixels.g, pixels.b), rgb: pixels });
+    await new Promise(r => setTimeout(r, 33));
+  }
+  if (samples.length > 5) {
+    const vValues = samples.map(s => s.hsv.v).sort((a, b) => a - b);
+    const median = vValues[Math.floor(vValues.length / 2)];
+    const filtered = samples.filter(s => Math.abs(s.hsv.v - median) < 20);
+    if (filtered.length > 0) samples.length = 0, samples.push(...filtered);
+  }
+  if (samples.length === 0) { alert('Erro na calibração.'); return; }
+  let avgS=0, avgV=0, avgR=0, avgG=0, avgB=0, sinSum=0, cosSum=0;
+  samples.forEach(item => {
+    const radH = item.hsv.h * Math.PI / 180;
+    sinSum += Math.sin(radH); cosSum += Math.cos(radH);
+    avgS += item.hsv.s; avgV += item.hsv.v;
+    avgR += item.rgb.r; avgG += item.rgb.g; avgB += item.rgb.b;
+  });
+  const len = samples.length;
+  let avgH = Math.atan2(sinSum / len, cosSum / len) * 180 / Math.PI;
+  if (avgH < 0) avgH += 360;
+  avgS /= len; avgV /= len;
+  avgR = Math.round(avgR / len); avgG = Math.round(avgG / len); avgB = Math.round(avgB / len);
+  whiteCalibration = { hsv: { h: avgH, s: avgS, v: avgV }, rgb: { r: avgR, g: avgG, b: avgB } };
+  isWhiteCalibrated = true;
+  const tempResult = detectColorTemperature(whiteCalibration.rgb);
+  colorTemperatureBias = tempResult.bias; hasColorTempCompensation = true;
+  document.getElementById('color-name').textContent = 'Branco';
+  document.getElementById('color-name').style.color = '#ffffff';
+  document.getElementById('btn-calibrate-white').classList.add('calibrated');
+  updateCalibrationStatus();
+  colorBuffer = []; lastStableColorName = 'Branco'; lastStableHue = avgH;
+  lastStableRGB = { r: avgR, g: avgG, b: avgB };
+  speakImmediate('Branco calibrado');
+}
+
+async function calibrateBlack() {
+  if (!systemOn) return;
+  if (!running) { alert('Inicie a câmera primeiro.'); return; }
+  if (!currentMode) { alert('Selecione um modo primeiro.'); return; }
+  const samples = [];
+  for (let i = 0; i < 30; i++) {
+    const pixels = currentMode === 'estatico' && staticPosition ? samplePixelsEstatico(staticPosition.x, staticPosition.y) : samplePixels();
+    if (pixels) samples.push({ hsv: rgbToHSV(pixels.r, pixels.g, pixels.b), rgb: pixels });
+    await new Promise(r => setTimeout(r, 33));
+  }
+  if (samples.length > 5) {
+    const vValues = samples.map(s => s.hsv.v).sort((a, b) => a - b);
+    const median = vValues[Math.floor(vValues.length / 2)];
+    const filtered = samples.filter(s => Math.abs(s.hsv.v - median) < 20);
+    if (filtered.length > 0) samples.length = 0, samples.push(...filtered);
+  }
+  if (samples.length === 0) { alert('Erro na calibração.'); return; }
+  let avgS=0, avgV=0, avgR=0, avgG=0, avgB=0, sinSum=0, cosSum=0;
+  samples.forEach(item => {
+    const radH = item.hsv.h * Math.PI / 180;
+    sinSum += Math.sin(radH); cosSum += Math.cos(radH);
+    avgS += item.hsv.s; avgV += item.hsv.v;
+    avgR += item.rgb.r; avgG += item.rgb.g; avgB += item.rgb.b;
+  });
+  const len = samples.length;
+  let avgH = Math.atan2(sinSum / len, cosSum / len) * 180 / Math.PI;
+  if (avgH < 0) avgH += 360;
+  avgS /= len; avgV /= len;
+  avgR = Math.round(avgR / len); avgG = Math.round(avgG / len); avgB = Math.round(avgB / len);
+  blackCalibration = { hsv: { h: avgH, s: avgS, v: avgV }, rgb: { r: avgR, g: avgG, b: avgB } };
+  isBlackCalibrated = true;
+  document.getElementById('color-name').textContent = 'Preto';
+  document.getElementById('color-name').style.color = '#1a1a2a';
+  document.getElementById('btn-calibrate-black').classList.add('calibrated');
+  updateCalibrationStatus();
+  colorBuffer = []; lastStableColorName = 'Preto'; lastStableHue = avgH;
+  lastStableRGB = { r: avgR, g: avgG, b: avgB };
+  speakImmediate('Preto calibrado');
+}
+
+function resetWhite() {
+  if (!systemOn) return;
+  whiteCalibration = null; isWhiteCalibrated = false;
+  colorTemperatureBias = { r: 0, g: 0, b: 0 }; hasColorTempCompensation = false;
+  document.getElementById('btn-calibrate-white').classList.remove('calibrated');
+  updateCalibrationStatus();
+  colorBuffer = []; lastStableColorName = ''; mismatchCounter = 0; consecutiveFrameCounter = 0;
+  speakImmediate('Branco resetado');
+}
+
+function resetBlack() {
+  if (!systemOn) return;
+  blackCalibration = null; isBlackCalibrated = false;
+  document.getElementById('btn-calibrate-black').classList.remove('calibrated');
+  updateCalibrationStatus();
+  colorBuffer = []; lastStableColorName = ''; mismatchCounter = 0; consecutiveFrameCounter = 0;
+  speakImmediate('Preto resetado');
+}
+
+async function startCamera() {
+  if (!systemOn) return;
+  document.getElementById('start-overlay').classList.add('hide');
+  await getDevices(); await openCamera();
+  running = true;
   requestAnimationFrame(update);
 }
-// ════ EVENT LISTENERS ════
-document.addEventListener('click', function(e) { const dd = document.getElementById('mode-dropdown'), bm = document.getElementById('btn-modes'); if (!bm.contains(e.target) && !dd.contains(e.target)) dd.classList.remove('show'); });
-cameraContainer.addEventListener('click', function(e) {
-  if (currentMode === 'comparacao' && running) { const r = cameraContainer.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top; if (selectingRef) { captureRef(x, y); selectingRef = false; return; } if (selectingSample) { captureSample(x, y); selectingSample = false; return; } return; }
-  if (currentMode !== 'estatico' || !running || staticFrozen) return;
-  const r = cameraContainer.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top;
-  staticPosition = { x, y }; staticAnalysisActive = true; staticFrozen = false;
-  reticle.style.left = x + 'px'; reticle.style.top = y + 'px'; reticle.style.transform = 'translate(-50%, -50%)'; reticle.classList.add('show');
+
+// ════════════════════════════════════════════════════════════════
+// 🔄 LOOP PRINCIPAL
+// ════════════════════════════════════════════════════════════════
+function update() {
+  if (!running || !systemOn || currentMode === 'comparacao' || (currentMode === 'estatico' && staticFrozen) || video.readyState < 2) {
+    requestAnimationFrame(update);
+    return;
+  }
+  let pixels = null;
+  if (currentMode === 'livre') pixels = samplePixels();
+  else if (currentMode === 'estatico' && staticPosition) pixels = samplePixelsEstatico(staticPosition.x, staticPosition.y);
+  if (!pixels) { requestAnimationFrame(update); return; }
+
+  pixels = applyColorTempCompensation(pixels);
+  addToBuffer(rgbToHSV(pixels.r, pixels.g, pixels.b), pixels);
+  const stable = getStableColor();
+  if (!stable) { requestAnimationFrame(update); return; }
+
+  const variance = calculateVariance(colorBuffer);
+  const classification = plasticsMode
+    ? classifyPlasticsPolymers(stable.hsv, stable.rgb, variance)
+    : (ampliatedMode ? classifyColorExtended(stable.hsv, stable.rgb, variance) : classifyColorWithRuler(stable.hsv, stable.rgb, variance));
+
+  if (classification.name !== lastStableColorName && lastStableColorName !== '') mismatchCounter++;
+  else mismatchCounter = 0;
+  const forceUpdate = mismatchCounter >= MISMATCH_FORCE_UPDATE;
+
+  const shouldUpdate = forceUpdate || (currentMode === 'livre' && shouldUpdateColor(stable.hsv.h, classification.name, stable.rgb, stable.hsv.s, variance));
+
+  if (shouldUpdate) {
+    if (forceUpdate) { colorBuffer = colorBuffer.slice(-3); mismatchCounter = 0; consecutiveFrameCounter = 0; }
+    if (detectObjectChange(stable.rgb)) { colorBuffer = colorBuffer.slice(-2); consecutiveFrameCounter = 0; }
+
+    lastStableColorName = classification.name;
+    lastStableHue = stable.hsv.h;
+    lastStableRGB = { ...stable.rgb };
+    lastStableVariance = variance;
+
+    document.getElementById('color-name').textContent = classification.name;
+    document.getElementById('color-name').style.color = classification.color;
+    document.getElementById('confidence-display').textContent = `${classification.confidence}%`;
+    document.getElementById('confidence-display').style.color =
+      classification.confidence > 95 ? '#6a6' : (classification.confidence > 85 ? '#fa0' : '#f66');
+    
+    if (plasticsMode && (currentMode === 'livre' || currentMode === 'estatico')) {
+      document.getElementById('formula-content').textContent = formatFormula(classification.formula);
+      const adjustment = generateAdjustmentSuggestion(stable.rgb, stable.hsv, classification.color, classification.name);
+      document.getElementById('adjustment-text').textContent = adjustment.text;
+      document.getElementById('adjustment-text').className = 'adjustment-text ' + adjustment.cssClass;
+    }
+    
+    triggerAudioIfChanged(classification.name + ', ' + classification.confidence + ' por cento');
+
+    if (currentMode === 'estatico' && colorBuffer.length >= BUFFER_SIZE) staticFrozen = true;
+  }
+
+  document.getElementById('rgb-line').innerHTML =
+    `<span class="lbl">R:</span>${stable.rgb.r} <span class="lbl">G:</span>${stable.rgb.g} <span class="lbl">B:</span>${stable.rgb.b}`;
+  document.getElementById('hsv-line').innerHTML =
+    `<span class="lbl">H:</span>${stable.hsv.h.toFixed(0)}° <span class="lbl">S:</span>${stable.hsv.s.toFixed(0)}% <span class="lbl">V:</span>${stable.hsv.v.toFixed(0)}%`;
+  document.getElementById('color-swatch').style.background =
+    `rgb(${stable.rgb.r},${stable.rgb.g},${stable.rgb.b})`;
+
+  requestAnimationFrame(update);
+}
+
+// ════════════════════════════════════════════════════════════════
+// 🎪 EVENT LISTENERS
+// ════════════════════════════════════════════════════════════════
+document.addEventListener('click', function(e) {
+  const dropdown = document.getElementById('mode-dropdown');
+  const btnModes = document.getElementById('btn-modes');
+  if (!btnModes.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('show');
 });
-console.log('%c🎨 Motor de Cores v4.3 PRO++ - FOCO MANUAL + CLASSIFICAÇÃO VALIDADA', 'color: #6effa0; font-size: 14px; font-weight: bold;');
-console.log('%c📚 RAL P1: ' + RAL_P1.length + ' | RAL P2: ' + RAL_P2.length + ' | Total: ' + RAL_LIBRARY_FULL.length, 'color: #7fdbff; font-size: 12px;');
-console.log('%c🔒 Compatibilidade mínima: ' + MIN_COMPATIBILITY_THRESHOLD + '% | 📷 Foco manual: evita desfoque', 'color: #ffcc60; font-size: 12px;');
+
+cameraContainer.addEventListener('click', function(e) {
+  if (currentMode === 'comparacao' && running) {
+    const rect = cameraContainer.getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+    if (selectingRef) { captureRef(x, y); selectingRef = false; return; }
+    if (selectingSample) { captureSample(x, y); selectingSample = false; return; }
+    return;
+  }
+  if (currentMode !== 'estatico' || !running || staticFrozen) return;
+  const rect = cameraContainer.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  staticPosition = { x, y };
+  staticAnalysisActive = true; staticFrozen = false;
+  reticle.style.left = x + 'px'; reticle.style.top = y + 'px';
+  reticle.style.transform = 'translate(-50%, -50%)';
+  reticle.classList.add('show');
+});
+
+// ════════════════════════════════════════════════════════════════
+// ✅ SISTEMA CARREGADO
+// ════════════════════════════════════════════════════════════════
+console.log('%c🎨 Motor de Cores v3.5 PRO++ - CATÁLOGO DIGITAL ATIVADO!', 'color: #6effa0; font-size: 14px; font-weight: bold;');
+console.log('%c📚 Biblioteca Plásticos: ' + Object.keys(PLASTICS_LIBRARY).length + ' cores', 'color: #7fdbff; font-size: 12px;');
+console.log('%c🔒 Validação por Maior Score: ATIVA', 'color: #ffcc60; font-size: 12px;');
+console.log('%c🎤 Sistema de Áudio Completo: ATIVO', 'color: #ff88aa; font-size: 12px;');
 </script>
 </body>
 </html>
