@@ -5,544 +5,87 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Motor de Cores v4.1 - RAL Plastics Lab/DeltaE</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: #0a0a0f;
-    color: #e0e0f0;
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  #header {
-    height: 34px;
-    min-height: 34px;
-    background: rgba(10,10,20,0.92);
-    padding: 5px 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid rgba(100,100,255,0.15);
-    flex-shrink: 0;
-    gap: 10px;
-    overflow: hidden;
-  }
-
-  #header-title {
-    font-size: 0.6rem;
-    color: #556;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  #library-count {
-    font-size: 0.58rem;
-    color: #667;
-    white-space: nowrap;
-  }
-
-  #btn-system {
-    padding: 5px 12px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-  }
-
-  #btn-system.system-on {
-    background: linear-gradient(135deg, #1a4a2e, #2a7a4e);
-    color: #6effa0;
-    border: 1px solid rgba(60,200,100,0.45);
-    box-shadow: 0 0 8px rgba(60,200,100,0.25);
-  }
-
-  #btn-system.system-off {
-    background: linear-gradient(135deg, #3a1a1a, #5a2020);
-    color: #ff5050;
-    border: 1px solid rgba(200,50,50,0.45);
-    box-shadow: 0 0 8px rgba(200,50,50,0.2);
-  }
-
-  #top-bar {
-    height: 52px;
-    min-height: 52px;
-    max-height: 52px;
-    background: rgba(8,8,20,0.92);
-    border-bottom: 1px solid rgba(100,100,255,0.12);
-    padding: 5px 10px;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    flex-wrap: nowrap;
-    flex-shrink: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: thin;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-  }
-
-  .btn-top {
-    padding: 5px 8px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.58rem;
-    font-weight: 800;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
-    transition: all 0.18s ease;
-    white-space: nowrap;
-    flex: 0 0 auto;
-    background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
-    color: #778;
-    border: 1px solid rgba(100,100,150,0.2);
-  }
-
-  .btn-top:hover:not(:disabled) {
-    background: linear-gradient(135deg, #252535, #353550);
-    color: #ccd;
-  }
-
-  .btn-top:disabled { opacity: 0.25; cursor: not-allowed; }
-
-  .active-green {
-    background: linear-gradient(135deg, #1a4a2e, #2a7a4e) !important;
-    color: #6effa0 !important;
-    border-color: rgba(60,200,100,0.5) !important;
-    box-shadow: 0 0 7px rgba(60,200,100,0.22);
-  }
-
-  .active-blue {
-    background: linear-gradient(135deg, #1a2a4e, #2a4a7e) !important;
-    color: #6eb0ff !important;
-    border-color: rgba(60,150,255,0.5) !important;
-  }
-
-  .active-amber {
-    background: linear-gradient(135deg, #4a2a1e, #6a4a30) !important;
-    color: #ffcc80 !important;
-    border-color: rgba(200,150,80,0.5) !important;
-  }
-
-  .active-violet {
-    background: linear-gradient(135deg, #2a1a3e, #4a2a6e) !important;
-    color: #ba8eff !important;
-    border-color: rgba(150,80,200,0.45) !important;
-  }
-
-  #color-swatch {
-    width: 28px;
-    min-width: 28px;
-    height: 28px;
-    border-radius: 5px;
-    border: 1px solid rgba(255,255,255,0.12);
-    flex-shrink: 0;
-    background: #1a1a2e;
-    box-shadow: 0 0 8px rgba(0,0,0,0.5);
-  }
-
-  #color-name {
-    font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.3px;
-    width: 280px;
-    min-width: 280px;
-    max-width: 280px;
-    color: #445;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.05;
-  }
-
-  #confidence-display {
-    font-size: 0.6rem;
-    color: #6a6;
-    white-space: nowrap;
-    font-weight: 800;
-    width: 46px;
-    min-width: 46px;
-    max-width: 46px;
-    text-align: left;
-  }
-
-  .sep {
-    color: rgba(100,100,255,0.3);
-    font-size: 0.7rem;
-    flex: 0 0 auto;
-  }
-
-  .data-inline {
-    font-size: 0.61rem;
-    font-family: 'Courier New', monospace;
-    color: #aab;
-    white-space: nowrap;
-    flex: 0 0 auto;
-  }
-
-  .data-inline .lbl { color: #558; margin-right: 1px; }
-
-  #base-info {
-    font-size: 0.58rem;
-    color: #667;
-    white-space: nowrap;
-    min-width: 118px;
-    flex: 0 0 auto;
-  }
-
-  #main {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-    background: #000;
-  }
-
-  #camera-container {
-    position: absolute;
-    inset: 0;
-    background: #000;
-  }
-
-  #videoEl {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: 1;
-  }
-
-  #canvasEl { display: none; }
-
-  #reticle {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 60px;
-    height: 60px;
-    pointer-events: none;
-    z-index: 20;
-    display: none;
-  }
-
-  #reticle.show { display: block; }
-
-  .reticle-h {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: rgba(120,220,255,0.9);
-    transform: translateY(-50%);
-    box-shadow: 0 0 4px rgba(120,220,255,0.5);
-  }
-
-  .reticle-v {
-    position: absolute;
-    left: 50%;
-    top: 0;
-    height: 100%;
-    width: 2px;
-    background: rgba(120,220,255,0.9);
-    transform: translateX(-50%);
-    box-shadow: 0 0 4px rgba(120,220,255,0.5);
-  }
-
-  .reticle-box {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 22px;
-    height: 22px;
-    border: 1.5px solid rgba(120,220,255,0.5);
-  }
-
-  .reticle-dot {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: rgba(120,220,255,0.9);
-    box-shadow: 0 0 4px rgba(120,220,255,0.8);
-  }
-
-  #mode-select-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.92);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 35;
-    gap: 18px;
-    padding: 20px;
-    text-align: center;
-  }
-
-  #mode-select-overlay.hide { display: none; }
-
-  #mode-select-overlay h2 {
-    color: #aac;
-    font-size: 1.3rem;
-    letter-spacing: 1px;
-    font-weight: 800;
-  }
-
-  #mode-select-overlay p {
-    color: #778;
-    font-size: 0.9rem;
-    max-width: 520px;
-    line-height: 1.5;
-  }
-
-  #start-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 30;
-    gap: 14px;
-    text-align: center;
-  }
-
-  #start-overlay.hide { display: none; }
-
-  #start-overlay p { color: #778; font-size: 0.88rem; }
-
-  #btn-start {
-    padding: 13px 30px;
-    background: linear-gradient(135deg, #3a3a9e, #7b5ce8);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    font-weight: 800;
-    cursor: pointer;
-    letter-spacing: 1px;
-    transition: all 0.2s;
-  }
-
-  #btn-start:hover { transform: scale(1.05); }
-
-  .panel {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(8,8,20,0.95);
-    border-top: 1px solid rgba(100,100,255,0.2);
-    padding: 1.2vh 1.5vw;
-    z-index: 22;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    max-height: 55vh;
-    overflow-y: auto;
-  }
-
-  #formula-panel {
-    display: none;
-    flex-direction: column;
-    gap: 0.8vh;
-  }
-
-  #formula-panel.show { display: flex; }
-
-  .formula-section { width: 100%; margin-bottom: 0.4vh; }
-
-  .formula-title {
-    font-size: 0.65rem;
-    font-weight: 800;
-    letter-spacing: 1.2px;
-    color: #6ac;
-    text-transform: uppercase;
-    margin-bottom: 0.4vh;
-  }
-
-  .formula-content,
-  .adjustment-text {
-    font-size: 0.64rem;
-    color: #aac;
-    line-height: 1.4;
-    font-family: 'Courier New', monospace;
-    white-space: pre-line;
-  }
-
-  .adjustment-text {
-    color: #8ec;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-  }
-
-  #comparison-panel {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.8vh;
-  }
-
-  #comparison-panel.show { display: flex; }
-
-  .comp-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1.5vw;
-    width: 100%;
-  }
-
-  .comp-block {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5vh;
-    flex: 1;
-    max-width: 18vw;
-  }
-
-  .comp-block.comp-center {
-    flex: 0 0 auto;
-    min-width: 14vw;
-  }
-
-  .comp-label {
-    font-size: clamp(0.5rem, 1.8vw, 0.56rem);
-    font-weight: 800;
-    letter-spacing: 0.9px;
-    color: #778;
-    text-transform: uppercase;
-  }
-
-  .comp-img-wrap {
-    width: 100%;
-    aspect-ratio: 4/3;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid rgba(100,100,255,0.25);
-    background: #000;
-  }
-
-  .comp-thumb {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .comp-color-name {
-    font-size: clamp(0.6rem, 2vw, 0.68rem);
-    font-weight: 800;
-    color: #aac;
-    text-align: center;
-    min-height: 1.2em;
-    line-height: 1.2;
-  }
-
-  .comp-percent-label {
-    font-size: clamp(0.48rem, 1.6vw, 0.54rem);
-    font-weight: 800;
-    letter-spacing: 1px;
-    color: #557;
-    text-transform: uppercase;
-    text-align: center;
-  }
-
-  .comp-percent {
-    font-size: clamp(1.15rem, 4vw, 1.5rem);
-    font-weight: 900;
-    color: #6effa0;
-    text-align: center;
-    text-shadow: 0 0 10px rgba(110,255,160,0.35);
-    line-height: 1;
-  }
-
-  .comp-percent.low { color: #ff5050; }
-  .comp-percent.medium { color: #ffcc60; }
-
-  .comp-info-section {
-    width: 100%;
-    max-width: 92vw;
-    padding: 1vh 2vw;
-    background: rgba(15,15,30,0.86);
-    border: 1px solid rgba(120,220,255,0.3);
-    border-radius: 6px;
-    margin-top: 0.3vh;
-  }
-
-  .comp-info-title {
-    font-size: clamp(0.48rem, 1.6vw, 0.56rem);
-    font-weight: 800;
-    letter-spacing: 1.3px;
-    color: #667;
-    text-transform: uppercase;
-    text-align: center;
-    margin-bottom: 0.6vh;
-  }
-
-  .comp-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5vw;
-  }
-
-  .comp-info-label {
-    font-size: clamp(0.5rem, 1.7vw, 0.58rem);
-    font-weight: 800;
-    color: #8ac;
-    margin-bottom: 0.4vh;
-  }
-
-  .comp-info-text {
-    font-size: clamp(0.52rem, 1.8vw, 0.62rem);
-    color: #aac;
-    line-height: 1.4;
-    font-family: 'Courier New', monospace;
-    white-space: pre-line;
-  }
-
-  .comp-suggestion-text {
-    font-size: clamp(0.62rem, 2.2vw, 0.72rem);
-    font-weight: 600;
-    color: #8ec;
-    line-height: 1.35;
-    white-space: pre-line;
-  }
-
-  @media (max-width: 768px) {
-    #header { padding: 4px 8px; }
-    #btn-system { font-size: 0.6rem; padding: 4px 9px; }
-    #top-bar { gap: 5px; padding: 4px 8px; height: 50px; min-height: 50px; max-height: 50px; }
-    .btn-top { padding: 3px 6px; font-size: 0.55rem; }
-    #color-name { font-size: 0.72rem; width: 210px; min-width: 210px; max-width: 210px; }
-    .data-inline { font-size: 0.58rem; }
-    #base-info { font-size: 0.54rem; }
-    .comp-row { gap: 2vw; }
-    .comp-block { max-width: 28vw; }
-    .comp-block.comp-center { min-width: 18vw; }
-    .comp-grid { grid-template-columns: 1fr; }
-  }
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0f;color:#e0e0f0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;height:100vh;overflow:hidden;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+#header{background:rgba(10,10,20,.92);padding:5px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(100,100,255,.15);z-index:30;position:relative;flex-shrink:0;gap:10px}
+#btn-system{padding:5px 12px;border:none;border-radius:5px;cursor:pointer;font-size:.68rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;transition:all .2s ease;white-space:nowrap}
+#btn-system.system-on{background:linear-gradient(135deg,#1a4a2e,#2a7a4e);color:#6effa0;border:1px solid rgba(60,200,100,.45);box-shadow:0 0 8px rgba(60,200,100,.25)}
+#btn-system.system-off{background:linear-gradient(135deg,#3a1a1a,#5a2020);color:#ff5050;border:1px solid rgba(200,50,50,.45);box-shadow:0 0 8px rgba(200,50,50,.2)}
+#header-title{font-size:.6rem;color:#556;letter-spacing:1px;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#library-count{font-size:.58rem;color:#667;white-space:nowrap}
+#top-bar{background:rgba(8,8,20,.9);border-bottom:1px solid rgba(100,100,255,.12);padding:5px 10px;display:flex;align-items:center;gap:7px;z-index:25;position:relative;flex-shrink:0;flex-wrap:wrap;overflow:visible;height:auto;min-height:unset;max-height:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.btn-top{padding:4px 8px;border:none;border-radius:5px;cursor:pointer;font-size:.58rem;font-weight:800;letter-spacing:.4px;text-transform:uppercase;transition:all .18s ease;white-space:nowrap;flex-shrink:0;background:linear-gradient(135deg,#1a1a2e,#2a2a3e);color:#778;border:1px solid rgba(100,100,150,.2)}
+.btn-top:hover:not(:disabled){background:linear-gradient(135deg,#252535,#353550);color:#ccd}
+.btn-top:disabled{opacity:.25;cursor:not-allowed}
+.active-green{background:linear-gradient(135deg,#1a4a2e,#2a7a4e)!important;color:#6effa0!important;border-color:rgba(60,200,100,.5)!important;box-shadow:0 0 7px rgba(60,200,100,.22)}
+.active-blue{background:linear-gradient(135deg,#1a2a4e,#2a4a7e)!important;color:#6eb0ff!important;border-color:rgba(60,150,255,.5)!important}
+.active-amber{background:linear-gradient(135deg,#4a2a1e,#6a4a30)!important;color:#ffcc80!important;border-color:rgba(200,150,80,.5)!important}
+.active-violet{background:linear-gradient(135deg,#2a1a3e,#4a2a6e)!important;color:#ba8eff!important;border-color:rgba(150,80,200,.45)!important}
+#color-swatch{width:28px;min-width:28px;height:28px;border-radius:5px;border:1px solid rgba(255,255,255,.12);flex-shrink:0;background:#1a1a2e;box-shadow:0 0 8px rgba(0,0,0,.5)}
+#color-name{font-size:.78rem;font-weight:800;letter-spacing:.3px;width:280px;min-width:280px;max-width:280px;color:#445;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.05;display:block}
+#confidence-display{font-size:.6rem;color:#6a6;white-space:nowrap;font-weight:800;width:46px;min-width:46px;max-width:46px;text-align:left}
+.sep{color:rgba(100,100,255,.3);font-size:.7rem;flex-shrink:0}
+.data-inline{font-size:.61rem;font-family:'Courier New',monospace;color:#aab;white-space:nowrap;flex-shrink:0}
+.data-inline .lbl{color:#558;margin-right:1px}
+#base-info{font-size:.58rem;color:#667;white-space:nowrap;min-width:118px;flex-shrink:0}
+#main{flex:1;position:relative;overflow:hidden;background:#000}
+#camera-container{position:absolute;inset:0;background:#000}
+#videoEl{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+#canvasEl{display:none}
+#reticle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;pointer-events:none;z-index:20;display:none}
+#reticle.show{display:block}
+.reticle-h{position:absolute;top:50%;left:0;width:100%;height:2px;background:rgba(120,220,255,.9);transform:translateY(-50%);box-shadow:0 0 4px rgba(120,220,255,.5)}
+.reticle-v{position:absolute;left:50%;top:0;height:100%;width:2px;background:rgba(120,220,255,.9);transform:translateX(-50%);box-shadow:0 0 4px rgba(120,220,255,.5)}
+.reticle-box{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;border:1.5px solid rgba(120,220,255,.5)}
+.reticle-dot{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:4px;height:4px;border-radius:50%;background:rgba(120,220,255,.9);box-shadow:0 0 4px rgba(120,220,255,.8)}
+#mode-select-overlay{position:absolute;inset:0;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:35;gap:18px;padding:20px;text-align:center}
+#mode-select-overlay.hide{display:none}
+#mode-select-overlay h2{color:#aac;font-size:1.3rem;letter-spacing:1px;font-weight:800}
+#mode-select-overlay p{color:#778;font-size:.9rem;max-width:520px;line-height:1.5}
+#start-overlay{position:absolute;inset:0;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:30;gap:14px;text-align:center}
+#start-overlay.hide{display:none}
+#start-overlay p{color:#778;font-size:.88rem}
+#btn-start{padding:13px 30px;background:linear-gradient(135deg,#3a3a9e,#7b5ce8);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:800;cursor:pointer;letter-spacing:1px;transition:all .2s}
+#btn-start:hover{transform:scale(1.05)}
+.panel{position:absolute;bottom:0;left:0;right:0;background:rgba(8,8,20,.95);border-top:1px solid rgba(100,100,255,.2);padding:1.2vh 1.5vw;z-index:22;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);max-height:55vh;overflow-y:auto}
+#formula-panel{display:none;flex-direction:column;gap:.8vh}
+#formula-panel.show{display:flex}
+.formula-section{width:100%;margin-bottom:.4vh}
+.formula-title{font-size:.65rem;font-weight:800;letter-spacing:1.2px;color:#6ac;text-transform:uppercase;margin-bottom:.4vh}
+.formula-content,.adjustment-text{font-size:.64rem;color:#aac;line-height:1.4;font-family:'Courier New',monospace;white-space:pre-line}
+.adjustment-text{color:#8ec;font-family:'Segoe UI',system-ui,sans-serif}
+#comparison-panel{display:none;flex-direction:column;align-items:center;gap:.8vh}
+#comparison-panel.show{display:flex}
+.comp-row{display:flex;align-items:center;justify-content:center;gap:1.5vw;width:100%}
+.comp-block{display:flex;flex-direction:column;align-items:center;gap:.5vh;flex:1;max-width:18vw}
+.comp-block.comp-center{flex:0 0 auto;min-width:14vw}
+.comp-label{font-size:clamp(.5rem,1.8vw,.56rem);font-weight:800;letter-spacing:.9px;color:#778;text-transform:uppercase}
+.comp-img-wrap{width:100%;aspect-ratio:4/3;border-radius:6px;overflow:hidden;border:1px solid rgba(100,100,255,.25);background:#000}
+.comp-thumb{width:100%;height:100%;object-fit:cover;display:block}
+.comp-color-name{font-size:clamp(.6rem,2vw,.68rem);font-weight:800;color:#aac;text-align:center;min-height:1.2em;line-height:1.2}
+.comp-percent-label{font-size:clamp(.48rem,1.6vw,.54rem);font-weight:800;letter-spacing:1px;color:#557;text-transform:uppercase;text-align:center}
+.comp-percent{font-size:clamp(1.15rem,4vw,1.5rem);font-weight:900;color:#6effa0;text-align:center;text-shadow:0 0 10px rgba(110,255,160,.35);line-height:1}
+.comp-percent.low{color:#ff5050}
+.comp-percent.medium{color:#ffcc60}
+.comp-info-section{width:100%;max-width:92vw;padding:1vh 2vw;background:rgba(15,15,30,.86);border:1px solid rgba(120,220,255,.3);border-radius:6px;margin-top:.3vh}
+.comp-info-title{font-size:clamp(.48rem,1.6vw,.56rem);font-weight:800;letter-spacing:1.3px;color:#667;text-transform:uppercase;text-align:center;margin-bottom:.6vh}
+.comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5vw}
+.comp-info-label{font-size:clamp(.5rem,1.7vw,.58rem);font-weight:800;color:#8ac;margin-bottom:.4vh}
+.comp-info-text{font-size:clamp(.52rem,1.8vw,.62rem);color:#aac;line-height:1.4;font-family:'Courier New',monospace;white-space:pre-line}
+.comp-suggestion-text{font-size:clamp(.62rem,2.2vw,.72rem);font-weight:600;color:#8ec;line-height:1.35;white-space:pre-line}
+@media(max-width:768px){
+#header{padding:4px 8px}
+#btn-system{font-size:.6rem;padding:4px 9px}
+#top-bar{gap:5px;padding:4px 8px;flex-wrap:wrap;overflow:visible;height:auto;min-height:unset;max-height:none}
+.btn-top{padding:3px 6px;font-size:.55rem}
+#color-name{font-size:.72rem;width:210px;min-width:210px;max-width:210px}
+.data-inline{font-size:.58rem}
+#base-info{font-size:.54rem}
+.comp-row{gap:2vw}
+.comp-block{max-width:28vw}
+.comp-block.comp-center{min-width:18vw}
+.comp-grid{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -556,40 +99,30 @@
   <button class="btn-top" id="btn-mode-livre" onclick="selectMode('livre')">Livre</button>
   <button class="btn-top" id="btn-mode-estatico" onclick="selectMode('estatico')">Estático</button>
   <button class="btn-top" id="btn-mode-comparacao" onclick="selectMode('comparacao')">Comparação</button>
-
   <span class="sep">│</span>
-
   <div id="color-swatch"></div>
   <div id="color-name" title="">---</div>
   <div id="confidence-display"></div>
-
   <span class="sep">│</span>
-
   <div class="data-inline" id="hsv-line"><span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---</div>
   <span class="sep">│</span>
   <div class="data-inline" id="rgb-line"><span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---</div>
   <span class="sep">│</span>
   <div id="base-info">Base: não calibrada</div>
-
   <span class="sep">│</span>
-
   <button class="btn-top" id="btn-calibrate-white" onclick="calibrateWhite()">Calibrar Branco</button>
   <button class="btn-top" id="btn-calibrate-black" onclick="calibrateBlack()">Calibrar Preto</button>
   <button class="btn-top" id="btn-reset-white" onclick="resetWhite()">Reset Branco</button>
   <button class="btn-top" id="btn-reset-black" onclick="resetBlack()">Reset Preto</button>
-
   <button class="btn-top" id="btn-reset-estatico" onclick="resetEstatico()" style="display:none;">Reset Estático</button>
-
   <button class="btn-top" id="btn-sel-ref" onclick="startRefSelection()" style="display:none;">Selecionar Referência</button>
   <button class="btn-top" id="btn-sel-sample" onclick="startSampleSelection()" style="display:none;">Selecionar Amostra</button>
   <button class="btn-top" id="btn-reset-ref" onclick="resetRef()" style="display:none;">Reset Referência</button>
   <button class="btn-top" id="btn-reset-sample" onclick="resetSample()" style="display:none;">Reset Amostra</button>
   <button class="btn-top" id="btn-reset-comparacao" onclick="resetComparison()" style="display:none;">Reset Comparação</button>
-
   <button class="btn-top" id="btn-camera" onclick="switchCamera()">Câmera</button>
   <button class="btn-top" id="btn-audio" onclick="toggleAudio()">Áudio</button>
   <button class="btn-top" id="btn-flash" onclick="toggleFlash()">Flash</button>
-
   <button class="btn-top active-amber" id="btn-universal" onclick="toggleUniversalMode()">Universal</button>
   <button class="btn-top" id="btn-ampliado" onclick="toggleAmpliatedMode()">Ampliado</button>
   <button class="btn-top" id="btn-plasticos" onclick="togglePlasticsMode()">Plásticos</button>
@@ -622,23 +155,17 @@
       <div class="comp-row">
         <div class="comp-block">
           <div class="comp-label">Referência</div>
-          <div class="comp-img-wrap">
-            <img id="ref-thumb" class="comp-thumb" src="" alt="">
-          </div>
+          <div class="comp-img-wrap"><img id="ref-thumb" class="comp-thumb" src="" alt=""></div>
           <div id="ref-color-name" class="comp-color-name">---</div>
         </div>
-
         <div class="comp-block comp-center">
           <div class="comp-percent-label">Compatibilidade</div>
           <div id="compatibility-percent" class="comp-percent">---</div>
           <div class="data-inline" id="delta-line">Delta E: ---</div>
         </div>
-
         <div class="comp-block">
           <div class="comp-label">Amostra</div>
-          <div class="comp-img-wrap">
-            <img id="sample-thumb" class="comp-thumb" src="" alt="">
-          </div>
+          <div class="comp-img-wrap"><img id="sample-thumb" class="comp-thumb" src="" alt=""></div>
           <div id="sample-color-name" class="comp-color-name">---</div>
         </div>
       </div>
@@ -646,14 +173,8 @@
       <div class="comp-info-section" id="comp-formulas-section" style="display:none;">
         <div class="comp-info-title">Fórmulas das cores capturadas</div>
         <div class="comp-grid">
-          <div>
-            <div class="comp-info-label">Referência:</div>
-            <div class="comp-info-text" id="ref-formula-list">---</div>
-          </div>
-          <div>
-            <div class="comp-info-label">Amostra:</div>
-            <div class="comp-info-text" id="sample-formula-list">---</div>
-          </div>
+          <div><div class="comp-info-label">Referência:</div><div class="comp-info-text" id="ref-formula-list">---</div></div>
+          <div><div class="comp-info-label">Amostra:</div><div class="comp-info-text" id="sample-formula-list">---</div></div>
         </div>
       </div>
 
@@ -665,11 +186,7 @@
 
     <div id="mode-select-overlay">
       <h2>SELECIONE O MODO</h2>
-      <p>
-        Livre: mira fixa no centro, análise contínua.<br>
-        Estático: clique na tela para analisar um ponto específico.<br>
-        Comparação: capture referência e amostra para medir compatibilidade.
-      </p>
+      <p>Livre: mira fixa no centro, análise contínua.<br>Estático: clique na tela para analisar um ponto específico.<br>Comparação: capture referência e amostra para medir compatibilidade.</p>
     </div>
 
     <div id="start-overlay">
@@ -682,9 +199,6 @@
 <script>
 "use strict";
 
-/* =========================
-   ESTADO GLOBAL
-========================= */
 const video = document.getElementById("videoEl");
 const canvas = document.getElementById("canvasEl");
 const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -696,22 +210,18 @@ let devices = [];
 let deviceIndex = 0;
 let running = false;
 let systemOn = true;
-
 let universalMode = true;
 let ampliatedMode = false;
 let plasticsMode = false;
 let flashEnabled = false;
 let audioEnabled = false;
-
 let currentMode = null;
 let staticPosition = null;
 let staticFrozen = false;
-
 let whiteCalibration = null;
 let blackCalibration = null;
 let isWhiteCalibrated = false;
 let isBlackCalibrated = false;
-
 let colorBuffer = [];
 let lastStableColorName = "";
 let lastStableRGB = { r: 0, g: 0, b: 0 };
@@ -722,7 +232,6 @@ let consecutiveFrameCounter = 0;
 let lastSpokenName = "";
 let pendingName = "";
 let stableTimer = null;
-
 let comparisonRef = null;
 let comparisonSample = null;
 let selectingRef = false;
@@ -736,9 +245,6 @@ const MISMATCH_FORCE_UPDATE = 5;
 const MIN_CONSECUTIVE_FRAMES = 7;
 const STABLE_SPEECH_MS = 600;
 
-/* =========================
-   PIGMENTOS BASE UNIVERSAIS
-========================= */
 const PIGMENTS = {
   white: { pigmento: "Dióxido de Titânio", ci: "PW6", codigo: "CI 77891", funcao: "clareamento/opacidade" },
   black: { pigmento: "Carbon Black", ci: "PBk7", codigo: "CI 77266", funcao: "escurecimento/profundidade" },
@@ -757,113 +263,54 @@ const PIGMENTS = {
   brown: { pigmento: "Óxidos de Ferro Amarelo/Vermelho", ci: "PY42/PR101", codigo: "CI 77492/77491", funcao: "terras e marrons" }
 };
 
-/* =========================
-   RAL PLASTICS P1
-========================= */
 const P1_COLORS = [
-  ["RAL 1000-P", "Bege esverdeado", "#CDBA88"], ["RAL 1001-P", "Bege", "#D0B084"],
-  ["RAL 1002-P", "Amarelo areia", "#D2AA6D"], ["RAL 1004-P", "Amarelo ouro", "#E49E00"],
-  ["RAL 1011-P", "Castanho", "#AF804F"], ["RAL 1012-P", "Amarelo limão", "#DDAF27"],
-  ["RAL 1013-P", "Pérola", "#E3D9C6"], ["RAL 1015-P", "Marfim claro", "#E6D2B5"],
-  ["RAL 1016-P", "Amarelo enxofre", "#F1DD38"], ["RAL 1017-P", "Amarelo açafrão", "#F6A950"],
-  ["RAL 1018-P", "Amarelo zinco", "#FACA30"], ["RAL 1020-P", "Amarelo oliva", "#A48F7A"],
-  ["RAL 1021-P", "Amarelo canola", "#F6B600"], ["RAL 1028-P", "Amarelo melão", "#FFB230"],
-  ["RAL 1033-P", "Amarelo dália", "#F99A1C"], ["RAL 2000-P", "Laranja escuro", "#ED760E"],
-  ["RAL 2002-P", "Laranja sangue", "#CB2821"], ["RAL 2003-P", "Laranja pastel", "#FF7514"],
-  ["RAL 2004-P", "Laranja puro", "#F44611"], ["RAL 2008-P", "Laranja vermelho claro", "#F75E25"],
-  ["RAL 2012-P", "Laranja salmão", "#D36E70"], ["RAL 3000-P", "Vermelho vivo", "#AF2B1E"],
-  ["RAL 3002-P", "Carmim", "#A12312"], ["RAL 3003-P", "Vermelho rubi", "#8D1D2C"],
-  ["RAL 3004-P", "Vermelho púrpura", "#701F29"], ["RAL 3012-P", "Bege avermelhado", "#C1876B"],
-  ["RAL 3014-P", "Rosa envelhecido", "#CA8081"], ["RAL 3015-P", "Rosa claro", "#E8C3B9"],
-  ["RAL 3016-P", "Coral", "#B32821"], ["RAL 3018-P", "Vermelho morango", "#D53032"],
-  ["RAL 3020-P", "Vermelho sinalização", "#CC0605"], ["RAL 3027-P", "Vermelho framboesa", "#C51D34"],
-  ["RAL 3028-P", "Vermelho puro", "#CB3234"], ["RAL 4001-P", "Roxo", "#6D3F5B"],
-  ["RAL 4002-P", "Violeta avermelhado", "#922B3E"], ["RAL 4003-P", "Violeta rosado", "#DE4C8A"],
-  ["RAL 4005-P", "Lilás", "#6C4675"], ["RAL 4006-P", "Roxo sinalização", "#A03472"],
-  ["RAL 4007-P", "Roxo escuro", "#4A192C"], ["RAL 4008-P", "Roxo segurança", "#924E7D"],
-  ["RAL 4009-P", "Roxo pastel", "#A18594"], ["RAL 5002-P", "Azul marinho", "#20214F"],
-  ["RAL 5005-P", "Azul segurança", "#004389"], ["RAL 5009-P", "Azul", "#025669"],
-  ["RAL 5010-P", "Azul genciano", "#0E294B"], ["RAL 5011-P", "Azul aço", "#231A24"],
-  ["RAL 5012-P", "Azul claro", "#3B83BD"], ["RAL 5013-P", "Azul cobalto", "#1E213D"],
-  ["RAL 5014-P", "Azul pombo", "#606E8C"], ["RAL 5015-P", "Azul celeste", "#2271B3"],
-  ["RAL 5017-P", "Azul sinalização", "#063971"], ["RAL 5018-P", "Azul turquesa", "#3F888F"],
-  ["RAL 5020-P", "Azul oceano", "#1D334A"], ["RAL 5022-P", "Azul noturno", "#252850"],
-  ["RAL 5023-P", "Azul distante", "#49678D"], ["RAL 5024-P", "Azul pastel", "#5D9B9B"],
-  ["RAL 6000-P", "Verde platina", "#327662"], ["RAL 6002-P", "Verde folha", "#276230"],
-  ["RAL 6003-P", "Verde oliva", "#4E5B31"], ["RAL 6005-P", "Verde musgo", "#0E4438"],
-  ["RAL 6009-P", "Verde couve", "#26392F"], ["RAL 6011-P", "Verde aspargo", "#68825B"],
-  ["RAL 6017-P", "Verde seiva", "#4C9141"], ["RAL 6018-P", "Verde amarelado", "#57A639"],
-  ["RAL 6019-P", "Verde pastel", "#BDECB6"], ["RAL 6024-P", "Verde sinalização", "#008351"],
-  ["RAL 6026-P", "Verde opala", "#005F4E"], ["RAL 6037-P", "Verde vivo", "#008F39"],
-  ["RAL 7001-P", "Cinza prateado", "#8A9597"], ["RAL 7004-P", "Cinza segurança", "#9C9C9C"],
-  ["RAL 7011-P", "Cinza ferro", "#52595D"], ["RAL 7012-P", "Cinza basalto", "#575D57"],
-  ["RAL 7015-P", "Cinza ardósia", "#51565C"], ["RAL 7016-P", "Carvão", "#383E42"],
-  ["RAL 7021-P", "Cinza escuro", "#2F3234"], ["RAL 7031-P", "Cinza azulado", "#4B6069"],
-  ["RAL 7035-P", "Cinza claro", "#CBD0CC"], ["RAL 7037-P", "Cinza poeira", "#7D7F7D"],
-  ["RAL 7038-P", "Cinza ágata", "#B5B8B1"], ["RAL 7040-P", "Cinza janela", "#9DA3A6"],
-  ["RAL 7042-P", "Cinza sinalização A", "#8D948D"], ["RAL 7045-P", "Cinza tele 1", "#91969A"],
-  ["RAL 8001-P", "Marrom ocre", "#955F20"], ["RAL 8004-P", "Marrom cobre", "#8F4E35"],
-  ["RAL 8007-P", "Marrom alce", "#6F4A2F"], ["RAL 8008-P", "Marrom oliva", "#6F4F28"],
-  ["RAL 8011-P", "Marrom castanha", "#5B3A29"], ["RAL 8014-P", "Marrom sépia", "#49392D"],
-  ["RAL 8015-P", "Castanho", "#633A34"], ["RAL 8017-P", "Chocolate", "#44322D"],
-  ["RAL 8023-P", "Marrom alaranjado", "#A65E2E"], ["RAL 8025-P", "Marrom pálido", "#755C48"],
-  ["RAL 9001-P", "Creme", "#E9E0D2"], ["RAL 9002-P", "Branco acinzentado", "#D7D7D7"],
-  ["RAL 9003-P", "Branco segurança", "#F4F4F4"], ["RAL 9010-P", "Branco puro", "#F6F6F6"],
-  ["RAL 9011-P", "Grafite escuro", "#27292B"], ["RAL 9016-P", "Branco sinalização", "#F6F6F6"]
+["RAL 1000-P","Bege esverdeado","#CDBA88"],["RAL 1001-P","Bege","#D0B084"],["RAL 1002-P","Amarelo areia","#D2AA6D"],["RAL 1004-P","Amarelo ouro","#E49E00"],["RAL 1011-P","Castanho","#AF804F"],["RAL 1012-P","Amarelo limão","#DDAF27"],["RAL 1013-P","Pérola","#E3D9C6"],["RAL 1015-P","Marfim claro","#E6D2B5"],["RAL 1016-P","Amarelo enxofre","#F1DD38"],["RAL 1017-P","Amarelo açafrão","#F6A950"],["RAL 1018-P","Amarelo zinco","#FACA30"],["RAL 1020-P","Amarelo oliva","#A48F7A"],["RAL 1021-P","Amarelo canola","#F6B600"],["RAL 1028-P","Amarelo melão","#FFB230"],["RAL 1033-P","Amarelo dália","#F99A1C"],["RAL 2000-P","Laranja escuro","#ED760E"],["RAL 2002-P","Laranja sangue","#CB2821"],["RAL 2003-P","Laranja pastel","#FF7514"],["RAL 2004-P","Laranja puro","#F44611"],["RAL 2008-P","Laranja vermelho claro","#F75E25"],["RAL 2012-P","Laranja salmão","#D36E70"],["RAL 3000-P","Vermelho vivo","#AF2B1E"],["RAL 3002-P","Carmim","#A12312"],["RAL 3003-P","Vermelho rubi","#8D1D2C"],["RAL 3004-P","Vermelho púrpura","#701F29"],["RAL 3012-P","Bege avermelhado","#C1876B"],["RAL 3014-P","Rosa envelhecido","#CA8081"],["RAL 3015-P","Rosa claro","#E8C3B9"],["RAL 3016-P","Coral","#B32821"],["RAL 3018-P","Vermelho morango","#D53032"],["RAL 3020-P","Vermelho sinalização","#CC0605"],["RAL 3027-P","Vermelho framboesa","#C51D34"],["RAL 3028-P","Vermelho puro","#CB3234"],["RAL 4001-P","Roxo","#6D3F5B"],["RAL 4002-P","Violeta avermelhado","#922B3E"],["RAL 4003-P","Violeta rosado","#DE4C8A"],["RAL 4005-P","Lilás","#6C4675"],["RAL 4006-P","Roxo sinalização","#A03472"],["RAL 4007-P","Roxo escuro","#4A192C"],["RAL 4008-P","Roxo segurança","#924E7D"],["RAL 4009-P","Roxo pastel","#A18594"],["RAL 5002-P","Azul marinho","#20214F"],["RAL 5005-P","Azul segurança","#004389"],["RAL 5009-P","Azul","#025669"],["RAL 5010-P","Azul genciano","#0E294B"],["RAL 5011-P","Azul aço","#231A24"],["RAL 5012-P","Azul claro","#3B83BD"],["RAL 5013-P","Azul cobalto","#1E213D"],["RAL 5014-P","Azul pombo","#606E8C"],["RAL 5015-P","Azul celeste","#2271B3"],["RAL 5017-P","Azul sinalização","#063971"],["RAL 5018-P","Azul turquesa","#3F888F"],["RAL 5020-P","Azul oceano","#1D334A"],["RAL 5022-P","Azul noturno","#252850"],["RAL 5023-P","Azul distante","#49678D"],["RAL 5024-P","Azul pastel","#5D9B9B"],["RAL 6000-P","Verde platina","#327662"],["RAL 6002-P","Verde folha","#276230"],["RAL 6003-P","Verde oliva","#4E5B31"],["RAL 6005-P","Verde musgo","#0E4438"],["RAL 6009-P","Verde couve","#26392F"],["RAL 6011-P","Verde aspargo","#68825B"],["RAL 6017-P","Verde seiva","#4C9141"],["RAL 6018-P","Verde amarelado","#57A639"],["RAL 6019-P","Verde pastel","#BDECB6"],["RAL 6024-P","Verde sinalização","#008351"],["RAL 6026-P","Verde opala","#005F4E"],["RAL 6037-P","Verde vivo","#008F39"],["RAL 7001-P","Cinza prateado","#8A9597"],["RAL 7004-P","Cinza segurança","#9C9C9C"],["RAL 7011-P","Cinza ferro","#52595D"],["RAL 7012-P","Cinza basalto","#575D57"],["RAL 7015-P","Cinza ardósia","#51565C"],["RAL 7016-P","Carvão","#383E42"],["RAL 7021-P","Cinza escuro","#2F3234"],["RAL 7031-P","Cinza azulado","#4B6069"],["RAL 7035-P","Cinza claro","#CBD0CC"],["RAL 7037-P","Cinza poeira","#7D7F7D"],["RAL 7038-P","Cinza ágata","#B5B8B1"],["RAL 7040-P","Cinza janela","#9DA3A6"],["RAL 7042-P","Cinza sinalização A","#8D948D"],["RAL 7045-P","Cinza tele 1","#91969A"],["RAL 8001-P","Marrom ocre","#955F20"],["RAL 8004-P","Marrom cobre","#8F4E35"],["RAL 8007-P","Marrom alce","#6F4A2F"],["RAL 8008-P","Marrom oliva","#6F4F28"],["RAL 8011-P","Marrom castanha","#5B3A29"],["RAL 8014-P","Marrom sépia","#49392D"],["RAL 8015-P","Castanho","#633A34"],["RAL 8017-P","Chocolate","#44322D"],["RAL 8023-P","Marrom alaranjado","#A65E2E"],["RAL 8025-P","Marrom pálido","#755C48"],["RAL 9001-P","Creme","#E9E0D2"],["RAL 9002-P","Branco acinzentado","#D7D7D7"],["RAL 9003-P","Branco segurança","#F4F4F4"],["RAL 9010-P","Branco puro","#F6F6F6"],["RAL 9011-P","Grafite escuro","#27292B"],["RAL 9016-P","Branco sinalização","#F6F6F6"]
 ];
 
-/* =========================
-   RAL PLASTICS P2
-========================= */
 const P2_GROUPS = [
-  ["Tons de cinza/preto", ["000 15 00-P", "000 40 00-P", "000 55 00-P", "000 55 00-P-T", "000 85 00-P"]],
-  ["Tons de vinho/rosa", ["010 30 44-P", "010 40 53-P", "010 40 53-P-T", "010 60 45-P", "010 80 20-P"]],
-  ["Tons de marrom terracota rosa claro", ["020 20 20-P", "020 30 40-P", "020 50 58-P", "020 50 58-P-T", "020 90 10-P"]],
-  ["Tons de marrom rosado nude escuro", ["030 30 20-P", "030 40 30-P", "030 40 30-P-T", "030 60 30-P", "030 80 10-P"]],
-  ["Tons de terracota tijolo", ["040 30 40-P", "040 50 60-P", "040 50 60-P-T", "040 60 60-P", "040 80 20-P"]],
-  ["Tons de laranja queimado caramelo escuro", ["050 30 30-P", "050 50 50-P", "050 50 78-P", "050 50 78-P-T", "050 80 20-P"]],
-  ["Tons de mostarda escuro âmbar", ["060 30 27-P", "060 50 50-P", "060 60 80-P", "060 60 80-P-T", "060 80 30-P"]],
-  ["Tons de amarelo ouro ocre", ["070 40 40-P", "070 70 80-P", "070 70 80-P-T", "070 80 50-P", "070 90 10-P"]],
-  ["Tons de amarelo queimado oliva amarelado", ["075 40 38-P", "075 60 70-P", "075 60 70-P-T", "075 80 20-P", "075 80 60-P"]],
-  ["Tons de bege areia escuro", ["080 30 26-P", "080 50 40-P", "080 70 50-P", "080 70 50-P-T", "080 80 20-P"]],
-  ["Tons de amarelo queimado palha", ["085 40 20-P", "085 60 60-P", "085 80 85-P", "085 80 85-P-T", "085 90 10-P"]],
-  ["Tons de amarelo vibrante canário", ["090 50 40-P", "090 70 80-P", "090 80 90-P", "090 80 90-P-T", "090 90 30-P"]],
-  ["Tons de verde lima pistache", ["095 50 50-P", "095 60 70-P", "095 60 70-P-T", "095 70 70-P", "095 90 40-P"]],
-  ["Tons de verde oliva claro erva-doce", ["100 40 40-P", "100 60 60-P", "100 80 70-P", "100 80 70-P-T", "100 90 40-P"]],
-  ["Tons de verde maçã folha claro", ["110 50 55-P", "110 70 70-P", "110 70 70-P-T", "110 80 70-P", "110 90 30-P"]],
-  ["Tons de verde musgo oliva", ["120 40 40-P", "120 50 40-P", "120 60 60-P", "120 60 60-P-T", "120 80 30-P"]],
-  ["Tons de verde folha grama", ["130 30 20-P", "130 60 50-P", "130 60 50-P-T", "130 80 40-P", "130 90 10-P"]],
-  ["Tons de verde bandeira esmeralda escuro", ["140 20 20-P", "140 40 50-P", "140 60 70-P", "140 60 70-P-T", "140 80 20-P"]],
-  ["Tons de verde cinzento eucalipto", ["150 30 20-P", "150 30 20-P-T", "150 50 20-P", "150 60 20-P", "150 70 10-P"]],
-  ["Tons de verde água menta escuro", ["160 30 40-P", "160 50 60-P", "160 50 60-P-T", "160 70 45-P", "160 80 30-P"]],
-  ["Tons de verde petróleo claro oceano", ["170 30 20-P", "170 30 20-P-T", "170 40 20-P", "170 60 20-P", "170 80 10-P"]],
-  ["Tons de verde esmeralda malaquita", ["180 40 45-P", "180 60 50-P", "180 60 50-P-T", "180 70 25-P", "180 90 10-P"]],
-  ["Tons de verde azulado escuro floresta", ["190 30 20-P", "190 30 20-P-T", "190 40 20-P", "190 50 20-P", "190 70 20-P"]],
-  ["Tons de turquesa profundo petróleo", ["200 30 33-P", "200 50 45-P", "200 50 45-P-T", "200 60 35-P", "200 80 10-P"]],
-  ["Tons de azul oceano água marinha escuro", ["210 40 20-P", "210 50 20-P", "210 60 30-P", "210 70 35-P", "210 70 35-P-T"]],
-  ["Tons de azul pavão cerceta", ["220 30 30-P", "220 40 40-P", "220 40 40-P-T", "220 50 40-P", "220 70 35-P"]],
-  ["Tons de azul cobalto escuro marinho", ["230 30 25-P", "230 40 20-P", "230 50 30-P", "230 50 30-P-T", "230 70 20-P"]],
-  ["Tons de azul petróleo oceano", ["240 20 22-P", "240 30 35-P", "240 60 40-P", "240 60 40-P-T", "240 80 20-P"]],
-  ["Tons de azul médio denim", ["250 30 20-P", "250 50 30-P", "250 50 30-P-T", "250 60 30-P", "250 80 20-P"]],
-  ["Tons de azul royal safira", ["260 20 20-P", "260 40 45-P", "260 40 45-P-T", "260 50 40-P", "260 80 15-P"]],
-  ["Tons de azul acinzentado ardósia", ["270 30 20-P", "270 30 20-P-T", "270 40 20-P", "270 60 20-P", "270 70 10-P"]],
-  ["Tons de azul ultramar profundo", ["280 30 40-P", "280 30 40-P-T", "280 40 40-P", "280 50 30-P", "280 80 10-P"]],
-  ["Tons de azul violeta lavanda escuro", ["290 30 30-P", "290 30 30-P-T", "290 50 30-P", "290 60 20-P", "290 70 10-P"]],
-  ["Tons de roxo profundo índigo", ["300 20 30-P", "300 40 40-P", "300 40 40-P-T", "300 70 20-P", "300 90 05-P"]],
-  ["Tons de violeta acinzentado lavanda", ["310 40 20-P", "310 50 30-P", "310 50 30-P-T", "310 60 20-P", "310 70 10-P"]],
-  ["Tons de berinjela ameixa", ["320 20 20-P", "320 30 37-P", "320 30 37-P-T", "320 50 30-P", "320 80 15-P"]],
-  ["Tons de magnólia malva", ["330 30 20-P", "330 50 40-P", "330 50 40-P-T", "330 60 20-P", "330 70 10-P"]],
-  ["Tons de carmim magenta escuro", ["340 30 38-P", "340 40 45-P", "340 40 45-P-T", "340 60 40-P", "340 80 20-P"]],
-  ["Tons de vinho rosado framboesa", ["350 20 20-P", "350 40 20-P", "350 50 40-P", "350 50 40-P-T", "350 60 20-P"]],
-  ["Tons de bordô claro rosé antigo", ["360 30 15-P", "360 30 30-P", "360 50 40-P", "360 50 40-P-T", "360 70 15-P"]]
+["Tons de cinza/preto",["000 15 00-P","000 40 00-P","000 55 00-P","000 55 00-P-T","000 85 00-P"]],
+["Tons de vinho/rosa",["010 30 44-P","010 40 53-P","010 40 53-P-T","010 60 45-P","010 80 20-P"]],
+["Tons de marrom terracota rosa claro",["020 20 20-P","020 30 40-P","020 50 58-P","020 50 58-P-T","020 90 10-P"]],
+["Tons de marrom rosado nude escuro",["030 30 20-P","030 40 30-P","030 40 30-P-T","030 60 30-P","030 80 10-P"]],
+["Tons de terracota tijolo",["040 30 40-P","040 50 60-P","040 50 60-P-T","040 60 60-P","040 80 20-P"]],
+["Tons de laranja queimado caramelo escuro",["050 30 30-P","050 50 50-P","050 50 78-P","050 50 78-P-T","050 80 20-P"]],
+["Tons de mostarda escuro âmbar",["060 30 27-P","060 50 50-P","060 60 80-P","060 60 80-P-T","060 80 30-P"]],
+["Tons de amarelo ouro ocre",["070 40 40-P","070 70 80-P","070 70 80-P-T","070 80 50-P","070 90 10-P"]],
+["Tons de amarelo queimado oliva amarelado",["075 40 38-P","075 60 70-P","075 60 70-P-T","075 80 20-P","075 80 60-P"]],
+["Tons de bege areia escuro",["080 30 26-P","080 50 40-P","080 70 50-P","080 70 50-P-T","080 80 20-P"]],
+["Tons de amarelo queimado palha",["085 40 20-P","085 60 60-P","085 80 85-P","085 80 85-P-T","085 90 10-P"]],
+["Tons de amarelo vibrante canário",["090 50 40-P","090 70 80-P","090 80 90-P","090 80 90-P-T","090 90 30-P"]],
+["Tons de verde lima pistache",["095 50 50-P","095 60 70-P","095 60 70-P-T","095 70 70-P","095 90 40-P"]],
+["Tons de verde oliva claro erva-doce",["100 40 40-P","100 60 60-P","100 80 70-P","100 80 70-P-T","100 90 40-P"]],
+["Tons de verde maçã folha claro",["110 50 55-P","110 70 70-P","110 70 70-P-T","110 80 70-P","110 90 30-P"]],
+["Tons de verde musgo oliva",["120 40 40-P","120 50 40-P","120 60 60-P","120 60 60-P-T","120 80 30-P"]],
+["Tons de verde folha grama",["130 30 20-P","130 60 50-P","130 60 50-P-T","130 80 40-P","130 90 10-P"]],
+["Tons de verde bandeira esmeralda escuro",["140 20 20-P","140 40 50-P","140 60 70-P","140 60 70-P-T","140 80 20-P"]],
+["Tons de verde cinzento eucalipto",["150 30 20-P","150 30 20-P-T","150 50 20-P","150 60 20-P","150 70 10-P"]],
+["Tons de verde água menta escuro",["160 30 40-P","160 50 60-P","160 50 60-P-T","160 70 45-P","160 80 30-P"]],
+["Tons de verde petróleo claro oceano",["170 30 20-P","170 30 20-P-T","170 40 20-P","170 60 20-P","170 80 10-P"]],
+["Tons de verde esmeralda malaquita",["180 40 45-P","180 60 50-P","180 60 50-P-T","180 70 25-P","180 90 10-P"]],
+["Tons de verde azulado escuro floresta",["190 30 20-P","190 30 20-P-T","190 40 20-P","190 50 20-P","190 70 20-P"]],
+["Tons de turquesa profundo petróleo",["200 30 33-P","200 50 45-P","200 50 45-P-T","200 60 35-P","200 80 10-P"]],
+["Tons de azul oceano água marinha escuro",["210 40 20-P","210 50 20-P","210 60 30-P","210 70 35-P","210 70 35-P-T"]],
+["Tons de azul pavão cerceta",["220 30 30-P","220 40 40-P","220 40 40-P-T","220 50 40-P","220 70 35-P"]],
+["Tons de azul cobalto escuro marinho",["230 30 25-P","230 40 20-P","230 50 30-P","230 50 30-P-T","230 70 20-P"]],
+["Tons de azul petróleo oceano",["240 20 22-P","240 30 35-P","240 60 40-P","240 60 40-P-T","240 80 20-P"]],
+["Tons de azul médio denim",["250 30 20-P","250 50 30-P","250 50 30-P-T","250 60 30-P","250 80 20-P"]],
+["Tons de azul royal safira",["260 20 20-P","260 40 45-P","260 40 45-P-T","260 50 40-P","260 80 15-P"]],
+["Tons de azul acinzentado ardósia",["270 30 20-P","270 30 20-P-T","270 40 20-P","270 60 20-P","270 70 10-P"]],
+["Tons de azul ultramar profundo",["280 30 40-P","280 30 40-P-T","280 40 40-P","280 50 30-P","280 80 10-P"]],
+["Tons de azul violeta lavanda escuro",["290 30 30-P","290 30 30-P-T","290 50 30-P","290 60 20-P","290 70 10-P"]],
+["Tons de roxo profundo índigo",["300 20 30-P","300 40 40-P","300 40 40-P-T","300 70 20-P","300 90 05-P"]],
+["Tons de violeta acinzentado lavanda",["310 40 20-P","310 50 30-P","310 50 30-P-T","310 60 20-P","310 70 10-P"]],
+["Tons de berinjela ameixa",["320 20 20-P","320 30 37-P","320 30 37-P-T","320 50 30-P","320 80 15-P"]],
+["Tons de magnólia malva",["330 30 20-P","330 50 40-P","330 50 40-P-T","330 60 20-P","330 70 10-P"]],
+["Tons de carmim magenta escuro",["340 30 38-P","340 40 45-P","340 40 45-P-T","340 60 40-P","340 80 20-P"]],
+["Tons de vinho rosado framboesa",["350 20 20-P","350 40 20-P","350 50 40-P","350 50 40-P-T","350 60 20-P"]],
+["Tons de bordô claro rosé antigo",["360 30 15-P","360 30 30-P","360 50 40-P","360 50 40-P-T","360 70 15-P"]]
 ];
 
-/* =========================
-   CONTINUA NA PARTE 2/2
-========================= */
-/* =========================
-   CONVERSÕES E MÉTRICAS
-========================= */
+/* CONTINUA NA PARTE 2/2 */
 function clamp(value, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value));
 }
@@ -888,11 +335,9 @@ function rgbToHSV(rgb) {
   const r = rgb.r / 255;
   const g = rgb.g / 255;
   const b = rgb.b / 255;
-
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
   const d = max - min;
-
   let h = 0;
 
   if (d !== 0) {
@@ -964,7 +409,6 @@ function labToRGB(lab) {
 
 function lchToLab(h, l, c) {
   const rad = (h * Math.PI) / 180;
-
   return {
     l,
     a: c * Math.cos(rad),
@@ -986,10 +430,8 @@ function compatibilityFromDelta(delta) {
 
 function isNoLightRGB(rgb) {
   if (!rgb) return false;
-
   const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
   const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
-
   return maxRGB <= 30 || avgRGB <= 18;
 }
 
@@ -1007,9 +449,6 @@ function forceBlackClassification() {
   };
 }
 
-/* =========================
-   FAMÍLIAS E PIGMENTOS
-========================= */
 function getFamilyFromHSV(hsv) {
   if (hsv.s < 12) {
     if (hsv.v > 82) return "branco";
@@ -1057,36 +496,30 @@ function pigmentsForFamily(family, name = "") {
   if (family === "preto") return [PIGMENTS.black];
   if (family === "cinza") return [PIGMENTS.white, PIGMENTS.black];
 
-  if (family === "amarelo") {
-    return [
-      PIGMENTS.yellow,
-      n.includes("oliva") ? PIGMENTS.black : PIGMENTS.white
-    ];
-  }
+  if (family === "amarelo") return [
+    PIGMENTS.yellow,
+    n.includes("oliva") ? PIGMENTS.black : PIGMENTS.white
+  ];
 
   if (family === "laranja") return [PIGMENTS.orange, PIGMENTS.yellow, PIGMENTS.red];
 
-  if (family === "vermelho") {
-    return [
-      n.includes("óxido") || n.includes("oxide") || n.includes("terracota") ? PIGMENTS.redIron : PIGMENTS.red,
-      PIGMENTS.white,
-      PIGMENTS.black
-    ];
-  }
+  if (family === "vermelho") return [
+    n.includes("óxido") || n.includes("oxide") || n.includes("terracota") ? PIGMENTS.redIron : PIGMENTS.red,
+    PIGMENTS.white,
+    PIGMENTS.black
+  ];
 
   if (family === "rosa") return [PIGMENTS.red, PIGMENTS.white, PIGMENTS.violet];
   if (family === "violeta") return [PIGMENTS.violet, PIGMENTS.blueAlpha, PIGMENTS.red];
   if (family === "azul") return [PIGMENTS.blue, PIGMENTS.ultramarine, PIGMENTS.white, PIGMENTS.black];
   if (family === "ciano") return [PIGMENTS.blue, PIGMENTS.green, PIGMENTS.white];
 
-  if (family === "verde") {
-    return [
-      n.includes("oliva") ? PIGMENTS.chromeGreen : PIGMENTS.green,
-      PIGMENTS.greenYellow,
-      PIGMENTS.yellow,
-      PIGMENTS.white
-    ];
-  }
+  if (family === "verde") return [
+    n.includes("oliva") ? PIGMENTS.chromeGreen : PIGMENTS.green,
+    PIGMENTS.greenYellow,
+    PIGMENTS.yellow,
+    PIGMENTS.white
+  ];
 
   if (family === "marrom") return [PIGMENTS.brown, PIGMENTS.redIron, PIGMENTS.black, PIGMENTS.yellow];
 
@@ -1097,7 +530,6 @@ function makeP2Name(group, code) {
   const match = code.match(/^(\d{3})\s(\d{2})\s(\d{2})/);
   const l = Number(match?.[2] || 50);
   const c = Number(match?.[3] || 0);
-
   const mods = [];
 
   if (l <= 30) mods.push("escuro");
@@ -1112,15 +544,11 @@ function makeP2Name(group, code) {
   return group + (mods.length ? " " + mods.join(" ") : "");
 }
 
-/* =========================
-   BIBLIOTECA RAL PLASTICS
-========================= */
 function buildRalPlasticsLibrary() {
   const p1 = P1_COLORS.map(item => {
     const code = item[0];
     const name = item[1];
     const hex = item[2];
-
     const rgb = hexToRGB(hex);
     const hsv = rgbToHSV(rgb);
     const family = getFamilyFromName(name, hsv);
@@ -1147,11 +575,9 @@ function buildRalPlasticsLibrary() {
 
     return codes.map(code => {
       const match = code.match(/^(\d{3})\s(\d{2})\s(\d{2})/);
-
       const h = Number(match?.[1] || 0);
       const l = Number(match?.[2] || 50);
       const c = Number(match?.[3] || 0);
-
       const lab = lchToLab(h === 360 ? 0 : h, l, c);
       const rgb = labToRGB(lab);
       const hsv = rgbToHSV(rgb);
@@ -1182,26 +608,16 @@ function buildRalPlasticsLibrary() {
 const RAL_PLASTICS_LIBRARY = buildRalPlasticsLibrary();
 document.getElementById("library-count").textContent = "Biblioteca: " + RAL_PLASTICS_LIBRARY.length + " refs";
 
-/* =========================
-   CLASSIFICADORES
-========================= */
 function classifyColorWithRuler(hsv, rgb) {
   if (!hsv || !rgb) return { name: "Erro", displayName: "Erro", color: "#888888", confidence: 0, family: "erro" };
-
   if (isNoLightRGB(rgb)) return forceBlackClassification();
 
   const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
   const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
 
   if (maxRGB <= 30 || avgRGB <= 18) return forceBlackClassification();
-
-  if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) {
-    return { name: "Branco", displayName: "Branco", color: "#ffffff", confidence: 99, family: "branco" };
-  }
-
-  if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) {
-    return forceBlackClassification();
-  }
+  if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) return { name: "Branco", displayName: "Branco", color: "#ffffff", confidence: 99, family: "branco" };
+  if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) return forceBlackClassification();
 
   const h = hsv.h;
   const s = hsv.s;
@@ -1268,7 +684,6 @@ function classifyColorWithRuler(hsv, rgb) {
   }
 
   let modifier = "";
-
   if (!universalMode) {
     if (v < 28) modifier = " Escuro";
     else if (v > 82 && s < 45) modifier = " Claro";
@@ -1285,47 +700,28 @@ function classifyColorWithRuler(hsv, rgb) {
 
 function classifyColorExtended(hsv, rgb) {
   if (!hsv || !rgb) return { name: "Erro", displayName: "Erro", color: "#888888", confidence: 0, family: "erro" };
-
   if (isNoLightRGB(rgb)) return forceBlackClassification();
 
   const base = classifyColorWithRuler(hsv, rgb);
-
   if (base.family === "preto") return forceBlackClassification();
 
-  if (base.family === "azul" && hsv.v > 75 && hsv.s < 55) {
-    return { ...base, name: "Azul Claro", displayName: "Azul Claro", color: "#bfdbfe" };
-  }
-
-  if (base.family === "azul" && hsv.v < 35) {
-    return { ...base, name: "Azul Marinho", displayName: "Azul Marinho", color: "#001f3f" };
-  }
-
-  if (base.family === "verde" && hsv.v < 40) {
-    return { ...base, name: "Verde Musgo", displayName: "Verde Musgo", color: "#4a5d23" };
-  }
-
-  if (base.family === "amarelo" && hsv.v < 58) {
-    return { ...base, name: "Mostarda", displayName: "Mostarda", color: "#ccaa00" };
-  }
-
-  if (base.family === "laranja" && hsv.v < 45) {
-    return { ...base, name: "Laranja Queimado", displayName: "Laranja Queimado", color: "#d2691e" };
-  }
+  if (base.family === "azul" && hsv.v > 75 && hsv.s < 55) return { ...base, name: "Azul Claro", displayName: "Azul Claro", color: "#bfdbfe" };
+  if (base.family === "azul" && hsv.v < 35) return { ...base, name: "Azul Marinho", displayName: "Azul Marinho", color: "#001f3f" };
+  if (base.family === "verde" && hsv.v < 40) return { ...base, name: "Verde Musgo", displayName: "Verde Musgo", color: "#4a5d23" };
+  if (base.family === "amarelo" && hsv.v < 58) return { ...base, name: "Mostarda", displayName: "Mostarda", color: "#ccaa00" };
+  if (base.family === "laranja" && hsv.v < 45) return { ...base, name: "Laranja Queimado", displayName: "Laranja Queimado", color: "#d2691e" };
 
   return base;
 }
 
 function classifyPlasticsPolymers(hsv, rgb) {
   if (!hsv || !rgb) return { name: "Erro", displayName: "Erro", color: "#888888", confidence: 0, family: "erro" };
-
   if (isNoLightRGB(rgb)) return forceBlackClassification();
 
   const lab = rgbToLab(rgb);
   const family = getFamilyFromHSV(hsv);
 
-  if (family === "preto" || hsv.v < 14 || Math.max(rgb.r, rgb.g, rgb.b) < 35) {
-    return forceBlackClassification();
-  }
+  if (family === "preto" || hsv.v < 14 || Math.max(rgb.r, rgb.g, rgb.b) < 35) return forceBlackClassification();
 
   const neutral = ["branco", "preto", "cinza"].includes(family);
 
@@ -1337,13 +733,11 @@ function classifyPlasticsPolymers(hsv, rgb) {
   });
 
   const pool = candidates.length ? candidates : RAL_PLASTICS_LIBRARY;
-
   let best = pool[0];
   let bestDelta = Infinity;
 
   for (const color of pool) {
     const d = deltaE(lab, color.lab);
-
     if (d < bestDelta) {
       best = color;
       bestDelta = d;
@@ -1362,9 +756,6 @@ function classifyPlasticsPolymers(hsv, rgb) {
   };
 }
 
-/* =========================
-   FÓRMULAS, AJUSTES E COMPARAÇÃO
-========================= */
 function formatFormula(formula) {
   if (!formula || formula.length === 0) return "Sem sugestão técnica disponível.";
   return formula.map(p => "- " + p.pigmento + " (" + p.ci + " / " + p.codigo + ") - " + p.funcao).join("\n");
@@ -1395,7 +786,6 @@ function adjustmentText(readLab, target) {
   if (dA < -4) lines.push("Amostra precisa ir para verde: ajustar com PG7/PG36.");
   if (dB > 4) lines.push("Amostra precisa ir para amarelo: ajustar com PY151/PY110.");
   if (dB < -4) lines.push("Amostra precisa ir para azul: ajustar com PB15:3/PB29.");
-
   if (lines.length === 2) lines.push("Diferença perceptível baixa: ajuste fino por pequenas proporções da base dominante.");
 
   return lines.join("\n");
@@ -1405,10 +795,7 @@ function suggestPigmentAdjustment(ref, sample) {
   if (!ref || !sample) return { text: "Capture referência e amostra.", cssClass: "" };
 
   if (ref.catalog) {
-    return {
-      text: adjustmentText(sample.lab, ref.catalog),
-      cssClass: ""
-    };
+    return { text: adjustmentText(sample.lab, ref.catalog), cssClass: "" };
   }
 
   const de = deltaE(sample.lab, ref.lab);
@@ -1420,60 +807,43 @@ function suggestPigmentAdjustment(ref, sample) {
   };
 }
 
-/* =========================
-   CALIBRAÇÃO
-========================= */
 function normalizeV(vRaw) {
   if (!isWhiteCalibrated || !isBlackCalibrated || !whiteCalibration || !blackCalibration) return vRaw;
-
   const vWhite = whiteCalibration.hsv.v;
   const vBlack = blackCalibration.hsv.v;
-
   if (vWhite <= vBlack) return vRaw;
-
   const vNormalized = ((vRaw - vBlack) / (vWhite - vBlack)) * 100;
   return Math.max(0, Math.min(100, vNormalized));
 }
 
 function isCalibrationWhite(hsv, rgb) {
   if (!isWhiteCalibrated || !whiteCalibration) return false;
-
   const base = whiteCalibration;
   const dr = rgb.r - base.rgb.r;
   const dg = rgb.g - base.rgb.g;
   const db = rgb.b - base.rgb.b;
   const rgbDistance = Math.sqrt(dr * dr + dg * dg + db * db);
   const vDiff = Math.abs(hsv.v - base.hsv.v);
-
   if (rgbDistance <= 50 || (vDiff <= 15 && hsv.s <= 30)) return true;
   if (hsv.v >= base.hsv.v && hsv.s <= 20) return true;
-
   return false;
 }
 
 function isCalibrationBlack(hsv, rgb) {
   if (!isBlackCalibrated || !blackCalibration) return false;
-
   const base = blackCalibration;
   const dr = rgb.r - base.rgb.r;
   const dg = rgb.g - base.rgb.g;
   const db = rgb.b - base.rgb.b;
   const rgbDistance = Math.sqrt(dr * dr + dg * dg + db * db);
   const vDiff = Math.abs(hsv.v - base.hsv.v);
-
   if (rgbDistance <= 40 || (vDiff <= 12 && hsv.s <= 35)) return true;
-
-  if (
-    Math.max(rgb.r, rgb.g, rgb.b) <= Math.max(base.rgb.r, base.rgb.g, base.rgb.b) + 20 &&
-    hsv.s <= 35
-  ) return true;
-
+  if (Math.max(rgb.r, rgb.g, rgb.b) <= Math.max(base.rgb.r, base.rgb.g, base.rgb.b) + 20 && hsv.s <= 35) return true;
   return false;
 }
 
 function updateCalibrationStatus() {
   let statusText = "Base: ";
-
   if (isWhiteCalibrated && isBlackCalibrated) {
     const vRange = whiteCalibration.hsv.v - blackCalibration.hsv.v;
     statusText += "Régua Completa (" + vRange.toFixed(0) + "% range)";
@@ -1484,30 +854,17 @@ function updateCalibrationStatus() {
   } else {
     statusText += "não calibrada";
   }
-
   document.getElementById("base-info").textContent = statusText;
 }
 
-/* =========================
-   ÁUDIO
-========================= */
 function speakImmediate(text) {
   if (!window.speechSynthesis || !text || !audioEnabled) return;
-
   window.speechSynthesis.cancel();
-
   setTimeout(() => {
     try {
-      const utt = new SpeechSynthesisUtterance(
-        String(text)
-          .replace(/RAL/g, "ral")
-          .replace(/CI/g, "c i")
-          .replace(/Delta E/g, "delta e")
-      );
-
+      const utt = new SpeechSynthesisUtterance(String(text).replace(/RAL/g, "ral").replace(/CI/g, "c i").replace(/Delta E/g, "delta e"));
       utt.lang = "pt-BR";
       utt.rate = 1.08;
-
       window.speechSynthesis.speak(utt);
     } catch (e) {
       console.error(e);
@@ -1530,14 +887,12 @@ function triggerAudioIfChanged(name) {
       clearTimeout(stableTimer);
       stableTimer = null;
     }
-
     pendingName = "";
     return;
   }
 
   if (cleanName !== pendingName) {
     pendingName = cleanName;
-
     if (stableTimer) clearTimeout(stableTimer);
 
     stableTimer = setTimeout(() => {
@@ -1556,19 +911,14 @@ function triggerAudioIfChanged(name) {
   }
 }
 
-/* =========================
-   AMOSTRAGEM E CÂMERA
-========================= */
 function samplePixels() {
   const vw = video.videoWidth;
   const vh = video.videoHeight;
-
   if (!vw || !vh) return null;
 
   const cw = video.clientWidth;
   const ch = video.clientHeight;
   const scale = Math.max(cw / vw, ch / vh);
-
   const nativeCX = Math.round((cw / 2 + (vw * scale - cw) / 2) / scale);
   const nativeCY = Math.round((ch / 2 + (vh * scale - ch) / 2) / scale);
   const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
@@ -1576,35 +926,21 @@ function samplePixels() {
   canvas.width = vw;
   canvas.height = vh;
 
-  try {
-    ctx.drawImage(video, 0, 0);
-  } catch (e) {
-    return null;
-  }
+  try { ctx.drawImage(video, 0, 0); } catch (e) { return null; }
 
   const x0 = Math.max(0, nativeCX - nativeSample);
   const y0 = Math.max(0, nativeCY - nativeSample);
 
   try {
     const data = ctx.getImageData(x0, y0, nativeSample * 2, nativeSample * 2).data;
-
-    let r = 0;
-    let g = 0;
-    let b = 0;
-    let c = 0;
-
+    let r = 0, g = 0, b = 0, c = 0;
     for (let i = 0; i < data.length; i += 4) {
       r += data[i];
       g += data[i + 1];
       b += data[i + 2];
       c++;
     }
-
-    return c === 0 ? null : {
-      r: Math.round(r / c),
-      g: Math.round(g / c),
-      b: Math.round(b / c)
-    };
+    return c === 0 ? null : { r: Math.round(r / c), g: Math.round(g / c), b: Math.round(b / c) };
   } catch (e) {
     return null;
   }
@@ -1613,11 +949,9 @@ function samplePixels() {
 function samplePixelsEstatico(x, y) {
   const vw = video.videoWidth;
   const vh = video.videoHeight;
-
   if (!vw || !vh) return null;
 
   const scale = Math.max(video.clientWidth / vw, video.clientHeight / vh);
-
   const nativeCX = Math.round((x + (vw * scale - video.clientWidth) / 2) / scale);
   const nativeCY = Math.round((y + (vh * scale - video.clientHeight) / 2) / scale);
   const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
@@ -1625,35 +959,21 @@ function samplePixelsEstatico(x, y) {
   canvas.width = vw;
   canvas.height = vh;
 
-  try {
-    ctx.drawImage(video, 0, 0);
-  } catch (e) {
-    return null;
-  }
+  try { ctx.drawImage(video, 0, 0); } catch (e) { return null; }
 
   const x0 = Math.max(0, Math.min(vw - nativeSample * 2, nativeCX - nativeSample));
   const y0 = Math.max(0, Math.min(vh - nativeSample * 2, nativeCY - nativeSample));
 
   try {
     const data = ctx.getImageData(x0, y0, nativeSample * 2, nativeSample * 2).data;
-
-    let r = 0;
-    let g = 0;
-    let b = 0;
-    let c = 0;
-
+    let r = 0, g = 0, b = 0, c = 0;
     for (let i = 0; i < data.length; i += 4) {
       r += data[i];
       g += data[i + 1];
       b += data[i + 2];
       c++;
     }
-
-    return c === 0 ? null : {
-      r: Math.round(r / c),
-      g: Math.round(g / c),
-      b: Math.round(b / c)
-    };
+    return c === 0 ? null : { r: Math.round(r / c), g: Math.round(g / c), b: Math.round(b / c) };
   } catch (e) {
     return null;
   }
@@ -1661,18 +981,14 @@ function samplePixelsEstatico(x, y) {
 
 function addToBuffer(hsv, rgb) {
   if (!hsv || !rgb) return;
-
   colorBuffer.push({ hsv, rgb });
-
   if (colorBuffer.length > BUFFER_SIZE) colorBuffer.shift();
 }
 
 function filterOutliers(buffer) {
   if (!buffer || buffer.length < 5) return buffer;
-
   const vValues = buffer.map(item => item.hsv.v).sort((a, b) => a - b);
   const median = vValues[Math.floor(vValues.length / 2)];
-
   return buffer.filter(item => Math.abs(item.hsv.v - median) < 30);
 }
 
@@ -1680,20 +996,12 @@ function getStableColor() {
   if (colorBuffer.length < 3) return null;
 
   const filtered = filterOutliers(colorBuffer);
-
   if (filtered.length === 0) return null;
 
-  let avgS = 0;
-  let avgV = 0;
-  let avgR = 0;
-  let avgG = 0;
-  let avgB = 0;
-  let sinSum = 0;
-  let cosSum = 0;
+  let avgS = 0, avgV = 0, avgR = 0, avgG = 0, avgB = 0, sinSum = 0, cosSum = 0;
 
   filtered.forEach(item => {
     const radH = item.hsv.h * Math.PI / 180;
-
     sinSum += Math.sin(radH);
     cosSum += Math.cos(radH);
     avgS += item.hsv.s;
@@ -1704,25 +1012,18 @@ function getStableColor() {
   });
 
   const len = filtered.length;
-
   let avgH = Math.atan2(sinSum / len, cosSum / len) * 180 / Math.PI;
-
   if (avgH < 0) avgH += 360;
 
   return {
     hsv: { h: avgH, s: avgS / len, v: avgV / len },
-    rgb: {
-      r: Math.round(avgR / len),
-      g: Math.round(avgG / len),
-      b: Math.round(avgB / len)
-    }
+    rgb: { r: Math.round(avgR / len), g: Math.round(avgG / len), b: Math.round(avgB / len) }
   };
 }
 
 function detectObjectChange(newRGB) {
   if (!lastStableRGB.r && !lastStableRGB.g && !lastStableRGB.b) return false;
   if (!newRGB) return false;
-
   return Math.sqrt(
     Math.pow(newRGB.r - lastStableRGB.r, 2) +
     Math.pow(newRGB.g - lastStableRGB.g, 2) +
@@ -1732,32 +1033,26 @@ function detectObjectChange(newRGB) {
 
 function calculateVariance(buffer) {
   if (!buffer || buffer.length < 3) return 0;
-
   const values = buffer.map(item => item.hsv.v);
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
-
   return Math.sqrt(values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length);
 }
 
 function shouldUpdateColor(newHue, newColorName, newRGB, newSat, newVariance) {
   if (!lastStableColorName) return true;
-
   if (detectObjectChange(newRGB)) {
     consecutiveFrameCounter = 0;
     return true;
   }
-
   if (Math.abs(newVariance - lastStableVariance) > 10) return true;
 
   if (newColorName !== lastStableColorName) {
     let diff = Math.abs(newHue - lastStableHue);
     if (diff > 180) diff = 360 - diff;
-
     if (diff >= HYSTERESIS_THRESHOLD) {
       consecutiveFrameCounter++;
       return consecutiveFrameCounter >= MIN_CONSECUTIVE_FRAMES;
     }
-
     consecutiveFrameCounter = 0;
     return false;
   }
@@ -1781,17 +1076,12 @@ async function openCamera(preferredDeviceId) {
     try {
       stream = await navigator.mediaDevices.getUserMedia(constraints);
       video.srcObject = stream;
-
       if (flashEnabled) {
         const track = stream.getVideoTracks()[0];
-
         if (track && typeof track.applyConstraints === "function") {
-          try {
-            await track.applyConstraints({ advanced: [{ torch: true }] });
-          } catch (e) {}
+          try { await track.applyConstraints({ advanced: [{ torch: true }] }); } catch (e) {}
         }
       }
-
       return true;
     } catch (e) {
       return false;
@@ -1808,49 +1098,34 @@ async function openCamera(preferredDeviceId) {
 
 async function startCamera() {
   if (!systemOn) return;
-
   document.getElementById("start-overlay").classList.add("hide");
-
   await getDevices();
   await openCamera();
-
   running = true;
-
   speakImmediate("Câmera iniciada");
   requestAnimationFrame(update);
 }
 
 async function switchCamera() {
   if (!systemOn) return;
-
   if (devices.length < 2) {
     alert("Apenas uma câmera disponível.");
     return;
   }
-
   deviceIndex = (deviceIndex + 1) % devices.length;
-
   await openCamera(devices[deviceIndex].deviceId);
   speakImmediate("Câmera alternada");
 }
 
-/* =========================
-   CAPTURA COMPARAÇÃO
-========================= */
 function capturePoint(x, y, thumbId, nameId) {
   const vw = video.videoWidth;
   const vh = video.videoHeight;
-
   if (!vw || !vh) return null;
 
   canvas.width = vw;
   canvas.height = vh;
 
-  try {
-    ctx.drawImage(video, 0, 0, vw, vh);
-  } catch (e) {
-    return null;
-  }
+  try { ctx.drawImage(video, 0, 0, vw, vh); } catch (e) { return null; }
 
   const scale = Math.max(video.clientWidth / vw, video.clientHeight / vh);
   const nativeX = Math.round((x + (vw * scale - video.clientWidth) / 2) / scale);
@@ -1867,10 +1142,7 @@ function capturePoint(x, y, thumbId, nameId) {
     return null;
   }
 
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  let c = 0;
+  let r = 0, g = 0, b = 0, c = 0;
 
   for (let i = 0; i < data.length; i += 4) {
     r += data[i];
@@ -1901,11 +1173,7 @@ function capturePoint(x, y, thumbId, nameId) {
 
   const tCtx = tCanv.getContext("2d");
 
-  try {
-    tCtx.drawImage(video, 0, 0, thumbW, thumbH);
-  } catch (e) {
-    return null;
-  }
+  try { tCtx.drawImage(video, 0, 0, thumbW, thumbH); } catch (e) { return null; }
 
   const tx = nativeX * thumbScale;
   const ty = nativeY * thumbScale;
@@ -1942,12 +1210,8 @@ function capturePoint(x, y, thumbId, nameId) {
   };
 }
 
-/* =========================
-   INTERFACE E CONTROLES
-========================= */
 function toggleSystem() {
   systemOn = !systemOn;
-
   const btn = document.getElementById("btn-system");
 
   if (systemOn) {
@@ -1957,27 +1221,22 @@ function toggleSystem() {
   } else {
     btn.textContent = "SISTEMA/OFF";
     btn.className = "system-off";
-
     document.getElementById("color-name").textContent = "---";
     document.getElementById("color-name").style.color = "#445";
     document.getElementById("confidence-display").textContent = "";
     document.getElementById("hsv-line").innerHTML = "<span class='lbl'>H:</span>--- &nbsp;<span class='lbl'>S:</span>--- &nbsp;<span class='lbl'>V:</span>---";
     document.getElementById("rgb-line").innerHTML = "<span class='lbl'>R:</span>--- &nbsp;<span class='lbl'>G:</span>--- &nbsp;<span class='lbl'>B:</span>---";
     document.getElementById("color-swatch").style.background = "#1a1a2e";
-
     speakImmediate("Sistema desativado");
   }
 }
 
 function selectMode(mode) {
   currentMode = mode;
-
   document.getElementById("mode-select-overlay").classList.add("hide");
-
   document.getElementById("btn-mode-livre").classList.toggle("active-green", mode === "livre");
   document.getElementById("btn-mode-estatico").classList.toggle("active-blue", mode === "estatico");
   document.getElementById("btn-mode-comparacao").classList.toggle("active-amber", mode === "comparacao");
-
   document.getElementById("btn-reset-estatico").style.display = mode === "estatico" ? "inline-block" : "none";
 
   ["btn-sel-ref", "btn-sel-sample", "btn-reset-ref", "btn-reset-sample", "btn-reset-comparacao"].forEach(id => {
@@ -2012,105 +1271,70 @@ function selectMode(mode) {
 
 function resetEstatico() {
   if (currentMode !== "estatico") return;
-
   staticPosition = null;
   staticFrozen = false;
   reticle.classList.remove("show");
   colorBuffer = [];
-
   document.getElementById("color-name").textContent = "---";
   document.getElementById("color-name").style.color = "#445";
   document.getElementById("confidence-display").textContent = "";
   document.getElementById("color-swatch").style.background = "#1a1a2e";
-
   speakImmediate("Estático resetado");
 }
 
 function toggleUniversalMode() {
   if (!systemOn) return;
-
   universalMode = true;
   ampliatedMode = false;
   plasticsMode = false;
-
   document.getElementById("btn-universal").classList.add("active-amber");
   document.getElementById("btn-ampliado").classList.remove("active-violet");
   document.getElementById("btn-plasticos").classList.remove("active-green");
   document.getElementById("formula-panel").classList.remove("show");
-
   lastSpokenName = "";
   pendingName = "";
   colorBuffer = [];
-
   speakImmediate("Modo Universal ativado");
 }
 
 function toggleAmpliatedMode() {
   if (!systemOn) return;
-
   universalMode = false;
   ampliatedMode = true;
   plasticsMode = false;
-
   document.getElementById("btn-universal").classList.remove("active-amber");
   document.getElementById("btn-ampliado").classList.add("active-violet");
   document.getElementById("btn-plasticos").classList.remove("active-green");
   document.getElementById("formula-panel").classList.remove("show");
-
   lastSpokenName = "";
   pendingName = "";
   colorBuffer = [];
-
   speakImmediate("Modo Ampliado ativado");
 }
 
 function togglePlasticsMode() {
   if (!systemOn) return;
-
   universalMode = false;
   ampliatedMode = false;
   plasticsMode = true;
-
   document.getElementById("btn-universal").classList.remove("active-amber");
   document.getElementById("btn-ampliado").classList.remove("active-violet");
   document.getElementById("btn-plasticos").classList.add("active-green");
-
-  if (currentMode !== "comparacao") {
-    document.getElementById("formula-panel").classList.add("show");
-  }
-
+  if (currentMode !== "comparacao") document.getElementById("formula-panel").classList.add("show");
   lastSpokenName = "";
   pendingName = "";
   colorBuffer = [];
-
   speakImmediate("Modo Plásticos e Poliéster ativado");
 }
 
-/* =========================
-   CALIBRAÇÃO
-========================= */
 async function calibrateWhite() {
   if (!systemOn) return;
-
-  if (!running) {
-    alert("Inicie a câmera primeiro.");
-    return;
-  }
-
-  const pixels = currentMode === "estatico" && staticPosition
-    ? samplePixelsEstatico(staticPosition.x, staticPosition.y)
-    : samplePixels();
-
-  if (!pixels) {
-    alert("Erro na calibração.");
-    return;
-  }
-
+  if (!running) { alert("Inicie a câmera primeiro."); return; }
+  const pixels = currentMode === "estatico" && staticPosition ? samplePixelsEstatico(staticPosition.x, staticPosition.y) : samplePixels();
+  if (!pixels) { alert("Erro na calibração."); return; }
   const hsv = rgbToHSV(pixels);
-
   whiteCalibration = { hsv, rgb: pixels };
   isWhiteCalibrated = true;
-
   document.getElementById("btn-calibrate-white").classList.add("active-green");
   updateCalibrationStatus();
   speakImmediate("Branco calibrado");
@@ -2118,26 +1342,12 @@ async function calibrateWhite() {
 
 async function calibrateBlack() {
   if (!systemOn) return;
-
-  if (!running) {
-    alert("Inicie a câmera primeiro.");
-    return;
-  }
-
-  const pixels = currentMode === "estatico" && staticPosition
-    ? samplePixelsEstatico(staticPosition.x, staticPosition.y)
-    : samplePixels();
-
-  if (!pixels) {
-    alert("Erro na calibração.");
-    return;
-  }
-
+  if (!running) { alert("Inicie a câmera primeiro."); return; }
+  const pixels = currentMode === "estatico" && staticPosition ? samplePixelsEstatico(staticPosition.x, staticPosition.y) : samplePixels();
+  if (!pixels) { alert("Erro na calibração."); return; }
   const hsv = rgbToHSV(pixels);
-
   blackCalibration = { hsv, rgb: pixels };
   isBlackCalibrated = true;
-
   document.getElementById("btn-calibrate-black").classList.add("active-green");
   updateCalibrationStatus();
   speakImmediate("Preto calibrado");
@@ -2146,7 +1356,6 @@ async function calibrateBlack() {
 function resetWhite() {
   whiteCalibration = null;
   isWhiteCalibrated = false;
-
   document.getElementById("btn-calibrate-white").classList.remove("active-green");
   updateCalibrationStatus();
   speakImmediate("Branco resetado");
@@ -2155,71 +1364,55 @@ function resetWhite() {
 function resetBlack() {
   blackCalibration = null;
   isBlackCalibrated = false;
-
   document.getElementById("btn-calibrate-black").classList.remove("active-green");
   updateCalibrationStatus();
   speakImmediate("Preto resetado");
 }
 
-/* =========================
-   COMPARAÇÃO
-========================= */
 function startRefSelection() {
   if (!systemOn || !running || currentMode !== "comparacao") return;
-
   selectingRef = true;
   selectingSample = false;
-
   document.getElementById("color-name").textContent = "Toque na tela: REFERÊNCIA";
   document.getElementById("color-name").title = "Toque na tela: REFERÊNCIA";
   document.getElementById("color-name").style.color = "#8ec";
-
   speakImmediate("Selecione a referência");
 }
 
 function startSampleSelection() {
   if (!systemOn || !running || currentMode !== "comparacao") return;
-
   selectingSample = true;
   selectingRef = false;
-
   document.getElementById("color-name").textContent = "Toque na tela: AMOSTRA";
   document.getElementById("color-name").title = "Toque na tela: AMOSTRA";
   document.getElementById("color-name").style.color = "#dd8";
-
   speakImmediate("Selecione a amostra");
 }
 
 function resetRef() {
   comparisonRef = null;
-
   document.getElementById("ref-thumb").src = "";
   document.getElementById("ref-color-name").textContent = "---";
   document.getElementById("ref-color-name").style.color = "#aac";
   document.getElementById("ref-formula-list").textContent = "---";
-
   updateComparison();
 }
 
 function resetSample() {
   comparisonSample = null;
-
   document.getElementById("sample-thumb").src = "";
   document.getElementById("sample-color-name").textContent = "---";
   document.getElementById("sample-color-name").style.color = "#aac";
   document.getElementById("sample-formula-list").textContent = "---";
-
   updateComparison();
 }
 
 function resetComparison() {
   resetRef();
   resetSample();
-
   document.getElementById("color-name").textContent = "---";
   document.getElementById("color-name").title = "";
   document.getElementById("color-name").style.color = "#445";
-
   speakImmediate("Comparação resetada");
 }
 
@@ -2240,7 +1433,6 @@ function updateComparison() {
 
   const de = deltaE(comparisonRef.lab, comparisonSample.lab);
   const compat = compatibilityFromDelta(de);
-
   percentEl.textContent = compat + "%";
   percentEl.className = "comp-percent" + (compat < 50 ? " low" : (compat < 75 ? " medium" : ""));
   deltaEl.textContent = "Delta E: " + de.toFixed(1);
@@ -2250,13 +1442,11 @@ function updateComparison() {
   document.getElementById("sample-formula-list").textContent = formatFormula(comparisonSample.formula);
 
   const sug = suggestPigmentAdjustment(comparisonRef, comparisonSample);
-
   suggestionText.textContent = sug.text;
   suggestionText.className = "comp-suggestion-text " + (sug.cssClass || "");
   suggestionBox.style.display = "block";
 
   const phrase = "Compatibilidade, " + compat + " por cento";
-
   if (phrase !== lastSpokenName) {
     lastSpokenName = phrase;
     speakImmediate(phrase);
@@ -2265,45 +1455,21 @@ function updateComparison() {
 
 function suggestPigmentAdjustment(ref, sample) {
   if (!ref || !sample) return { text: "Capture referência e amostra.", cssClass: "" };
-
-  if (ref.catalog) {
-    return {
-      text: adjustmentText(sample.lab, ref.catalog),
-      cssClass: ""
-    };
-  }
-
+  if (ref.catalog) return { text: adjustmentText(sample.lab, ref.catalog), cssClass: "" };
   const de = deltaE(sample.lab, ref.lab);
   const compat = compatibilityFromDelta(de);
-
-  return {
-    text: "Compatibilidade perceptual: " + compat + "%\nDelta E: " + de.toFixed(1) + "\nPara sugestões técnicas CI, utilize o modo Plásticos.",
-    cssClass: ""
-  };
+  return { text: "Compatibilidade perceptual: " + compat + "%\nDelta E: " + de.toFixed(1) + "\nPara sugestões técnicas CI, utilize o modo Plásticos.", cssClass: "" };
 }
 
-/* =========================
-   LOOP PRINCIPAL
-========================= */
 function update() {
-  if (
-    !running ||
-    !systemOn ||
-    currentMode === "comparacao" ||
-    (currentMode === "estatico" && staticFrozen) ||
-    video.readyState < 2
-  ) {
+  if (!running || !systemOn || currentMode === "comparacao" || (currentMode === "estatico" && staticFrozen) || video.readyState < 2) {
     requestAnimationFrame(update);
     return;
   }
 
   let pixels = null;
-
-  if (currentMode === "livre") {
-    pixels = samplePixels();
-  } else if (currentMode === "estatico" && staticPosition) {
-    pixels = samplePixelsEstatico(staticPosition.x, staticPosition.y);
-  }
+  if (currentMode === "livre") pixels = samplePixels();
+  else if (currentMode === "estatico" && staticPosition) pixels = samplePixelsEstatico(staticPosition.x, staticPosition.y);
 
   if (!pixels) {
     requestAnimationFrame(update);
@@ -2312,9 +1478,7 @@ function update() {
 
   const rawIsNoLight = isNoLightRGB(pixels);
   const hsvRaw = rgbToHSV(pixels);
-  const hsvForBuffer = rawIsNoLight
-    ? { h: 0, s: 0, v: 0 }
-    : { h: hsvRaw.h, s: hsvRaw.s, v: normalizeV(hsvRaw.v) };
+  const hsvForBuffer = rawIsNoLight ? { h: 0, s: 0, v: 0 } : { h: hsvRaw.h, s: hsvRaw.s, v: normalizeV(hsvRaw.v) };
 
   addToBuffer(hsvForBuffer, pixels);
 
@@ -2327,7 +1491,6 @@ function update() {
 
   const stableIsNoLight = isNoLightRGB(stable.rgb);
   const variance = calculateVariance(colorBuffer);
-
   let classification;
 
   if (stableIsNoLight) {
@@ -2338,11 +1501,8 @@ function update() {
       : (ampliatedMode ? classifyColorExtended(stable.hsv, stable.rgb) : classifyColorWithRuler(stable.hsv, stable.rgb));
   }
 
-  if (classification.displayName !== lastStableColorName && lastStableColorName !== "") {
-    mismatchCounter++;
-  } else {
-    mismatchCounter = 0;
-  }
+  if (classification.displayName !== lastStableColorName && lastStableColorName !== "") mismatchCounter++;
+  else mismatchCounter = 0;
 
   const forceUpdate = mismatchCounter >= MISMATCH_FORCE_UPDATE;
 
@@ -2370,15 +1530,13 @@ function update() {
     lastStableVariance = variance;
 
     const colorNameEl = document.getElementById("color-name");
-
     colorNameEl.textContent = classification.displayName;
     colorNameEl.title = classification.displayName;
     colorNameEl.style.color = classification.color;
 
     document.getElementById("confidence-display").textContent = classification.confidence + "%";
     document.getElementById("confidence-display").style.color =
-      classification.confidence > 95 ? "#6a6" :
-      (classification.confidence > 85 ? "#fa0" : "#f66");
+      classification.confidence > 95 ? "#6a6" : (classification.confidence > 85 ? "#fa0" : "#f66");
 
     if (plasticsMode && classification.catalog && !classification.forcedBlack) {
       document.getElementById("formula-content").textContent = formatFormula(classification.formula);
@@ -2388,7 +1546,6 @@ function update() {
       document.getElementById("formula-content").textContent = formatFormula(classification.formula);
       document.getElementById("adjustment-text").textContent =
         "Sem luz suficiente no receptor.\nClassificação forçada para Preto.\nNenhuma outra cor deve ser considerada nesta condição.";
-
       if (plasticsMode) document.getElementById("formula-panel").classList.add("show");
     }
 
@@ -2415,9 +1572,6 @@ function update() {
   requestAnimationFrame(update);
 }
 
-/* =========================
-   EVENTOS DE CLIQUE
-========================= */
 cameraContainer.addEventListener("click", function(e) {
   if (currentMode === "comparacao" && running) {
     const rect = cameraContainer.getBoundingClientRect();
@@ -2426,26 +1580,22 @@ cameraContainer.addEventListener("click", function(e) {
 
     if (selectingRef) {
       const r = capturePoint(x, y, "ref-thumb", "ref-color-name");
-
       if (r) {
         comparisonRef = r;
         updateComparison();
         speakImmediate("Referência capturada, " + r.displayName);
       }
-
       selectingRef = false;
       return;
     }
 
     if (selectingSample) {
       const r = capturePoint(x, y, "sample-thumb", "sample-color-name");
-
       if (r) {
         comparisonSample = r;
         updateComparison();
         speakImmediate("Amostra capturada, " + r.displayName);
       }
-
       selectingSample = false;
       return;
     }
@@ -2461,27 +1611,18 @@ cameraContainer.addEventListener("click", function(e) {
 
   staticPosition = { x, y };
   staticFrozen = false;
-
   reticle.style.left = x + "px";
   reticle.style.top = y + "px";
   reticle.style.transform = "translate(-50%, -50%)";
   reticle.classList.add("show");
-
   colorBuffer = [];
-
   speakImmediate("Ponto estático selecionado");
 });
 
-/* =========================
-   ÁUDIO, FLASH E SISTEMA
-========================= */
 function toggleAudio() {
   if (!systemOn) return;
-
   if (window.speechSynthesis) window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
-
   audioEnabled = !audioEnabled;
-
   const btn = document.getElementById("btn-audio");
   btn.classList.toggle("active-green", audioEnabled);
 
@@ -2489,12 +1630,10 @@ function toggleAudio() {
     speakImmediate("Áudio ativado");
   } else {
     if (window.speechSynthesis) window.speechSynthesis.cancel();
-
     if (stableTimer) {
       clearTimeout(stableTimer);
       stableTimer = null;
     }
-
     pendingName = "";
     lastSpokenName = "";
   }
@@ -2502,15 +1641,12 @@ function toggleAudio() {
 
 async function toggleFlash() {
   if (!systemOn) return;
-
   flashEnabled = !flashEnabled;
-
   const btn = document.getElementById("btn-flash");
   btn.classList.toggle("active-amber", flashEnabled);
 
   if (stream) {
     const track = stream.getVideoTracks()[0];
-
     if (track && typeof track.applyConstraints === "function") {
       try {
         await track.applyConstraints({ advanced: [{ torch: flashEnabled }] });
@@ -2526,9 +1662,6 @@ async function toggleFlash() {
   speakImmediate(flashEnabled ? "Flash ativado" : "Flash desativado");
 }
 
-/* =========================
-   INICIALIZAÇÃO
-========================= */
 document.getElementById("library-count").textContent = "Biblioteca: " + RAL_PLASTICS_LIBRARY.length + " refs";
 document.getElementById("formula-panel").classList.remove("show");
 document.getElementById("comparison-panel").classList.remove("show");
@@ -2542,7 +1675,7 @@ if (stableTimer) {
 }
 
 console.log("Motor de Cores v4.1 - HTML oficial carregado.");
-console.log("Correção 1: largura fixa do nome da cor para não mover a mira.");
+console.log("Correção 1: comandos visíveis e nome com largura fixa.");
 console.log("Correção 2: áudio fala apenas quando a cor muda.");
 console.log("Correção 3: sem luz/lente coberta força Preto 99%.");
 console.log("RAL Plastics Library:", RAL_PLASTICS_LIBRARY.length, "referências.");
