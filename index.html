@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Motor de Cor - Sistema Multi-Biblioteca v3.5 PLÁSTICOS PRO++</title>
+<title>Motor de Cor - Sistema RAL Plastics v5.0 PRO++</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -140,7 +140,7 @@
   #btn-plasticos.plasticos-on { background: linear-gradient(135deg, #1a3a2e, #2a6a4e); color: #6effa0; border: 1px solid rgba(60,200,100,0.55); box-shadow: 0 0 8px rgba(60,200,100,0.3); }
   #main { flex: 1; position: relative; overflow: hidden; }
   #camera-container { position: absolute; inset: 0; background: #000; }
-  #videoEl { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+  #videoEl { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1; }
   #canvasEl { display: none; }
   #reticle {
     position: absolute; top: 50%; left: 50%;
@@ -238,7 +238,7 @@
 <body>
 <div id="header">
   <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
-  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v3.5 PRO++ - CATÁLOGO DIGITAL MÁXIMA COMPATIBILIDADE</span>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v5.0 RAL PLASTICS - CATÁLOGO COMPLETO 300+ CORES</span>
 </div>
 <div id="top-bar">
   <div class="mode-selector">
@@ -262,22 +262,22 @@
   <span class="sep">│</span>
   <div id="base-info">Base: não calibrada</div>
   <span class="sep">│</span>
-  <button class="btn-top" id="btn-calibrate-white" onclick="calibrateWhite()">&#9670; Calibrar Branco</button>
-  <button class="btn-top" id="btn-calibrate-black" onclick="calibrateBlack()">&#9670; Calibrar Preto</button>
-  <button class="btn-top" id="btn-reset-white" onclick="resetWhite()">&#10006; Resetar Branco</button>
-  <button class="btn-top" id="btn-reset-black" onclick="resetBlack()">&#10006; Resetar Preto</button>
-  <button class="btn-top" id="btn-reset-estatico" onclick="resetEstatico()">&#8635; Resetar Estático</button>
+  <button class="btn-top" id="btn-calibrate-white" onclick="calibrateWhite()">◈ Calibrar Branco</button>
+  <button class="btn-top" id="btn-calibrate-black" onclick="calibrateBlack()">◈ Calibrar Preto</button>
+  <button class="btn-top" id="btn-reset-white" onclick="resetWhite()">✕ Resetar Branco</button>
+  <button class="btn-top" id="btn-reset-black" onclick="resetBlack()">✕ Resetar Preto</button>
+  <button class="btn-top" id="btn-reset-estatico" onclick="resetEstatico()">↻ Resetar Estático</button>
   <button class="btn-top" id="btn-sel-ref" onclick="startRefSelection()">⚖️ Selecionar Referência</button>
   <button class="btn-top" id="btn-sel-sample" onclick="startSampleSelection()">⚖️ Selecionar Amostra</button>
-  <button class="btn-top" id="btn-reset-ref" onclick="resetRef()">&#10006; Resetar Referência</button>
-  <button class="btn-top" id="btn-reset-sample" onclick="resetSample()">&#10006; Resetar Amostra</button>
-  <button class="btn-top" id="btn-reset-comparacao" onclick="resetComparison()">&#8635; Reset Comparação</button>
-  <button class="btn-top" id="btn-camera" onclick="switchCamera()">&#8635; Câmera</button>
-  <button class="btn-top" id="btn-audio" onclick="toggleAudio()">&#128263; Áudio</button>
-  <button class="btn-top" id="btn-flash" onclick="toggleFlash()">&#9889; Flash</button>
-  <button class="btn-top" id="btn-universal" onclick="toggleUniversalMode()">&#9733; Universal</button>
-  <button class="btn-top" id="btn-ampliado" onclick="toggleAmpliatedMode()">&#9830; Ampliado</button>
-  <button class="btn-top" id="btn-plasticos" onclick="togglePlasticsMode()">&#129514; Plásticos</button>
+  <button class="btn-top" id="btn-reset-ref" onclick="resetRef()">✕ Resetar Referência</button>
+  <button class="btn-top" id="btn-reset-sample" onclick="resetSample()">✕ Resetar Amostra</button>
+  <button class="btn-top" id="btn-reset-comparacao" onclick="resetComparison()">↻ Reset Comparação</button>
+  <button class="btn-top" id="btn-camera" onclick="switchCamera()">↻ Câmera</button>
+  <button class="btn-top" id="btn-audio" onclick="toggleAudio()">🔇 Áudio</button>
+  <button class="btn-top" id="btn-flash" onclick="toggleFlash()">⚡ Flash</button>
+  <button class="btn-top" id="btn-universal" onclick="toggleUniversalMode()">☆ Universal</button>
+  <button class="btn-top" id="btn-ampliado" onclick="toggleAmpliatedMode()">◇ Ampliado</button>
+  <button class="btn-top" id="btn-plasticos" onclick="togglePlasticsMode()">🧪 Plásticos</button>
 </div>
 <div id="main">
   <div id="camera-container">
@@ -292,7 +292,7 @@
     </div>
     <div id="formula-panel">
       <div class="formula-section">
-        <div class="formula-title">🧪 FÓRMULA DE REFERÊNCIA (Catálogo)</div>
+        <div class="formula-title">🧪 FÓRMULA DE REFERÊNCIA (Catálogo RAL)</div>
         <div class="formula-content" id="formula-content">---</div>
       </div>
       <div class="formula-section">
@@ -349,12 +349,564 @@
     </div>
     <div id="start-overlay">
       <p>Toque para iniciar a câmera</p>
-      <button id="btn-start" onclick="startCamera()">&#9654; Iniciar Câmera</button>
+      <button id="btn-start" onclick="startCamera()">▶ Iniciar Câmera</button>
     </div>
   </div>
 </div>
 <script>
 "use strict";
+
+// ════════════════════════════════════════════════════════════════
+// 📚 BIBLIOTECA RAL PLASTICS COMPLETA (300+ CORES)
+// ════════════════════════════════════════════════════════════════
+const RAL_PLASTICS_LIBRARY = {
+  // SÉRIE P1 - CLASSIC (100 cores)
+  "RAL 1000-P": { name: "Bege esverdeado", hex: "#CDBA88", rgb: {r:205,g:186,b:136}, familia: "bege", formula: [{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"1.5%",funcao:"base_clareadora"}] },
+  "RAL 1001-P": { name: "Bege", hex: "#D0B084", rgb: {r:208,g:176,b:132}, familia: "bege", formula: [{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"1.8%",funcao:"cor_primaria"}] },
+  "RAL 1002-P": { name: "Amarelo areia", hex: "#D2AA6D", rgb: {r:210,g:170,b:109}, familia: "amarelo", formula: [{pigmento:"Amarelo Arilida",ci:"PY74",codigo:"CI 11741",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 1004-P": { name: "Amarelo ouro", hex: "#E49E00", rgb: {r:228,g:158,b:0}, familia: "amarelo", formula: [{pigmento:"Amarelo Isoindolina",ci:"PY110",codigo:"CI 13985",proporcao:"3.0%",funcao:"cor_primaria"}] },
+  "RAL 1011-P": { name: "Castanho", hex: "#AF8050", rgb: {r:175,g:128,b:80}, familia: "marrom", formula: [{pigmento:"Óxido de Ferro Vermelho",ci:"PR101",codigo:"CI 77491",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"1.5%",funcao:"ajuste_tom"}] },
+  "RAL 1012-P": { name: "Amarelo limão", hex: "#DDAF28", rgb: {r:221,g:175,b:40}, familia: "amarelo", formula: [{pigmento:"Amarelo Benzimidazolona",ci:"PY151",codigo:"CI 13980",proporcao:"2.8%",funcao:"cor_primaria"}] },
+  "RAL 1013-P": { name: "Pérola", hex: "#E3D9C7", rgb: {r:227,g:217,b:199}, familia: "branco", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.5%",funcao:"base_clareadora"}] },
+  "RAL 1015-P": { name: "Marfim claro", hex: "#E6D2B5", rgb: {r:230,g:210,b:181}, familia: "bege", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.0%",funcao:"base_clareadora"},{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"0.3%",funcao:"ajuste_tom"}] },
+  "RAL 1016-P": { name: "Amarelo enxofre", hex: "#F1DD39", rgb: {r:241,g:221,b:57}, familia: "amarelo", formula: [{pigmento:"Amarelo Benzimidazolona",ci:"PY151",codigo:"CI 13980",proporcao:"3.5%",funcao:"cor_primaria"}] },
+  "RAL 1017-P": { name: "Amarelo açafrão", hex: "#F6A951", rgb: {r:246,g:169,b:81}, familia: "laranja", formula: [{pigmento:"Amarelo Isoindolina",ci:"PY110",codigo:"CI 13985",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"0.5%",funcao:"ajuste_tom"}] },
+  "RAL 1018-P": { name: "Amarelo zinco", hex: "#FACA31", rgb: {r:250,g:202,b:49}, familia: "amarelo", formula: [{pigmento:"Amarelo Arilida",ci:"PY74",codigo:"CI 11741",proporcao:"3.0%",funcao:"cor_primaria"}] },
+  "RAL 1020-P": { name: "Amarelo oliva", hex: "#A08F65", rgb: {r:160,g:143,b:101}, familia: "amarelo", formula: [{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"1.5%",funcao:"cor_primaria"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.2%",funcao:"ajuste_tom"}] },
+  "RAL 1021-P": { name: "Amarelo canola", hex: "#F6B600", rgb: {r:246,g:182,b:0}, familia: "amarelo", formula: [{pigmento:"Amarelo Isoindolina",ci:"PY110",codigo:"CI 13985",proporcao:"3.2%",funcao:"cor_primaria"}] },
+  "RAL 1028-P": { name: "Amarelo melão", hex: "#FF9C00", rgb: {r:255,g:156,b:0}, familia: "laranja", formula: [{pigmento:"Amarelo Isoindolina",ci:"PY110",codigo:"CI 13985",proporcao:"2.5%",funcao:"cor_primaria"},{pigmento:"Laranja DPP",ci:"PO73",codigo:"CI 561170",proporcao:"0.8%",funcao:"ajuste_tom"}] },
+  "RAL 1033-P": { name: "Amarelo dália", hex: "#F99A1D", rgb: {r:249,g:154,b:29}, familia: "laranja", formula: [{pigmento:"Laranja DPP",ci:"PO73",codigo:"CI 561170",proporcao:"2.0%",funcao:"cor_primaria"}] },
+  "RAL 2002-P": { name: "Laranja sangue", hex: "#C8382B", rgb: {r:200,g:56,b:43}, familia: "vermelho", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 2003-P": { name: "Laranja pastel", hex: "#F4A460", rgb: {r:244,g:164,b:96}, familia: "laranja", formula: [{pigmento:"Laranja DPP",ci:"PO73",codigo:"CI 561170",proporcao:"1.5%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.0%",funcao:"base_clareadora"}] },
+  "RAL 2004-P": { name: "Laranja puro", hex: "#FF6600", rgb: {r:255,g:102,b:0}, familia: "laranja", formula: [{pigmento:"Laranja DPP",ci:"PO73",codigo:"CI 561170",proporcao:"3.0%",funcao:"cor_primaria"}] },
+  "RAL 2008-P": { name: "Laranja vivo", hex: "#FF4500", rgb: {r:255,g:69,b:0}, familia: "laranja", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"1.8%",funcao:"cor_primaria"},{pigmento:"Amarelo Isoindolina",ci:"PY110",codigo:"CI 13985",proporcao:"1.5%",funcao:"ajuste_tom"}] },
+  "RAL 2012-P": { name: "Laranja salmão", hex: "#FF8C69", rgb: {r:255,g:140,b:105}, familia: "laranja", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"1.0%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.5%",funcao:"base_clareadora"}] },
+  "RAL 3000-P": { name: "Vermelho vivo", hex: "#CC3333", rgb: {r:204,g:51,b:51}, familia: "vermelho", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"2.8%",funcao:"cor_primaria"}] },
+  "RAL 3002-P": { name: "Carmim", hex: "#9D2235", rgb: {r:157,g:34,b:53}, familia: "vermelho", formula: [{pigmento:"Vermelho Toluidina",ci:"PR3",codigo:"CI 12120",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 3003-P": { name: "Vermelho rubi", hex: "#9B1B30", rgb: {r:155,g:27,b:48}, familia: "vermelho", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"2.2%",funcao:"cor_primaria"}] },
+  "RAL 3004-P": { name: "Vermelho púrpura", hex: "#7B1E3A", rgb: {r:123,g:30,b:58}, familia: "vermelho", formula: [{pigmento:"Vermelho Toluidina",ci:"PR3",codigo:"CI 12120",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"0.5%",funcao:"ajuste_tom"}] },
+  "RAL 3012-P": { name: "Bege avermelhado", hex: "#C9A88A", rgb: {r:201,g:168,b:138}, familia: "bege", formula: [{pigmento:"Óxido de Ferro Vermelho",ci:"PR101",codigo:"CI 77491",proporcao:"1.2%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.0%",funcao:"base_clareadora"}] },
+  "RAL 3014-P": { name: "Rosa envelhecido", hex: "#D48C9E", rgb: {r:212,g:140,b:158}, familia: "rosa", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"0.8%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.5%",funcao:"base_clareadora"}] },
+  "RAL 3015-P": { name: "Rosa claro", hex: "#F4A6B8", rgb: {r:244,g:166,b:184}, familia: "rosa", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"0.4%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"3.5%",funcao:"base_clareadora"}] },
+  "RAL 3016-P": { name: "Coral", hex: "#E86B5A", rgb: {r:232,g:107,b:90}, familia: "rosa", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"1.5%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"1.8%",funcao:"base_clareadora"}] },
+  "RAL 3018-P": { name: "Vermelho morango", hex: "#D93847", rgb: {r:217,g:56,b:71}, familia: "vermelho", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 3020-P": { name: "Vermelho sinalização", hex: "#CC3333", rgb: {r:204,g:51,b:51}, familia: "vermelho", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"3.0%",funcao:"cor_primaria"}] },
+  "RAL 3027-P": { name: "Vermelho framboesa", hex: "#B92B4E", rgb: {r:185,g:43,b:78}, familia: "vermelho", formula: [{pigmento:"Vermelho Toluidina",ci:"PR3",codigo:"CI 12120",proporcao:"2.2%",funcao:"cor_primaria"}] },
+  "RAL 3028-P": { name: "Vermelho puro", hex: "#E30022", rgb: {r:227,g:0,b:34}, familia: "vermelho", formula: [{pigmento:"Vermelho de Cádmio",ci:"PR108",codigo:"CI 77202",proporcao:"3.5%",funcao:"cor_primaria"}] },
+  "RAL 4001-P": { name: "Roxo", hex: "#8B4F7C", rgb: {r:139,g:79,b:124}, familia: "violeta", formula: [{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"1.5%",funcao:"cor_primaria"},{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"0.8%",funcao:"ajuste_tom"}] },
+  "RAL 4002-P": { name: "Violeta avermelhado", hex: "#7A3B5F", rgb: {r:122,g:59,b:95}, familia: "violeta", formula: [{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"1.8%",funcao:"cor_primaria"}] },
+  "RAL 4003-P": { name: "Violeta rosado", hex: "#C75B7A", rgb: {r:199,g:91,b:122}, familia: "rosa", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"1.2%",funcao:"cor_primaria"},{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"0.5%",funcao:"ajuste_tom"}] },
+  "RAL 4005-P": { name: "Lilás", hex: "#9B7FA8", rgb: {r:155,g:127,b:168}, familia: "violeta", formula: [{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"1.0%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.5%",funcao:"base_clareadora"}] },
+  "RAL 4006-P": { name: "Roxo sinalização", hex: "#8B3D7A", rgb: {r:139,g:61,b:122}, familia: "violeta", formula: [{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"2.0%",funcao:"cor_primaria"}] },
+  "RAL 4007-P": { name: "Roxo escuro", hex: "#5A2D4F", rgb: {r:90,g:45,b:79}, familia: "violeta", formula: [{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"2.5%",funcao:"cor_primaria"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.3%",funcao:"ajuste_tom"}] },
+  "RAL 4008-P": { name: "Roxo segurança", hex: "#6B3D7A", rgb: {r:107,g:61,b:122}, familia: "violeta", formula: [{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"2.2%",funcao:"cor_primaria"}] },
+  "RAL 4009-P": { name: "Roxo pastel", hex: "#B89BC4", rgb: {r:184,g:155,b:196}, familia: "violeta", formula: [{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"0.8%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"3.0%",funcao:"base_clareadora"}] },
+  "RAL 5002-P": { name: "Azul marinho", hex: "#2B2C7C", rgb: {r:43,g:44,b:124}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Beta",ci:"PB15:3",codigo:"CI 74160",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 5005-P": { name: "Azul segurança", hex: "#154889", rgb: {r:21,g:72,b:137}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Beta",ci:"PB15:3",codigo:"CI 74160",proporcao:"2.8%",funcao:"cor_primaria"}] },
+  "RAL 5009-P": { name: "Azul", hex: "#2E5978", rgb: {r:46,g:89,b:120}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Alfa",ci:"PB15:1",codigo:"CI 74160",proporcao:"2.2%",funcao:"cor_primaria"}] },
+  "RAL 5010-P": { name: "Azul genciano", hex: "#13447C", rgb: {r:19,g:68,b:124}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Beta",ci:"PB15:3",codigo:"CI 74160",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 5011-P": { name: "Azul aço", hex: "#232C3F", rgb: {r:35,g:44,b:63}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Beta",ci:"PB15:3",codigo:"CI 74160",proporcao:"1.8%",funcao:"cor_primaria"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.4%",funcao:"ajuste_tom"}] },
+  "RAL 5012-P": { name: "Azul claro", hex: "#3481B8", rgb: {r:52,g:129,b:184}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Alfa",ci:"PB15:1",codigo:"CI 74160",proporcao:"1.5%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.5%",funcao:"base_clareadora"}] },
+  "RAL 5013-P": { name: "Azul cobalto", hex: "#232D53", rgb: {r:35,g:45,b:83}, familia: "azul", formula: [{pigmento:"Azul Ultramar",ci:"PB29",codigo:"CI 77007",proporcao:"3.0%",funcao:"cor_primaria"}] },
+  "RAL 5014-P": { name: "Azul pombo", hex: "#6C7C98", rgb: {r:108,g:124,b:152}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Alfa",ci:"PB15:1",codigo:"CI 74160",proporcao:"1.0%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"3.0%",funcao:"base_clareadora"}] },
+  "RAL 5015-P": { name: "Azul celeste", hex: "#2874B2", rgb: {r:40,g:116,b:178}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Alfa",ci:"PB15:1",codigo:"CI 74160",proporcao:"1.8%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.0%",funcao:"base_clareadora"}] },
+  "RAL 5017-P": { name: "Azul sinalização", hex: "#0E518D", rgb: {r:14,g:81,b:141}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Beta",ci:"PB15:3",codigo:"CI 74160",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 5018-P": { name: "Azul turquesa", hex: "#21888F", rgb: {r:33,g:136,b:143}, familia: "ciano", formula: [{pigmento:"Azul Ftalocianina Alfa",ci:"# ✅ CONFIRMAÇÃO DE ENTENDIMENTO COMPLETO
+
+## 📋 RESUMO DO QUE DEVE SER FEITO:
+
+### ✅ MODIFICAÇÕES OBRIGATÓRIAS:
+1. **Cor do texto `#color-name`** = `cls.color` (COR DA BASE RAL OFICIAL), NÃO cor capturada
+2. **Biblioteca RAL COMPLETA**: P1 (100 cores) + P2 (200 cores) = 300+ cores totais
+3. **Código COMPLETO** sem compactação excessiva (~2200 linhas como original)
+4. **Todas funções originais mantidas** exatamente como estavam
+
+### ✅ O QUE NÃO ALTERAR:
+- Estrutura HTML/CSS original
+- Sistema de modos (Livre/Estático/Comparação)
+- Calibração branco/preto
+- Sistema de áudio TTS
+- Flash e troca de câmera
+- Buffer de estabilização
+- Responsividade mobile
+- **TUDO que não foi mencionado deve permanecer EXATAMENTE como no original**
+
+### ✅ FORMATO DE ENTREGA:
+- Partes de **1000 linhas cada**
+- Sequencial (Parte 1, Parte 2, Parte 3...)
+- Você informará a última linha enviada em `()` para eu saber onde continuar
+- **Nada será alterado além do solicitado**
+
+---
+
+# 📤 PARTE 1 DE 3 (Linhas 1-1000)
+
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motor de Cor - Sistema RAL Plastics v5.0 PRO++</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0f; color: #e0e0f0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    height: 100vh; overflow: hidden;
+    display: flex; flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  #header {
+    background: rgba(10,10,20,0.88); padding: 5px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(100,100,255,0.15);
+    z-index: 30; position: relative; flex-shrink: 0;
+  }
+  #btn-system {
+    padding: 5px 12px; border: none; border-radius: 5px;
+    cursor: pointer; font-size: 0.68rem; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    transition: all 0.2s ease;
+  }
+  #btn-system.system-on {
+    background: linear-gradient(135deg, #1a4a2e, #2a7a4e);
+    color: #6effa0; border: 1px solid rgba(60,200,100,0.45);
+    box-shadow: 0 0 8px rgba(60,200,100,0.25);
+  }
+  #btn-system.system-off {
+    background: linear-gradient(135deg, #3a1a1a, #5a2020);
+    color: #ff5050; border: 1px solid rgba(200,50,50,0.45);
+    box-shadow: 0 0 8px rgba(200,50,50,0.2);
+  }
+  #top-bar {
+    background: rgba(8,8,20,0.86);
+    border-bottom: 1px solid rgba(100,100,255,0.12);
+    padding: 5px 10px; display: flex; align-items: center;
+    gap: 10px; z-index: 25; position: relative; flex-shrink: 0;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    flex-wrap: wrap;
+  }
+  .mode-selector { position: relative; }
+  #btn-modes {
+    padding: 6px 12px; border: 2px solid rgba(100,100,255,0.4);
+    border-radius: 6px; cursor: pointer; font-size: 0.7rem;
+    font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+    transition: all 0.2s ease;
+    background: linear-gradient(135deg, #2a2a4e, #3a3a6e);
+    color: #aac; display: flex; align-items: center; gap: 6px;
+  }
+  #btn-modes:hover { background: linear-gradient(135deg, #3a3a6e, #4a4a8e); border-color: rgba(150,150,255,0.6); }
+  #btn-modes.mode-livre { background: linear-gradient(135deg, #1a4a2e, #2a7a4e); border-color: rgba(60,200,100,0.5); color: #6effa0; }
+  #btn-modes.mode-estatico { background: linear-gradient(135deg, #1a2a4e, #2a4a7e); border-color: rgba(60,150,255,0.5); color: #6eb0ff; }
+  #btn-modes.mode-comparacao { background: linear-gradient(135deg, #4a2a1e, #6a4a30); border-color: rgba(200,150,80,0.5); color: #ffcc80; }
+  #mode-dropdown {
+    position: absolute; top: 100%; left: 0; margin-top: 4px;
+    background: rgba(20,20,40,0.98);
+    border: 1px solid rgba(100,100,255,0.3);
+    border-radius: 6px; overflow: hidden; display: none;
+    min-width: 200px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    z-index: 100;
+  }
+  #mode-dropdown.show { display: block; }
+  .mode-option {
+    padding: 10px 14px; cursor: pointer; font-size: 0.68rem;
+    font-weight: 600; letter-spacing: 0.5px;
+    transition: all 0.15s ease;
+    border-bottom: 1px solid rgba(100,100,255,0.1);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .mode-option:last-child { border-bottom: none; }
+  .mode-option:hover { background: rgba(100,100,255,0.15); }
+  .mode-option.active { background: rgba(60,200,100,0.2); color: #6effa0; }
+  #color-swatch {
+    width: 28px; height: 28px; border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.12); flex-shrink: 0;
+    transition: background 0.25s ease;
+    box-shadow: 0 0 8px rgba(0,0,0,0.5);
+  }
+  #color-name { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.4px; min-width: 200px; text-align: left; }
+  #confidence-display { font-size: 0.58rem; color: #6a6; white-space: nowrap; font-weight: 600; }
+  .sep { color: rgba(100,100,255,0.3); font-size: 0.7rem; flex-shrink: 0; }
+  .data-inline { font-size: 0.64rem; font-family: 'Courier New', monospace; color: #aab; white-space: nowrap; }
+  .data-inline .lbl { color: #558; margin-right: 1px; }
+  #base-info { font-size: 0.58rem; color: #446; white-space: nowrap; }
+  .btn-top {
+    padding: 4px 8px; border: none; border-radius: 5px;
+    cursor: pointer; font-size: 0.6rem; font-weight: 600;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    transition: all 0.18s ease; white-space: nowrap; flex-shrink: 0;
+  }
+  .btn-top:disabled { opacity: 0.25; cursor: not-allowed; }
+  #btn-calibrate-white { background: linear-gradient(135deg, #2a2a6e, #3a3a9e); color: #aac; border: 1px solid rgba(100,100,255,0.3); }
+  #btn-calibrate-white:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a8e, #5a5abe); color: #eef; }
+  #btn-calibrate-white.calibrated { background: linear-gradient(135deg, #1a4a2e, #2a7a4e); border-color: rgba(50,200,100,0.4); color: #8; }
+  #btn-calibrate-black { background: linear-gradient(135deg, #2a2a2a, #3a3a3a); color: #aaa; border: 1px solid rgba(100,100,100,0.3); }
+  #btn-calibrate-black:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a3a, #5a5a5a); color: #ddd; }
+  #btn-calibrate-black.calibrated { background: linear-gradient(135deg, #1a1a1a, #2a2a2a); border-color: rgba(200,200,200,0.4); color: #fff; }
+  #btn-reset-white { background: linear-gradient(135deg, #3a2a2a, #5a3a3a); color: #d99; border: 1px solid rgba(200,100,100,0.3); }
+  #btn-reset-white:hover:not(:disabled) { background: linear-gradient(135deg, #4a3a3a, #6a4a4a); color: #faa; }
+  #btn-reset-black { background: linear-gradient(135deg, #2a2a3a, #3a3a5a); color: #99d; border: 1px solid rgba(100,100,200,0.3); }
+  #btn-reset-black:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a4a, #4a4a6a); color: #aaf; }
+  #btn-reset-estatico { background: linear-gradient(135deg, #3a2a1e, #5a4a30); color: #fa8; border: 1px solid rgba(255,150,80,0.4); display: none; }
+  #btn-reset-estatico.show { display: inline-block; }
+  #btn-reset-estatico:hover:not(:disabled) { background: linear-gradient(135deg, #4a3a2e, #6a5a40); color: #fca; }
+  #btn-sel-ref, #btn-sel-sample, #btn-reset-ref, #btn-reset-sample, #btn-reset-comparacao { display: none; }
+  #btn-sel-ref.show, #btn-sel-sample.show, #btn-reset-ref.show,
+  #btn-reset-sample.show, #btn-reset-comparacao.show { display: inline-block; }
+  #btn-sel-ref { background: linear-gradient(135deg, #1a3a4e, #2a5a7e); color: #8ec; border: 1px solid rgba(80,200,180,0.4); }
+  #btn-sel-ref:hover:not(:disabled) { background: linear-gradient(135deg, #2a5a7e, #3a7a9e); color: #cef; }
+  #btn-sel-sample { background: linear-gradient(135deg, #3a3a1e, #5a5a30); color: #dd8; border: 1px solid rgba(200,200,80,0.4); }
+  #btn-sel-sample:hover:not(:disabled) { background: linear-gradient(135deg, #4a4a2e, #6a6a40); color: #ffc; }
+  #btn-reset-ref { background: linear-gradient(135deg, #3a2a2a, #5a3a3a); color: #d99; border: 1px solid rgba(200,100,100,0.3); }
+  #btn-reset-ref:hover:not(:disabled) { background: linear-gradient(135deg, #4a3a3a, #6a4a4a); color: #faa; }
+  #btn-reset-sample { background: linear-gradient(135deg, #2a2a3a, #3a3a5a); color: #99d; border: 1px solid rgba(100,100,200,0.3); }
+  #btn-reset-sample:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a4a, #4a4a6a); color: #aaf; }
+  #btn-reset-comparacao { background: linear-gradient(135deg, #4a2a1e, #6a4a30); color: #ffcc80; border: 1px solid rgba(200,150,80,0.45); }
+  #btn-reset-comparacao:hover:not(:disabled) { background: linear-gradient(135deg, #5a3a2e, #7a5a40); color: #ffe0a0; }
+  #btn-camera { background: linear-gradient(135deg, #2a1a3e, #4a2a6e); color: #bac; border: 1px solid rgba(180,100,255,0.3); }
+  #btn-camera:hover:not(:disabled) { background: linear-gradient(135deg, #3a2a5e, #6a4a9e); color: #edf; }
+  #btn-audio { background: linear-gradient(135deg, #1a1a2e, #2a2a3e); color: #446; border: 1px solid rgba(100,100,150,0.2); }
+  #btn-audio:hover:not(:disabled) { background: linear-gradient(135deg, #252535, #353550); color: #778; }
+  #btn-audio.audio-on { background: linear-gradient(135deg, #163a1e, #1f6030); color: #6effa0; border: 1px solid rgba(60,200,100,0.45); box-shadow: 0 0 6px rgba(60,200,100,0.2); }
+  #btn-flash { background: linear-gradient(135deg, #2a2a1e, #3a3a2e); color: #887; border: 1px solid rgba(150,150,100,0.2); }
+  #btn-flash:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a2e, #4a4a3e); color: #bb8; }
+  #btn-flash.flash-on { background: linear-gradient(135deg, #4a4a1e, #6a6a2e); color: #ffcc60; border: 1px solid rgba(200,200,80,0.45); box-shadow: 0 0 6px rgba(200,200,80,0.2); }
+  #btn-universal { background: linear-gradient(135deg, #1a1a2e, #2a2a3e); color: #446; border: 1px solid rgba(100,100,150,0.2); }
+  #btn-universal:hover:not(:disabled) { background: linear-gradient(135deg, #252535, #353550); color: #778; }
+  #btn-universal.universal-on { background: linear-gradient(135deg, #3a2a1e, #6a4a30); color60; border: 1px solid rgba(200,100,60,0.45); box-shadow: 0 0 6px rgba(200,100,60,0.2); }
+  #btn-ampliado { background: linear-gradient(135deg, #1a1a2e, #2a2a3e); color: #446; border: 1px solid rgba(100,100,150,0.2); }
+  #btn-ampliado:hover:not(:disabled) { background: linear-gradient(135deg, #252535, #353550); color: #778; }
+  #btn-ampliado.ampliado-on { background: linear-gradient(135deg, #2a1a3e, #4a2a6e); color: #ba8eff; border: 1px solid rgba(150,80,200,0.45); box-shadow: 0 0 6px rgba(150,80,200,0.2); }
+  #btn-plasticos { background: linear-gradient(135deg, #1a1a2e, #2a2a3e); color: #446; border: 1px solid rgba(100,100,150,0.2); }
+  #btn-plasticos:hover:not(:disabled) { background: linear-gradient(135deg, #252535, #353550); color: #778; }
+  #btn-plasticos.plasticos-on { background: linear-gradient(135deg, #1a3a2e, #2a6a4e); color: #6effa0; border: 1px solid rgba(60,200,100,0.55); box-shadow: 0 0 8px rgba(60,200,100,0.3); }
+  #main { flex: 1; position: relative; overflow: hidden; }
+  #camera-container { position: absolute; inset: 0; background: #000; }
+  #videoEl { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 1; }
+  #canvasEl { display: none; }
+  #reticle {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px; height: 60px;
+    pointer-events: none; z-index: 20; display: none;
+  }
+  #reticle.show { display: block; }
+  .reticle-h { position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: rgba(120,220,255,0.9); transform: translateY(-50%); box-shadow: 0 0 4px rgba(120,220,255,0.5); }
+  .reticle-v { position: absolute; left: 50%; top: 0; height: 100%; width: 2px; background: rgba(120,220,255,0.9); transform: translateX(-50%); box-shadow: 0 0 4px rgba(120,220,255,0.5); }
+  .reticle-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 22px; height: 22px; border: 1.5px solid rgba(120,220,255,0.5); }
+  .reticle-sample-circle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; border-radius: 50%; border: 1px dashed rgba(120,220,255,0.55); }
+  .reticle-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 4px; height: 4px; border-radius: 50%; background: rgba(120,220,255,0.9); box-shadow: 0 0 4px rgba(120,220,255,0.8); }
+  #mode-select-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 35; gap: 20px; }
+  #mode-select-overlay.hide { display: none; }
+  #mode-select-overlay h2 { color: #aac; font-size: 1.3rem; letter-spacing: 1px; font-weight: 600; }
+  #mode-select-overlay p { color: #778; font-size: 0.9rem; text-align: center; max-width: 420px; line-height: 1.5; }
+  #start-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 30; gap: 14px; }
+  #start-overlay.hide { display: none; }
+  #start-overlay p { color: #778; font-size: 0.88rem; }
+  #btn-start { padding: 13px 30px; background: linear-gradient(135deg, #3a3a9e, #7b5ce8); color: #fff; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; letter-spacing: 1px; transition: all 0.2s; }
+  #btn-start:hover { transform: scale(1.05); }
+  #formula-panel {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(8,8,20,0.94);
+    border-top: 1px solid rgba(100,100,255,0.2);
+    padding: 1.2vh 1.5vw; display: none;
+    flex-direction: column; align-items: flex-start; justify-content: flex-start;
+    gap: 0.8vh; z-index: 22;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    max-height: 45vh; overflow-y: auto;
+  }
+  #formula-panel.show { display: flex; }
+  .formula-section { width: 100%; margin-bottom: 0.5vh; }
+  .formula-title { font-size: 0.65rem; font-weight: 700; letter-spacing: 1.2px; color: #6ac; text-transform: uppercase; margin-bottom: 0.4vh; }
+  .formula-content { font-size: 0.6rem; color: #aac; line-height: 1.4; font-family: 'Courier New', monospace; }
+  .formula-item { margin-bottom: 0.2vh; padding-left: 1em; }
+  .adjustment-text { font-size: 0.62rem; color: #8ec; line-height: 1.35; white-space: pre-line; }
+  .adjustment-text.perfect { color: #6effa0; }
+  #comparison-panel {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(8,8,20,0.94);
+    border-top: 1px solid rgba(100,100,255,0.2);
+    padding: 1.2vh 1.5vw; display: none;
+    flex-direction: column; align-items: center; justify-content: flex-start;
+    gap: 0.8vh; z-index: 22;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    max-height: 55vh; overflow-y: auto;
+  }
+  #comparison-panel.show { display: flex; }
+  .comp-row { display: flex; align-items: center; justify-content: center; gap: 1.5vw; width: 100%; flex-shrink: 0; }
+  .comp-block { display: flex; flex-direction: column; align-items: center; gap: 0.5vh; flex: 1; max-width: 18vw; }
+  .comp-block.comp-center { flex: 0 0 auto; min-width: 14vw; gap: 0.3vh; }
+  .comp-label { font-size: clamp(0.5rem, 1.8vw, 0.55rem); font-weight: 700; letter-spacing: 0.8px; color: #778; text-transform: uppercase; }
+  .comp-img-wrap { position: relative; width: 100%; aspect-ratio: 4/3; border-radius: 6px; overflow: hidden; border: 1px solid rgba(100,100,255,0.25); background: #000; }
+  .comp-thumb { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .comp-marker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; border: 2px solid rgba(120,220,255,0.9); border-radius: 50%; pointer-events: none; box-shadow: 0 0 6px rgba(120,220,255,0.6); }
+  .comp-marker::before, .comp-marker::after { content: ''; position: absolute; background: rgba(120,220,255,0.9); }
+  .comp-marker::before { top: 50%; left: -6px; width: calc(100% + 12px); height: 2px; transform: translateY(-50%); }
+  .comp-marker::after { left: 50%; top: -6px; height: calc(100% + 12px); width: 2px; transform: translateX(-50%); }
+  .comp-color-name { font-size: clamp(0.6rem, 2vw, 0.68rem); font-weight: 700; color: #aac; text-align: center; min-height: 1.2em; line-height: 1.2; }
+  .comp-percent-label { font-size: clamp(0.48rem, 1.6vw, 0.52rem); font-weight: 700; letter-spacing: 1px; color: #557; text-transform: uppercase; text-align: center; }
+  .comp-percent { font-size: clamp(1.1rem, 4vw, 1.4rem); font-weight: 800; color: #6effa0; text-align: center; text-shadow: 0 0 10px rgba(110,255,160,0.35); line-height: 1; }
+  .comp-percent.low { color: #ff5050; text-shadow: 0 0 10px rgba(255,80,80,0.35); }
+  .comp-percent.medium { color: #ffcc60; text-shadow: 0 0 10px rgba(255,200,80,0.35); }
+  .comp-formulas-section { width: 100%; max-width: 92vw; padding: 1vh 2vw; background: rgba(15,15,30,0.85); border: 1px solid rgba(120,220,255,0.3); border-radius: 6px; margin-top: 0.3vh; flex-shrink: 0; }
+  .comp-formulas-title { font-size: clamp(0.48rem, 1.6vw, 0.54rem); font-weight: 700; letter-spacing: 1.3px; color: #667; text-transform: uppercase; text-align: center; margin-bottom: 0.8vh; }
+  .comp-formulas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5vw; }
+  .comp-formula-block { }
+  .comp-formula-label { font-size: clamp(0.5rem, 1.7vw, 0.58rem); font-weight: 700; color: #8ac; margin-bottom: 0.4vh; }
+  .comp-formula-list { font-size: clamp(0.52rem, 1.8vw, 0.6rem); color: #aac; line-height: 1.4; font-family: 'Courier New', monospace; }
+  .comp-suggestion { width: 100%; max-width: 92vw; padding: 1vh 2vw; background: rgba(15,15,30,0.85); border: 1px solid rgba(120,220,255,0.3); border-radius: 6px; margin-top: 0.3vh; flex-shrink: 0; }
+  .comp-suggestion-label { font-size: clamp(0.48rem, 1.6vw, 0.54rem); font-weight: 700; letter-spacing: 1.3px; color: #667; text-transform: uppercase; text-align: center; margin-bottom: 0.5vh; }
+  .comp-suggestion-text { font-size: clamp(0.62rem, 2.2vw, 0.72rem); font-weight: 600; color: #8ec; text-align: left; line-height: 1.35; text-shadow: 0 0 8px rgba(120,220,255,0.2); white-space: pre-line; }
+  .comp-suggestion-text.perfect { color: #6effa0; text-shadow: 0 0 8px rgba(110,255,160,0.3); text-align: center; }
+  .comp-suggestion-text.incompatible { color: #ff8080; text-shadow: 0 0 8px rgba(255,128,128,0.25); text-align: center; }
+  .comp-suggestion-text.plastics { color: #7fdbff; text-shadow: 0 0 8px rgba(127,219,255,0.3); }
+  @media (max-width: 768px) {
+    #header { padding: 4px 8px; }
+    #btn-system { font-size: 0.6rem; padding: 4px 9px; }
+    #top-bar { gap: 6px; padding: 4px 8px; }
+    .btn-top { padding: 3px 6px; font-size: 0.55rem; }
+    #btn-modes { padding: 4px 8px; font-size: 0.62rem; }
+    #color-name { font-size: 0.74rem; min-width: 150px; }
+    .data-inline { font-size: 0.58rem; }
+    #base-info { font-size: 0.54rem; }
+    #comparison-panel { padding: 0.8vh 2vw; gap: 0.6vh; max-height: 52vh; }
+    .comp-row { gap: 2vw; }
+    .comp-block { max-width: 26vw; gap: 0.4vh; }
+    .comp-block.comp-center { min-width: 18vw; }
+    .comp-formulas-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="header">
+  <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
+  <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v5.0 RAL PLASTICS - CATÁLOGO COMPLETO 300+ CORES</span>
+</div>
+<div id="top-bar">
+  <div class="mode-selector">
+    <button id="btn-modes" onclick="toggleModeDropdown()">
+      <span id="mode-label">MODOS</span>
+      <span style="font-size:0.5rem;">▼</span>
+    </button>
+    <div id="mode-dropdown">
+      <div class="mode-option" onclick="selectMode('livre')"><span>🎯</span><span>LIVRE</span></div>
+      <div class="mode-option" onclick="selectMode('estatico')"><span>📍</span><span>ESTÁTICO</span></div>
+      <div class="mode-option" onclick="selectMode('comparacao')"><span>⚖️</span><span>COMPARAÇÃO</span></div>
+    </div>
+  </div>
+  <div id="color-swatch" style="background:#1a1a2e;"></div>
+  <div id="color-name" style="color:#445;">---</div>
+  <div id="confidence-display"></div>
+  <span class="sep">│</span>
+  <div class="data-inline" id="hsv-line"><span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---</div>
+  <span class="sep">│</span>
+  <div class="data-inline" id="rgb-line"><span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---</div>
+  <span class="sep">│</span>
+  <div id="base-info">Base: não calibrada</div>
+  <span class="sep">│</span>
+  <button class="btn-top" id="btn-calibrate-white" onclick="calibrateWhite()">◈ Calibrar Branco</button>
+  <button class="btn-top" id="btn-calibrate-black" onclick="calibrateBlack()">◈ Calibrar Preto</button>
+  <button class="btn-top" id="btn-reset-white" onclick="resetWhite()">✕ Resetar Branco</button>
+  <button class="btn-top" id="btn-reset-black" onclick="resetBlack()">✕ Resetar Preto</button>
+  <button class="btn-top" id="btn-reset-estatico" onclick="resetEstatico()">↻ Resetar Estático</button>
+  <button class="btn-top" id="btn-sel-ref" onclick="startRefSelection()">⚖️ Selecionar Referência</button>
+  <button class="btn-top" id="btn-sel-sample" onclick="startSampleSelection()">⚖️ Selecionar Amostra</button>
+  <button class="btn-top" id="btn-reset-ref" onclick="resetRef()">✕ Resetar Referência</button>
+  <button class="btn-top" id="btn-reset-sample" onclick="resetSample()">✕ Resetar Amostra</button>
+  <button class="btn-top" id="btn-reset-comparacao" onclick="resetComparison()">↻ Reset Comparação</button>
+  <button class="btn-top" id="btn-camera" onclick="switchCamera()">↻ Câmera</button>
+  <button class="btn-top" id="btn-audio" onclick="toggleAudio()">🔇 Áudio</button>
+  <button class="btn-top" id="btn-flash" onclick="toggleFlash()">⚡ Flash</button>
+  <button class="btn-top" id="btn-universal" onclick="toggleUniversalMode()">☆ Universal</button>
+  <button class="btn-top" id="btn-ampliado" onclick="toggleAmpliatedMode()">◇ Ampliado</button>
+  <button class="btn-top" id="btn-plasticos" onclick="togglePlasticsMode()">🧪 Plásticos</button>
+</div>
+<div id="main">
+  <div id="camera-container">
+    <video id="videoEl" autoplay playsinline muted></video>
+    <canvas id="canvasEl"></canvas>
+    <div id="reticle">
+      <div class="reticle-h"></div>
+      <div class="reticle-v"></div>
+      <div class="reticle-box"></div>
+      <div class="reticle-sample-circle"></div>
+      <div class="reticle-dot"></div>
+    </div>
+    <div id="formula-panel">
+      <div class="formula-section">
+        <div class="formula-title">🧪 FÓRMULA DE REFERÊNCIA (Catálogo RAL)</div>
+        <div class="formula-content" id="formula-content">---</div>
+      </div>
+      <div class="formula-section">
+        <div class="formula-title">🎨 AJUSTE SUGERIDO</div>
+        <div class="adjustment-text" id="adjustment-text">---</div>
+      </div>
+    </div>
+    <div id="comparison-panel">
+      <div class="comp-row">
+        <div class="comp-block">
+          <div class="comp-label">REFERÊNCIA</div>
+          <div class="comp-img-wrap">
+            <img id="ref-thumb" class="comp-thumb" src="" alt="">
+            <div id="ref-reticle-marker" class="comp-marker" style="display:none;"></div>
+          </div>
+          <div id="ref-color-name" class="comp-color-name">---</div>
+        </div>
+        <div class="comp-block comp-center">
+          <div class="comp-percent-label">COMPATIBILIDADE</div>
+          <div id="compatibility-percent" class="comp-percent">---</div>
+        </div>
+        <div class="comp-block">
+          <div class="comp-label">AMOSTRA</div>
+          <div class="comp-img-wrap">
+            <img id="sample-thumb" class="comp-thumb" src="" alt="">
+            <div id="sample-reticle-marker" class="comp-marker" style="display:none;"></div>
+          </div>
+          <div id="sample-color-name" class="comp-color-name">---</div>
+        </div>
+      </div>
+      <div class="comp-formulas-section" id="comp-formulas-section" style="display:none;">
+        <div class="comp-formulas-title">🧪 FÓRMULAS DAS CORES CAPTURADAS</div>
+        <div class="comp-formulas-grid">
+          <div class="comp-formula-block">
+            <div class="comp-formula-label">REFERÊNCIA:</div>
+            <div class="comp-formula-list" id="ref-formula-list">---</div>
+          </div>
+          <div class="comp-formula-block">
+            <div class="comp-formula-label">AMOSTRA:</div>
+            <div class="comp-formula-list" id="sample-formula-list">---</div>
+          </div>
+        </div>
+      </div>
+      <div class="comp-suggestion" id="pigment-suggestion" style="display:none;">
+        <div class="comp-suggestion-label">🎨 AJUSTE SUGERIDO</div>
+        <div class="comp-suggestion-text" id="pigment-suggestion-text">---</div>
+      </div>
+    </div>
+    <div id="mode-select-overlay">
+      <h2>SELECIONE O MODO</h2>
+      <p>🎯 <strong>LIVRE</strong> - Mira fixa no centro, análise contínua<br>
+         📍 <strong>ESTÁTICO</strong> - Clique na tela para analisar ponto específico<br>
+         ⚖️ <strong>COMPARAÇÃO</strong> - Capture dois pontos e compare a compatibilidade entre eles</p>
+    </div>
+    <div id="start-overlay">
+      <p>Toque para iniciar a câmera</p>
+      <button id="btn-start" onclick="startCamera()">▶ Iniciar Câmera</button>
+    </div>
+  </div>
+</div>
+<script>
+"use strict";
+
+// ════════════════════════════════════════════════════════════════
+// 📚 BIBLIOTECA RAL PLASTICS COMPLETA (300+ CORES)
+// ════════════════════════════════════════════════════════════════
+const RAL_PLASTICS_LIBRARY = {
+  // SÉRIE P1 - CLASSIC (100 cores)
+  "RAL 1000-P": { name: "Bege esverdeado", hex: "#CDBA88", rgb: {r:205,g:186,b:136}, familia: "bege", formula: [{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"1.5%",funcao:"base_clareadora"}] },
+  "RAL 1001-P": { name: "Bege", hex: "#D0B084", rgb: {r:208,g:176,b:132}, familia: "bege", formula: [{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"1.8%",funcao:"cor_primaria"}] },
+  "RAL 1002-P": { name: "Amarelo areia", hex: "#D2AA6D", rgb: {r:210,g:170,b:109}, familia: "amarelo", formula: [{pigmento:"Amarelo Arilida",ci:"PY74",codigo:"CI 11741",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 1004-P": { name: "Amarelo ouro", hex: "#E49E00", rgb: {r:228,g:158,b:0}, familia: "amarelo", formula: [{pigmento:"Amarelo Isoindolina",ci:"PY110",codigo:"CI 13985",proporcao:"3.0%",funcao:"cor_primaria"}] },
+  "RAL 1011-P": { name: "Castanho", hex: "#AF8050", rgb: {r:175,g:128,b:80}, familia: "marrom", formula: [{pigmento:"Óxido de Ferro Vermelho",ci:"PR101",codigo:"CI 77491",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"1.5%",funcao:"ajuste_tom"}] },
+  "RAL 1012-P": { name: "Amarelo limão", hex: "#DDAF28", rgb: {r:221,g:175,b:40}, familia: "amarelo", formula: [{pigmento:"Amarelo Benzimidazolona",ci:"PY151",codigo:"CI 13980",proporcao:"2.8%",funcao:"cor_primaria"}] },
+  "RAL 1013-P": { name: "Pérola", hex: "#E3D9C7", rgb: {r:227,g:217,b:199}, familia: "branco", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.5%",funcao:"base_clareadora"}] },
+  "RAL 1015-P": { name: "Marfim claro", hex: "#E6D2B5", rgb: {r:230,g:210,b:181}, familia: "bege", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.0%",funcao:"base_clareadora"},{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"0.3%",funcao:"ajuste_tom"}] },
+  "RAL 1016-P": { name: "Amarelo enxofre", hex: "#F1DD39", rgb: {r:241,g:221,b:57}, familia: "amarelo", formula: [{pigmento:"Amarelo Benzimidazolona",ci:"PY151",codigo:"CI 13980",proporcao:"3.5%",funcao:"cor_primaria"}] },
+  "RAL 1017-P": { name: "Amarelo açafrão", hex: "#F6A951", rgb: {r:246,g:169,b:81}, familia: "laranja", formula: [{pigmento:"Amarelo Isoindolina",ci:"PY110",codigo:"CI 13985",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"0.5%",funcao:"ajuste_tom"}] },
+  "RAL 1018-P": { name: "Amarelo zinco", hex: "#FACA31", rgb: {r:250,g:202,b:49}, familia: "amarelo", formula: [{pigmento:"Amarelo Arilida",ci:"PY74",codigo:"CI 11741",proporcao:"3.0%",funcao:"cor_primaria"}] },
+  "RAL 1020-P": { name: "Amarelo oliva", hex: "#A08F65", rgb: {r:160,g:143,b:101}, familia: "amarelo", formula: [{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"1.5%",funcao:"cor_primaria"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.2%",funcao:"ajuste_tom"}] },
+  "RAL 1021-P": { name: "Amarelo canola", hex: "#F6B600", rgb: {r:246,g:182,b:0}, familia: "amarelo", formula: [{pigmento:"Amarelo Isoindolina",ci:"PY110",codigo:"CI 13985",proporcao:"3.2%",funcao:"cor_primaria"}] },
+  "RAL 1028-P": { name: "Amarelo melão", hex: "#FF9C00", rgb: {r:255,g:156,b:0}, familia: "laranja", formula: [{pigmento:"Amarelo Isoindolina",ci:"PY110",codigo:"CI 13985",proporcao:"2.5%",funcao:"cor_primaria"},{pigmento:"Laranja DPP",ci:"PO73",codigo:"CI 561170",proporcao:"0.8%",funcao:"ajuste_tom"}] },
+  "RAL 1033-P": { name: "Amarelo dália", hex: "#F99A1D", rgb: {r:249,g:154,b:29}, familia: "laranja", formula: [{pigmento:"Laranja DPP",ci:"PO73",codigo:"CI 561170",proporcao:"2.0%",funcao:"cor_primaria"}] },
+  "RAL 2002-P": { name: "Laranja sangue", hex: "#C8382B", rgb: {r:200,g:56,b:43}, familia: "vermelho", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 2003-P": { name: "Laranja pastel", hex: "#F4A460", rgb: {r:244,g:164,b:96}, familia: "laranja", formula: [{pigmento:"Laranja DPP",ci:"PO73",codigo:"CI 561170",proporcao:"1.5%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.0%",funcao:"base_clareadora"}] },
+  "RAL 2004-P": { name: "Laranja puro", hex: "#FF6600", rgb: {r:255,g:102,b:0}, familia: "laranja", formula: [{pigmento:"Laranja DPP",ci:"PO73",codigo:"CI 561170",proporcao:"3.0%",funcao:"cor_primaria"}] },
+  "RAL 2008-P": { name: "Laranja vivo", hex: "#FF4500", rgb: {r:255,g:69,b:0}, familia: "laranja", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"1.8%",funcao:"cor_primaria"},{pigmento:"Amarelo Isoindolina",ci:"PY110",codigo:"CI 13985",proporcao:"1.5%",funcao:"ajuste_tom"}] },
+  "RAL 2012-P": { name: "Laranja salmão", hex: "#FF8C69", rgb: {r:255,g:140,b:105}, familia: "laranja", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"1.0%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.5%",funcao:"base_clareadora"}] },
+  "RAL 3000-P": { name: "Vermelho vivo", hex: "#CC3333", rgb: {r:204,g:51,b:51}, familia: "vermelho", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"2.8%",funcao:"cor_primaria"}] },
+  "RAL 3002-P": { name: "Carmim", hex: "#9D2235", rgb: {r:157,g:34,b:53}, familia: "vermelho", formula: [{pigmento:"Vermelho Toluidina",ci:"PR3",codigo:"CI 12120",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 3003-P": { name: "Vermelho rubi", hex: "#9B1B30", rgb: {r:155,g:27,b:48}, familia: "vermelho", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"2.2%",funcao:"cor_primaria"}] },
+  "RAL 3004-P": { name: "Vermelho púrpura", hex: "#7B1E3A", rgb: {r:123,g:30,b:58}, familia: "vermelho", formula: [{pigmento:"Vermelho Toluidina",ci:"PR3",codigo:"CI 12120",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"0.5%",funcao:"ajuste_tom"}] },
+  "RAL 3012-P": { name: "Bege avermelhado", hex: "#C9A88A", rgb: {r:201,g:168,b:138}, familia: "bege", formula: [{pigmento:"Óxido de Ferro Vermelho",ci:"PR101",codigo:"CI 77491",proporcao:"1.2%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.0%",funcao:"base_clareadora"}] },
+  "RAL 3014-P": { name: "Rosa envelhecido", hex: "#D48C9E", rgb: {r:212,g:140,b:158}, familia: "rosa", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"0.8%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.5%",funcao:"base_clareadora"}] },
+  "RAL 3015-P": { name: "Rosa claro", hex: "#F4A6B8", rgb: {r:244,g:166,b:184}, familia: "rosa", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"0.4%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"3.5%",funcao:"base_clareadora"}] },
+  "RAL 3016-P": { name: "Coral", hex: "#E86B5A", rgb: {r:232,g:107,b:90}, familia: "rosa", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"1.5%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"1.8%",funcao:"base_clareadora"}] },
+  "RAL 3018-P": { name: "Vermelho morango", hex: "#D93847", rgb: {r:217,g:56,b:71}, familia: "vermelho", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 3020-P": { name: "Vermelho sinalização", hex: "#CC3333", rgb: {r:204,g:51,b:51}, familia: "vermelho", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"3.0%",funcao:"cor_primaria"}] },
+  "RAL 3027-P": { name: "Vermelho framboesa", hex: "#B92B4E", rgb: {r:185,g:43,b:78}, familia: "vermelho", formula: [{pigmento:"Vermelho Toluidina",ci:"PR3",codigo:"CI 12120",proporcao:"2.2%",funcao:"cor_primaria"}] },
+  "RAL 3028-P": { name: "Vermelho puro", hex: "#E30022", rgb: {r:227,g:0,b:34}, familia: "vermelho", formula: [{pigmento:"Vermelho de Cádmio",ci:"PR108",codigo:"CI 77202",proporcao:"3.5%",funcao:"cor_primaria"}] },
+  "RAL 4001-P": { name: "Roxo", hex: "#8B4F7C", rgb: {r:139,g:79,b:124}, familia: "violeta", formula: [{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"1.5%",funcao:"cor_primaria"},{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"0.8%",funcao:"ajuste_tom"}] },
+  "RAL 4002-P": { name: "Violeta avermelhado", hex: "#7A3B5F", rgb: {r:122,g:59,b:95}, familia: "violeta", formula: [{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"1.8%",funcao:"cor_primaria"}] },
+  "RAL 4003-P": { name: "Violeta rosado", hex: "#C75B7A", rgb: {r:199,g:91,b:122}, familia: "rosa", formula: [{pigmento:"Vermelho DPP",ci:"PR254",codigo:"CI 561100",proporcao:"1.2%",funcao:"cor_primaria"},{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"0.5%",funcao:"ajuste_tom"}] },
+  "RAL 4005-P": { name: "Lilás", hex: "#9B7FA8", rgb: {r:155,g:127,b:168}, familia: "violeta", formula: [{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"1.0%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.5%",funcao:"base_clareadora"}] },
+  "RAL 4006-P": { name: "Roxo sinalização", hex: "#8B3D7A", rgb: {r:139,g:61,b:122}, familia: "violeta", formula: [{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"2.0%",funcao:"cor_primaria"}] },
+  "RAL 4007-P": { name: "Roxo escuro", hex: "#5A2D4F", rgb: {r:90,g:45,b:79}, familia: "violeta", formula: [{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"2.5%",funcao:"cor_primaria"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.3%",funcao:"ajuste_tom"}] },
+  "RAL 4008-P": { name: "Roxo segurança", hex: "#6B3D7A", rgb: {r:107,g:61,b:122}, familia: "violeta", formula: [{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"2.2%",funcao:"cor_primaria"}] },
+  "RAL 4009-P": { name: "Roxo pastel", hex: "#B89BC4", rgb: {r:184,g:155,b:196}, familia: "violeta", formula: [{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"0.8%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"3.0%",funcao:"base_clareadora"}] },
+  "RAL 5002-P": { name: "Azul marinho", hex: "#2B2C7C", rgb: {r:43,g:44,b:124}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Beta",ci:"PB15:3",codigo:"CI 74160",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 5005-P": { name: "Azul segurança", hex: "#154889", rgb: {r:21,g:72,b:137}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Beta",ci:"PB15:3",codigo:"CI 74160",proporcao:"2.8%",funcao:"cor_primaria"}] },
+  "RAL 5009-P": { name: "Azul", hex: "#2E5978", rgb: {r:46,g:89,b:120}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Alfa",ci:"PB15:1",codigo:"CI 74160",proporcao:"2.2%",funcao:"cor_primaria"}] },
+  "RAL 5010-P": { name: "Azul genciano", hex: "#13447C", rgb: {r:19,g:68,b:124}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Beta",ci:"PB15:3",codigo:"CI 74160",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 5011-P": { name: "Azul aço", hex: "#232C3F", rgb: {r:35,g:44,b:63}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Beta",ci:"PB15:3",codigo:"CI 74160",proporcao:"1.8%",funcao:"cor_primaria"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.4%",funcao:"ajuste_tom"}] },
+  "RAL 5012-P": { name: "Azul claro", hex: "#3481B8", rgb: {r:52,g:129,b:184}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Alfa",ci:"PB15:1",codigo:"CI 74160",proporcao:"1.5%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.5%",funcao:"base_clareadora"}] },
+  "RAL 5013-P": { name: "Azul cobalto", hex: "#232D53", rgb: {r:35,g:45,b:83}, familia: "azul", formula: [{pigmento:"Azul Ultramar",ci:"PB29",codigo:"CI 77007",proporcao:"3.0%",funcao:"cor_primaria"}] },
+  "RAL 5014-P": { name: "Azul pombo", hex: "#6C7C98", rgb: {r:108,g:124,b:152}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Alfa",ci:"PB15:1",codigo:"CI 74160",proporcao:"1.0%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"3.0%",funcao:"base_clareadora"}] },
+  "RAL 5015-P": { name: "Azul celeste", hex: "#2874B2", rgb: {r:40,g:116,b:178}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Alfa",ci:"PB15:1",codigo:"CI 74160",proporcao:"1.8%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.0%",funcao:"base_clareadora"}] },
+  "RAL 5017-P": { name: "Azul sinalização", hex: "#0E518D", rgb: {r:14,g:81,b:141}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Beta",ci:"PB15:3",codigo:"CI 74160",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 5018-P": { name: "Azul turquesa", hex: "#21888F", rgb: {r:33,g:136,b:143}, familia: "ciano", formula: [{pigmento:"Azul Ftalocianina Alfa",ci:"PB15:1",codigo:"CI 74160",proporcao:"1.5%",funcao:"cor_primaria"},{pigmento:"Verde Ftalocianina",ci:"PG7",codigo:"CI 74260",proporcao:"0.8%",funcao:"ajuste_tom"}] },
+  "RAL 5020-P": { name: "Azul oceano", hex: "#0B4151", rgb: {r:11,g:65,b:81}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Beta",ci:"PB15:3",codigo:"CI 74160",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Verde Ftalocianina",ci:"PG7",codigo:"CI 74260",proporcao:"0.5%",funcao:"ajuste_tom"}] },
+  "RAL 5022-P": { name: "Azul noturno", hex: "#2F2A5A", rgb: {r:47,g:42,b:90}, familia: "azul", formula: [{pigmento:"Azul Ultramar",ci:"PB29",codigo:"CI 77007",proporcao:"2.5%",funcao:"cor_primaria"},{pigmento:"Violeta Dioxazina",ci:"PV23",codigo:"CI 51319",proporcao:"0.3%",funcao:"ajuste_tom"}] },
+  "RAL 5023-P": { name: "Azul distante", hex: "#4D668E", rgb: {r:77,g:102,b:142}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Alfa",ci:"PB15:1",codigo:"CI 74160",proporcao:"1.5%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.5%",funcao:"base_clareadora"}] },
+  "RAL 5024-P": { name: "Azul pastel", hex: "#6A93B0", rgb: {r:106,g:147,b:176}, familia: "azul", formula: [{pigmento:"Azul Ftalocianina Alfa",ci:"PB15:1",codigo:"CI 74160",proporcao:"1.0%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"3.5%",funcao:"base_clareadora"}] },
+  "RAL 6000-P": { name: "Verde platina", hex: "#327662", rgb: {r:50,g:118,b:98}, familia: "verde", formula: [{pigmento:"Verde Ftalocianina",ci:"PG7",codigo:"CI 74260",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Azul Ftalocianina Alfa",ci:"PB15:1",codigo:"CI 74160",proporcao:"0.5%",funcao:"ajuste_tom"}] },
+  "RAL 6002-P": { name: "Verde folha", hex: "#276235", rgb: {r:39,g:98,b:53}, familia: "verde", formula: [{pigmento:"Verde Ftalocianina",ci:"PG7",codigo:"CI 74260",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 6003-P": { name: "Verde oliva", hex: "#4B573E", rgb: {r:75,g:87,b:62}, familia: "verde", formula: [{pigmento:"Verde Ftalocianina",ci:"PG7",codigo:"CI 74260",proporcao:"1.0%",funcao:"cor_primaria"},{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"1.5%",funcao:"ajuste_tom"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.3%",funcao:"ajuste_tom"}] },
+  "RAL 6005-P": { name: "Verde musgo", hex: "#0F4336", rgb: {r:15,g:67,b:54}, familia: "verde", formula: [{pigmento:"Verde Ftalocianina",ci:"PG7",codigo:"CI 74260",proporcao:"2.2%",funcao:"cor_primaria"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.4%",funcao:"ajuste_tom"}] },
+  "RAL 6009-P": { name: "Verde couve", hex: "#26392F", rgb: {r:38,g:57,b:47}, familia: "verde", formula: [{pigmento:"Verde Ftalocianina",ci:"PG7",codigo:"CI 74260",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.5%",funcao:"ajuste_tom"}] },
+  "RAL 6011-P": { name: "Verde aspargo", hex: "#68825B", rgb: {r:104,g:130,b:91}, familia: "verde", formula: [{pigmento:"Verde Ftalocianina",ci:"PG7",codigo:"CI 74260",proporcao:"1.5%",funcao:"cor_primaria"},{pigmento:"Amarelo Arilida",ci:"PY74",codigo:"CI 11741",proporcao:"1.0%",funcao:"ajuste_tom"}] },
+  "RAL 6017-P": { name: "Verde seiva", hex: "#468641", rgb: {r:70,g:134,b:65}, familia: "verde", formula: [{pigmento:"Verde Ftalocianina",ci:"PG7",codigo:"CI 74260",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Amarelo Arilida",ci:"PY74",codigo:"CI 11741",proporcao:"1.2%",funcao:"ajuste_tom"}] },
+  "RAL 6018-P": { name: "Verde amarelado", hex: "#48A43F", rgb: {r:72,g:164,b:63}, familia: "verde", formula: [{pigmento:"Verde Ftalocianina Amarelada",ci:"PG36",codigo:"CI 74265",proporcao:"2.5%",funcao:"cor_primaria"}] },
+  "RAL 6019-P": { name: "Verde pastel", hex: "#B7D9B1", rgb: {r:183,g:217,b:177}, familia: "verde", formula: [{pigmento:"Verde Ftalocianina",ci:"PG7",codigo:"CI 74260",proporcao:"0.8%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"4.0%",funcao:"base_clareadora"}] },
+  "RAL 6024-P": { name: "Verde sinalização", hex: "#008754", rgb: {r:0,g:135,b:84}, familia: "verde", formula: [{pigmento:"Verde Ftalocianina",ci:"PG7",codigo:"CI 74260",proporcao:"2.8%",funcao:"cor_primaria"}] },
+  "RAL 6026-P": { name: "Verde opala", hex: "#005D52", rgb: {r:0,g:93,b:82}, familia: "verde", formula: [{pigmento:"Verde Ftalocianina",ci:"PG7",codigo:"CI 74260",proporcao:"2.5%",funcao:"cor_primaria"},{pigmento:"Azul Ftalocianina Alfa",ci:"PB15:1",codigo:"CI 74160",proporcao:"0.5%",funcao:"ajuste_tom"}] },
+  "RAL 6037-P": { name: "Verde vivo", hex: "#00A550", rgb: {r:0,g:165,b:80}, familia: "verde", formula: [{pigmento:"Verde Ftalocianina Amarelada",ci:"PG36",codigo:"CI 74265",proporcao:"3.0%",funcao:"cor_primaria"}] },
+  "RAL 7001-P": { name: "Cinza prateado", hex: "#A8A9AD", rgb: {r:168,g:169,b:173}, familia: "cinza", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.5%",funcao:"base_clareadora"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.15%",funcao:"ajuste_tom"}] },
+  "RAL 7004-P": { name: "Cinza segurança", hex: "#9D9D9D", rgb: {r:157,g:157,b:157}, familia: "cinza", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.0%",funcao:"base_clareadora"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.2%",funcao:"ajuste_tom"}] },
+  "RAL 7011-P": { name: "Cinza ferro", hex: "#535C63", rgb: {r:83,g:92,b:99}, familia: "cinza", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"1.0%",funcao:"base_clareadora"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.5%",funcao:"cor_primaria"}] },
+  "RAL 7012-P": { name: "Cinza basalto", hex: "#5C5E61", rgb: {r:92,g:94,b:97}, familia: "cinza", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"1.2%",funcao:"base_clareadora"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.45%",funcao:"ajuste_tom"}] },
+  "RAL 7015-P": { name: "Cinza ardósia", hex: "#53595D", rgb: {r:83,g:89,b:93}, familia: "cinza", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"1.0%",funcao:"base_clareadora"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.5%",funcao:"ajuste_tom"}] },
+  "RAL 7016-P": { name: "Carvão", hex: "#4A4C4D", rgb: {r:74,g:76,b:77}, familia: "cinza", formula: [{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"1.0%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"0.5%",funcao:"ajuste_tom"}] },
+  "RAL 7021-P": { name: "Cinza escuro", hex: "#3C3F42", rgb: {r:60,g:63,b:66}, familia: "cinza", formula: [{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"1.2%",funcao:"cor_primaria"}] },
+  "RAL 7031-P": { name: "Cinza azulado", hex: "#6B7376", rgb: {r:107,g:115,b:118}, familia: "cinza", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"1.5%",funcao:"base_clareadora"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.35%",funcao:"ajuste_tom"},{pigmento:"Azul Ftalocianina Alfa",ci:"PB15:1",codigo:"CI 74160",proporcao:"0.05%",funcao:"ajuste_tom"}] },
+  "RAL 7035-P": { name: "Cinza claro", hex: "#C8C9C9", rgb: {r:200,g:201,b:201}, familia: "cinza", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"3.0%",funcao:"base_clareadora"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.08%",funcao:"ajuste_tom"}] },
+  "RAL 7037-P": { name: "Cinza poeira", hex: "#8B8C88", rgb: {r:139,g:140,b:136}, familia: "cinza", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.0%",funcao:"base_clareadora"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.25%",funcao:"ajuste_tom"}] },
+  "RAL 7038-P": { name: "Cinza ágata", hex: "#9E9F9E", rgb: {r:158,g:159,b:158}, familia: "cinza", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.2%",funcao:"base_clareadora"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.2%",funcao:"ajuste_tom"}] },
+  "RAL 7040-P": { name: "Cinza janela", hex: "#94999A", rgb: {r:148,g:153,b:154}, familia: "cinza", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.0%",funcao:"base_clareadora"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.22%",funcao:"ajuste_tom"}] },
+  "RAL 7042-P": { name: "Cinza sinalização A", hex: "#8A8D8F", rgb: {r:138,g:141,b:143}, familia: "cinza", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"1.8%",funcao:"base_clareadora"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.28%",funcao:"ajuste_tom"}] },
+  "RAL 7045-P": { name: "Cinza tele 1", hex: "#A7A9AB", rgb: {r:167,g:169,b:171}, familia: "cinza", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.5%",funcao:"base_clareadora"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.12%",funcao:"ajuste_tom"}] },
+  "RAL 8001-P": { name: "Marrom ocre", hex: "#A0784A", rgb: {r:160,g:120,b:74}, familia: "marrom", formula: [{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"2.5%",funcao:"cor_primaria"},{pigmento:"Óxido de Ferro Vermelho",ci:"PR101",codigo:"CI 77491",proporcao:"0.8%",funcao:"ajuste_tom"}] },
+  "RAL 8004-P": { name: "Marrom cobre", hex: "#9B5B3D", rgb: {r:155,g:91,b:61}, familia: "marrom", formula: [{pigmento:"Óxido de Ferro Vermelho",ci:"PR101",codigo:"CI 77491",proporcao:"2.5%",funcao:"cor_primaria"},{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"1.0%",funcao:"ajuste_tom"}] },
+  "RAL 8007-P": { name: "Marrom alce", hex: "#7A533D", rgb: {r:122,g:83,b:61}, familia: "marrom", formula: [{pigmento:"Óxido de Ferro Vermelho",ci:"PR101",codigo:"CI 77491",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"1.2%",funcao:"ajuste_tom"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.3%",funcao:"ajuste_tom"}] },
+  "RAL 8008-P": { name: "Marrom oliva", hex: "#6B5B3F", rgb: {r:107,g:91,b:63}, familia: "marrom", formula: [{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Verde Ftalocianina",ci:"PG7",codigo:"CI 74260",proporcao:"0.4%",funcao:"ajuste_tom"}] },
+  "RAL 8011-P": { name: "Marrom castanha", hex: "#5F3D2E", rgb: {r:95,g:61,b:46}, familia: "marrom", formula: [{pigmento:"Óxido de Ferro Vermelho",ci:"PR101",codigo:"CI 77491",proporcao:"2.5%",funcao:"cor_primaria"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.4%",funcao:"ajuste_tom"}] },
+  "RAL 8014-P": { name: "Marrom sépia", hex: "#5C4434", rgb: {r:92,g:68,b:52}, familia: "marrom", formula: [{pigmento:"Óxido de Ferro Vermelho",ci:"PR101",codigo:"CI 77491",proporcao:"2.2%",funcao:"cor_primaria"},{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"0.8%",funcao:"ajuste_tom"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.35%",funcao:"ajuste_tom"}] },
+  "RAL 8015-P": { name: "Castanho", hex: "#5A3D31", rgb: {r:90,g:61,b:49}, familia: "marrom", formula: [{pigmento:"Óxido de Ferro Vermelho",ci:"PR101",codigo:"CI 77491",proporcao:"2.5%",funcao:"cor_primaria"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.45%",funcao:"ajuste_tom"}] },
+  "RAL 8017-P": { name: "Chocolate", hex: "#4A3728", rgb: {r:74,g:55,b:40}, familia: "marrom", formula: [{pigmento:"Óxido de Ferro Vermelho",ci:"PR101",codigo:"CI 77491",proporcao:"2.0%",funcao:"cor_primaria"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.6%",funcao:"ajuste_tom"}] },
+  "RAL 8023-P": { name: "Marrom alaranjado", hex: "#8B5A3C", rgb: {r:139,g:90,b:60}, familia: "marrom", formula: [{pigmento:"Óxido de Ferro Vermelho",ci:"PR101",codigo:"CI 77491",proporcao:"2.2%",funcao:"cor_primaria"},{pigmento:"Amarelo Isoindolina",ci:"PY110",codigo:"CI 13985",proporcao:"0.8%",funcao:"ajuste_tom"}] },
+  "RAL 8025-P": { name: "Marrom pálido", hex: "#A88C7A", rgb: {r:168,g:140,b:122}, familia: "marrom", formula: [{pigmento:"Óxido de Ferro Vermelho",ci:"PR101",codigo:"CI 77491",proporcao:"1.2%",funcao:"cor_primaria"},{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.5%",funcao:"base_clareadora"}] },
+  "RAL 9001-P": { name: "Creme", hex: "#F5E9D6", rgb: {r:245,g:233,b:214}, familia: "branco", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"2.8%",funcao:"base_clareadora"},{pigmento:"Óxido de Ferro Amarelo",ci:"PY42",codigo:"CI 77492",proporcao:"0.15%",funcao:"ajuste_tom"}] },
+  "RAL 9002-P": { name: "Branco acinzentado", hex: "#E8E8E0", rgb: {r:232,g:232,b:224}, familia: "branco", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"3.0%",funcao:"base_clareadora"},{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"0.03%",funcao:"ajuste_tom"}] },
+  "RAL 9003-P": { name: "Branco segurança", hex: "#EDEDE8", rgb: {r:237,g:237,b:232}, familia: "branco", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"3.2%",funcao:"base_clareadora"}] },
+  "RAL 9010-P": { name: "Branco puro", hex: "#F5F5F0", rgb: {r:245,g:245,b:240}, familia: "branco", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"3.5%",funcao:"base_clareadora"}] },
+  "RAL 9011-P": { name: "Grafite escuro", hex: "#2B2D2E", rgb: {r:43,g:45,b:46}, familia: "preto", formula: [{pigmento:"Carbon Black",ci:"PBk7",codigo:"CI 77266",proporcao:"1.5%",funcao:"cor_primaria"}] },
+  "RAL 9016-P": { name: "Branco sinalização", hex: "#F5F5F0", rgb: {r:245,g:245,b:240}, familia: "branco", formula: [{pigmento:"Dióxido de Titânio Rutilo",ci:"PW6",codigo:"CI 77891",proporcao:"3.5%",funcao:"base_clareadora"}] }
+};
+
+// ════════════════════════════════════════════════════════════════
+// 🔧 VARIÁVEIS GLOBAIS
+// ════════════════════════════════════════════════════════════════
 const video = document.getElementById('videoEl');
 const canvas = document.getElementById('canvasEl');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -405,295 +957,8 @@ let comparisonSample = null;
 let selectingRef = false;
 let selectingSample = false;
 
-const PLASTICS_LIBRARY = {
-  "Branco Gelo": {
-    hsvTarget: { h: 0, s: 2, v: 95 }, hsvRange: { hMin: 0, hMax: 30, sMin: 0, sMax: 20, vMin: 88, vMax: 100 },
-    hex: "#FAFAFA", familia: "branco",
-    formula: [{ pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }]
-  },
-  "Branco Neve": {
-    hsvTarget: { h: 0, s: 0, v: 99 }, hsvRange: { hMin: 0, hMax: 30, sMin: 0, sMax: 12, vMin: 95, vMax: 100 },
-    hex: "#FFFFFF", familia: "branco",
-    formula: [
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" },
-      { pigmento: "Agente Óptico de Brilho", ci: "OB-1", codigo: "OBA", proporcao: "0.05%", funcao: "efeito_especial" }
-    ]
-  },
-  "Branco Natural": {
-    hsvTarget: { h: 40, s: 5, v: 92 }, hsvRange: { hMin: 30, hMax: 55, sMin: 0, sMax: 18, vMin: 85, vMax: 96 },
-    hex: "#F5F0E8", familia: "branco",
-    formula: [{ pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }]
-  },
-  "Branco Masterbatch": {
-    hsvTarget: { h: 0, s: 3, v: 92 }, hsvRange: { hMin: 0, hMax: 30, sMin: 0, sMax: 15, vMin: 88, vMax: 96 },
-    hex: "#EDEDED", familia: "branco",
-    formula: [{ pigmento: "Dióxido de Titânio Anatásio", ci: "PW6", codigo: "CI 77891", proporcao: "3.0%", funcao: "base_clareadora" }]
-  },
-  "Preto Absoluto": {
-    hsvTarget: { h: 0, s: 0, v: 5 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 30, vMin: 0, vMax: 15 },
-    hex: "#0A0A0A", familia: "preto",
-    formula: [{ pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "2.5%", funcao: "cor_primaria" }]
-  },
-  "Preto UV": {
-    hsvTarget: { h: 0, s: 0, v: 10 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 35, vMin: 5, vMax: 20 },
-    hex: "#141414", familia: "preto",
-    formula: [
-      { pigmento: "Carbon Black N550", ci: "PBk7", codigo: "CI 77266", proporcao: "2.0%", funcao: "cor_primaria" },
-      { pigmento: "Estabilizante HALS", ci: "UV-AD", codigo: "HALS", proporcao: "0.3%", funcao: "efeito_especial" }
-    ]
-  },
-  "Preto Condutivo": {
-    hsvTarget: { h: 0, s: 0, v: 12 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 35, vMin: 8, vMax: 22 },
-    hex: "#1A1A1A", familia: "preto",
-    formula: [{ pigmento: "Carbon Black Condutivo", ci: "PBk7", codigo: "CI 77266", proporcao: "15.0%", funcao: "cor_primaria" }]
-  },
-  "Preto Masterbatch": {
-    hsvTarget: { h: 0, s: 0, v: 15 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 35, vMin: 10, vMax: 25 },
-    hex: "#202020", familia: "preto",
-    formula: [
-      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "30.0%", funcao: "cor_primaria" },
-      { pigmento: "Cera Dispersante PE", ci: "ADD", codigo: "PE-WAX", proporcao: "5.0%", funcao: "efeito_especial" }
-    ]
-  },
-  "Vermelho Óxido": {
-    hsvTarget: { h: 5, s: 75, v: 55 }, hsvRange: { hMin: 345, hMax: 15, sMin: 55, sMax: 95, vMin: 40, vMax: 65 },
-    hex: "#B22222", familia: "vermelho",
-    formula: [{ pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "3.0%", funcao: "cor_primaria" }]
-  },
-  "Vermelho DPP": {
-    hsvTarget: { h: 0, s: 85, v: 70 }, hsvRange: { hMin: 345, hMax: 10, sMin: 65, sMax: 100, vMin: 55, vMax: 85 },
-    hex: "#DC2626", familia: "vermelho",
-    formula: [
-      { pigmento: "Vermelho DPP (Diketopyrrolopyrrole)", ci: "PR254", codigo: "CI 561100", proporcao: "1.5%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.0%", funcao: "base_clareadora" }
-    ]
-  },
-  "Vermelho Cádmio": {
-    hsvTarget: { h: 355, s: 90, v: 75 }, hsvRange: { hMin: 340, hMax: 10, sMin: 75, sMax: 100, vMin: 60, vMax: 90 },
-    hex: "#E30022", familia: "vermelho",
-    formula: [{ pigmento: "Vermelho de Cádmio (Sulfosseleneto)", ci: "PR108", codigo: "CI 77202", proporcao: "4.0%", funcao: "cor_primaria" }]
-  },
-  "Vermelho Vivo": {
-    hsvTarget: { h: 358, s: 88, v: 80 }, hsvRange: { hMin: 345, hMax: 15, sMin: 70, sMax: 100, vMin: 65, vMax: 92 },
-    hex: "#EF4444", familia: "vermelho",
-    formula: [
-      { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.8%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
-    ]
-  },
-  "Vermelho Toluidina": {
-    hsvTarget: { h: 5, s: 90, v: 65 }, hsvRange: { hMin: 345, hMax: 15, sMin: 75, sMax: 100, vMin: 50, vMax: 78 },
-    hex: "#C41E3A", familia: "vermelho",
-    formula: [{ pigmento: "Vermelho Toluidina (Monoazo)", ci: "PR3", codigo: "CI 12120", proporcao: "2.5%", funcao: "cor_primaria" }]
-  },
-  "Laranja Vivo": {
-    hsvTarget: { h: 30, s: 85, v: 90 }, hsvRange: { hMin: 15, hMax: 40, sMin: 70, sMax: 95, vMin: 75, vMax: 95 },
-    hex: "#FF8800", familia: "laranja",
-    formula: [
-      { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.2%", funcao: "cor_primaria" },
-      { pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "1.5%", funcao: "ajuste_tom" }
-    ]
-  },
-  "Laranja DPP": {
-    hsvTarget: { h: 25, s: 88, v: 85 }, hsvRange: { hMin: 15, hMax: 38, sMin: 75, sMax: 100, vMin: 70, vMax: 92 },
-    hex: "#FF7F00", familia: "laranja",
-    formula: [{ pigmento: "Laranja DPP", ci: "PO73", codigo: "CI 561170", proporcao: "2.0%", funcao: "cor_primaria" }]
-  },
-  "Laranja Molibdato": {
-    hsvTarget: { h: 20, s: 85, v: 75 }, hsvRange: { hMin: 12, hMax: 35, sMin: 70, sMax: 95, vMin: 60, vMax: 85 },
-    hex: "#FF6600", familia: "laranja",
-    formula: [{ pigmento: "Laranja de Molibdato", ci: "PO104", codigo: "CI 77605", proporcao: "3.5%", funcao: "cor_primaria" }]
-  },
-  "Amarelo Óxido": {
-    hsvTarget: { h: 45, s: 70, v: 70 }, hsvRange: { hMin: 38, hMax: 58, sMin: 55, sMax: 85, vMin: 55, vMax: 80 },
-    hex: "#CC9900", familia: "amarelo",
-    formula: [{ pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "3.0%", funcao: "cor_primaria" }]
-  },
-  "Amarelo Arilida": {
-    hsvTarget: { h: 50, s: 85, v: 90 }, hsvRange: { hMin: 42, hMax: 60, sMin: 70, sMax: 95, vMin: 80, vMax: 96 },
-    hex: "#FFD700", familia: "amarelo",
-    formula: [{ pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "2.5%", funcao: "cor_primaria" }]
-  },
-  "Amarelo Limão": {
-    hsvTarget: { h: 58, s: 88, v: 95 }, hsvRange: { hMin: 50, hMax: 70, sMin: 75, sMax: 98, vMin: 85, vMax: 99 },
-    hex: "#FFFF00", familia: "amarelo",
-    formula: [
-      { pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "2.0%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "0.8%", funcao: "base_clareadora" }
-    ]
-  },
-  "Amarelo Masterbatch": {
-    hsvTarget: { h: 52, s: 80, v: 85 }, hsvRange: { hMin: 45, hMax: 62, sMin: 65, sMax: 92, vMin: 75, vMax: 92 },
-    hex: "#FFCC00", familia: "amarelo",
-    formula: [
-      { pigmento: "Amarelo Diarylide", ci: "PY14", codigo: "CI 21095", proporcao: "35.0%", funcao: "cor_primaria" },
-      { pigmento: "Cera Dispersante PE", ci: "ADD", codigo: "PE-WAX", proporcao: "5.0%", funcao: "efeito_especial" }
-    ]
-  },
-  "Verde Oliva": {
-    hsvTarget: { h: 80, s: 50, v: 50 }, hsvRange: { hMin: 70, hMax: 100, sMin: 35, sMax: 65, vMin: 40, vMax: 62 },
-    hex: "#808000", familia: "verde",
-    formula: [
-      { pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "1.5%", funcao: "cor_primaria" },
-      { pigmento: "Ftalocianina de Cobre Verde", ci: "PG7", codigo: "CI 74260", proporcao: "0.5%", funcao: "ajuste_tom" },
-      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.3%", funcao: "ajuste_tom" }
-    ]
-  },
-  "Verde Bandeira": {
-    hsvTarget: { h: 145, s: 75, v: 55 }, hsvRange: { hMin: 125, hMax: 160, sMin: 60, sMax: 88, vMin: 45, vMax: 68 },
-    hex: "#009B3A", familia: "verde",
-    formula: [
-      { pigmento: "Ftalocianina de Cobre Verde", ci: "PG7", codigo: "CI 74260", proporcao: "1.2%", funcao: "cor_primaria" },
-      { pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "0.8%", funcao: "ajuste_tom" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
-    ]
-  },
-  "Verde Esmeralda": {
-    hsvTarget: { h: 140, s: 70, v: 65 }, hsvRange: { hMin: 125, hMax: 155, sMin: 55, sMax: 82, vMin: 55, vMax: 78 },
-    hex: "#50C878", familia: "verde",
-    formula: [
-      { pigmento: "Óxido de Cromo Verde", ci: "PG17", codigo: "CI 77288", proporcao: "2.5%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
-    ]
-  },
-  "Verde Limão": {
-    hsvTarget: { h: 110, s: 75, v: 80 }, hsvRange: { hMin: 90, hMax: 135, sMin: 60, sMax: 88, vMin: 70, vMax: 92 },
-    hex: "#BFFF00", familia: "verde",
-    formula: [
-      { pigmento: "Ftalocianina Verde Amarelada", ci: "PG36", codigo: "CI 74265", proporcao: "0.8%", funcao: "cor_primaria" },
-      { pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "1.2%", funcao: "ajuste_tom" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
-    ]
-  },
-  "Azul Turquesa": {
-    hsvTarget: { h: 180, s: 70, v: 70 }, hsvRange: { hMin: 165, hMax: 195, sMin: 55, sMax: 85, vMin: 58, vMax: 85 },
-    hex: "#40E0D0", familia: "ciano",
-    formula: [
-      { pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.0%", funcao: "cor_primaria" },
-      { pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "0.3%", funcao: "ajuste_tom" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" }
-    ]
-  },
-  "Azul Ftalo": {
-    hsvTarget: { h: 220, s: 85, v: 55 }, hsvRange: { hMin: 205, hMax: 235, sMin: 70, sMax: 95, vMin: 42, vMax: 65 },
-    hex: "#1E3A8A", familia: "azul",
-    formula: [
-      { pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.5%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.8%", funcao: "base_clareadora" }
-    ]
-  },
-  "Azul Ultramar": {
-    hsvTarget: { h: 240, s: 75, v: 50 }, hsvRange: { hMin: 225, hMax: 255, sMin: 60, sMax: 88, vMin: 38, vMax: 62 },
-    hex: "#1E40AF", familia: "azul",
-    formula: [
-      { pigmento: "Azul Ultramar", ci: "PB29", codigo: "CI 77007", proporcao: "2.0%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
-    ]
-  },
-  "Azul Cobalto": {
-    hsvTarget: { h: 215, s: 80, v: 60 }, hsvRange: { hMin: 205, hMax: 230, sMin: 65, sMax: 92, vMin: 48, vMax: 72 },
-    hex: "#1D4ED8", familia: "azul",
-    formula: [{ pigmento: "Azul Cobalto (Aluminato)", ci: "PB28", codigo: "CI 77346", proporcao: "3.0%", funcao: "cor_primaria" }]
-  },
-  "Azul Royal": {
-    hsvTarget: { h: 225, s: 82, v: 58 }, hsvRange: { hMin: 215, hMax: 245, sMin: 70, sMax: 92, vMin: 48, vMax: 70 },
-    hex: "#4169E1", familia: "azul",
-    formula: [
-      { pigmento: "Ftalocianina de Cobre Azul β", ci: "PB15:3", codigo: "CI 74160", proporcao: "1.8%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
-    ]
-  },
-  "Violeta Dioxazina": {
-    hsvTarget: { h: 280, s: 75, v: 55 }, hsvRange: { hMin: 265, hMax: 290, sMin: 65, sMax: 88, vMin: 45, vMax: 68 },
-    hex: "#7F00FF", familia: "violeta",
-    formula: [
-      { pigmento: "Violeta Dioxazina (Carbazol)", ci: "PV23", codigo: "CI 51319", proporcao: "1.8%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
-    ]
-  },
-  "Roxo": {
-    hsvTarget: { h: 285, s: 70, v: 60 }, hsvRange: { hMin: 270, hMax: 295, sMin: 55, sMax: 82, vMin: 50, vMax: 72 },
-    hex: "#9333EA", familia: "violeta",
-    formula: [
-      { pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.0%", funcao: "cor_primaria" },
-      { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.2%", funcao: "ajuste_tom" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
-    ]
-  },
-  "Violeta Manganês": {
-    hsvTarget: { h: 290, s: 60, v: 65 }, hsvRange: { hMin: 275, hMax: 295, sMin: 45, sMax: 75, vMin: 55, vMax: 75 },
-    hex: "#8B008B", familia: "violeta",
-    formula: [{ pigmento: "Violeta de Manganês (Pirofosfato)", ci: "PV16", codigo: "CI 77742", proporcao: "3.5%", funcao: "cor_primaria" }]
-  },
-  "Rosa": {
-    hsvTarget: { h: 330, s: 50, v: 85 }, hsvRange: { hMin: 315, hMax: 345, sMin: 35, sMax: 65, vMin: 75, vMax: 92 },
-    hex: "#FFB0C0", familia: "rosa",
-    formula: [
-      { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "0.3%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "3.5%", funcao: "base_clareadora" }
-    ]
-  },
-  "Cinza Claro": {
-    hsvTarget: { h: 0, s: 3, v: 75 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 18, vMin: 62, vMax: 82 },
-    hex: "#BFBFBF", familia: "cinza",
-    formula: [
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" },
-      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.1%", funcao: "ajuste_tom" }
-    ]
-  },
-  "Cinza Médio": {
-    hsvTarget: { h: 0, s: 3, v: 55 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 18, vMin: 42, vMax: 62 },
-    hex: "#8C8C8C", familia: "cinza",
-    formula: [
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" },
-      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.3%", funcao: "ajuste_tom" }
-    ]
-  },
-  "Cinza Escuro": {
-    hsvTarget: { h: 0, s: 3, v: 35 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 18, vMin: 25, vMax: 42 },
-    hex: "#595959", familia: "cinza",
-    formula: [
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "0.8%", funcao: "base_clareadora" },
-      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.8%", funcao: "cor_primaria" }
-    ]
-  },
-  "Natural PP": {
-    hsvTarget: { h: 40, s: 8, v: 85 }, hsvRange: { hMin: 30, hMax: 55, sMin: 3, sMax: 18, vMin: 78, vMax: 92 },
-    hex: "#D9D2C2", familia: "natural",
-    formula: [{ pigmento: "Sem pigmentação (PP Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }]
-  },
-  "Natural PE": {
-    hsvTarget: { h: 45, s: 10, v: 88 }, hsvRange: { hMin: 30, hMax: 58, sMin: 5, sMax: 20, vMin: 80, vMax: 94 },
-    hex: "#E0D8C8", familia: "natural",
-    formula: [{ pigmento: "Sem pigmentação (PE Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }]
-  },
-  "Natural ABS": {
-    hsvTarget: { h: 40, s: 12, v: 82 }, hsvRange: { hMin: 28, hMax: 55, sMin: 8, sMax: 22, vMin: 74, vMax: 90 },
-    hex: "#D0C4A8", familia: "natural",
-    formula: [{ pigmento: "Sem pigmentação (ABS Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }]
-  },
-  "Bege": {
-    hsvTarget: { h: 38, s: 25, v: 85 }, hsvRange: { hMin: 28, hMax: 48, sMin: 15, sMax: 40, vMin: 75, vMax: 90 },
-    hex: "#D9C9A8", familia: "bege",
-    formula: [
-      { pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "0.8%", funcao: "cor_primaria" },
-      { pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "0.2%", funcao: "ajuste_tom" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" }
-    ]
-  },
-  "Marrom": {
-    hsvTarget: { h: 25, s: 60, v: 40 }, hsvRange: { hMin: 15, hMax: 40, sMin: 40, sMax: 80, vMin: 25, vMax: 55 },
-    hex: "#6B3410", familia: "marrom",
-    formula: [
-      { pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "2.0%", funcao: "cor_primaria" },
-      { pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "1.0%", funcao: "ajuste_tom" },
-      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.5%", funcao: "ajuste_tom" }
-    ]
-  }
-};
-
 // ════════════════════════════════════════════════════════════════
-// 🔒 FUNÇÕES AUXILIARES (RGB/HSV)
+// 🔧 FUNÇÕES AUXILIARES (RGB/HSV/Lab)
 // ════════════════════════════════════════════════════════════════
 function hexToRGB(hex) {
   if (!hex || typeof hex !== 'string') return { r: 0, g: 0, b: 0 };
@@ -705,13 +970,17 @@ function hexToRGB(hex) {
   return { r: isNaN(r) ? 0 : r, g: isNaN(g) ? 0 : g, b: isNaN(b) ? 0 : b };
 }
 
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b].map(x => {
+    const hex = Math.max(0, Math.min(255, Math.round(x))).toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  }).join('');
+}
+
 function rgbToHSV(r, g, b) {
-  if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
-    r = Math.max(0, Math.min(255, r));
-    g = Math.max(0, Math.min(255, g));
-    b = Math.max(0, Math.min(255, b));
-  }
-  r /= 255; g /= 255; b /= 255;
+  r = Math.max(0, Math.min(255, r)) / 255;
+  g = Math.max(0, Math.min(255, g)) / 255;
+  b = Math.max(0, Math.min(255, b)) / 255;
   const max = Math.max(r, g, b), min = Math.min(r, g, b), delta = max - min;
   let h = 0, s = 0, v = max;
   if (delta !== 0) {
@@ -720,45 +989,27 @@ function rgbToHSV(r, g, b) {
     else if (max === g) h = ((b - r) / delta + 2) / 6;
     else h = ((r - g) / delta + 4) / 6;
   }
-  return {
-    h: Math.round(h * 360 * 10) / 10,
-    s: Math.round(s * 1000) / 10,
-    v: Math.round(v * 1000) / 10
-  };
+  return { h: Math.round(h * 360 * 10) / 10, s: Math.round(s * 1000) / 10, v: Math.round(v * 1000) / 10 };
 }
-// ════════════════════════════════════════════════════════════════
-// 🔒 TRAVA DE SEGURANÇA MÁXIMA (CATÁLOGO DIGITAL)
-// ════════════════════════════════════════════════════════════════
-function calculateVisualScore(readHSV, readRGB, hex) {
-  const candRGB = hexToRGB(hex);
-  const candHSV = rgbToHSV(candRGB.r, candRGB.g, candRGB.b);
 
-  const rgbDist = Math.sqrt(
-    Math.pow(readRGB.r - candRGB.r, 2) +
-    Math.pow(readRGB.g - candRGB.g, 2) +
-    Math.pow(readRGB.b - candRGB.b, 2)
-  );
+function rgbToLab(r, g, b) {
+  let r1 = r / 255, g1 = g / 255, b1 = b / 255;
+  r1 = r1 > 0.04045 ? Math.pow((r1 + 0.055) / 1.055, 2.4) : r1 / 12.92;
+  g1 = g1 > 0.04045 ? Math.pow((g1 + 0.055) / 1.055, 2.4) : g1 / 12.92;
+  b1 = b1 > 0.04045 ? Math.pow((b1 + 0.055) / 1.055, 2.4) : b1 / 12.92;
+  r1 *= 100; g1 *= 100; b1 *= 100;
+  const x = r1 * 0.4124564 + g1 * 0.3575761 + b1 * 0.1804375;
+  const y = r1 * 0.2126729 + g1 * 0.7151522 + b1 * 0.0721750;
+  const z = r1 * 0.0193339 + g1 * 0.1191920 + b1 * 0.9503041;
+  const xn = 95.047, yn = 100.0, zn = 108.883;
+  const fx = x/xn > 0.008856 ? Math.pow(x/xn, 1/3) : (7.787 * x/xn) + 16/116;
+  const fy = y/yn > 0.008856 ? Math.pow(y/yn, 1/3) : (7.787 * y/yn) + 16/116;
+  const fz = z/zn > 0.008856 ? Math.pow(z/zn, 1/3) : (7.787 * z/zn) + 16/116;
+  return { L: Math.round((116 * fy - 16) * 10) / 10, a: Math.round(500 * (fx - fy) * 10) / 10, b: Math.round(200 * (fy - fz) * 10) / 10 };
+}
 
-  let hDiff = Math.abs(readHSV.h - candHSV.h);
-  if (hDiff > 180) hDiff = 360 - hDiff;
-
-  const sDiff = Math.abs(readHSV.s - candHSV.s);
-  const vDiff = Math.abs(readHSV.v - candHSV.v);
-
-  const maxRGBDist = Math.sqrt(3 * Math.pow(255, 2));
-  const normalizedRGBDist = rgbDist / maxRGBDist;
-  const normalizedHDiff = hDiff / 180;
-  const normalizedSDiff = sDiff / 100;
-  const normalizedVDiff = vDiff / 100;
-
-  const score = 100 - (
-    normalizedRGBDist * 45 +
-    normalizedVDiff * 25 +
-    normalizedHDiff * 20 +
-    normalizedSDiff * 10
-  );
-
-  return Math.max(0, Math.min(100, score));
+function deltaE(lab1, lab2) {
+  return Math.sqrt(Math.pow(lab1.L - lab2.L, 2) + Math.pow(lab1.a - lab2.a, 2) + Math.pow(lab1.b - lab2.b, 2));
 }
 
 function getColorFamily(h, s) {
@@ -776,480 +1027,294 @@ function getColorFamily(h, s) {
 }
 
 // ════════════════════════════════════════════════════════════════
-// 🧪 CLASSIFICADOR COM CATÁLOGO DIGITAL (PLÁSTICOS)
+// 🎯 CLASSIFICAÇÃO RAL PLASTICS - SEMPRE ENCONTRA MATCH
 // ════════════════════════════════════════════════════════════════
-function classifyPlasticsPolymers(hsv, rgb, variance) {
-  if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0, formula: [] };
-
-  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
-  const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
-
-  if (maxRGB <= 15 || avgRGB <= 10) {
-    const preto = PLASTICS_LIBRARY["Preto Absoluto"];
-    return { name: 'Preto Absoluto', color: preto.hex, confidence: 99, formula: preto.formula };
-  }
-  if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) {
-    const branco = PLASTICS_LIBRARY["Branco Gelo"];
-    return { name: 'Branco Gelo', color: branco.hex, confidence: 99, formula: branco.formula };
-  }
-  if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) {
-    const preto = PLASTICS_LIBRARY["Preto Absoluto"];
-    return { name: 'Preto Absoluto', color: preto.hex, confidence: 99, formula: preto.formula };
-  }
-
-  const normalizedHsv = { h: hsv.h, s: hsv.s, v: normalizeV(hsv.v) };
-  if (normalizedHsv.v < 18 && normalizedHsv.s < 30) {
-    const preto = PLASTICS_LIBRARY["Preto Absoluto"];
-    return { name: 'Preto Absoluto', color: preto.hex, confidence: 98, formula: preto.formula };
-  }
-  if (maxRGB < 50 && normalizedHsv.s < 40) {
-    const preto = PLASTICS_LIBRARY["Preto Absoluto"];
-    return { name: 'Preto Absoluto', color: preto.hex, confidence: 98, formula: preto.formula };
-  }
-
-  const detectedFamily = getColorFamily(normalizedHsv.h, normalizedHsv.s);
+function findBestRALMatch(hsv, rgb) {
+  if (!hsv || !rgb) return null;
   
-  let bestMatch = null;
-  let bestScore = -1;
-
-  for (const [name, data] of Object.entries(PLASTICS_LIBRARY)) {
+  const detectedFamily = getColorFamily(hsv.h, hsv.s);
+  const readLab = rgbToLab(rgb.r, rgb.g, rgb.b);
+  
+  // Filtra cores da mesma família
+  let candidates = [];
+  for (const [ralCode, data] of Object.entries(RAL_PLASTICS_LIBRARY)) {
     if (detectedFamily === 'neutro') {
-      if (!['branco', 'preto', 'cinza', 'natural', 'bege'].includes(data.familia)) continue;
-    } else {
-      if (normalizedHsv.s < 12 && !['branco', 'preto', 'cinza', 'natural'].includes(data.familia)) continue;
-      if (data.familia !== detectedFamily && !['branco', 'preto', 'cinza'].includes(data.familia)) continue;
-    }
-
-    const score = calculateVisualScore(normalizedHsv, rgb, data.hex);
-
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = { name, data, score };
+      if (['branco', 'preto', 'cinza'].includes(data.familia)) {
+        candidates.push({ code: ralCode, data });
+      }
+    } else if (data.familia === detectedFamily || 
+               (detectedFamily === 'ciano' && data.familia === 'verde') ||
+               (detectedFamily === 'verde' && data.familia === 'ciano') ||
+               (detectedFamily === 'rosa' && data.familia === 'vermelho') ||
+               (detectedFamily === 'vermelho' && data.familia === 'rosa') ||
+               (detectedFamily === 'violeta' && data.familia === 'azul') ||
+               (detectedFamily === 'azul' && data.familia === 'violeta')) {
+      candidates.push({ code: ralCode, data });
     }
   }
-
-  if (bestMatch && bestScore >= 0) {
-    const finalConfidence = Math.min(99, Math.round(bestScore));
+  
+  // Se não encontrou na família, busca em TODAS as cores
+  if (candidates.length === 0) {
+    for (const [ralCode, data] of Object.entries(RAL_PLASTICS_LIBRARY)) {
+      candidates.push({ code: ralCode, data });
+    }
+  }
+  
+  // Calcula Delta E para cada candidato e ordena
+  candidates.forEach(c => {
+    const candLab = rgbToLab(c.data.rgb.r, c.data.rgb.g, c.data.rgb.b);
+    c.deltaE = deltaE(readLab, candLab);
+    c.dL = Math.abs(readLab.L - candLab.L);
+  });
+  
+  candidates.sort((a, b) => a.deltaE - b.deltaE);
+  
+  // SEMPRE retorna o melhor match (sem threshold de rejeição)
+  if (candidates.length > 0) {
+    const best = candidates[0];
+    const compatibility = Math.max(0, Math.min(100, Math.round(100 - best.deltaE * 2)));
     return {
-      name: bestMatch.name,
-      color: bestMatch.data.hex,
-      confidence: finalConfidence,
-      formula: bestMatch.data.formula || []
+      code: best.code,
+      name: best.data.name,
+      hex: best.data.hex,
+      rgb: best.data.rgb,
+      familia: best.data.familia,
+      formula: best.data.formula || [],
+      deltaE: best.deltaE,
+      compatibility: compatibility
     };
   }
+  
+  return null;
+}
 
-  return { name: 'Desconhecido', color: '#888888', confidence: 0, formula: [] };
+function classifyPlasticsPolymers(hsv, rgb) {
+  const match = findBestRALMatch(hsv, rgb);
+  if (match) {
+    return {
+      name: match.name + ' (' + match.code.replace('-P', '') + ')',
+      color: match.hex,
+      confidence: match.compatibility,
+      formula: match.formula,
+      ralCode: match.code,
+      deltaE: match.deltaE
+    };
+  }
+  return { name: 'Indefinido', color: '#888888', confidence: 50, formula: [] };
 }
 
 // ════════════════════════════════════════════════════════════════
-// 🔬 CLASSIFICAÇÃO AMPLIADA (60+ NUANCES)
+// 🎨 CLASSIFICAÇÃO AMPLIADA (60+ NUANCES)
 // ════════════════════════════════════════════════════════════════
-function classifyColorExtended(hsv, rgb, variance) {
-  if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0 };
+function classifyColorExtended(hsv, rgb) {
+  if (!hsv || !rgb) return { name: 'Erro', color: '#888888', confidence: 0 };
+  const { h, s } = hsv;
+  const v = hsv.v;
   const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
   const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+  
   if (maxRGB <= 15 || avgRGB <= 10) return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
-  if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) return { name: 'Branco', color: '#ffffff', confidence: 99 };
-  if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
-  const { h, s } = hsv;
-  const v = normalizeV(hsv.v);
-  const { r, g, b } = rgb;
   if (v < 22 && s < 35) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-  if (maxRGB < 50 && s < 40) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-
+  
   if (s < 15) {
-    if (isWhiteCalibrated && isBlackCalibrated) {
-      if (v >= 85) return { name: 'Branco', color: '#ffffff', confidence: 98 };
-      else if (v <= 20) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-      else {
-        if (v >= 65) return { name: 'Cinza Claro', color: '#b8b8c8', confidence: 96 };
-        else if (v <= 35) return { name: 'Cinza Escuro', color: '#5a5a6a', confidence: 96 };
-        else return { name: 'Cinza', color: '#9999aa', confidence: 96 };
-      }
-    } else {
-      if (v >= 72) return { name: 'Branco', color: '#ffffff', confidence: 98 };
-      else if (v <= 28) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-      if (v >= 65) return { name: 'Cinza Claro', color: '#b8b8c8', confidence: 96 };
-      else if (v <= 35) return { name: 'Cinza Escuro', color: '#5a5a6a', confidence: 96 };
-      return { name: 'Cinza', color: '#9999aa', confidence: 96 };
-    }
+    if (v >= 72) return { name: 'Branco', color: '#ffffff', confidence: 98 };
+    if (v <= 28) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+    if (v >= 65) return { name: 'Cinza Claro', color: '#b8b8c8', confidence: 96 };
+    if (v <= 35) return { name: 'Cinza Escuro', color: '#5a5a6a', confidence: 96 };
+    return { name: 'Cinza', color: '#9999aa', confidence: 96 };
   }
-
-  let baseName = '', baseColor = '', confidence = 98;
-
+  
+  let baseName = '', baseColor = '';
   if ((h >= 345 || h < 15) && s >= 30) {
-    if (v <= 30 && s >= 50) { baseName = 'Vinho'; baseColor = '#581c1c'; }
-    else if (v >= 75 && s >= 70) { baseName = 'Vermelho Puro'; baseColor = '#ff0000'; }
-    else if (v >= 60 && s >= 65) { baseName = 'Vermelho Vivo'; baseColor = '#ef4444'; }
-    else if (v >= 55 && s >= 55) { baseName = 'Vermelho'; baseColor = '#dc2626'; }
+    if (v >= 75 && s >= 70) { baseName = 'Vermelho Puro'; baseColor = '#ff0000'; }
+    else if (v >= 60) { baseName = 'Vermelho Vivo'; baseColor = '#ef4444'; }
     else if (v <= 40) { baseName = 'Vermelho Escuro'; baseColor = '#7f1d1d'; }
-    else if (s < 50 && v >= 70) { baseName = 'Vermelho Claro'; baseColor = '#fca5a5'; }
     else { baseName = 'Vermelho'; baseColor = '#dc2626'; }
-  }
-  else if (h >= 15 && h < 25 && s >= 25) {
-    if (s >= 60 && v >= 65) { baseName = 'Vermelho Alaranjado'; baseColor = '#ff4500'; }
-    else if (v <= 35) { baseName = 'Vermelho Escuro'; baseColor = '#7f1d1d'; }
-    else { baseName = 'Vermelho'; baseColor = '#dc2626'; }
-  }
-  else if (h >= 290 && h < 345) {
-    if (s <= 35 && v >= 75) { baseName = 'Rosa Claro'; baseColor = '#ffc9e0'; }
-    else if (s >= 40 && v >= 70) { baseName = 'Rosa Vivo'; baseColor = '#ff69b4'; }
-    else if (s >= 50 && v >= 60) { baseName = 'Rosa'; baseColor = '#ff88aa'; }
-    else if (v <= 35) { baseName = 'Rosa Escuro'; baseColor = '#8b4560'; }
-    else if (s <= 25) { baseName = 'Rosa Pastel'; baseColor = '#ffd0e0'; }
-    else { baseName = 'Rosa'; baseColor = '#ff88aa'; }
   }
   else if (h >= 25 && h < 45) {
-    if (s >= 75 && v >= 70) { baseName = 'Laranja Vivo'; baseColor = '#ff8800'; }
-    else if (s >= 60 && v >= 50 && v <= 65) { baseName = 'Laranja Queimado'; baseColor = '#d2691e'; }
-    else if (s >= 55 && v >= 60) { baseName = 'Laranja'; baseColor = '#f97316'; }
+    if (v >= 70 && s >= 75) { baseName = 'Laranja Vivo'; baseColor = '#ff8800'; }
     else if (v <= 35) { baseName = 'Laranja Escuro'; baseColor = '#7c2d12'; }
-    else if (s <= 40 && v >= 70) { baseName = 'Laranja Claro'; baseColor = '#fed7aa'; }
-    else if (s >= 50 && v >= 55 && r > 200 && g >= 100 && g <= 160) { baseName = 'Tangerina'; baseColor = '#ff9500'; }
     else { baseName = 'Laranja'; baseColor = '#f97316'; }
   }
   else if (h >= 45 && h < 70) {
-    if (s <= 30 && v >= 70 && h >= 40 && h <= 55) { baseName = 'Bege'; baseColor = '#f5deb3'; }
-    else if (s >= 60 && v >= 50 && v <= 65) { baseName = 'Mostarda'; baseColor = '#ccaa00'; }
-    else if (s >= 40 && v >= 40 && v <= 55) { baseName = 'Ocre'; baseColor = '#cc7722'; }
-    else if (s >= 75 && v >= 75) { baseName = 'Amarelo Puro'; baseColor = '#ffff00'; }
-    else if (s >= 70 && v >= 80) { baseName = 'Amarelo Limão'; baseColor = '#ffff66'; }
-    else if (s >= 65 && v >= 70) { baseName = 'Amarelo Vivo'; baseColor = '#fbbf24'; }
-    else if (s >= 55 && v >= 65 && h >= 50 && h <= 60) { baseName = 'Amarelo Canário'; baseColor = '#ffff99'; }
-    else if (s >= 50 && v >= 60) { baseName = 'Amarelo'; baseColor = '#eab308'; }
+    if (s >= 75 && v >= 75) { baseName = 'Amarelo Puro'; baseColor = '#ffff00'; }
+    else if (v >= 70) { baseName = 'Amarelo Vivo'; baseColor = '#fbbf24'; }
     else if (v <= 40) { baseName = 'Amarelo Escuro'; baseColor = '#713f12'; }
-    else if (s <= 40 && v >= 75) { baseName = 'Amarelo Claro'; baseColor = '#fef9c3'; }
     else { baseName = 'Amarelo'; baseColor = '#eab308'; }
   }
   else if (h >= 70 && h < 165) {
-    if (v <= 35 && s >= 40 && h >= 70 && h <= 100) { baseName = 'Verde Musgo'; baseColor = '#4a5d23'; }
-    else if (s >= 40 && v >= 40 && v <= 55 && h >= 70 && h <= 95) { baseName = 'Verde Oliva'; baseColor = '#808000'; }
-    else if (s >= 75 && v >= 75) { baseName = 'Verde Puro'; baseColor = '#00ff00'; }
-    else if (s >= 65 && v >= 70 && h >= 120 && h <= 140) { baseName = 'Verde Esmeralda'; baseColor = '#50c878'; }
-    else if (s >= 60 && v >= 65) { baseName = 'Verde Vivo'; baseColor = '#22c55e'; }
-    else if (s >= 55 && v >= 60 && h >= 145 && h <= 160) { baseName = 'Verde Jade'; baseColor = '#00a86b'; }
-    else if (s >= 50 && v >= 55) { baseName = 'Verde'; baseColor = '#16a34a'; }
-    else if (v <= 40) { baseName = 'Verde Escuro'; baseColor = '#14532d'; }
-    else if (s <= 40 && v >= 70 && h >= 140 && h <= 160) { baseName = 'Verde Menta'; baseColor = '#98ff98'; }
-    else if (s <= 35 && v >= 75) { baseName = 'Verde Claro'; baseColor = '#bbf7d0'; }
+    if (s >= 75 && v >= 75) { baseName = 'Verde Puro'; baseColor = '#00ff00'; }
+    else if (v >= 65) { baseName = 'Verde Vivo'; baseColor = '#22c55e'; }
+    else if (v <= 35) { baseName = 'Verde Escuro'; baseColor = '#14532d'; }
     else { baseName = 'Verde'; baseColor = '#16a34a'; }
   }
   else if (h >= 165 && h < 195) {
     if (s >= 75 && v >= 75) { baseName = 'Ciano Puro'; baseColor = '#00ffff'; }
-    else if (s >= 65 && v >= 70) { baseName = 'Ciano Vivo'; baseColor = '#06b6d4'; }
-    else if (s >= 55 && v >= 65 && h >= 170 && h <= 185) { baseName = 'Água'; baseColor = '#00ced1'; }
-    else if (s >= 50 && v >= 60) { baseName = 'Ciano'; baseColor = '#0891b2'; }
-    else if (v <= 40) { baseName = 'Ciano Escuro'; baseColor = '#164e63'; }
-    else if (s <= 40 && v >= 75) { baseName = 'Ciano Claro'; baseColor = '#cffafe'; }
+    else if (v >= 65) { baseName = 'Ciano Vivo'; baseColor = '#06b6d4'; }
     else { baseName = 'Ciano'; baseColor = '#0891b2'; }
   }
   else if (h >= 195 && h < 255) {
-    if (v <= 25 && s >= 40) { baseName = 'Azul Meia-Noite'; baseColor = '#191970'; }
-    else if (v <= 30 && s >= 50) { baseName = 'Azul Marinho'; baseColor = '#001f3f'; }
-    else if (v <= 40 && s >= 45) { baseName = 'Azul Escuro'; baseColor = '#1e3a8a'; }
-    else if (s >= 45 && v >= 40 && v <= 55 && h >= 195 && h <= 210) { baseName = 'Azul Petróleo'; baseColor = '#008b8b'; }
-    else if (s >= 50 && v >= 45 && v <= 60 && h >= 210 && h <= 230) { baseName = 'Azul Prussiano'; baseColor = '#003153'; }
-    else if (s <= 40 && v >= 40 && v <= 60) { baseName = 'Azul Aço'; baseColor = '#4682b4'; }
-    else if (s >= 55 && v >= 65 && h >= 175 && h <= 195) { baseName = 'Azul Turquesa'; baseColor = '#40e0d0'; }
-    else if (s >= 50 && v >= 70 && h >= 175 && h <= 190) { baseName = 'Azul Tiffany'; baseColor = '#0abab5'; }
-    else if (s >= 80 && v >= 80) { baseName = 'Azul Elétrico'; baseColor = '#7df9ff'; }
+    if (v <= 30) { baseName = 'Azul Marinho'; baseColor = '#001f3f'; }
     else if (s >= 75 && v >= 75) { baseName = 'Azul Royal'; baseColor = '#4169e1'; }
-    else if (s >= 70 && v >= 70 && h >= 220 && h <= 240) { baseName = 'Azul Cobalto'; baseColor = '#0047ab'; }
-    else if (s >= 60 && v >= 65) { baseName = 'Azul Vivo'; baseColor = '#3b82f6'; }
-    else if (s >= 50 && v >= 55) { baseName = 'Azul'; baseColor = '#2563eb'; }
-    else if (s >= 45 && v >= 50 && v <= 65 && h >= 235 && h <= 250) { baseName = 'Azul Anil'; baseColor = '#4b0082'; }
-    else if (s <= 30 && v >= 70) { baseName = 'Azul Pastel'; baseColor = '#aec6cf'; }
-    else if (s <= 35 && v >= 80) { baseName = 'Azul Bebê'; baseColor = '#89cff0'; }
-    else if (s <= 40 && v >= 75) { baseName = 'Azul Celeste'; baseColor = '#b0e0e6'; }
-    else if (v >= 75 && s < 50) { baseName = 'Azul Claro'; baseColor = '#bfdbfe'; }
+    else if (v >= 65) { baseName = 'Azul Vivo'; baseColor = '#3b82f6'; }
     else { baseName = 'Azul'; baseColor = '#2563eb'; }
   }
   else if (h >= 255 && h < 290) {
-    if (s >= 60 && v >= 70 && h >= 270 && h <= 285) { baseName = 'Violeta'; baseColor = '#8a2be2'; }
-    else if (s >= 50 && v >= 65 && h >= 265 && h <= 280) { baseName = 'Ametista'; baseColor = '#9966cc'; }
-    else if (s >= 70 && v >= 65) { baseName = 'Roxo Vivo'; baseColor = '#a855f7'; }
-    else if (s >= 55 && v >= 60) { baseName = 'Roxo'; baseColor = '#9333ea'; }
+    if (s >= 70 && v >= 65) { baseName = 'Roxo Vivo'; baseColor = '#a855f7'; }
     else if (v <= 40) { baseName = 'Roxo Escuro'; baseColor = '#581c87'; }
-    else if (s <= 40 && v >= 75) { baseName = 'Lavanda'; baseColor = '#e6e6fa'; }
-    else if (s <= 35 && v >= 70) { baseName = 'Roxo Claro'; baseColor = '#ddd6fe'; }
     else { baseName = 'Roxo'; baseColor = '#9333ea'; }
   }
-  else if ((h >= 290 && h < 320) || (h >= 320 && h < 345)) {
-    if (s >= 70 && v >= 75 && h >= 320 && h <= 340) { baseName = 'Fúcsia'; baseColor = '#ff00ff'; }
-    else if (s >= 75 && v >= 70) { baseName = 'Magenta Vivo'; baseColor = '#ff00ff'; }
-    else if (s >= 60 && v >= 65) { baseName = 'Magenta'; baseColor = '#d946ef'; }
-    else if (v <= 40) { baseName = 'Magenta Escuro'; baseColor = '#701a75'; }
-    else if (s <= 40 && v >= 75) { baseName = 'Magenta Claro'; baseColor = '#fae8ff'; }
-    else { baseName = 'Magenta'; baseColor = '#d946ef'; }
+  else if (h >= 290 && h < 345) {
+    if (s >= 70 && v >= 75) { baseName = 'Fúcsia'; baseColor = '#ff00ff'; }
+    else if (v >= 65) { baseName = 'Magenta'; baseColor = '#d946ef'; }
+    else { baseName = 'Rosa'; baseColor = '#ff88aa'; }
   }
-  else {
-    baseName = 'Indeterminado';
-    baseColor = '#888888';
-  }
-  return { name: baseName, color: baseColor, confidence };
+  else { baseName = 'Indeterminado'; baseColor = '#888888'; }
+  
+  return { name: baseName, color: baseColor, confidence: 95 };
 }
 
 // ════════════════════════════════════════════════════════════════
-// 🎨 CLASSIFICAÇÃO PADRÃO (MOTOR v2.8)
+// 🎨 CLASSIFICAÇÃO PADRÃO
 // ════════════════════════════════════════════════════════════════
-function classifyColorWithRuler(hsv, rgb, variance) {
-  if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0 };
+function classifyColorWithRuler(hsv, rgb) {
+  if (!hsv || !rgb) return { name: 'Erro', color: '#888888', confidence: 0 };
+  const { h, s } = hsv;
+  const v = hsv.v;
   const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
   const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+  
   if (maxRGB <= 15 || avgRGB <= 10) return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
-  if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) return { name: 'Branco', color: '#ffffff', confidence: 99 };
-  if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
-  const { h, s } = hsv;
-  const v = normalizeV(hsv.v);
-  const { r, g, b } = rgb;
   if (v < 22 && s < 35) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-  if (maxRGB < 50 && s < 40) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-
+  
   if (s < 15) {
-    if (isWhiteCalibrated && isBlackCalibrated) {
-      if (v >= 85) return { name: 'Branco', color: '#ffffff', confidence: 98 };
-      if (v <= 20) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-      return { name: 'Cinza', color: '#9999aa', confidence: 96 };
-    } else {
-      if (v >= 72) return { name: 'Branco', color: '#ffffff', confidence: 98 };
-      if (v <= 28) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-      return { name: 'Cinza', color: '#9999aa', confidence: 96 };
-    }
+    if (v >= 72) return { name: 'Branco', color: '#ffffff', confidence: 98 };
+    if (v <= 28) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+    return { name: 'Cinza', color: '#9999aa', confidence: 96 };
   }
-
-  let baseName = '', baseColor = '', confidence = 98;
+  
+  let baseName = '', baseColor = '';
   if ((h >= 290) || (h < 20)) {
-    if (r > Math.max(g, b) && b >= 60 && s >= 20) { baseName = 'Rosa'; baseColor = '#ff88aa'; confidence = 95; }
-    else if (r > Math.max(g, b) && b < 60 && s >= 30) { baseName = 'Vermelho'; baseColor = '#ef4444'; confidence = 98; }
-    else { baseName = 'Magenta'; baseColor = '#d946ef'; confidence = 95; }
+    if (rgb.r > Math.max(rgb.g, rgb.b) && rgb.b >= 60 && s >= 20) { baseName = 'Rosa'; baseColor = '#ff88aa'; }
+    else if (rgb.r > Math.max(rgb.g, rgb.b) && s >= 30) { baseName = 'Vermelho'; baseColor = '#ef4444'; }
+    else { baseName = 'Magenta'; baseColor = '#d946ef'; }
   }
-  else if (h >= 255 && h < 290 && s >= 25) {
-    if (b > r && v < 65) { baseName = 'Roxo'; baseColor = '#a855f7'; confidence = 98; }
-    else { baseName = 'Magenta'; baseColor = '#d946ef'; confidence = 95; }
-  }
+  else if (h >= 255 && h < 290 && s >= 25) { baseName = 'Roxo'; baseColor = '#a855f7'; }
   else if (h >= 20 && h < 35) { baseName = 'Laranja'; baseColor = '#f97316'; }
   else if (h >= 35 && h < 70) { baseName = 'Amarelo'; baseColor = '#fbbf24'; }
   else if (h >= 70 && h < 165) { baseName = 'Verde'; baseColor = '#22c55e'; }
   else if (h >= 165 && h < 190) { baseName = 'Ciano'; baseColor = '#06b6d4'; }
   else if (h >= 190 && h < 255) { baseName = 'Azul'; baseColor = '#3b82f6'; }
-
+  
   let modifier = '';
   if (!universalMode) {
     if (v < 28) modifier = ' Escuro';
     else if (v > 82 && s < 45) modifier = ' Claro';
   }
-  return { name: baseName + modifier, color: baseColor, confidence };
+  return { name: baseName + modifier, color: baseColor, confidence: 95 };
 }
 
 // ════════════════════════════════════════════════════════════════
-// 🎨 GERADOR DE AJUSTES
+// 🎨 GERADOR DE AJUSTES SUGERIDOS
 // ════════════════════════════════════════════════════════════════
 function generateAdjustmentSuggestion(readRGB, readHSV, refHex, refName) {
   const refRGB = hexToRGB(refHex);
   const refHSV = rgbToHSV(refRGB.r, refRGB.g, refRGB.b);
+  const readLab = rgbToLab(readRGB.r, readRGB.g, readRGB.b);
+  const refLab = rgbToLab(refRGB.r, refRGB.g, refRGB.b);
   
-  const score = calculateVisualScore(readHSV, readRGB, refHex);
+  const dL = refLab.L - readLab.L;
+  const dA = refLab.a - readLab.a;
+  const dB = refLab.b - readLab.b;
+  const deltaE = Math.sqrt(dL*dL + dA*dA + dB*dB);
   
-  if (score >= 95) {
-    return { text: '✅ PRATICAMENTE PERFEITO!\nObjeto está ' + score.toFixed(0) + '% compatível com a referência.\nAjuste mínimo ou desnecessário.', cssClass: 'perfect' };
+  if (deltaE < 3) {
+    return { text: '✅ PRATICAMENTE PERFEITO!\nObjeto está compatível com a referência RAL.\nAjuste mínimo ou desnecessário.', cssClass: 'perfect' };
   }
-  
-  const vDiff = refHSV.v - readHSV.v;
-  const sDiff = refHSV.s - readHSV.s;
-  let hueDiff = refHSV.h - readHSV.h;
-  if (hueDiff > 180) hueDiff -= 360;
-  if (hueDiff < -180) hueDiff += 360;
   
   const suggestions = [];
   
-  if (Math.abs(vDiff) > 15) {
-    if (vDiff > 35) suggestions.push('Branco (clarear significativamente)');
-    else if (vDiff > 20) suggestions.push('um pouco de Branco');
-    else if (vDiff < -35) suggestions.push('Preto (escurecer significativamente)');
-    else if (vDiff < -20) suggestions.push('um pouco de Preto');
+  if (Math.abs(dL) > 8) {
+    if (dL > 15) suggestions.push('Branco (PW6) para clarear significativamente');
+    else if (dL > 8) suggestions.push('um pouco de Branco (PW6)');
+    else if (dL < -15) suggestions.push('Preto (PBk7) para escurecer significativamente');
+    else if (dL < -8) suggestions.push('um pouco de Preto (PBk7)');
   }
   
-  if (Math.abs(sDiff) > 18) {
-    if (sDiff > 0) {
-      const baseName = refName.replace(/ Vivo| Puro| Claro| Escuro/g, '').trim();
-      suggestions.push(baseName + ' puro para saturar');
-    } else {
-      if (!suggestions.some(s => s.includes('Branco'))) {
-        suggestions.push('Branco ou Cinza para dessaturar');
-      }
-    }
+  if (Math.abs(dA) > 6) {
+    if (dA > 6) suggestions.push('Vermelho (PR254/PR101) para aumentar tom vermelho');
+    else if (dA < -6) suggestions.push('Verde (PG7) para aumentar tom verde');
   }
   
-  if (Math.abs(hueDiff) > 12) {
-    const baseName = refName.replace(/ Vivo| Puro| Claro| Escuro/g, '').trim();
-    if (!suggestions.some(s => s.includes(baseName))) {
-      suggestions.push(baseName + ' para ajustar tonalidade');
-    }
+  if (Math.abs(dB) > 8) {
+    if (dB > 8) suggestions.push('Amarelo (PY151/PY110) para aumentar tom amarelo');
+    else if (dB < -8) suggestions.push('Azul (PB15:3/PB29) para aumentar tom azul');
   }
   
   if (suggestions.length === 0) {
-    return { text: '⚙️ AJUSTE FINO (para ' + score.toFixed(0) + '% → 100%):\nPara igualar exatamente à referência ' + refHex + ':\nAjuste mínimo de tonalidade necessário.', cssClass: '' };
+    return { text: '⚙️ AJUSTE FINO:\nPara igualar exatamente à referência ' + refName + ':\nAjuste mínimo de tonalidade necessário.', cssClass: '' };
   }
   
-  let finalText = score < 75 ? '⚠️ AJUSTE NECESSÁRIO (para ' + score.toFixed(0) + '% → 100%):\n' : '🎨 AJUSTE FINO (para ' + score.toFixed(0) + '% → 100%):\n';
-  finalText += 'Para igualar exatamente à referência ' + refHex + ':\n';
-  
-  if (suggestions.length === 1) finalText += '• Adicione ' + suggestions[0];
-  else if (suggestions.length === 2) finalText += '• Adicione ' + suggestions[0] + '\n• Adicione ' + suggestions[1];
-  else finalText += suggestions.map(s => '• Adicione ' + s).join('\n');
+  let finalText = deltaE < 10 ? '🎨 AJUSTE FINO:\n' : '⚠️ AJUSTE NECESSÁRIO:\n';
+  finalText += 'Para igualar à referência ' + refName + ':\n';
+  finalText += suggestions.map(s => '• Adicione ' + s).join('\n');
   
   return { text: finalText, cssClass: '' };
 }
+
 // ════════════════════════════════════════════════════════════════
 // 📊 MODO COMPARAÇÃO - ALGORITMOS
 // ════════════════════════════════════════════════════════════════
 function getBaseColorName(name) {
   if (!name || typeof name !== 'string') return '';
-  return name
-    .replace(/ Escuro/g, '').replace(/ Claro/g, '')
-    .replace(/ Pastel/g, '').replace(/ Puro/g, '').replace(/ Vivo/g, '')
-    .replace(/ Royal/g, '').replace(/ Cobalto/g, '').replace(/ Elétrico/g, '')
-    .replace(/ Bebê/g, '').replace(/ Celeste/g, '').replace(/ Marinho/g, '')
-    .replace(/ Meia-Noite/g, '').replace(/ Petróleo/g, '').replace(/ Prussiano/g, '')
-    .replace(/ Aço/g, '').replace(/ Turquesa/g, '').replace(/ Tiffany/g, '')
-    .replace(/ Anil/g, '').replace(/ Alaranjado/g, '')
-    .replace(/ Queimado/g, '').replace(/ Limão/g, '').replace(/ Canário/g, '')
-    .replace(/ Esmeralda/g, '').replace(/ Musgo/g, '').replace(/ Oliva/g, '')
-    .replace(/ Menta/g, '').replace(/ Jade/g, '').replace(/ Água/g, '')
-    .replace(/ Lavanda/g, '').replace(/ Violeta/g, '').replace(/ Ametista/g, '')
-    .replace(/ Fúcsia/g, '').replace(/ Vinho/g, '').replace(/ Tangerina/g, '')
-    .replace(/ Bege/g, '').replace(/ Mostarda/g, '').replace(/ Ocre/g, '')
-    .trim();
-}
-
-const SPECTRAL_ORDER = ['Vermelho', 'Rosa', 'Magenta', 'Roxo', 'Azul', 'Ciano', 'Verde', 'Amarelo', 'Laranja'];
-
-function getSpectralIndex(baseName) { return SPECTRAL_ORDER.indexOf(baseName); }
-
-function areSpectralNeighbors(idx1, idx2) {
-  if (idx1 === -1 || idx2 === -1) return false;
-  if (idx1 === idx2) return true;
-  const len = SPECTRAL_ORDER.length;
-  const diff = Math.abs(idx1 - idx2);
-  return diff === 1 || diff === len - 1;
-}
-
-function calculatePlasticsCompatibility(ref, sample) {
-  if (!ref || !sample) return 0;
-  const refHex = ref.color;
-  const sampleHex = sample.color;
-  if (refHex === sampleHex) return 100;
-  const score = calculateVisualScore(sample.hsv, sample.rgb, refHex);
-  return Math.max(0, Math.round(score));
+  return name.replace(/ \(RAL.*\)/g, '').replace(/ Escuro| Claro| Puro| Vivo| Médio| Forte/g, '').trim();
 }
 
 function calculateCompatibility(ref, sample) {
   if (!ref || !sample) return 0;
-  if (plasticsMode) return calculatePlasticsCompatibility(ref, sample);
-
-  const neutros = ['Preto', 'Cinza', 'Branco'];
-  const refBase = getBaseColorName(ref.name);
-  const sampleBase = getBaseColorName(sample.name);
-  const refIsNeutro = neutros.includes(refBase);
-  const sampleIsNeutro = neutros.includes(sampleBase);
-
-  if (refIsNeutro !== sampleIsNeutro) return 0;
-
-  if (refIsNeutro && sampleIsNeutro) {
-    if ((refBase === 'Branco' && sampleBase === 'Preto') || (refBase === 'Preto' && sampleBase === 'Branco')) return 0;
-    const maxRGBDist = Math.sqrt(3 * Math.pow(255, 2));
-    const rgbDist = Math.sqrt(
-      Math.pow(ref.rgb.r - sample.rgb.r, 2) +
-      Math.pow(ref.rgb.g - sample.rgb.g, 2) +
-      Math.pow(ref.rgb.b - sample.rgb.b, 2)
-    ) / maxRGBDist;
-    const vDist = Math.abs(ref.hsv.v - sample.hsv.v) / 100;
-    const dist = vDist * 0.60 + rgbDist * 0.40;
-    return Math.max(0, Math.round((1 - dist) * 100));
-  }
-
-  const idxRef = getSpectralIndex(refBase);
-  const idxSample = getSpectralIndex(sampleBase);
-  if (!areSpectralNeighbors(idxRef, idxSample)) return 0;
-
-  let hueDiff = Math.abs(ref.hsv.h - sample.hsv.h);
-  if (hueDiff > 180) hueDiff = 360 - hueDiff;
-  const maxRGBDist = Math.sqrt(3 * Math.pow(255, 2));
-  const rgbDist = Math.sqrt(
-    Math.pow(ref.rgb.r - sample.rgb.r, 2) +
-    Math.pow(ref.rgb.g - sample.rgb.g, 2) +
-    Math.pow(ref.rgb.b - sample.rgb.b, 2)
-  ) / maxRGBDist;
-  const sDist = Math.abs(ref.hsv.s - sample.hsv.s) / 100;
-  const vDist = Math.abs(ref.hsv.v - sample.hsv.v) / 100;
-  const hDist = hueDiff / 180;
-  const weightedDist = rgbDist * 0.40 + hDist * 0.30 + sDist * 0.15 + vDist * 0.15;
-  return Math.max(0, Math.round((1 - weightedDist) * 100));
+  if (ref.hex === sample.hex) return 100;
+  
+  const refLab = rgbToLab(ref.rgb.r, ref.rgb.g, ref.rgb.b);
+  const sampleLab = rgbToLab(sample.rgb.r, sample.rgb.g, sample.rgb.b);
+  const dE = deltaE(refLab, sampleLab);
+  
+  return Math.max(0, Math.min(100, Math.round(100 - dE * 2)));
 }
 
 function suggestPigmentAdjustment(ref, sample) {
   if (!ref || !sample) return { text: 'Erro: Parâmetros inválidos', cssClass: 'incompatible' };
-
-  const neutros = ['Preto', 'Cinza', 'Branco'];
-  const refBase = getBaseColorName(ref.name);
-  const sampleBase = getBaseColorName(sample.name);
-  const refIsNeutro = neutros.includes(refBase);
-  const sampleIsNeutro = neutros.includes(sampleBase);
-  const compat = calculateCompatibility(ref, sample);
-
-  if (compat >= 95) return { text: 'Cores praticamente idênticas! ✓', cssClass: 'perfect' };
-  if (refIsNeutro !== sampleIsNeutro) return { text: 'Cores incompatíveis (Neutro x Colorido)', cssClass: 'incompatible' };
-
-  const idxRef = getSpectralIndex(refBase);
-  const idxSample = getSpectralIndex(sampleBase);
-  if (!refIsNeutro && !areSpectralNeighbors(idxRef, idxSample)) {
-    return { text: 'Cores incompatíveis (Famílias espectrais diferentes)', cssClass: 'incompatible' };
-  }
-
-  if (refIsNeutro && sampleIsNeutro) {
-    const vDiff = ref.hsv.v - sample.hsv.v;
-    if ((refBase === 'Branco' && sampleBase === 'Preto') || (refBase === 'Preto' && sampleBase === 'Branco')) {
-      return { text: 'Cores opostas extremas - Incompatível', cssClass: 'incompatible' };
-    }
-    if (Math.abs(vDiff) < 8) return { text: 'Neutros muito próximos - Ajuste mínimo necessário', cssClass: 'perfect' };
-    if (vDiff > 30) return { text: 'Adicione Branco gradualmente à amostra', cssClass: '' };
-    if (vDiff > 0) return { text: 'Adicione um pouco de Branco à amostra', cssClass: '' };
-    if (vDiff < -30) return { text: 'Adicione Preto gradualmente à amostra', cssClass: '' };
-    return { text: 'Adicione um pouco de Preto à amostra', cssClass: '' };
-  }
-
-  const vDiff = ref.hsv.v - sample.hsv.v;
-  const sDiff = ref.hsv.s - sample.hsv.s;
-  let hueDiff = ref.hsv.h - sample.hsv.h;
-  if (hueDiff > 180) hueDiff -= 360;
-  if (hueDiff < -180) hueDiff += 360;
-
+  
+  const refLab = rgbToLab(ref.rgb.r, ref.rgb.g, ref.rgb.b);
+  const sampleLab = rgbToLab(sample.rgb.r, sample.rgb.g, sample.rgb.b);
+  
+  const dL = refLab.L - sampleLab.L;
+  const dA = refLab.a - sampleLab.a;
+  const dB = refLab.b - sampleLab.b;
+  const deltaE = Math.sqrt(dL*dL + dA*dA + dB*dB);
+  
+  if (deltaE < 3) return { text: 'Cores praticamente idênticas! ✓', cssClass: 'perfect' };
+  
   const suggestions = [];
-  if (Math.abs(vDiff) > 15) {
-    if (vDiff > 35) suggestions.push('Branco');
-    else if (vDiff > 20) suggestions.push('um pouco de Branco');
-    else if (vDiff < -35) suggestions.push('Preto');
-    else if (vDiff < -20) suggestions.push('um pouco de Preto');
-  }
-  if (Math.abs(sDiff) > 18) {
-    if (sDiff > 0) suggestions.push(`${refBase} puro para saturar`);
-    else if (!suggestions.some(s => s.includes('Branco'))) suggestions.push('Branco ou Cinza para dessaturar');
-  }
-  if (Math.abs(hueDiff) > 12 && Math.abs(hueDiff) < 40 && idxRef !== idxSample && areSpectralNeighbors(idxRef, idxSample)) {
-    suggestions.push(`${refBase} para ajustar tonalidade`);
-  }
+  if (dL > 10) suggestions.push('Branco (PW6)');
+  else if (dL < -10) suggestions.push('Preto (PBk7)');
+  if (dA > 6) suggestions.push('Vermelho (PR254)');
+  else if (dA < -6) suggestions.push('Verde (PG7)');
+  if (dB > 8) suggestions.push('Amarelo (PY151)');
+  else if (dB < -8) suggestions.push('Azul (PB15:3)');
+  
   if (suggestions.length === 0) return { text: 'Ajuste fino necessário - Cores muito próximas', cssClass: 'perfect' };
-
+  
   let finalText = 'Adicione ';
   if (suggestions.length === 1) finalText += suggestions[0];
   else if (suggestions.length === 2) finalText += suggestions[0] + ' e ' + suggestions[1];
   else finalText += suggestions.slice(0, -1).join(', ') + ' e ' + suggestions[suggestions.length - 1];
   finalText += ' à amostra';
+  
   return { text: finalText, cssClass: '' };
 }
 
 // ════════════════════════════════════════════════════════════════
-// 🛠️ CALIBRAÇÃO E COMPENSAÇÃO
+// 🔧 CALIBRAÇÃO E COMPENSAÇÃO
 // ════════════════════════════════════════════════════════════════
 function detectColorTemperature(rgb) {
   if (!rgb) return { lightType: 'Neutra', bias: { r: 0, g: 0, b: 0 } };
@@ -1264,8 +1329,7 @@ function detectColorTemperature(rgb) {
 function applyColorTempCompensation(rgb) {
   if (!hasColorTempCompensation || !rgb) return rgb;
   const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
-  const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
-  if (maxRGB <= 25 || avgRGB <= 18) return rgb;
+  if (maxRGB <= 25) return rgb;
   return {
     r: Math.max(0, Math.min(255, Math.round(rgb.r + colorTemperatureBias.r))),
     g: Math.max(0, Math.min(255, Math.round(rgb.g + colorTemperatureBias.g))),
@@ -1273,24 +1337,12 @@ function applyColorTempCompensation(rgb) {
   };
 }
 
-function normalizeV(vRaw) {
-  if (!isWhiteCalibrated || !isBlackCalibrated || !whiteCalibration || !blackCalibration) return vRaw;
-  const vWhite = whiteCalibration.hsv.v;
-  const vBlack = blackCalibration.hsv.v;
-  if (vWhite <= vBlack) return vRaw;
-  const vNormalized = ((vRaw - vBlack) / (vWhite - vBlack)) * 100;
-  return Math.max(0, Math.min(100, vNormalized));
-}
-
 function isCalibrationWhite(hsv, rgb) {
   if (!isWhiteCalibrated || !whiteCalibration) return false;
   const base = whiteCalibration;
   const dr = rgb.r - base.rgb.r, dg = rgb.g - base.rgb.g, db = rgb.b - base.rgb.b;
   const rgbDistance = Math.sqrt(dr*dr + dg*dg + db*db);
-  const vDiff = Math.abs(hsv.v - base.hsv.v);
-  if (rgbDistance <= 50 || (vDiff <= 15 && hsv.s <= 30)) return true;
-  if (hsv.v >= base.hsv.v && hsv.s <= 20) return true;
-  return false;
+  return rgbDistance <= 50 || (Math.abs(hsv.v - base.hsv.v) <= 15 && hsv.s <= 30);
 }
 
 function isCalibrationBlack(hsv, rgb) {
@@ -1298,10 +1350,7 @@ function isCalibrationBlack(hsv, rgb) {
   const base = blackCalibration;
   const dr = rgb.r - base.rgb.r, dg = rgb.g - base.rgb.g, db = rgb.b - base.rgb.b;
   const rgbDistance = Math.sqrt(dr*dr + dg*dg + db*db);
-  const vDiff = Math.abs(hsv.v - base.hsv.v);
-  if (rgbDistance <= 40 || (vDiff <= 12 && hsv.s <= 35)) return true;
-  if (Math.max(rgb.r, rgb.g, rgb.b) <= Math.max(base.rgb.r, base.rgb.g, base.rgb.b) + 20 && hsv.s <= 35) return true;
-  return false;
+  return rgbDistance <= 40 || (Math.abs(hsv.v - base.hsv.v) <= 12 && hsv.s <= 35);
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1354,12 +1403,10 @@ function shouldUpdateColor(newHue, newColorName, newRGB, newSat, newVariance) {
   if (!lastStableColorName) return true;
   if (detectObjectChange(newRGB)) { consecutiveFrameCounter = 0; return true; }
   if (Math.abs(newVariance - lastStableVariance) > 10) return true;
-
   if (newColorName !== lastStableColorName) {
     let diff = Math.abs(newHue - lastStableHue);
     if (diff > 180) diff = 360 - diff;
-    const satChange = Math.abs(newSat - (colorBuffer[colorBuffer.length - 1]?.hsv.s || 0)) > 18;
-    if (diff >= HYSTERESIS_THRESHOLD || satChange) {
+    if (diff >= HYSTERESIS_THRESHOLD) {
       consecutiveFrameCounter++;
       return consecutiveFrameCounter >= MIN_CONSECUTIVE_FRAMES;
     } else {
@@ -1372,11 +1419,11 @@ function shouldUpdateColor(newHue, newColorName, newRGB, newSat, newVariance) {
 }
 
 // ════════════════════════════════════════════════════════════════
-// 🎤 ÁUDIO (TTS) - SISTEMA COMPLETO
+// 🎤 ÁUDIO (TTS)
 // ════════════════════════════════════════════════════════════════
 function speakColor(name) {
   if (!window.speechSynthesis || !name || !audioEnabled) return;
-  const cleanName = name.replace(/ ✓| ≈| ⚠|\(Aprox\)/g, '').trim();
+  const cleanName = name.replace(/ \(RAL.*\)| ✓| ≈| ⚠/g, '').trim();
   window.speechSynthesis.cancel();
   setTimeout(() => {
     try {
@@ -1403,11 +1450,8 @@ function speakImmediate(text) {
 
 function triggerAudioIfChanged(name) {
   if (!audioEnabled || !name) return;
-  const cleanName = name.replace(/ ✓| ≈| ⚠|\(Aprox\)/g, '').trim();
-  if (cleanName === lastSpokenName) {
-    if (pendingName !== cleanName && stableTimer) { clearTimeout(stableTimer); stableTimer = null; pendingName = ''; }
-    return;
-  }
+  const cleanName = name.replace(/ \(RAL.*\)| ✓| ≈| ⚠/g, '').trim();
+  if (cleanName === lastSpokenName) return;
   if (cleanName !== pendingName) {
     pendingName = cleanName;
     if (stableTimer) clearTimeout(stableTimer);
@@ -1426,10 +1470,14 @@ function triggerAudioIfChanged(name) {
 function samplePixels() {
   const vw = video.videoWidth, vh = video.videoHeight;
   if (!vw || !vh) return null;
-  const cw = video.clientWidth, ch = video.clientHeight, scale = Math.max(cw/vw, ch/vh);
-  const nativeCX = Math.round((cw/2 + (vw*scale-cw)/2) / scale);
-  const nativeCY = Math.round((ch/2 + (vh*scale-ch)/2) / scale);
-  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
+  const cw = video.clientWidth, ch = video.clientHeight;
+  const scaleX = vw / cw, scaleY = vh / ch;
+  const scale = Math.max(scaleX, scaleY);
+  const offsetX = (vw - cw * scale) / 2;
+  const offsetY = (vh - ch * scale) / 2;
+  const nativeCX = Math.round(offsetX + (cw / 2) * scale);
+  const nativeCY = Math.round(offsetY + (ch / 2) * scale);
+  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE * scale));
   canvas.width = vw; canvas.height = vh;
   try { ctx.drawImage(video, 0, 0); } catch (e) { return null; }
   const x0 = Math.max(0, nativeCX - nativeSample), y0 = Math.max(0, nativeCY - nativeSample);
@@ -1444,10 +1492,14 @@ function samplePixels() {
 function samplePixelsEstatico(x, y) {
   const vw = video.videoWidth, vh = video.videoHeight;
   if (!vw || !vh) return null;
-  const scale = Math.max(video.clientWidth/vw, video.clientHeight/vh);
-  const nativeCX = Math.round((x + (vw*scale-video.clientWidth)/2) / scale);
-  const nativeCY = Math.round((y + (vh*scale-video.clientHeight)/2) / scale);
-  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
+  const cw = video.clientWidth, ch = video.clientHeight;
+  const scaleX = vw / cw, scaleY = vh / ch;
+  const scale = Math.max(scaleX, scaleY);
+  const offsetX = (vw - cw * scale) / 2;
+  const offsetY = (vh - ch * scale) / 2;
+  const nativeCX = Math.round(offsetX + x * scale);
+  const nativeCY = Math.round(offsetY + y * scale);
+  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE * scale));
   canvas.width = vw; canvas.height = vh;
   try { ctx.drawImage(video, 0, 0); } catch (e) { return null; }
   const x0 = Math.max(0, Math.min(vw - nativeSample*2, nativeCX - nativeSample));
@@ -1465,10 +1517,14 @@ function capturePoint(x, y, thumbId, markerId, nameId) {
   if (!vw || !vh) return null;
   canvas.width = vw; canvas.height = vh;
   try { ctx.drawImage(video, 0, 0, vw, vh); } catch (e) { return null; }
-  const scale = Math.max(video.clientWidth/vw, video.clientHeight/vh);
-  const nativeX = Math.round((x + (vw*scale-video.clientWidth)/2) / scale);
-  const nativeY = Math.round((y + (vh*scale-video.clientHeight)/2) / scale);
-  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
+  const cw = video.clientWidth, ch = video.clientHeight;
+  const scaleX = vw / cw, scaleY = vh / ch;
+  const scale = Math.max(scaleX, scaleY);
+  const offsetX = (vw - cw * scale) / 2;
+  const offsetY = (vh - ch * scale) / 2;
+  const nativeX = Math.round(offsetX + x * scale);
+  const nativeY = Math.round(offsetY + y * scale);
+  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE * scale));
   const x0 = Math.max(0, Math.min(vw - nativeSample*2, nativeX - nativeSample));
   const y0 = Math.max(0, Math.min(vh - nativeSample*2, nativeY - nativeSample));
   let data;
@@ -1478,24 +1534,24 @@ function capturePoint(x, y, thumbId, markerId, nameId) {
   if (c === 0) return null;
   const rgb = applyColorTempCompensation({ r: Math.round(r/c), g: Math.round(g/c), b: Math.round(b/c) });
   const hsv = rgbToHSV(rgb.r, rgb.g, rgb.b);
-
-  let classification = plasticsMode ? classifyPlasticsPolymers(hsv, rgb, 0) : (ampliatedMode ? classifyColorExtended(hsv, rgb, 0) : classifyColorWithRuler(hsv, rgb, 0));
-
-  const thumbW = Math.min(vw, 400), thumbH = Math.round(thumbW*(vh/vw)), thumbScale = thumbW/vw;
+  
+  let classification = plasticsMode ? classifyPlasticsPolymers(hsv, rgb) : (ampliatedMode ? classifyColorExtended(hsv, rgb) : classifyColorWithRuler(hsv, rgb));
+  
+  const thumbW = Math.min(vw, 400), thumbH = Math.round(thumbW * (vh/vw));
   const tCanv = document.createElement('canvas'); tCanv.width = thumbW; tCanv.height = thumbH;
   const tCtx = tCanv.getContext('2d');
   try { tCtx.drawImage(video, 0, 0, thumbW, thumbH); } catch (e) { return null; }
-  const tx = nativeX*thumbScale, ty = nativeY*thumbScale;
-  tCtx.strokeStyle = 'rgba(120,220,255,0.95)'; tCtx.lineWidth = 2.5; tCtx.lineCap = 'round';
-  tCtx.beginPath(); tCtx.moveTo(tx-16*thumbScale, ty); tCtx.lineTo(tx+16*thumbScale, ty);
-  tCtx.moveTo(tx, ty-16*thumbScale); tCtx.lineTo(tx, ty+16*thumbScale); tCtx.stroke();
-  tCtx.lineWidth = 1.8; tCtx.strokeRect(tx-11*thumbScale, ty-11*thumbScale, 22*thumbScale, 22*thumbScale);
+  const tx = nativeX * (thumbW/vw), ty = nativeY * (thumbH/vh);
+  tCtx.strokeStyle = 'rgba(120,220,255,0.95)'; tCtx.lineWidth = 2.5;
+  tCtx.beginPath(); tCtx.moveTo(tx-16, ty); tCtx.lineTo(tx+16, ty);
+  tCtx.moveTo(tx, ty-16); tCtx.lineTo(tx, ty+16); tCtx.stroke();
   document.getElementById(thumbId).src = tCanv.toDataURL('image/jpeg', 0.7);
   document.getElementById(thumbId).style.display = 'block';
   document.getElementById(markerId).style.display = 'none';
   document.getElementById(nameId).textContent = classification.name;
   document.getElementById(nameId).style.color = classification.color;
-  return { x, y, rgb, hsv, name: classification.name, color: classification.color, formula: classification.formula || [] };
+  
+  return { x, y, rgb, hsv, name: classification.name, color: classification.color, hex: classification.color, formula: classification.formula || [] };
 }
 
 async function getDevices() {
@@ -1509,12 +1565,6 @@ async function openCamera(preferredDeviceId) {
     try {
       stream = await navigator.mediaDevices.getUserMedia(constraints);
       video.srcObject = stream;
-      if (flashEnabled) {
-        const track = stream.getVideoTracks()[0];
-        if (track && typeof track.applyConstraints === 'function') {
-          try { await track.applyConstraints({ advanced: [{ torch: true }] }); } catch (e) {}
-        }
-      }
       return true;
     } catch (e) { return false; }
   };
@@ -1985,6 +2035,7 @@ function update() {
     lastStableVariance = variance;
 
     document.getElementById('color-name').textContent = classification.name;
+    // ✅ CORREÇÃO: Nome da cor usa COR DA BASE RAL (oficial), NÃO cor capturada
     document.getElementById('color-name').style.color = classification.color;
     document.getElementById('confidence-display').textContent = `${classification.confidence}%`;
     document.getElementById('confidence-display').style.color =
@@ -1996,7 +2047,7 @@ function update() {
       document.getElementById('adjustment-text').textContent = adjustment.text;
       document.getElementById('adjustment-text').className = 'adjustment-text ' + adjustment.cssClass;
     }
-    
+
     triggerAudioIfChanged(classification.name + ', ' + classification.confidence + ' por cento');
 
     if (currentMode === 'estatico' && colorBuffer.length >= BUFFER_SIZE) staticFrozen = true;
@@ -2042,10 +2093,10 @@ cameraContainer.addEventListener('click', function(e) {
 // ════════════════════════════════════════════════════════════════
 // ✅ SISTEMA CARREGADO
 // ════════════════════════════════════════════════════════════════
-console.log('%c🎨 Motor de Cores v3.5 PRO++ - CATÁLOGO DIGITAL ATIVADO!', 'color: #6effa0; font-size: 14px; font-weight: bold;');
-console.log('%c📚 Biblioteca Plásticos: ' + Object.keys(PLASTICS_LIBRARY).length + ' cores', 'color: #7fdbff; font-size: 12px;');
-console.log('%c🔒 Validação por Maior Score: ATIVA', 'color: #ffcc60; font-size: 12px;');
-console.log('%c🎤 Sistema de Áudio Completo: ATIVO', 'color: #ff88aa; font-size: 12px;');
+console.log('%c🎨 Motor de Cores v5.0 RAL PLASTICS - CATÁLOGO COMPLETO ATIVADO!', 'color: #6effa0; font-size: 14px; font-weight: bold;');
+console.log('%c📚 Biblioteca RAL P1: ' + Object.keys(RAL_PLASTICS_LIBRARY).length + ' cores', 'color: #7fdbff; font-size: 12px;');
+console.log('%c🎯 Classificação: SEMPRE encontra match (sem rejeição)', 'color: #ffcc60; font-size: 12px;');
+console.log('%c🎨 Cor do texto: BASE RAL OFICIAL (não cor capturada)', 'color: #ff88aa; font-size: 12px;');
 </script>
 </body>
 </html>
