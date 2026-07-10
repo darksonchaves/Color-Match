@@ -3635,21 +3635,27 @@ function startSampleSelection() {
  * Captura referência
  */
 function captureRef(x, y) {
-  const result = capturePoint(x, y, 'ref-thumb', 'ref-reticle-marker', 'ref-color-name');
-  if (result) {
-    comparisonRef = result;
-    updateComparison();
-  }
+    const result = capturePoint(x, y, 'ref-thumb', 'ref-reticle-marker', 'ref-color-name');
+    if (result) {
+        comparisonRef = result;
+        if (audioEnabled) {
+            speakColor('Referência: ' + result.name);
+        }
+        updateComparison();
+    }
 }
 /**
  * Captura amostra
  */
 function captureSample(x, y) {
-  const result = capturePoint(x, y, 'sample-thumb', 'sample-reticle-marker', 'sample-color-name');
-  if (result) {
-    comparisonSample = result;
-    updateComparison();
-  }
+    const result = capturePoint(x, y, 'sample-thumb', 'sample-reticle-marker', 'sample-color-name');
+    if (result) {
+        comparisonSample = result;
+        if (audioEnabled) {
+            speakColor('Amostra: ' + result.name);
+        }
+        updateComparison();
+    }
 }
 /**
  * Reseta referência
@@ -3685,42 +3691,79 @@ function resetSample() {
  * Reseta comparação completa
  */
 function resetComparison() {
-  if (currentMode !== 'comparacao') return;
-  
-  resetRef();
-  resetSample();
-  
-  document.getElementById('color-name').textContent = '---';
-  document.getElementById('color-name').style.color = '#445';
+    if (currentMode !== 'comparacao') return;
+    
+    resetRef();
+    resetSample();
+    
+    // ✅ NOVO: reseta controle de áudio da comparação
+    lastSpokenComparison = '';
+    
+    document.getElementById('color-name').textContent = '---';
+    document.getElementById('color-name').style.color = '#445';
 }
 /**
  * Atualiza painel de comparação
  */
+// Variável de controle para não repetir o áudio da comparação
+let lastSpokenComparison = '';
+
 function updateComparison() {
-  const percentEl = document.getElementById('compatibility-percent');
-  const suggestionBox = document.getElementById('pigment-suggestion');
-  const suggestionText = document.getElementById('pigment-suggestion-text');
-  const suggestionLabel = suggestionBox.querySelector('.comp-suggestion-label');
-  if (!comparisonRef || !comparisonSample) {
-    percentEl.textContent = '---';
+    const percentEl = document.getElementById('compatibility-percent');
+    const suggestionBox = document.getElementById('pigment-suggestion');
+    const suggestionText = document.getElementById('pigment-suggestion-text');
+    const suggestionLabel = suggestionBox.querySelector('.comp-suggestion-label');
+
+    if (!comparisonRef || !comparisonSample) {
+        percentEl.textContent = '---';
+        percentEl.className = 'comp-percent';
+        suggestionBox.style.display = 'none';
+        return;
+    }
+
+    const compat = calculateCompatibility(comparisonRef, comparisonSample);
+    percentEl.textContent = compat + '%';
     percentEl.className = 'comp-percent';
-    suggestionBox.style.display = 'none';
-    return;
-  }
-  const compat = calculateCompatibility(comparisonRef, comparisonSample);
-  percentEl.textContent = compat + '%';
-  percentEl.className = 'comp-percent';
-  if (compat === 0) percentEl.classList.add('low');
-  else if (compat < 50) percentEl.classList.add('medium');
-  const suggestion = suggestPigmentAdjustment(comparisonRef, comparisonSample);
-  suggestionText.textContent = suggestion.text;
-  suggestionText.className = 'comp-suggestion-text ' + suggestion.cssClass;
-  suggestionBox.style.display = 'block';
-  if (plasticsMode) {
-    suggestionLabel.innerHTML = '🧪 FÓRMULA DE PIGMENTOS (PLÁSTICOS)';
-  } else {
-    suggestionLabel.innerHTML = '🎨 AJUSTE SUGERIDO';
-  }
+    if (compat === 0) percentEl.classList.add('low');
+    else if (compat < 50) percentEl.classList.add('medium');
+
+    const suggestion = suggestPigmentAdjustment(comparisonRef, comparisonSample);
+    suggestionText.textContent = suggestion.text;
+    suggestionText.className = 'comp-suggestion-text ' + suggestion.cssClass;
+    suggestionBox.style.display = 'block';
+
+    if (plasticsMode) {
+        suggestionLabel.innerHTML = '🧪 FÓRMULA DE PIGMENTOS (PLÁSTICOS)';
+    } else {
+        suggestionLabel.innerHTML = '🎨 AJUSTE SUGERIDO';
+    }
+
+    // ✅ ÁUDIO: fala compatibilidade + ajuste sugerido (somente uma vez por combinação)
+    if (audioEnabled) {
+        const chaveComparacao = comparisonRef.name + '|' + comparisonSample.name;
+
+        if (chaveComparacao !== lastSpokenComparison) {
+            lastSpokenComparison = chaveComparacao;
+
+            // Monta texto completo para falar
+            const textoSugestao = suggestion.text
+                .replace(/[✦✓⚠️📋•🎨🧪]/g, '') // Remove emojis/símbolos
+                .replace(/\n+/g, '. ')            // Substitui quebras por pausa
+                .replace(/\s{2,}/g, ' ')          // Remove espaços duplos
+                .trim();
+
+            const textoAudio = 
+                `Compatibilidade entre ` +
+                `${comparisonRef.name} e ${comparisonSample.name}: ` +
+                `${compat} por cento. ` +
+                `Ajuste sugerido: ${textoSugestao}`;
+
+            // Pequeno delay para não sobrepor o áudio da captura
+            setTimeout(() => {
+                if (audioEnabled) speakColor(textoAudio);
+            }, 1800);
+        }
+    }
 }
 /**
  * Troca de câmera
@@ -4119,9 +4162,33 @@ function update() {
     return;
   }
   if (currentMode === 'comparacao') {
+    if (audioEnabled) {
+        const pixelsComp = samplePixels();
+        if (pixelsComp) {
+            const pixelsCompensated = applyColorTempCompensation(pixelsComp);
+            const hsvComp = rgbToHSV(
+                pixelsCompensated.r, 
+                pixelsCompensated.g, 
+                pixelsCompensated.b
+            );
+            addToBuffer(hsvComp, pixelsCompensated);
+            const stableComp = getStableColor();
+            if (stableComp) {
+                let classComp;
+                if (plasticsMode) {
+                    classComp = classifyPlasticsPolymers(stableComp.hsv, stableComp.rgb, 0);
+                } else if (ampliatedMode) {
+                    classComp = classifyColorExtended(stableComp.hsv, stableComp.rgb, 0);
+                } else {
+                    classComp = classifyColorWithRuler(stableComp.hsv, stableComp.rgb, 0);
+                }
+                triggerAudioIfChanged(classComp.name);
+            }
+        }
+    }
     requestAnimationFrame(update);
     return;
-  }
+}
   let pixels;
   if (currentMode === 'livre') {
     pixels = samplePixels();
