@@ -684,7 +684,7 @@
 </head>
 <body>
 <div id="header">
-  <button id="btn-system" class="system-on" onclick="toggleSystem()">SISTEMA/ON</button>
+  <button id="btn-system" class="system-off" onclick="toggleSystem()">SISTEMA/OFF</button>
   <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v3.3 PRO - PLÁSTICOS (RANGES HSV OFICIAIS)</span>
 </div>
 <div id="top-bar">
@@ -804,7 +804,7 @@ let stream = null;
 let devices = [];
 let deviceIndex = 0;
 let running = false;
-let systemOn = true;
+let systemOn = false;
 // Modos de operação
 let universalMode = false;
 let ampliatedMode = false;
@@ -3483,30 +3483,46 @@ async function openCamera(preferredDeviceId) {
 /**
  * Alterna sistema ON/OFF
  */
-function toggleSystem() {
-  systemOn = !systemOn;
-  const btn = document.getElementById('btn-system');
-  
-  const btns = [
-    'btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black',
-    'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos',
-    'btn-modes', 'btn-reset-estatico',
-    'btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao'
-  ];
-  if (systemOn) {
-    btn.textContent = 'SISTEMA/ON';
-    btn.className = 'system-on';
-    btns.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.disabled = false;
-    });
-  } else {
-    btn.textContent = 'SISTEMA/OFF';
-    btn.className = 'system-off';
-    btns.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.disabled = true;
-    });
+const textoBoasVindas = 
+            'Sistema ligado. Selecione o modo. ' +
+            'Modo Livre: mira fixa no centro, análise contínua. ' +
+            'Modo Estático: clique na tela para analisar ponto específico. ' +
+            'Modo Comparação: capture dois pontos e compare a compatibilidade entre eles.';
+
+        // Usa speakColor diretamente, sem verificar audioEnabled
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+            setTimeout(() => {
+                try {
+                    const utt = new SpeechSynthesisUtterance(textoBoasVindas);
+                    utt.lang = 'pt-BR';
+                    utt.rate = 1.0;
+                    utt.pitch = 1.0;
+                    window.speechSynthesis.speak(utt);
+                } catch (e) {
+                    console.error('Erro na síntese de voz:', e);
+                }
+            }, 300);
+        }
+
+    } else {
+        btn.textContent = 'SISTEMA/OFF';
+        btn.className = 'system-off';
+        btns.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.disabled = true;
+        });
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        document.getElementById('color-name').textContent = '---';
+        document.getElementById('color-name').style.color = '#445';
+        document.getElementById('confidence-display').textContent = '';
+        document.getElementById('hsv-line').innerHTML = 
+            '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
+        document.getElementById('rgb-line').innerHTML = 
+            '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
+        document.getElementById('color-swatch').style.background = '#1a1a2e';
+    }
+}
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     document.getElementById('color-name').textContent = '---';
     document.getElementById('color-name').style.color = '#445';
