@@ -18,6 +18,31 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+   #btn-resultado {
+  background: linear-gradient(135deg, #1a3a1e, #2a6a3e);
+  color: #6effa0;
+  border: 1px solid rgba(60,200,100,0.5);
+  display: none;
+}
+#btn-resultado.show { display: inline-block; }
+#btn-resultado:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2a5a3e, #3a8a5e);
+  color: #9effbc;
+}
+  <button class="btn-top" id="btn-ajuste-audio" onclick="speakAjusteSugerido()">
+  🔈 Ajuste
+</button>
+  #btn-ajuste-audio {
+  background: linear-gradient(135deg, #1a2a3e, #2a4a6e);
+  color: #7fdbff;
+  border: 1px solid rgba(80,180,255,0.4);
+  display: none;
+}
+#btn-ajuste-audio.show { display: inline-block; }
+#btn-ajuste-audio:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2a3a5e, #3a5a8e);
+  color: #aef;
+}
   #header {
     background: rgba(10,10,20,0.88);
     padding: 5px 12px;
@@ -732,6 +757,9 @@
   <button class="btn-top" id="btn-reset-ref" onclick="resetRef()">&#10006; Resetar Referência</button>
   <button class="btn-top" id="btn-reset-sample" onclick="resetSample()">&#10006; Resetar Amostra</button>
   <button class="btn-top" id="btn-reset-comparacao" onclick="resetComparison()">&#8635; Reset Comparação</button>
+  <button class="btn-top" id="btn-resultado" onclick="showResultado()">
+  📊 Resultado
+</button>  
   <button class="btn-top" id="btn-camera" onclick="switchCamera()">&#8635; Câmera</button>
   <button class="btn-top" id="btn-audio" onclick="toggleAudio()">&#128263; Áudio</button>
   <button class="btn-top" id="btn-flash" onclick="toggleFlash()">&#9889; Flash</button>
@@ -760,23 +788,17 @@
           </div>
           <div id="ref-color-name" class="comp-color-name">---</div>
         </div>
-        <div class="comp-block comp-center">
-          <div class="comp-percent-label">COMPATIBILIDADE</div>
-          <div id="compatibility-percent" class="comp-percent">---</div>
-        </div>
-        <div class="comp-block">
-          <div class="comp-label">AMOSTRA</div>
-          <div class="comp-img-wrap">
-            <img id="sample-thumb" class="comp-thumb" src="" alt="">
-            <div id="sample-reticle-marker" class="comp-marker" style="display:none;"></div>
-          </div>
-          <div id="sample-color-name" class="comp-color-name">---</div>
-        </div>
-      </div>
-      <div class="comp-suggestion" id="pigment-suggestion" style="display:none;">
-        <div class="comp-suggestion-label">🎨 AJUSTE SUGERIDO</div>
-        <div class="comp-suggestion-text" id="pigment-suggestion-text">---</div>
-      </div>
+       <!-- Modificar comp-center para iniciar oculto -->
+<div class="comp-block comp-center" id="result-block" style="display:none;">
+  <div class="comp-percent-label">COMPATIBILIDADE</div>
+  <div id="compatibility-percent" class="comp-percent">---</div>
+</div>
+
+<!-- Manter suggestion oculto como já está -->
+<div class="comp-suggestion" id="pigment-suggestion" style="display:none;">
+  <div class="comp-suggestion-label">🎨 AJUSTE SUGERIDO</div>
+  <div class="comp-suggestion-text" id="pigment-suggestion-text">---</div>
+</div>
     </div>
     <div id="mode-select-overlay">
       <h2>SELECIONE O MODO</h2>
@@ -3483,7 +3505,8 @@ async function openCamera(preferredDeviceId) {
 /**
  * Alterna sistema ON/OFF
  */
-function toggleSystem() {
+function toggleSystem() {document.getElementById('btn-resultado').classList.remove('show');
+document.getElementById('btn-ajuste-audio').classList.remove('show');
   systemOn = !systemOn;
   const btn = document.getElementById('btn-system');
   
@@ -3552,6 +3575,14 @@ function toggleModeDropdown() {
  * Seleciona modo de operação
  */
 function selectMode(mode) {
+  // ✅ NOVO: Oculta botões de resultado e ajuste ao trocar de modo
+document.getElementById('btn-resultado').classList.remove('show');
+document.getElementById('btn-ajuste-audio').classList.remove('show');
+// ✅ Oculta resultado e sugestão ao trocar de modo
+const resultBlock = document.getElementById('result-block');
+if (resultBlock) resultBlock.style.display = 'none';
+document.getElementById('pigment-suggestion').style.display = 'none';
+document.getElementById('compatibility-percent').textContent = '---';
   currentMode = mode;
   const dropdown = document.getElementById('mode-dropdown');
   const btnModes = document.getElementById('btn-modes');
@@ -3614,6 +3645,9 @@ function selectMode(mode) {
     staticAnalysisActive = false;
     staticPosition = null;
     staticFrozen = false;
+    // ✅ NOVO: Mostra botões de resultado e ajuste
+document.getElementById('btn-resultado').classList.add('show');
+document.getElementById('btn-ajuste-audio').classList.add('show');
     document.getElementById('btn-sel-ref').classList.add('show');
     document.getElementById('btn-sel-sample').classList.add('show');
     document.getElementById('btn-reset-ref').classList.add('show');
@@ -3670,20 +3704,32 @@ function resetEstatico() {
  */
 function startRefSelection() {
   if (!systemOn || !running || currentMode !== 'comparacao') return;
+  // ✅ Bloqueia se já tiver referência capturada
+  if (comparisonRef) {
+    if (audioEnabled) speakColor('Referência já capturada. Utilize resetar referência para realizar uma nova captura.');
+    return;
+  }
   selectingRef = true;
   selectingSample = false;
   document.getElementById('color-name').textContent = 'Toque na tela: REFERÊNCIA';
   document.getElementById('color-name').style.color = '#8ec';
+  // ✅ NOVO: Fala instrução ao usuário
+  if (audioEnabled) speakColor('Selecione a área de referência desejada na tela.');
 }
-/**
- * Inicia seleção de amostra
- */
+
 function startSampleSelection() {
   if (!systemOn || !running || currentMode !== 'comparacao') return;
+  // ✅ Bloqueia se já tiver amostra capturada
+  if (comparisonSample) {
+    if (audioEnabled) speakColor('Amostra já capturada. Utilize resetar amostra para realizar uma nova captura.');
+    return;
+  }
   selectingSample = true;
   selectingRef = false;
   document.getElementById('color-name').textContent = 'Toque na tela: AMOSTRA';
   document.getElementById('color-name').style.color = '#dd8';
+  // ✅ NOVO: Fala instrução ao usuário
+  if (audioEnabled) speakColor('Selecione a área de amostra desejada na tela.');
 }
 /**
  * Captura referência
@@ -3700,6 +3746,103 @@ function captureRef(x, y) {
       }, 200);
     }
     updateComparison();
+  }
+}
+// ════════════════════════════════════════════════════════════════
+// 📊 RESULTADO DE COMPATIBILIDADE
+// ════════════════════════════════════════════════════════════════
+function showResultado() {
+  if (!systemOn || currentMode !== 'comparacao') return;
+
+  // ✅ Verifica se referência está capturada
+  if (!comparisonRef && !comparisonSample) {
+    if (audioEnabled) speakColor(
+      'Nenhuma imagem capturada. Capture a referência e a amostra primeiro.'
+    );
+    alert('Capture a Referência e a Amostra primeiro.');
+    return;
+  }
+
+  // ✅ Verifica se falta referência
+  if (!comparisonRef) {
+    if (audioEnabled) speakColor(
+      'Referência não capturada. Por favor selecione a área de referência.'
+    );
+    alert('Referência não capturada. Selecione a área de referência.');
+    return;
+  }
+
+  // ✅ Verifica se falta amostra
+  if (!comparisonSample) {
+    if (audioEnabled) speakColor(
+      'Amostra não capturada. Por favor selecione a área de amostra.'
+    );
+    alert('Amostra não capturada. Selecione a área de amostra.');
+    return;
+  }
+
+  // ✅ Ambas capturadas — exibe resultado
+  const resultBlock = document.getElementById('result-block');
+  const suggestionBox = document.getElementById('pigment-suggestion');
+
+  if (resultBlock) resultBlock.style.display = 'flex';
+  if (suggestionBox) suggestionBox.style.display = 'block';
+
+  // ✅ Calcula e exibe
+  updateComparison();
+
+  if (audioEnabled) speakColor('Calculando resultado de compatibilidade.');
+}
+// ════════════════════════════════════════════════════════════════
+// 🔈 AJUSTE SUGERIDO — ÁUDIO
+// ════════════════════════════════════════════════════════════════
+function speakAjusteSugerido() {
+  if (!systemOn || currentMode !== 'comparacao') return;
+
+  // ✅ Verifica se há resultado calculado
+  if (!comparisonRef || !comparisonSample) {
+    if (audioEnabled) speakColor(
+      'Nenhum resultado disponível. Capture a referência e a amostra e solicite o resultado primeiro.'
+    );
+    return;
+  }
+
+  const textoAtual = document.getElementById('pigment-suggestion-text').textContent;
+
+  if (!textoAtual || textoAtual === '---') {
+    if (audioEnabled) speakColor(
+      'Nenhum ajuste disponível. Solicite o resultado de compatibilidade primeiro.'
+    );
+    return;
+  }
+
+  // ✅ Limpa símbolos e fala o texto
+  const textoLimpo = textoAtual
+    .replace(/[✦✓⚠️📋•🎨🧪◆◇⭐☆]/g, '')
+    .replace(/\n+/g, '. ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  const compat = document.getElementById('compatibility-percent').textContent;
+
+  const textoCompleto =
+    `Resultado de compatibilidade entre ${comparisonRef.name} e ${comparisonSample.name}: ` +
+    `${compat}. ` +
+    `Ajuste sugerido: ${textoLimpo}`;
+
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+    setTimeout(() => {
+      try {
+        const utt = new SpeechSynthesisUtterance(textoCompleto);
+        utt.lang = 'pt-BR';
+        utt.rate = 0.95;
+        utt.pitch = 1.0;
+        window.speechSynthesis.speak(utt);
+      } catch (e) {
+        console.error('Erro ao falar ajuste:', e);
+      }
+    }, 200);
   }
 }
 /**
@@ -3773,10 +3916,13 @@ function updateComparison() {
   const suggestionBox = document.getElementById('pigment-suggestion');
   const suggestionText = document.getElementById('pigment-suggestion-text');
   const suggestionLabel = suggestionBox.querySelector('.comp-suggestion-label');
+  const resultBlock = document.getElementById('result-block');
 
   if (!comparisonRef || !comparisonSample) {
     percentEl.textContent = '---';
     percentEl.className = 'comp-percent';
+    // ✅ Oculta resultado se faltar alguma captura
+    if (resultBlock) resultBlock.style.display = 'none';
     suggestionBox.style.display = 'none';
     return;
   }
@@ -3790,7 +3936,6 @@ function updateComparison() {
   const suggestion = suggestPigmentAdjustment(comparisonRef, comparisonSample);
   suggestionText.textContent = suggestion.text;
   suggestionText.className = 'comp-suggestion-text ' + suggestion.cssClass;
-  suggestionBox.style.display = 'block';
 
   if (plasticsMode) {
     suggestionLabel.innerHTML = '🧪 FÓRMULA DE PIGMENTOS (PLÁSTICOS)';
@@ -3798,24 +3943,19 @@ function updateComparison() {
     suggestionLabel.innerHTML = '🎨 AJUSTE SUGERIDO';
   }
 
-  // ✅ NOVO: Áudio — fala compatibilidade + ajuste sugerido (uma vez por combinação)
-  if (audioEnabled) {
+  // ✅ Só fala se o resultado já estiver visível na tela
+  if (resultBlock && resultBlock.style.display !== 'none' && audioEnabled) {
     const chaveComparacao = comparisonRef.name + '|' + comparisonSample.name;
     if (chaveComparacao !== lastSpokenComparison) {
       lastSpokenComparison = chaveComparacao;
-
       const textoSugestao = suggestion.text
         .replace(/[✦✓⚠️📋•🎨🧪◆◇⭐☆]/g, '')
         .replace(/\n+/g, '. ')
         .replace(/\s{2,}/g, ' ')
         .trim();
-
       const textoAudio =
         `Compatibilidade entre ${comparisonRef.name} e ${comparisonSample.name}: ` +
-        `${compat} por cento. ` +
-        `Ajuste sugerido: ${textoSugestao}`;
-
-      // Delay para não sobrepor áudio da captura da amostra
+        `${compat} por cento. Ajuste sugerido: ${textoSugestao}`;
       setTimeout(() => {
         if (audioEnabled) speakColor(textoAudio);
       }, 1800);
@@ -4372,20 +4512,23 @@ cameraContainer.addEventListener('click', function(e) {
     const rect = cameraContainer.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+
+    // ✅ Só captura SE estiver em modo seleção ativo
+    // Caso contrário ignora o toque — imagem permanece na tela
     if (selectingRef) {
       captureRef(x, y);
       selectingRef = false;
       return;
     }
-    
     if (selectingSample) {
       captureSample(x, y);
       selectingSample = false;
       return;
     }
-    
+    // ✅ Toque sem seleção ativa — ignora completamente
     return;
   }
+  // ... resto do código estático inalterado
   if (currentMode !== 'estatico' || !running) return;
   if (staticFrozen) return;
   const rect = cameraContainer.getBoundingClientRect();
@@ -4408,4 +4551,5 @@ console.log('%c⚡ Performance:', 'Otimizado para máxima precisão', 'color: #f
 </script>
 </body>
 </html>
+
 
