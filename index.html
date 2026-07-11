@@ -3541,8 +3541,7 @@ function toggleSystem() {
     document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
     document.getElementById('color-swatch').style.background = '#1a1a2e';
   }
-}
-/**
+}/**
  * Alterna dropdown de modos
  */
 function toggleModeDropdown() {
@@ -3559,7 +3558,7 @@ function selectMode(mode) {
   const modeLabel = document.getElementById('mode-label');
   const modeSelectOverlay = document.getElementById('mode-select-overlay');
   const btnResetEstatico = document.getElementById('btn-reset-estatico');
-  // Esconde botões de comparação
+
   document.getElementById('btn-sel-ref').classList.remove('show');
   document.getElementById('btn-sel-sample').classList.remove('show');
   document.getElementById('btn-reset-ref').classList.remove('show');
@@ -3569,6 +3568,7 @@ function selectMode(mode) {
   dropdown.classList.remove('show');
   modeSelectOverlay.classList.add('hide');
   btnModes.classList.remove('mode-livre', 'mode-estatico', 'mode-comparacao');
+
   if (mode === 'livre') {
     btnModes.classList.add('mode-livre');
     modeLabel.textContent = 'MODO: 🎯 LIVRE';
@@ -3580,6 +3580,15 @@ function selectMode(mode) {
     staticAnalysisActive = false;
     staticPosition = null;
     staticFrozen = false;
+    // ✅ NOVO: Fala o modo selecionado
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setTimeout(() => {
+        const utt = new SpeechSynthesisUtterance('Modo Livre selecionado. Mira fixa no centro, análise contínua.');
+        utt.lang = 'pt-BR'; utt.rate = 1.0; utt.pitch = 1.0;
+        window.speechSynthesis.speak(utt);
+      }, 200);
+    }
   } else if (mode === 'estatico') {
     btnModes.classList.add('mode-estatico');
     modeLabel.textContent = 'MODO: 📍 ESTÁTICO';
@@ -3588,6 +3597,15 @@ function selectMode(mode) {
     staticAnalysisActive = false;
     staticPosition = null;
     staticFrozen = false;
+    // ✅ NOVO: Fala o modo selecionado
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setTimeout(() => {
+        const utt = new SpeechSynthesisUtterance('Modo Estático selecionado. Clique na tela para analisar ponto específico.');
+        utt.lang = 'pt-BR'; utt.rate = 1.0; utt.pitch = 1.0;
+        window.speechSynthesis.speak(utt);
+      }, 200);
+    }
   } else if (mode === 'comparacao') {
     btnModes.classList.add('mode-comparacao');
     modeLabel.textContent = 'MODO: ⚖️ COMPARAÇÃO';
@@ -3602,8 +3620,17 @@ function selectMode(mode) {
     document.getElementById('btn-reset-sample').classList.add('show');
     document.getElementById('btn-reset-comparacao').classList.add('show');
     document.getElementById('comparison-panel').classList.add('show');
+    // ✅ NOVO: Fala o modo selecionado
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setTimeout(() => {
+        const utt = new SpeechSynthesisUtterance('Modo Comparação selecionado. Capture dois pontos e compare a compatibilidade entre eles.');
+        utt.lang = 'pt-BR'; utt.rate = 1.0; utt.pitch = 1.0;
+        window.speechSynthesis.speak(utt);
+      }, 200);
+    }
   }
-  // Atualiza opções ativas
+
   const options = dropdown.querySelectorAll('.mode-option');
   options.forEach(opt => opt.classList.remove('active'));
   if (mode === 'livre') options[0].classList.add('active');
@@ -3615,6 +3642,7 @@ function selectMode(mode) {
  */
 function resetEstatico() {
   if (currentMode !== 'estatico') return;
+  if (audioEnabled) speakColor('Modo estático resetado.');
   staticPosition = null;
   staticAnalysisActive = false;
   staticFrozen = false;
@@ -3664,6 +3692,13 @@ function captureRef(x, y) {
   const result = capturePoint(x, y, 'ref-thumb', 'ref-reticle-marker', 'ref-color-name');
   if (result) {
     comparisonRef = result;
+    // ✅ NOVO: Fala a cor da referência
+    if (audioEnabled) {
+      window.speechSynthesis.cancel();
+      setTimeout(() => {
+        speakColor('Referência capturada: ' + result.name);
+      }, 200);
+    }
     updateComparison();
   }
 }
@@ -3674,6 +3709,14 @@ function captureSample(x, y) {
   const result = capturePoint(x, y, 'sample-thumb', 'sample-reticle-marker', 'sample-color-name');
   if (result) {
     comparisonSample = result;
+    // ✅ NOVO: Fala a cor da amostra
+    if (audioEnabled) {
+      window.speechSynthesis.cancel();
+      setTimeout(() => {
+        speakColor('Amostra capturada: ' + result.name);
+      }, 200);
+    }
+    let lastSpokenComparison = '';
     updateComparison();
   }
 }
@@ -3682,14 +3725,15 @@ function captureSample(x, y) {
  */
 function resetRef() {
   if (currentMode !== 'comparacao') return;
-  
   comparisonRef = null;
   document.getElementById('ref-thumb').src = '';
   document.getElementById('ref-thumb').style.display = 'none';
   document.getElementById('ref-reticle-marker').style.display = 'none';
   document.getElementById('ref-color-name').textContent = '---';
   document.getElementById('ref-color-name').style.color = '#aac';
-  
+  // ✅ NOVO
+  lastSpokenComparison = '';
+  if (audioEnabled) speakColor('Referência resetada.');
   updateComparison();
 }
 /**
@@ -3697,14 +3741,15 @@ function resetRef() {
  */
 function resetSample() {
   if (currentMode !== 'comparacao') return;
-  
   comparisonSample = null;
   document.getElementById('sample-thumb').src = '';
   document.getElementById('sample-thumb').style.display = 'none';
   document.getElementById('sample-reticle-marker').style.display = 'none';
   document.getElementById('sample-color-name').textContent = '---';
   document.getElementById('sample-color-name').style.color = '#aac';
-  
+  // ✅ NOVO
+  lastSpokenComparison = '';
+  if (audioEnabled) speakColor('Amostra resetada.');
   updateComparison();
 }
 /**
@@ -3712,10 +3757,11 @@ function resetSample() {
  */
 function resetComparison() {
   if (currentMode !== 'comparacao') return;
-  
   resetRef();
   resetSample();
-  
+  // ✅ NOVO: reseta controle de áudio
+  lastSpokenComparison = '';
+  if (audioEnabled) speakColor('Comparação resetada.');
   document.getElementById('color-name').textContent = '---';
   document.getElementById('color-name').style.color = '#445';
 }
@@ -3727,25 +3773,53 @@ function updateComparison() {
   const suggestionBox = document.getElementById('pigment-suggestion');
   const suggestionText = document.getElementById('pigment-suggestion-text');
   const suggestionLabel = suggestionBox.querySelector('.comp-suggestion-label');
+
   if (!comparisonRef || !comparisonSample) {
     percentEl.textContent = '---';
     percentEl.className = 'comp-percent';
     suggestionBox.style.display = 'none';
     return;
   }
+
   const compat = calculateCompatibility(comparisonRef, comparisonSample);
   percentEl.textContent = compat + '%';
   percentEl.className = 'comp-percent';
   if (compat === 0) percentEl.classList.add('low');
   else if (compat < 50) percentEl.classList.add('medium');
+
   const suggestion = suggestPigmentAdjustment(comparisonRef, comparisonSample);
   suggestionText.textContent = suggestion.text;
   suggestionText.className = 'comp-suggestion-text ' + suggestion.cssClass;
   suggestionBox.style.display = 'block';
+
   if (plasticsMode) {
     suggestionLabel.innerHTML = '🧪 FÓRMULA DE PIGMENTOS (PLÁSTICOS)';
   } else {
     suggestionLabel.innerHTML = '🎨 AJUSTE SUGERIDO';
+  }
+
+  // ✅ NOVO: Áudio — fala compatibilidade + ajuste sugerido (uma vez por combinação)
+  if (audioEnabled) {
+    const chaveComparacao = comparisonRef.name + '|' + comparisonSample.name;
+    if (chaveComparacao !== lastSpokenComparison) {
+      lastSpokenComparison = chaveComparacao;
+
+      const textoSugestao = suggestion.text
+        .replace(/[✦✓⚠️📋•🎨🧪◆◇⭐☆]/g, '')
+        .replace(/\n+/g, '. ')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+
+      const textoAudio =
+        `Compatibilidade entre ${comparisonRef.name} e ${comparisonSample.name}: ` +
+        `${compat} por cento. ` +
+        `Ajuste sugerido: ${textoSugestao}`;
+
+      // Delay para não sobrepor áudio da captura da amostra
+      setTimeout(() => {
+        if (audioEnabled) speakColor(textoAudio);
+      }, 1800);
+    }
   }
 }
 /**
@@ -3757,6 +3831,8 @@ async function switchCamera() {
     alert('Apenas uma câmera disponível.');
     return;
   }
+  // ✅ NOVO
+  if (audioEnabled) speakColor('Trocando câmera.');
   deviceIndex = (deviceIndex + 1) % devices.length;
   await openCamera(devices[deviceIndex].deviceId);
 }
@@ -3765,23 +3841,32 @@ async function switchCamera() {
  */
 function toggleAudio() {
   if (!systemOn) return;
-  // Inicializa API de voz
-  if (window.speechSynthesis) {
-    window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
-  }
   audioEnabled = !audioEnabled;
   const btn = document.getElementById('btn-audio');
+
   if (audioEnabled) {
     btn.textContent = '🔊 Áudio';
     btn.classList.add('audio-on');
+    // ✅ NOVO: Fala "Áudio ativado" ao ligar
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setTimeout(() => {
+        const utt = new SpeechSynthesisUtterance('Áudio ativado.');
+        utt.lang = 'pt-BR'; utt.rate = 1.0; utt.pitch = 1.0;
+        window.speechSynthesis.speak(utt);
+      }, 150);
+    }
   } else {
     btn.textContent = '🔇 Áudio';
     btn.classList.remove('audio-on');
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-    if (stableTimer) {
-      clearTimeout(stableTimer);
-      stableTimer = null;
+    // ✅ NOVO: Fala "Áudio desativado" antes de desligar
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance('Áudio desativado.');
+      utt.lang = 'pt-BR'; utt.rate = 1.0; utt.pitch = 1.0;
+      window.speechSynthesis.speak(utt);
     }
+    if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
     pendingName = '';
     lastSpokenName = '';
   }
@@ -3793,8 +3878,15 @@ async function toggleFlash() {
   if (!systemOn) return;
   flashEnabled = !flashEnabled;
   const btn = document.getElementById('btn-flash');
-  if (flashEnabled) btn.classList.add('flash-on');
-  else btn.classList.remove('flash-on');
+  if (flashEnabled) {
+    btn.classList.add('flash-on');
+    // ✅ NOVO
+    if (audioEnabled) speakColor('Flash ativado.');
+  } else {
+    btn.classList.remove('flash-on');
+    // ✅ NOVO
+    if (audioEnabled) speakColor('Flash desativado.');
+  }
   if (stream) {
     const track = stream.getVideoTracks()[0];
     if (track && typeof track.applyConstraints === 'function') {
@@ -3817,9 +3909,10 @@ function toggleUniversalMode() {
   if (!systemOn) return;
   universalMode = !universalMode;
   const btn = document.getElementById('btn-universal');
-  
   btn.textContent = universalMode ? '⭐ Universal' : '☆ Universal';
   btn.classList.toggle('universal-on', universalMode);
+  // ✅ NOVO
+  if (audioEnabled) speakColor(universalMode ? 'Modo Universal ativado.' : 'Modo Universal desativado.');
   if (universalMode && ampliatedMode) {
     ampliatedMode = false;
     document.getElementById('btn-ampliado').textContent = '◇ Ampliado';
@@ -3832,10 +3925,7 @@ function toggleUniversalMode() {
   }
   lastSpokenName = '';
   pendingName = '';
-  if (stableTimer) {
-    clearTimeout(stableTimer);
-    stableTimer = null;
-  }
+  if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
 }
 /**
  * Alterna modo ampliado
@@ -3844,9 +3934,10 @@ function toggleAmpliatedMode() {
   if (!systemOn) return;
   ampliatedMode = !ampliatedMode;
   const btn = document.getElementById('btn-ampliado');
-  
   btn.textContent = ampliatedMode ? '◆ Ampliado' : '◇ Ampliado';
   btn.classList.toggle('ampliado-on', ampliatedMode);
+  // ✅ NOVO
+  if (audioEnabled) speakColor(ampliatedMode ? 'Modo Ampliado ativado.' : 'Modo Ampliado desativado.');
   if (ampliatedMode && universalMode) {
     universalMode = false;
     document.getElementById('btn-universal').textContent = '☆ Universal';
@@ -3859,11 +3950,7 @@ function toggleAmpliatedMode() {
   }
   lastSpokenName = '';
   pendingName = '';
-  if (stableTimer) {
-    clearTimeout(stableTimer);
-    stableTimer = null;
-  }
-  
+  if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
   colorBuffer = [];
   lastStableColorName = '';
   mismatchCounter = 0;
@@ -3876,8 +3963,9 @@ function togglePlasticsMode() {
   if (!systemOn) return;
   plasticsMode = !plasticsMode;
   const btn = document.getElementById('btn-plasticos');
-  
   btn.classList.toggle('plasticos-on', plasticsMode);
+  // ✅ NOVO
+  if (audioEnabled) speakColor(plasticsMode ? 'Modo Plásticos ativado.' : 'Modo Plásticos desativado.');
   if (plasticsMode && universalMode) {
     universalMode = false;
     document.getElementById('btn-universal').textContent = '☆ Universal';
@@ -3890,11 +3978,7 @@ function togglePlasticsMode() {
   }
   lastSpokenName = '';
   pendingName = '';
-  if (stableTimer) {
-    clearTimeout(stableTimer);
-    stableTimer = null;
-  }
-  
+  if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
   colorBuffer = [];
   lastStableColorName = '';
   mismatchCounter = 0;
@@ -3930,7 +4014,9 @@ async function calibrateWhite() {
     alert('Inicie a câmera primeiro.');
     return;
   }
-  if (!currentMode) {
+  if (!currentMode)
+  if (audioEnabled) speakColor('Calibrando branco. Aguarde.');
+ {
     alert('Selecione um modo primeiro.');
     return;
   }
@@ -4013,7 +4099,9 @@ async function calibrateBlack() {
     alert('Inicie a câmera primeiro.');
     return;
   }
-  if (!currentMode) {
+  if (!currentMode) 
+  if (audioEnabled) speakColor('Calibrando preto. Aguarde.');
+{
     alert('Selecione um modo primeiro.');
     return;
   }
@@ -4099,7 +4187,7 @@ function resetWhite() {
   lastStableColorName = '';
   mismatchCounter = 0;
   consecutiveFrameCounter = 0;
-  if (audioEnabled) speakColor('Branco resetado');
+  if (audioEnabled) speakColor('Calibração de branco resetada.');
 }
 /**
  * Reseta calibração de preto
@@ -4114,7 +4202,7 @@ function resetBlack() {
   lastStableColorName = '';
   mismatchCounter = 0;
   consecutiveFrameCounter = 0;
-  if (audioEnabled) speakColor('Preto resetado');
+  if (audioEnabled) speakColor('Calibração de preto resetada.');
 }
 /**
  * Inicia câmera
