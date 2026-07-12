@@ -379,17 +379,18 @@
     background: linear-gradient(135deg, #2a4e7a, #3a6e9a);
     color: #b0e8ff;
   }
-  #btn-resultado-compatibilidade.show { display: inline-block !important; }
-  #btn-ajuste-sugerido {
-    background: linear-gradient(135deg, #2e1a4a, #4e2a7a);
-    color: #c080ff;
-    border: 1px solid rgba(180,80,255,0.45);
-  }
-  #btn-ajuste-sugerido:hover:not(:disabled) {
-    background: linear-gradient(135deg, #4e2a7a, #6e3a9a);
-    color: #e0b0ff;
-  }
-  #btn-ajuste-sugerido.show { display: inline-block !important; }
+  #btn-resultado-compatibilidade { display: none; }
+#btn-resultado-compatibilidade.show { 
+  display: inline-block !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}
+#btn-ajuste-sugerido { display: none; }
+#btn-ajuste-sugerido.show { 
+  display: inline-block !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}
   #main {
   }
   #main { flex: 1; position: relative; overflow: hidden; }
@@ -760,8 +761,8 @@
   <button class="btn-top" id="btn-universal" onclick="toggleUniversalMode()">&#9733; Universal</button>
   <button class="btn-top" id="btn-ampliado" onclick="toggleAmpliatedMode()">&#9830; Ampliado</button>
   <button class="btn-top" id="btn-plasticos" onclick="togglePlasticsMode()">&#129514; Plásticos</button>
-<button class="btn-top" id="btn-resultado-compatibilidade" onclick="mostrarResultadoCompatibilidade()" style="display:none;">&#9878; Resultado</button>
-<button class="btn-top" id="btn-ajuste-sugerido" onclick="narrarAjusteSugerido()" style="display:none;">&#127908; Ajuste</button>
+<button class="btn-top" id="btn-resultado-compatibilidade" onclick="mostrarResultadoCompatibilidade()">&#9878; Resultado</button>
+<button class="btn-top" id="btn-ajuste-sugerido" onclick="narrarAjusteSugerido()">&#127908; Ajuste</button>
 </div>
 <div id="main">
   <div id="camera-container">
@@ -3520,6 +3521,8 @@ function toggleSystem() {
     'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos',
     'btn-modes', 'btn-reset-estatico',
     'btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao'
+    // ⚠️ btn-resultado-compatibilidade e btn-ajuste-sugerido NÃO entram aqui
+    // pois são controlados exclusivamente pelo selectMode
   ];
   if (systemOn) {
     btn.textContent = 'SISTEMA/ON';
@@ -3612,8 +3615,19 @@ function selectMode(mode) {
   document.getElementById('btn-reset-ref').classList.remove('show');
   document.getElementById('btn-reset-sample').classList.remove('show');
   document.getElementById('btn-reset-comparacao').classList.remove('show');
-  document.getElementById('btn-resultado-compatibilidade').classList.remove('show');
-  document.getElementById('btn-ajuste-sugerido').classList.remove('show');
+  const btnResRem = document.getElementById('btn-resultado-compatibilidade');
+btnResRem.classList.remove('show');
+btnResRem.style.display = 'none';
+btnResRem.disabled = true;
+btnResRem.style.pointerEvents = 'none';
+btnResRem.style.opacity = '0.3';
+
+const btnAdjRem = document.getElementById('btn-ajuste-sugerido');
+btnAdjRem.classList.remove('show');
+btnAdjRem.style.display = 'none';
+btnAdjRem.disabled = true;
+btnAdjRem.style.pointerEvents = 'none';
+btnAdjRem.style.opacity = '0.3';
   document.getElementById('comparison-panel').classList.remove('show');
   resultadoCalculado = false;
   dropdown.classList.remove('show');
@@ -3670,8 +3684,19 @@ function selectMode(mode) {
     document.getElementById('btn-reset-ref').classList.add('show');
     document.getElementById('btn-reset-sample').classList.add('show');
     document.getElementById('btn-reset-comparacao').classList.add('show');
-    document.getElementById('btn-resultado-compatibilidade').classList.add('show');
-    document.getElementById('btn-ajuste-sugerido').classList.add('show');
+    const btnRes = document.getElementById('btn-resultado-compatibilidade');
+btnRes.classList.add('show');
+btnRes.disabled = false;
+btnRes.style.pointerEvents = 'auto';
+btnRes.style.opacity = '1';
+btnRes.style.display = 'inline-block';
+
+const btnAdj = document.getElementById('btn-ajuste-sugerido');
+btnAdj.classList.add('show');
+btnAdj.disabled = false;
+btnAdj.style.pointerEvents = 'auto';
+btnAdj.style.opacity = '1';
+btnAdj.style.display = 'inline-block';
     document.getElementById('comparison-panel').classList.add('show');
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
@@ -4623,7 +4648,7 @@ function update() {
 // 🚀 INICIALIZAÇÃO — Estado inicial com SISTEMA/OFF
 // ════════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', function() {
-  const btnsIniciais = [
+ const btnsIniciais = [
     'btn-calibrate-white', 'btn-calibrate-black',
     'btn-reset-white', 'btn-reset-black',
     'btn-camera', 'btn-audio', 'btn-flash',
@@ -4631,10 +4656,19 @@ window.addEventListener('DOMContentLoaded', function() {
     'btn-modes', 'btn-reset-estatico',
     'btn-sel-ref', 'btn-sel-sample',
     'btn-reset-ref', 'btn-reset-sample',
-    'btn-reset-comparacao',
-    'btn-resultado-compatibilidade',
-    'btn-ajuste-sugerido'
+    'btn-reset-comparacao'
+    // ⚠️ btn-resultado-compatibilidade e btn-ajuste-sugerido removidos daqui
+    // São ocultados via CSS display:none e controlados pelo selectMode
   ];
+
+  // Oculta botões de comparação avançada separadamente (só display:none, sem disabled)
+  ['btn-resultado-compatibilidade', 'btn-ajuste-sugerido'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.display = 'none';
+      el.disabled = true;
+    }
+  });
   btnsIniciais.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
