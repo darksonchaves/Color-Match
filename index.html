@@ -3784,9 +3784,12 @@ function captureRef(x, y) {
     comparisonRef = result;
     refCaptured = true;
     resultadoCalculado = false;
-    document.getElementById('compatibility-percent').textContent = '---';
-    document.getElementById('compatibility-percent').className = 'comp-percent';
-    document.getElementById('pigment-suggestion').style.display = 'none';
+    // Só limpa resultado se ainda não foi calculado
+if (!resultadoCalculado) {
+  document.getElementById('compatibility-percent').textContent = '---';
+  document.getElementById('compatibility-percent').className = 'comp-percent';
+  document.getElementById('pigment-suggestion').style.display = 'none';
+}
     const msg = 'Referência capturada: ' + result.name;
     document.getElementById('color-name').textContent = msg;
     document.getElementById('color-name').style.color = '#8ec';
@@ -3809,9 +3812,12 @@ function captureSample(x, y) {
     comparisonSample = result;
     sampleCaptured = true;
     resultadoCalculado = false;
-    document.getElementById('compatibility-percent').textContent = '---';
-    document.getElementById('compatibility-percent').className = 'comp-percent';
-    document.getElementById('pigment-suggestion').style.display = 'none';
+    // Só limpa resultado se ainda não foi calculado
+if (!resultadoCalculado) {
+  document.getElementById('compatibility-percent').textContent = '---';
+  document.getElementById('compatibility-percent').className = 'comp-percent';
+  document.getElementById('pigment-suggestion').style.display = 'none';
+}
     const msg = 'Amostra capturada: ' + result.name;
     document.getElementById('color-name').textContent = msg;
     document.getElementById('color-name').style.color = '#dd8';
@@ -3920,8 +3926,9 @@ function resetComparison() {
  * Atualiza painel de comparação
  */
 function updateComparison() {
-  // updateComparison agora apenas atualiza dados internos
-  // A exibição do resultado ocorre somente via mostrarResultadoCompatibilidade()
+  // Mantida apenas para compatibilidade interna — não exibe resultado
+  // O resultado é exibido exclusivamente por mostrarResultadoCompatibilidade()
+  return;
 }
 /**
  * Mostra resultado de compatibilidade (novo botão)
@@ -3929,6 +3936,7 @@ function updateComparison() {
 function mostrarResultadoCompatibilidade() {
   if (!systemOn || currentMode !== 'comparacao') return;
 
+  // Validação: falta referência E amostra
   if (!refCaptured && !sampleCaptured) {
     const msg = 'Nenhuma imagem capturada. Capture a referência e a amostra primeiro.';
     document.getElementById('color-name').textContent = msg;
@@ -3942,8 +3950,9 @@ function mostrarResultadoCompatibilidade() {
     return;
   }
 
+  // Validação: falta só a referência
   if (!refCaptured) {
-    const msg = 'Referência não capturada. Por favor, selecione e capture a área de referência.';
+    const msg = 'Referência não capturada. Por favor, selecione e capture a área de referência primeiro.';
     document.getElementById('color-name').textContent = msg;
     document.getElementById('color-name').style.color = '#f88';
     if (window.speechSynthesis) {
@@ -3955,8 +3964,9 @@ function mostrarResultadoCompatibilidade() {
     return;
   }
 
+  // Validação: falta só a amostra
   if (!sampleCaptured) {
-    const msg = 'Amostra não capturada. Por favor, selecione e capture a área de amostra.';
+    const msg = 'Amostra não capturada. Por favor, selecione e capture a área de amostra primeiro.';
     document.getElementById('color-name').textContent = msg;
     document.getElementById('color-name').style.color = '#f88';
     if (window.speechSynthesis) {
@@ -3968,53 +3978,74 @@ function mostrarResultadoCompatibilidade() {
     return;
   }
 
+  // ✅ Ambas capturadas — calcula e exibe resultado
   resultadoCalculado = true;
 
+  // Elementos do painel
   const percentEl = document.getElementById('compatibility-percent');
   const suggestionBox = document.getElementById('pigment-suggestion');
   const suggestionText = document.getElementById('pigment-suggestion-text');
   const suggestionLabel = suggestionBox.querySelector('.comp-suggestion-label');
 
+  // ✅ Garante que o painel de comparação está visível
+  document.getElementById('comparison-panel').classList.add('show');
+
+  // Calcula compatibilidade
   const compat = calculateCompatibility(comparisonRef, comparisonSample);
+
+  // Exibe percentual
   percentEl.textContent = compat + '%';
   percentEl.className = 'comp-percent';
-  if (compat === 0) percentEl.classList.add('low');
-  else if (compat < 50) percentEl.classList.add('medium');
+  if (compat === 0) {
+    percentEl.classList.add('low');
+  } else if (compat < 50) {
+    percentEl.classList.add('medium');
+  }
 
+  // Calcula e exibe sugestão
   const suggestion = suggestPigmentAdjustment(comparisonRef, comparisonSample);
   suggestionText.textContent = suggestion.text;
-  suggestionText.className = 'comp-suggestion-text ' + suggestion.cssClass;
+  suggestionText.className = 'comp-suggestion-text ' + (suggestion.cssClass || '');
+
+  // ✅ Exibe o bloco de sugestão
   suggestionBox.style.display = 'block';
 
+  // Label do modo
   if (plasticsMode) {
     suggestionLabel.innerHTML = '🧪 FÓRMULA DE PIGMENTOS (PLÁSTICOS)';
   } else {
     suggestionLabel.innerHTML = '🎨 AJUSTE SUGERIDO';
   }
 
+  // Exibe no color-name
+  document.getElementById('color-name').textContent =
+    'Compatibilidade: ' + compat + '% | ' + comparisonRef.name + ' × ' + comparisonSample.name;
+  document.getElementById('color-name').style.color =
+    compat >= 80 ? '#6effa0' : compat >= 50 ? '#ffcc60' : '#ff5050';
+
+  // ✅ Prepara texto limpo para áudio
   const textoSugestao = suggestion.text
-    .replace(/[✦✓⚠️📋•🎨🧪◆◇⭐☆]/g, '')
+    .replace(/[✦✓⚠️📋•🎨🧪◆◇⭐☆\u2714\u26A0\uFE0F]/g, '')
     .replace(/\n+/g, '. ')
     .replace(/\s{2,}/g, ' ')
     .trim();
 
   const textoAudio =
-    `Resultado: compatibilidade entre ${comparisonRef.name} e ${comparisonSample.name}: ` +
-    `${compat} por cento. ` +
-    `Ajuste sugerido: ${textoSugestao}`;
+    'Resultado de compatibilidade: ' +
+    compat + ' por cento. ' +
+    'Entre ' + comparisonRef.name + ' e ' + comparisonSample.name + '. ' +
+    'Ajuste sugerido: ' + textoSugestao;
 
-  document.getElementById('color-name').textContent =
-    `Compatibilidade: ${compat}% | ${comparisonRef.name} × ${comparisonSample.name}`;
-  document.getElementById('color-name').style.color =
-    compat >= 80 ? '#6effa0' : compat >= 50 ? '#ffcc60' : '#ff5050';
-
+  // ✅ Fala o resultado SEMPRE (independente de audioEnabled)
   if (window.speechSynthesis) {
     window.speechSynthesis.cancel();
-    setTimeout(() => {
+    setTimeout(function() {
       const utt = new SpeechSynthesisUtterance(textoAudio);
-      utt.lang = 'pt-BR'; utt.rate = 1.0;
+      utt.lang = 'pt-BR';
+      utt.rate = 0.95;
+      utt.pitch = 1.0;
       window.speechSynthesis.speak(utt);
-    }, 300);
+    }, 400);
   }
 }
 
@@ -4024,8 +4055,9 @@ function mostrarResultadoCompatibilidade() {
 function narrarAjusteSugerido() {
   if (!systemOn || currentMode !== 'comparacao') return;
 
+  // Validação: resultado ainda não calculado
   if (!resultadoCalculado) {
-    const msg = 'Calcule o resultado de compatibilidade primeiro.';
+    const msg = 'Clique em Resultado primeiro para calcular a compatibilidade.';
     document.getElementById('color-name').textContent = msg;
     document.getElementById('color-name').style.color = '#f88';
     if (window.speechSynthesis) {
@@ -4037,30 +4069,38 @@ function narrarAjusteSugerido() {
     return;
   }
 
-  const suggestionText = document.getElementById('pigment-suggestion-text').textContent;
-  if (!suggestionText || suggestionText === '---') {
+  // ✅ Lê diretamente do elemento já renderizado
+  const elSugestao = document.getElementById('pigment-suggestion-text');
+  const suggestionText = elSugestao ? elSugestao.textContent : '';
+
+  if (!suggestionText || suggestionText.trim() === '' || suggestionText.trim() === '---') {
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
-      const utt = new SpeechSynthesisUtterance('Nenhum ajuste disponível.');
+      const utt = new SpeechSynthesisUtterance('Nenhum ajuste disponível no momento.');
       utt.lang = 'pt-BR'; utt.rate = 1.0;
       window.speechSynthesis.speak(utt);
     }
     return;
   }
 
+  // ✅ Limpeza robusta do texto para narração
   const textoLimpo = suggestionText
-    .replace(/[✦✓⚠️📋•🎨🧪◆◇⭐☆]/g, '')
+    .replace(/[✦✓⚠️📋•🎨🧪◆◇⭐☆\u2714\u26A0\uFE0F]/g, '')
     .replace(/\n+/g, '. ')
     .replace(/\s{2,}/g, ' ')
+    .replace(/:\s*\./g, ':')
     .trim();
 
+  // ✅ Fala o ajuste SEMPRE (independente de audioEnabled)
   if (window.speechSynthesis) {
     window.speechSynthesis.cancel();
-    setTimeout(() => {
+    setTimeout(function() {
       const utt = new SpeechSynthesisUtterance('Ajuste sugerido: ' + textoLimpo);
-      utt.lang = 'pt-BR'; utt.rate = 1.0;
+      utt.lang = 'pt-BR';
+      utt.rate = 0.92;
+      utt.pitch = 1.0;
       window.speechSynthesis.speak(utt);
-    }, 200);
+    }, 250);
   }
 }
 /**
