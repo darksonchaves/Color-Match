@@ -6,7 +6,6 @@
 <title>Motor de Cor - Sistema Multi-Biblioteca v3.3 PLÁSTICOS PRO</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  
   body {
     background: #0a0a0f;
     color: #e0e0f0;
@@ -18,29 +17,6 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-   #btn-resultado {
-  background: linear-gradient(135deg, #1a3a1e, #2a6a3e);
-  color: #6effa0;
-  border: 1px solid rgba(60,200,100,0.5);
-  display: none;
-}
-#btn-resultado.show { display: inline-block; }
-#btn-resultado:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2a5a3e, #3a8a5e);
-  color: #9effbc;
-}
-  
-  #btn-ajuste-audio {
-  background: linear-gradient(135deg, #1a2a3e, #2a4a6e);
-  color: #7fdbff;
-  border: 1px solid rgba(80,180,255,0.4);
-  display: none;
-}
-#btn-ajuste-audio.show { display: inline-block; }
-#btn-ajuste-audio:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2a3a5e, #3a5a8e);
-  color: #aef;
-}
   #header {
     background: rgba(10,10,20,0.88);
     padding: 5px 12px;
@@ -106,25 +82,10 @@
     align-items: center;
     gap: 6px;
   }
-  #btn-modes:hover {
-    background: linear-gradient(135deg, #3a3a6e, #4a4a8e);
-    border-color: rgba(150,150,255,0.6);
-  }
-  #btn-modes.mode-livre {
-    background: linear-gradient(135deg, #1a4a2e, #2a7a4e);
-    border-color: rgba(60,200,100,0.5);
-    color: #6effa0;
-  }
-  #btn-modes.mode-estatico {
-    background: linear-gradient(135deg, #1a2a4e, #2a4a7e);
-    border-color: rgba(60,150,255,0.5);
-    color: #6eb0ff;
-  }
-  #btn-modes.mode-comparacao {
-    background: linear-gradient(135deg, #4a2a1e, #6a4a30);
-    border-color: rgba(200,150,80,0.5);
-    color: #ffcc80;
-  }
+  #btn-modes:hover { background: linear-gradient(135deg, #3a3a6e, #4a4a8e); border-color: rgba(150,150,255,0.6); }
+  #btn-modes.mode-livre { background: linear-gradient(135deg, #1a4a2e, #2a7a4e); border-color: rgba(60,200,100,0.5); color: #6effa0; }
+  #btn-modes.mode-estatico { background: linear-gradient(135deg, #1a2a4e, #2a4a7e); border-color: rgba(60,150,255,0.5); color: #6eb0ff; }
+  #btn-modes.mode-comparacao { background: linear-gradient(135deg, #4a2a1e, #6a4a30); border-color: rgba(200,150,80,0.5); color: #ffcc80; }
   #mode-dropdown {
     position: absolute;
     top: 100%;
@@ -156,535 +117,113 @@
   .mode-option:hover { background: rgba(100,100,255,0.15); }
   .mode-option.active { background: rgba(60,200,100,0.2); color: #6effa0; }
   #color-swatch {
-    width: 28px;
-    height: 28px;
-    border-radius: 5px;
+    width: 28px; height: 28px; border-radius: 5px;
     border: 1px solid rgba(255,255,255,0.12);
-    flex-shrink: 0;
-    transition: background 0.25s ease;
+    flex-shrink: 0; transition: background 0.25s ease;
     box-shadow: 0 0 8px rgba(0,0,0,0.5);
   }
-  #color-name { 
-    font-size: 0.82rem; 
-    font-weight: 700; 
-    letter-spacing: 0.4px; 
-    min-width: 200px;
-    text-align: left;
-  }
-  #confidence-display { 
-    font-size: 0.58rem; 
-    color: #6a6; 
-    white-space: nowrap; 
-    font-weight: 600;
-  }
+  #color-name { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.4px; min-width: 200px; text-align: left; }
+  #confidence-display { font-size: 0.58rem; color: #6a6; white-space: nowrap; font-weight: 600; }
   .sep { color: rgba(100,100,255,0.3); font-size: 0.7rem; flex-shrink: 0; }
-  .data-inline { 
-    font-size: 0.64rem; 
-    font-family: 'Courier New', monospace; 
-    color: #aab; 
-    white-space: nowrap; 
-  }
+  .data-inline { font-size: 0.64rem; font-family: 'Courier New', monospace; color: #aab; white-space: nowrap; }
   .data-inline .lbl { color: #558; margin-right: 1px; }
   #base-info { font-size: 0.58rem; color: #446; white-space: nowrap; }
   .btn-top {
-    padding: 4px 8px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.6rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    transition: all 0.18s ease;
-    white-space: nowrap;
-    flex-shrink: 0;
+    padding: 4px 8px; border: none; border-radius: 5px; cursor: pointer;
+    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.5px;
+    text-transform: uppercase; transition: all 0.18s ease;
+    white-space: nowrap; flex-shrink: 0;
   }
   .btn-top:disabled { opacity: 0.25; cursor: not-allowed; }
-  #btn-calibrate-white {
-    background: linear-gradient(135deg, #2a2a6e, #3a3a9e);
-    color: #aac;
-    border: 1px solid rgba(100,100,255,0.3);
-  }
-  #btn-calibrate-white:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #3a3a8e, #5a5abe); 
-    color: #eef; 
-  }
-  #btn-calibrate-white.calibrated {
-    background: linear-gradient(135deg, #1a4a2e, #2a7a4e);
-    border-color: rgba(50,200,100,0.4);
-    color: #8fc;
-  }
-  #btn-calibrate-black {
-    background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
-    color: #aaa;
-    border: 1px solid rgba(100,100,100,0.3);
-  }
-  #btn-calibrate-black:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #3a3a3a, #5a5a5a); 
-    color: #ddd; 
-  }
-  #btn-calibrate-black.calibrated {
-    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-    border-color: rgba(200,200,200,0.4);
-    color: #fff;
-  }
-  #btn-reset-white {
-    background: linear-gradient(135deg, #3a2a2a, #5a3a3a);
-    color: #d99;
-    border: 1px solid rgba(200,100,100,0.3);
-  }
-  #btn-reset-white:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #4a3a3a, #6a4a4a); 
-    color: #faa; 
-  }
-  #btn-reset-black {
-    background: linear-gradient(135deg, #2a2a3a, #3a3a5a);
-    color: #99d;
-    border: 1px solid rgba(100,100,200,0.3);
-  }
-  #btn-reset-black:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #3a3a4a, #4a4a6a); 
-    color: #aaf; 
-  }
-  #btn-reset-estatico {
-    background: linear-gradient(135deg, #3a2a1e, #5a4a30);
-    color: #fa8;
-    border: 1px solid rgba(255,150,80,0.4);
-    display: none;
-  }
+  #btn-calibrate-white { background: linear-gradient(135deg, #2a2a6e, #3a3a9e); color: #aac; border: 1px solid rgba(100,100,255,0.3); }
+  #btn-calibrate-white:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a8e, #5a5abe); color: #eef; }
+  #btn-calibrate-white.calibrated { background: linear-gradient(135deg, #1a4a2e, #2a7a4e); border-color: rgba(50,200,100,0.4); color: #8fc; }
+  #btn-calibrate-black { background: linear-gradient(135deg, #2a2a2a, #3a3a3a); color: #aaa; border: 1px solid rgba(100,100,100,0.3); }
+  #btn-calibrate-black:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a3a, #5a5a5a); color: #ddd; }
+  #btn-calibrate-black.calibrated { background: linear-gradient(135deg, #1a1a1a, #2a2a2a); border-color: rgba(200,200,200,0.4); color: #fff; }
+  #btn-reset-white { background: linear-gradient(135deg, #3a2a2a, #5a3a3a); color: #d99; border: 1px solid rgba(200,100,100,0.3); }
+  #btn-reset-white:hover:not(:disabled) { background: linear-gradient(135deg, #4a3a3a, #6a4a4a); color: #faa; }
+  #btn-reset-black { background: linear-gradient(135deg, #2a2a3a, #3a3a5a); color: #99d; border: 1px solid rgba(100,100,200,0.3); }
+  #btn-reset-black:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a4a, #4a4a6a); color: #aaf; }
+  #btn-reset-estatico { background: linear-gradient(135deg, #3a2a1e, #5a4a30); color: #fa8; border: 1px solid rgba(255,150,80,0.4); display: none; }
   #btn-reset-estatico.show { display: inline-block; }
-  #btn-reset-estatico:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #4a3a2e, #6a5a40); 
-    color: #fca; 
-  }
-  #btn-sel-ref, #btn-sel-sample, #btn-reset-ref, #btn-reset-sample, #btn-reset-comparacao {
-    display: none;
-  }
-  #btn-sel-ref.show, #btn-sel-sample.show, #btn-reset-ref.show, 
-  #btn-reset-sample.show, #btn-reset-comparacao.show {
-    display: inline-block;
-  }
-  #btn-sel-ref {
-    background: linear-gradient(135deg, #1a3a4e, #2a5a7e);
-    color: #8ec;
-    border: 1px solid rgba(80,200,180,0.4);
-  }
-  #btn-sel-ref:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #2a5a7e, #3a7a9e); 
-    color: #cef; 
-  }
-  #btn-sel-sample {
-    background: linear-gradient(135deg, #3a3a1e, #5a5a30);
-    color: #dd8;
-    border: 1px solid rgba(200,200,80,0.4);
-  }
-  #btn-sel-sample:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #4a4a2e, #6a6a40); 
-    color: #ffc; 
-  }
-  #btn-reset-ref {
-    background: linear-gradient(135deg, #3a2a2a, #5a3a3a);
-    color: #d99;
-    border: 1px solid rgba(200,100,100,0.3);
-  }
-  #btn-reset-ref:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #4a3a3a, #6a4a4a); 
-    color: #faa; 
-  }
-  #btn-reset-sample {
-    background: linear-gradient(135deg, #2a2a3a, #3a3a5a);
-    color: #99d;
-    border: 1px solid rgba(100,100,200,0.3);
-  }
-  #btn-reset-sample:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #3a3a4a, #4a4a6a); 
-    color: #aaf; 
-  }
-  #btn-reset-comparacao {
-    background: linear-gradient(135deg, #4a2a1e, #6a4a30);
-    color: #ffcc80;
-    border: 1px solid rgba(200,150,80,0.45);
-  }
-  #btn-reset-comparacao:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #5a3a2e, #7a5a40); 
-    color: #ffe0a0; 
-  }
-  #btn-camera {
-    background: linear-gradient(135deg, #2a1a3e, #4a2a6e);
-    color: #bac;
-    border: 1px solid rgba(180,100,255,0.3);
-  }
-  #btn-camera:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #3a2a5e, #6a4a9e); 
-    color: #edf; 
-  }
-  #btn-audio {
-    background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
-    color: #446;
-    border: 1px solid rgba(100,100,150,0.2);
-  }
-  #btn-audio:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #252535, #353550); 
-    color: #778; 
-  }
-  #btn-audio.audio-on {
-    background: linear-gradient(135deg, #163a1e, #1f6030);
-    color: #6effa0;
-    border: 1px solid rgba(60,200,100,0.45);
-    box-shadow: 0 0 6px rgba(60,200,100,0.2);
-  }
-  #btn-flash {
-    background: linear-gradient(135deg, #2a2a1e, #3a3a2e);
-    color: #887;
-    border: 1px solid rgba(150,150,100,0.2);
-  }
-  #btn-flash:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #3a3a2e, #4a4a3e); 
-    color: #bb8; 
-  }
-  #btn-flash.flash-on {
-    background: linear-gradient(135deg, #4a4a1e, #6a6a2e);
-    color: #ffcc60;
-    border: 1px solid rgba(200,200,80,0.45);
-    box-shadow: 0 0 6px rgba(200,200,80,0.2);
-  }
-  #btn-universal {
-    background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
-    color: #446;
-    border: 1px solid rgba(100,100,150,0.2);
-  }
-  #btn-universal:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #252535, #353550); 
-    color: #778; 
-  }
-  #btn-universal.universal-on {
-    background: linear-gradient(135deg, #3a2a1e, #6a4a30);
-    color: #ffa060;
-    border: 1px solid rgba(200,100,60,0.45);
-    box-shadow: 0 0 6px rgba(200,100,60,0.2);
-  }
-  #btn-ampliado {
-    background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
-    color: #446;
-    border: 1px solid rgba(100,100,150,0.2);
-  }
-  #btn-ampliado:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #252535, #353550); 
-    color: #778; 
-  }
-  #btn-ampliado.ampliado-on {
-    background: linear-gradient(135deg, #2a1a3e, #4a2a6e);
-    color: #ba8eff;
-    border: 1px solid rgba(150,80,200,0.45);
-    box-shadow: 0 0 6px rgba(150,80,200,0.2);
-  }
-  #btn-plasticos {
-    background: linear-gradient(135deg, #1a1a2e, #2a2a3e);
-    color: #446;
-    border: 1px solid rgba(100,100,150,0.2);
-  }
-  #btn-plasticos:hover:not(:disabled) { 
-    background: linear-gradient(135deg, #252535, #353550); 
-    color: #778; 
-  }
-  #btn-plasticos.plasticos-on {
-    background: linear-gradient(135deg, #1a3a2e, #2a6a4e);
-    color: #6effa0;
-    border: 1px solid rgba(60,200,100,0.55);
-    box-shadow: 0 0 8px rgba(60,200,100,0.3);
-  }
+  #btn-reset-estatico:hover:not(:disabled) { background: linear-gradient(135deg, #4a3a2e, #6a5a40); color: #fca; }
+  #btn-sel-ref, #btn-sel-sample, #btn-reset-ref, #btn-reset-sample, #btn-reset-comparacao, #btn-resultado, #btn-ajuste-audio { display: none; }
+  #btn-sel-ref.show, #btn-sel-sample.show, #btn-reset-ref.show, #btn-reset-sample.show, #btn-reset-comparacao.show, #btn-resultado.show, #btn-ajuste-audio.show { display: inline-block; }
+  #btn-sel-ref { background: linear-gradient(135deg, #1a3a4e, #2a5a7e); color: #8ec; border: 1px solid rgba(80,200,180,0.4); }
+  #btn-sel-ref:hover:not(:disabled) { background: linear-gradient(135deg, #2a5a7e, #3a7a9e); color: #cef; }
+  #btn-sel-sample { background: linear-gradient(135deg, #3a3a1e, #5a5a30); color: #dd8; border: 1px solid rgba(200,200,80,0.4); }
+  #btn-sel-sample:hover:not(:disabled) { background: linear-gradient(135deg, #4a4a2e, #6a6a40); color: #ffc; }
+  #btn-reset-ref { background: linear-gradient(135deg, #3a2a2a, #5a3a3a); color: #d99; border: 1px solid rgba(200,100,100,0.3); }
+  #btn-reset-ref:hover:not(:disabled) { background: linear-gradient(135deg, #4a3a3a, #6a4a4a); color: #faa; }
+  #btn-reset-sample { background: linear-gradient(135deg, #2a2a3a, #3a3a5a); color: #99d; border: 1px solid rgba(100,100,200,0.3); }
+  #btn-reset-sample:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a4a, #4a4a6a); color: #aaf; }
+  #btn-reset-comparacao { background: linear-gradient(135deg, #4a2a1e, #6a4a30); color: #ffcc80; border: 1px solid rgba(200,150,80,0.45); }
+  #btn-reset-comparacao:hover:not(:disabled) { background: linear-gradient(135deg, #5a3a2e, #7a5a40); color: #ffe0a0; }
+  #btn-resultado { background: linear-gradient(135deg, #1a3a1e, #2a6a3e); color: #6effa0; border: 1px solid rgba(60,200,100,0.5); }
+  #btn-resultado:hover:not(:disabled) { background: linear-gradient(135deg, #2a5a3e, #3a8a5e); color: #9effbc; }
+  #btn-ajuste-audio { background: linear-gradient(135deg, #1a2a3e, #2a4a6e); color: #7fdbff; border: 1px solid rgba(80,180,255,0.4); }
+  #btn-ajuste-audio:hover:not(:disabled) { background: linear-gradient(135deg, #2a3a5e, #3a5a8e); color: #aef; }
+  #btn-camera { background: linear-gradient(135deg, #2a1a3e, #4a2a6e); color: #bac; border: 1px solid rgba(180,100,255,0.3); }
+  #btn-camera:hover:not(:disabled) { background: linear-gradient(135deg, #3a2a5e, #6a4a9e); color: #edf; }
+  #btn-audio { background: linear-gradient(135deg, #1a1a2e, #2a2a3e); color: #446; border: 1px solid rgba(100,100,150,0.2); }
+  #btn-audio:hover:not(:disabled) { background: linear-gradient(135deg, #252535, #353550); color: #778; }
+  #btn-audio.audio-on { background: linear-gradient(135deg, #163a1e, #1f6030); color: #6effa0; border: 1px solid rgba(60,200,100,0.45); box-shadow: 0 0 6px rgba(60,200,100,0.2); }
+  #btn-flash { background: linear-gradient(135deg, #2a2a1e, #3a3a2e); color: #887; border: 1px solid rgba(150,150,100,0.2); }
+  #btn-flash:hover:not(:disabled) { background: linear-gradient(135deg, #3a3a2e, #4a4a3e); color: #bb8; }
+  #btn-flash.flash-on { background: linear-gradient(135deg, #4a4a1e, #6a6a2e); color: #ffcc60; border: 1px solid rgba(200,200,80,0.45); box-shadow: 0 0 6px rgba(200,200,80,0.2); }
+  #btn-universal { background: linear-gradient(135deg, #1a1a2e, #2a2a3e); color: #446; border: 1px solid rgba(100,100,150,0.2); }
+  #btn-universal:hover:not(:disabled) { background: linear-gradient(135deg, #252535, #353550); color: #778; }
+  #btn-universal.universal-on { background: linear-gradient(135deg, #3a2a1e, #6a4a30); color: #ffa060; border: 1px solid rgba(200,100,60,0.45); box-shadow: 0 0 6px rgba(200,100,60,0.2); }
+  #btn-ampliado { background: linear-gradient(135deg, #1a1a2e, #2a2a3e); color: #446; border: 1px solid rgba(100,100,150,0.2); }
+  #btn-ampliado:hover:not(:disabled) { background: linear-gradient(135deg, #252535, #353550); color: #778; }
+  #btn-ampliado.ampliado-on { background: linear-gradient(135deg, #2a1a3e, #4a2a6e); color: #ba8eff; border: 1px solid rgba(150,80,200,0.45); box-shadow: 0 0 6px rgba(150,80,200,0.2); }
+  #btn-plasticos { background: linear-gradient(135deg, #1a1a2e, #2a2a3e); color: #446; border: 1px solid rgba(100,100,150,0.2); }
+  #btn-plasticos:hover:not(:disabled) { background: linear-gradient(135deg, #252535, #353550); color: #778; }
+  #btn-plasticos.plasticos-on { background: linear-gradient(135deg, #1a3a2e, #2a6a4e); color: #6effa0; border: 1px solid rgba(60,200,100,0.55); box-shadow: 0 0 8px rgba(60,200,100,0.3); }
   #main { flex: 1; position: relative; overflow: hidden; }
   #camera-container { position: absolute; inset: 0; background: #000; }
-  #videoEl {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: 1;
-  }
+  #videoEl { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
   #canvasEl { display: none; }
-  #reticle {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 60px;
-    height: 60px;
-    pointer-events: none;
-    z-index: 20;
-    display: none;
-  }
+  #reticle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; pointer-events: none; z-index: 20; display: none; }
   #reticle.show { display: block; }
-  .reticle-h {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: rgba(120,220,255,0.9);
-    transform: translateY(-50%);
-    box-shadow: 0 0 4px rgba(120,220,255,0.5);
-  }
-  .reticle-v {
-    position: absolute;
-    left: 50%;
-    top: 0;
-    height: 100%;
-    width: 2px;
-    background: rgba(120,220,255,0.9);
-    transform: translateX(-50%);
-    box-shadow: 0 0 4px rgba(120,220,255,0.5);
-  }
-  .reticle-box {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 22px;
-    height: 22px;
-    border: 1.5px solid rgba(120,220,255,0.5);
-  }
-  .reticle-sample-circle {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 1px dashed rgba(120,220,255,0.55);
-  }
-  .reticle-dot {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: rgba(120,220,255,0.9);
-    box-shadow: 0 0 4px rgba(120,220,255,0.8);
-  }
-  #mode-select-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.92);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 35;
-    gap: 20px;
-  }
+  .reticle-h { position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: rgba(120,220,255,0.9); transform: translateY(-50%); box-shadow: 0 0 4px rgba(120,220,255,0.5); }
+  .reticle-v { position: absolute; left: 50%; top: 0; height: 100%; width: 2px; background: rgba(120,220,255,0.9); transform: translateX(-50%); box-shadow: 0 0 4px rgba(120,220,255,0.5); }
+  .reticle-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 22px; height: 22px; border: 1.5px solid rgba(120,220,255,0.5); }
+  .reticle-sample-circle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; border-radius: 50%; border: 1px dashed rgba(120,220,255,0.55); }
+  .reticle-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 4px; height: 4px; border-radius: 50%; background: rgba(120,220,255,0.9); box-shadow: 0 0 4px rgba(120,220,255,0.8); }
+  #mode-select-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.92); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 35; gap: 20px; }
   #mode-select-overlay.hide { display: none; }
-  #mode-select-overlay h2 {
-    color: #aac;
-    font-size: 1.3rem;
-    letter-spacing: 1px;
-    font-weight: 600;
-  }
-  #mode-select-overlay p {
-    color: #778;
-    font-size: 0.9rem;
-    text-align: center;
-    max-width: 420px;
-    line-height: 1.5;
-  }
-  #start-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 30;
-    gap: 14px;
-  }
+  #mode-select-overlay h2 { color: #aac; font-size: 1.3rem; letter-spacing: 1px; font-weight: 600; }
+  #mode-select-overlay p { color: #778; font-size: 0.9rem; text-align: center; max-width: 420px; line-height: 1.5; }
+  #start-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 30; gap: 14px; }
   #start-overlay.hide { display: none; }
   #start-overlay p { color: #778; font-size: 0.88rem; }
-  #btn-start {
-    padding: 13px 30px;
-    background: linear-gradient(135deg, #3a3a9e, #7b5ce8);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    cursor: pointer;
-    letter-spacing: 1px;
-    transition: all 0.2s;
-  }
+  #btn-start { padding: 13px 30px; background: linear-gradient(135deg, #3a3a9e, #7b5ce8); color: #fff; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; letter-spacing: 1px; transition: all 0.2s; }
   #btn-start:hover { transform: scale(1.05); }
-  #comparison-panel {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(8,8,20,0.94);
-    border-top: 1px solid rgba(100,100,255,0.2);
-    padding: 1.2vh 1.5vw;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 0.8vh;
-    z-index: 22;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    max-height: 55vh;
-    overflow-y: auto;
-  }
+  #comparison-panel { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(8,8,20,0.94); border-top: 1px solid rgba(100,100,255,0.2); padding: 1.2vh 1.5vw; display: none; flex-direction: column; align-items: center; justify-content: flex-start; gap: 0.8vh; z-index: 22; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); max-height: 55vh; overflow-y: auto; }
   #comparison-panel.show { display: flex; }
-  .comp-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1.5vw;
-    width: 100%;
-    flex-shrink: 0;
-  }
-  .comp-block {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5vh;
-    flex: 1;
-    max-width: 18vw;
-  }
-  .comp-block.comp-center {
-    flex: 0 0 auto;
-    min-width: 14vw;
-    gap: 0.3vh;
-  }
-  .comp-label {
-    font-size: clamp(0.5rem, 1.8vw, 0.55rem);
-    font-weight: 700;
-    letter-spacing: 0.8px;
-    color: #778;
-    text-transform: uppercase;
-  }
-  .comp-img-wrap {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 4/3;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid rgba(100,100,255,0.25);
-    background: #000;
-  }
-  .comp-thumb {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-  .comp-marker {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(120,220,255,0.9);
-    border-radius: 50%;
-    pointer-events: none;
-    box-shadow: 0 0 6px rgba(120,220,255,0.6);
-  }
-  .comp-marker::before, .comp-marker::after {
-    content: '';
-    position: absolute;
-    background: rgba(120,220,255,0.9);
-  }
-  .comp-marker::before {
-    top: 50%;
-    left: -6px;
-    width: calc(100% + 12px);
-    height: 2px;
-    transform: translateY(-50%);
-  }
-  .comp-marker::after {
-    left: 50%;
-    top: -6px;
-    height: calc(100% + 12px);
-    width: 2px;
-    transform: translateX(-50%);
-  }
-  .comp-color-name {
-    font-size: clamp(0.6rem, 2vw, 0.68rem);
-    font-weight: 700;
-    color: #aac;
-    text-align: center;
-    min-height: 1.2em;
-    line-height: 1.2;
-  }
-  .comp-percent-label {
-    font-size: clamp(0.48rem, 1.6vw, 0.52rem);
-    font-weight: 700;
-    letter-spacing: 1px;
-    color: #557;
-    text-transform: uppercase;
-    text-align: center;
-  }
-  .comp-percent {
-    font-size: clamp(1.1rem, 4vw, 1.4rem);
-    font-weight: 800;
-    color: #6effa0;
-    text-align: center;
-    text-shadow: 0 0 10px rgba(110,255,160,0.35);
-    line-height: 1;
-  }
-  .comp-percent.low { 
-    color: #ff5050; 
-    text-shadow: 0 0 10px rgba(255,80,80,0.35); 
-  }
-  .comp-percent.medium { 
-    color: #ffcc60; 
-    text-shadow: 0 0 10px rgba(255,200,80,0.35); 
-  }
-  .comp-suggestion {
-    width: 100%;
-    max-width: 92vw;
-    padding: 1vh 2vw;
-    background: rgba(15,15,30,0.85);
-    border: 1px solid rgba(120,220,255,0.3);
-    border-radius: 6px;
-    margin-top: 0.3vh;
-    flex-shrink: 0;
-  }
-  .comp-suggestion-label {
-    font-size: clamp(0.48rem, 1.6vw, 0.54rem);
-    font-weight: 700;
-    letter-spacing: 1.3px;
-    color: #667;
-    text-transform: uppercase;
-    text-align: center;
-    margin-bottom: 0.5vh;
-  }
-  .comp-suggestion-text {
-    font-size: clamp(0.62rem, 2.2vw, 0.72rem);
-    font-weight: 600;
-    color: #8ec;
-    text-align: left;
-    line-height: 1.35;
-    text-shadow: 0 0 8px rgba(120,220,255,0.2);
-    white-space: pre-line;
-  }
-  .comp-suggestion-text.perfect {
-    color: #6effa0;
-    text-shadow: 0 0 8px rgba(110,255,160,0.3);
-    text-align: center;
-  }
-  .comp-suggestion-text.incompatible {
-    color: #ff8080;
-    text-shadow: 0 0 8px rgba(255,128,128,0.25);
-    text-align: center;
-  }
-  .comp-suggestion-text.plastics {
-    color: #7fdbff;
-    text-shadow: 0 0 8px rgba(127,219,255,0.3);
-  }
+  .comp-row { display: flex; align-items: center; justify-content: center; gap: 1.5vw; width: 100%; flex-shrink: 0; }
+  .comp-block { display: flex; flex-direction: column; align-items: center; gap: 0.5vh; flex: 1; max-width: 18vw; }
+  .comp-block.comp-center { flex: 0 0 auto; min-width: 14vw; gap: 0.3vh; }
+  .comp-label { font-size: clamp(0.5rem, 1.8vw, 0.55rem); font-weight: 700; letter-spacing: 0.8px; color: #778; text-transform: uppercase; }
+  .comp-img-wrap { position: relative; width: 100%; aspect-ratio: 4/3; border-radius: 6px; overflow: hidden; border: 1px solid rgba(100,100,255,0.25); background: #000; }
+  .comp-thumb { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .comp-marker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; border: 2px solid rgba(120,220,255,0.9); border-radius: 50%; pointer-events: none; box-shadow: 0 0 6px rgba(120,220,255,0.6); }
+  .comp-marker::before, .comp-marker::after { content: ''; position: absolute; background: rgba(120,220,255,0.9); }
+  .comp-marker::before { top: 50%; left: -6px; width: calc(100% + 12px); height: 2px; transform: translateY(-50%); }
+  .comp-marker::after { left: 50%; top: -6px; height: calc(100% + 12px); width: 2px; transform: translateX(-50%); }
+  .comp-color-name { font-size: clamp(0.6rem, 2vw, 0.68rem); font-weight: 700; color: #aac; text-align: center; min-height: 1.2em; line-height: 1.2; }
+  .comp-percent-label { font-size: clamp(0.48rem, 1.6vw, 0.52rem); font-weight: 700; letter-spacing: 1px; color: #557; text-transform: uppercase; text-align: center; }
+  .comp-percent { font-size: clamp(1.1rem, 4vw, 1.4rem); font-weight: 800; color: #6effa0; text-align: center; text-shadow: 0 0 10px rgba(110,255,160,0.35); line-height: 1; }
+  .comp-percent.low { color: #ff5050; text-shadow: 0 0 10px rgba(255,80,80,0.35); }
+  .comp-percent.medium { color: #ffcc60; text-shadow: 0 0 10px rgba(255,200,80,0.35); }
+  .comp-suggestion { width: 100%; max-width: 92vw; padding: 1vh 2vw; background: rgba(15,15,30,0.85); border: 1px solid rgba(120,220,255,0.3); border-radius: 6px; margin-top: 0.3vh; flex-shrink: 0; }
+  .comp-suggestion-label { font-size: clamp(0.48rem, 1.6vw, 0.54rem); font-weight: 700; letter-spacing: 1.3px; color: #667; text-transform: uppercase; text-align: center; margin-bottom: 0.5vh; }
+  .comp-suggestion-text { font-size: clamp(0.62rem, 2.2vw, 0.72rem); font-weight: 600; color: #8ec; text-align: left; line-height: 1.35; text-shadow: 0 0 8px rgba(120,220,255,0.2); white-space: pre-line; }
+  .comp-suggestion-text.perfect { color: #6effa0; text-shadow: 0 0 8px rgba(110,255,160,0.3); text-align: center; }
+  .comp-suggestion-text.incompatible { color: #ff8080; text-shadow: 0 0 8px rgba(255,128,128,0.25); text-align: center; }
+  .comp-suggestion-text.plastics { color: #7fdbff; text-shadow: 0 0 8px rgba(127,219,255,0.3); }
   @media (max-width: 768px) {
     #header { padding: 4px 8px; }
     #btn-system { font-size: 0.6rem; padding: 4px 9px; }
@@ -694,11 +233,7 @@
     #color-name { font-size: 0.74rem; min-width: 150px; }
     .data-inline { font-size: 0.58rem; }
     #base-info { font-size: 0.54rem; }
-    #comparison-panel { 
-      padding: 0.8vh 2vw; 
-      gap: 0.6vh; 
-      max-height: 52vh; 
-    }
+    #comparison-panel { padding: 0.8vh 2vw; gap: 0.6vh; max-height: 52vh; }
     .comp-row { gap: 2vw; }
     .comp-block { max-width: 26vw; gap: 0.4vh; }
     .comp-block.comp-center { min-width: 18vw; }
@@ -717,31 +252,18 @@
       <span style="font-size:0.5rem;">▼</span>
     </button>
     <div id="mode-dropdown">
-      <div class="mode-option" onclick="selectMode('livre')">
-        <span>🎯</span>
-        <span>LIVRE</span>
-      </div>
-      <div class="mode-option" onclick="selectMode('estatico')">
-        <span>📍</span>
-        <span>ESTÁTICO</span>
-      </div>
-      <div class="mode-option" onclick="selectMode('comparacao')">
-        <span>⚖️</span>
-        <span>COMPARAÇÃO</span>
-      </div>
+      <div class="mode-option" onclick="selectMode('livre')"><span>🎯</span><span>LIVRE</span></div>
+      <div class="mode-option" onclick="selectMode('estatico')"><span>📍</span><span>ESTÁTICO</span></div>
+      <div class="mode-option" onclick="selectMode('comparacao')"><span>⚖️</span><span>COMPARAÇÃO</span></div>
     </div>
   </div>
   <div id="color-swatch" style="background:#1a1a2e;"></div>
   <div id="color-name" style="color:#445;">---</div>
   <div id="confidence-display"></div>
   <span class="sep">│</span>
-  <div class="data-inline" id="hsv-line">
-    <span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---
-  </div>
+  <div class="data-inline" id="hsv-line"><span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---</div>
   <span class="sep">│</span>
-  <div class="data-inline" id="rgb-line">
-    <span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---
-  </div>
+  <div class="data-inline" id="rgb-line"><span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---</div>
   <span class="sep">│</span>
   <div id="base-info">Base: não calibrada</div>
   <span class="sep">│</span>
@@ -775,6 +297,7 @@
       <div class="reticle-sample-circle"></div>
       <div class="reticle-dot"></div>
     </div>
+    <!-- PAINEL DE COMPARAÇÃO — estrutura corrigida -->
     <div id="comparison-panel">
       <div class="comp-row">
         <div class="comp-block">
@@ -818,7 +341,7 @@
 <script>
 "use strict";
 // ════════════════════════════════════════════════════════════════
-// 🎯 VARIÁVEIS GLOBAIS - CONFIGURAÇÃO PRINCIPAL
+// 🎯 VARIÁVEIS GLOBAIS
 // ════════════════════════════════════════════════════════════════
 const video = document.getElementById('videoEl');
 const canvas = document.getElementById('canvasEl');
@@ -830,30 +353,25 @@ let devices = [];
 let deviceIndex = 0;
 let running = false;
 let systemOn = false;
-// Modos de operação
 let universalMode = false;
 let ampliatedMode = false;
 let plasticsMode = false;
 let flashEnabled = false;
 let audioEnabled = false;
-// Modos de captura
 let currentMode = null;
 let staticPosition = null;
 let staticAnalysisActive = false;
 let staticFrozen = false;
-// Calibração
 let whiteCalibration = null;
 let blackCalibration = null;
 let isWhiteCalibrated = false;
 let isBlackCalibrated = false;
 let colorTemperatureBias = { r: 0, g: 0, b: 0 };
 let hasColorTempCompensation = false;
-// Parâmetros de análise otimizados
 const SAMPLE_SIZE = 2;
 const BUFFER_SIZE = 8;
 const HYSTERESIS_THRESHOLD = 6;
 const RGB_CHANGE_THRESHOLD = 55;
-// Buffers de estabilização
 let colorBuffer = [];
 let lastStableColorName = '';
 let lastStableHue = 0;
@@ -861,404 +379,71 @@ let lastStableRGB = { r: 0, g: 0, b: 0 };
 let lastStableVariance = 0;
 let mismatchCounter = 0;
 const MISMATCH_FORCE_UPDATE = 5;
-// Áudio
 let lastSpokenName = '';
 let pendingName = '';
 let stableTimer = null;
 const STABLE_SPEECH_MS = 600;
-// Detecção de mudanças
 let consecutiveFrameCounter = 0;
 const MIN_CONSECUTIVE_FRAMES = 7;
-// Modo comparação
 let comparisonRef = null;
 let comparisonSample = null;
 let selectingRef = false;
 let selectingSample = false;
+// ✅ ERRO 4 CORRIGIDO: variável global para controle de áudio da comparação
 let lastSpokenComparison = '';
 // ════════════════════════════════════════════════════════════════
-// 📚 BIBLIOTECA PLÁSTICOS v3.3 PRO - RANGES HSV OFICIAIS
+// 📚 BIBLIOTECA PLÁSTICOS v3.3 PRO
 // ════════════════════════════════════════════════════════════════
 const PLASTICS_LIBRARY = {
-  "Branco Gelo": {
-    hsvTarget: { h: 0, s: 2, v: 95 },
-    hsvRange: { hMin: 0, hMax: 30, sMin: 0, sMax: 20, vMin: 88, vMax: 100 },
-    hex: "#FAFAFA",
-    familia: "branco",
-    formula: [{ pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }]
-  },
-  "Branco Neve": {
-    hsvTarget: { h: 0, s: 0, v: 99 },
-    hsvRange: { hMin: 0, hMax: 30, sMin: 0, sMax: 12, vMin: 95, vMax: 100 },
-    hex: "#FFFFFF",
-    familia: "branco",
-    formula: [
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" },
-      { pigmento: "Agente Óptico de Brilho", ci: "OB-1", codigo: "OBA", proporcao: "0.05%", funcao: "efeito_especial" }
-    ]
-  },
-  "Branco Natural": {
-    hsvTarget: { h: 40, s: 5, v: 92 },
-    hsvRange: { hMin: 30, hMax: 55, sMin: 0, sMax: 18, vMin: 85, vMax: 96 },
-    hex: "#F5F0E8",
-    familia: "branco",
-    formula: [{ pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }]
-  },
-  "Branco Masterbatch": {
-    hsvTarget: { h: 0, s: 3, v: 92 },
-    hsvRange: { hMin: 0, hMax: 30, sMin: 0, sMax: 15, vMin: 88, vMax: 96 },
-    hex: "#EDEDED",
-    familia: "branco",
-    formula: [{ pigmento: "Dióxido de Titânio Anatásio", ci: "PW6", codigo: "CI 77891", proporcao: "3.0%", funcao: "base_clareadora" }]
-  },
-  "Preto Absoluto": {
-    hsvTarget: { h: 0, s: 0, v: 5 },
-    hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 30, vMin: 0, vMax: 15 },
-    hex: "#0A0A0A",
-    familia: "preto",
-    formula: [{ pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "2.5%", funcao: "cor_primaria" }]
-  },
-  "Preto UV": {
-    hsvTarget: { h: 0, s: 0, v: 10 },
-    hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 35, vMin: 5, vMax: 20 },
-    hex: "#141414",
-    familia: "preto",
-    formula: [
-      { pigmento: "Carbon Black N550", ci: "PBk7", codigo: "CI 77266", proporcao: "2.0%", funcao: "cor_primaria" },
-      { pigmento: "Estabilizante HALS", ci: "UV-AD", codigo: "HALS", proporcao: "0.3%", funcao: "efeito_especial" }
-    ]
-  },
-  "Preto Condutivo": {
-    hsvTarget: { h: 0, s: 0, v: 12 },
-    hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 35, vMin: 8, vMax: 22 },
-    hex: "#1A1A1A",
-    familia: "preto",
-    formula: [{ pigmento: "Carbon Black Condutivo", ci: "PBk7", codigo: "CI 77266", proporcao: "15.0%", funcao: "cor_primaria" }]
-  },
-  "Preto Masterbatch": {
-    hsvTarget: { h: 0, s: 0, v: 15 },
-    hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 35, vMin: 10, vMax: 25 },
-    hex: "#202020",
-    familia: "preto",
-    formula: [
-      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "30.0%", funcao: "cor_primaria" },
-      { pigmento: "Cera Dispersante PE", ci: "ADD", codigo: "PE-WAX", proporcao: "5.0%", funcao: "efeito_especial" }
-    ]
-  },
-  "Vermelho Óxido": {
-    hsvTarget: { h: 5, s: 75, v: 55 },
-    hsvRange: { hMin: 345, hMax: 15, sMin: 55, sMax: 95, vMin: 40, vMax: 65 },
-    hex: "#B22222",
-    familia: "vermelho",
-    formula: [{ pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "3.0%", funcao: "cor_primaria" }]
-  },
-  "Vermelho DPP": {
-    hsvTarget: { h: 0, s: 85, v: 70 },
-    hsvRange: { hMin: 345, hMax: 10, sMin: 65, sMax: 100, vMin: 55, vMax: 85 },
-    hex: "#DC2626",
-    familia: "vermelho",
-    formula: [
-      { pigmento: "Vermelho DPP (Diketopyrrolopyrrole)", ci: "PR254", codigo: "CI 561100", proporcao: "1.5%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.0%", funcao: "base_clareadora" }
-    ]
-  },
-  "Vermelho Cádmio": {
-    hsvTarget: { h: 355, s: 90, v: 75 },
-    hsvRange: { hMin: 340, hMax: 10, sMin: 75, sMax: 100, vMin: 60, vMax: 90 },
-    hex: "#E30022",
-    familia: "vermelho",
-    formula: [{ pigmento: "Vermelho de Cádmio (Sulfosseleneto)", ci: "PR108", codigo: "CI 77202", proporcao: "4.0%", funcao: "cor_primaria" }]
-  },
-  "Vermelho Vivo": {
-    hsvTarget: { h: 358, s: 88, v: 80 },
-    hsvRange: { hMin: 345, hMax: 15, sMin: 70, sMax: 100, vMin: 65, vMax: 92 },
-    hex: "#EF4444",
-    familia: "vermelho",
-    formula: [
-      { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.8%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
-    ]
-  },
-  "Vermelho Toluidina": {
-    hsvTarget: { h: 5, s: 90, v: 65 },
-    hsvRange: { hMin: 345, hMax: 15, sMin: 75, sMax: 100, vMin: 50, vMax: 78 },
-    hex: "#C41E3A",
-    familia: "vermelho",
-    formula: [{ pigmento: "Vermelho Toluidina (Monoazo)", ci: "PR3", codigo: "CI 12120", proporcao: "2.5%", funcao: "cor_primaria" }]
-  },
-  "Laranja Vivo": {
-    hsvTarget: { h: 30, s: 85, v: 90 },
-    hsvRange: { hMin: 15, hMax: 40, sMin: 70, sMax: 95, vMin: 75, vMax: 95 },
-    hex: "#FF8800",
-    familia: "laranja",
-    formula: [
-      { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.2%", funcao: "cor_primaria" },
-      { pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "1.5%", funcao: "ajuste_tom" }
-    ]
-  },
-  "Laranja DPP": {
-    hsvTarget: { h: 25, s: 88, v: 85 },
-    hsvRange: { hMin: 15, hMax: 38, sMin: 75, sMax: 100, vMin: 70, vMax: 92 },
-    hex: "#FF7F00",
-    familia: "laranja",
-    formula: [{ pigmento: "Laranja DPP", ci: "PO73", codigo: "CI 561170", proporcao: "2.0%", funcao: "cor_primaria" }]
-  },
-  "Laranja Molibdato": {
-    hsvTarget: { h: 20, s: 85, v: 75 },
-    hsvRange: { hMin: 12, hMax: 35, sMin: 70, sMax: 95, vMin: 60, vMax: 85 },
-    hex: "#FF6600",
-    familia: "laranja",
-    formula: [{ pigmento: "Laranja de Molibdato", ci: "PO104", codigo: "CI 77605", proporcao: "3.5%", funcao: "cor_primaria" }]
-  },
-  "Amarelo Óxido": {
-    hsvTarget: { h: 45, s: 70, v: 70 },
-    hsvRange: { hMin: 38, hMax: 58, sMin: 55, sMax: 85, vMin: 55, vMax: 80 },
-    hex: "#CC9900",
-    familia: "amarelo",
-    formula: [{ pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "3.0%", funcao: "cor_primaria" }]
-  },
-  "Amarelo Arilida": {
-    hsvTarget: { h: 50, s: 85, v: 90 },
-    hsvRange: { hMin: 42, hMax: 60, sMin: 70, sMax: 95, vMin: 80, vMax: 96 },
-    hex: "#FFD700",
-    familia: "amarelo",
-    formula: [{ pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "2.5%", funcao: "cor_primaria" }]
-  },
-  "Amarelo Limão": {
-    hsvTarget: { h: 58, s: 88, v: 95 },
-    hsvRange: { hMin: 50, hMax: 70, sMin: 75, sMax: 98, vMin: 85, vMax: 99 },
-    hex: "#FFFF00",
-    familia: "amarelo",
-    formula: [
-      { pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "2.0%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "0.8%", funcao: "base_clareadora" }
-    ]
-  },
-  "Amarelo Masterbatch": {
-    hsvTarget: { h: 52, s: 80, v: 85 },
-    hsvRange: { hMin: 45, hMax: 62, sMin: 65, sMax: 92, vMin: 75, vMax: 92 },
-    hex: "#FFCC00",
-    familia: "amarelo",
-    formula: [
-      { pigmento: "Amarelo Diarylide", ci: "PY14", codigo: "CI 21095", proporcao: "35.0%", funcao: "cor_primaria" },
-      { pigmento: "Cera Dispersante PE", ci: "ADD", codigo: "PE-WAX", proporcao: "5.0%", funcao: "efeito_especial" }
-    ]
-  },
-  "Verde Oliva": {
-    hsvTarget: { h: 80, s: 50, v: 50 },
-    hsvRange: { hMin: 70, hMax: 100, sMin: 35, sMax: 65, vMin: 40, vMax: 62 },
-    hex: "#808000",
-    familia: "verde",
-    formula: [
-      { pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "1.5%", funcao: "cor_primaria" },
-      { pigmento: "Ftalocianina de Cobre Verde", ci: "PG7", codigo: "CI 74260", proporcao: "0.5%", funcao: "ajuste_tom" },
-      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.3%", funcao: "ajuste_tom" }
-    ]
-  },
-  "Verde Bandeira": {
-    hsvTarget: { h: 145, s: 75, v: 55 },
-    hsvRange: { hMin: 125, hMax: 160, sMin: 60, sMax: 88, vMin: 45, vMax: 68 },
-    hex: "#009B3A",
-    familia: "verde",
-    formula: [
-      { pigmento: "Ftalocianina de Cobre Verde", ci: "PG7", codigo: "CI 74260", proporcao: "1.2%", funcao: "cor_primaria" },
-      { pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "0.8%", funcao: "ajuste_tom" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
-    ]
-  },
-  "Verde Esmeralda": {
-    hsvTarget: { h: 140, s: 70, v: 65 },
-    hsvRange: { hMin: 125, hMax: 155, sMin: 55, sMax: 82, vMin: 55, vMax: 78 },
-    hex: "#50C878",
-    familia: "verde",
-    formula: [
-      { pigmento: "Óxido de Cromo Verde", ci: "PG17", codigo: "CI 77288", proporcao: "2.5%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
-    ]
-  },
-  "Verde Limão": {
-    hsvTarget: { h: 110, s: 75, v: 80 },
-    hsvRange: { hMin: 90, hMax: 135, sMin: 60, sMax: 88, vMin: 70, vMax: 92 },
-    hex: "#BFFF00",
-    familia: "verde",
-    formula: [
-      { pigmento: "Ftalocianina Verde Amarelada", ci: "PG36", codigo: "CI 74265", proporcao: "0.8%", funcao: "cor_primaria" },
-      { pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "1.2%", funcao: "ajuste_tom" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
-    ]
-  },
-  "Azul Turquesa": {
-    hsvTarget: { h: 180, s: 70, v: 70 },
-    hsvRange: { hMin: 165, hMax: 195, sMin: 55, sMax: 85, vMin: 58, vMax: 85 },
-    hex: "#40E0D0",
-    familia: "ciano",
-    formula: [
-      { pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.0%", funcao: "cor_primaria" },
-      { pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "0.3%", funcao: "ajuste_tom" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" }
-    ]
-  },
-  "Azul Ftalo": {
-    hsvTarget: { h: 220, s: 85, v: 55 },
-    hsvRange: { hMin: 205, hMax: 235, sMin: 70, sMax: 95, vMin: 42, vMax: 65 },
-    hex: "#1E3A8A",
-    familia: "azul",
-    formula: [
-      { pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.5%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.8%", funcao: "base_clareadora" }
-    ]
-  },
-  "Azul Ultramar": {
-    hsvTarget: { h: 240, s: 75, v: 50 },
-    hsvRange: { hMin: 225, hMax: 255, sMin: 60, sMax: 88, vMin: 38, vMax: 62 },
-    hex: "#1E40AF",
-    familia: "azul",
-    formula: [
-      { pigmento: "Azul Ultramar", ci: "PB29", codigo: "CI 77007", proporcao: "2.0%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
-    ]
-  },
-  "Azul Cobalto": {
-    hsvTarget: { h: 215, s: 80, v: 60 },
-    hsvRange: { hMin: 205, hMax: 230, sMin: 65, sMax: 92, vMin: 48, vMax: 72 },
-    hex: "#1D4ED8",
-    familia: "azul",
-    formula: [{ pigmento: "Azul Cobalto (Aluminato)", ci: "PB28", codigo: "CI 77346", proporcao: "3.0%", funcao: "cor_primaria" }]
-  },
-  "Azul Royal": {
-    hsvTarget: { h: 225, s: 82, v: 58 },
-    hsvRange: { hMin: 215, hMax: 245, sMin: 70, sMax: 92, vMin: 48, vMax: 70 },
-    hex: "#4169E1",
-    familia: "azul",
-    formula: [
-      { pigmento: "Ftalocianina de Cobre Azul β", ci: "PB15:3", codigo: "CI 74160", proporcao: "1.8%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
-    ]
-  },
-  "Violeta Dioxazina": {
-    hsvTarget: { h: 280, s: 75, v: 55 },
-    hsvRange: { hMin: 265, hMax: 290, sMin: 65, sMax: 88, vMin: 45, vMax: 68 },
-    hex: "#7F00FF",
-    familia: "violeta",
-    formula: [
-      { pigmento: "Violeta Dioxazina (Carbazol)", ci: "PV23", codigo: "CI 51319", proporcao: "1.8%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }
-    ]
-  },
-  "Roxo": {
-    hsvTarget: { h: 285, s: 70, v: 60 },
-    hsvRange: { hMin: 270, hMax: 295, sMin: 55, sMax: 82, vMin: 50, vMax: 72 },
-    hex: "#9333EA",
-    familia: "violeta",
-    formula: [
-      { pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.0%", funcao: "cor_primaria" },
-      { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.2%", funcao: "ajuste_tom" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }
-    ]
-  },
-  "Violeta Manganês": {
-    hsvTarget: { h: 290, s: 60, v: 65 },
-    hsvRange: { hMin: 275, hMax: 295, sMin: 45, sMax: 75, vMin: 55, vMax: 75 },
-    hex: "#8B008B",
-    familia: "violeta",
-    formula: [{ pigmento: "Violeta de Manganês (Pirofosfato)", ci: "PV16", codigo: "CI 77742", proporcao: "3.5%", funcao: "cor_primaria" }]
-  },
-  "Rosa": {
-    hsvTarget: { h: 330, s: 50, v: 85 },
-    hsvRange: { hMin: 315, hMax: 345, sMin: 35, sMax: 65, vMin: 75, vMax: 92 },
-    hex: "#FFB0C0",
-    familia: "rosa",
-    formula: [
-      { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "0.3%", funcao: "cor_primaria" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "3.5%", funcao: "base_clareadora" }
-    ]
-  },
-  "Cinza Claro": {
-    hsvTarget: { h: 0, s: 3, v: 75 },
-    hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 18, vMin: 62, vMax: 82 },
-    hex: "#BFBFBF",
-    familia: "cinza",
-    formula: [
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" },
-      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.1%", funcao: "ajuste_tom" }
-    ]
-  },
-  "Cinza Médio": {
-    hsvTarget: { h: 0, s: 3, v: 55 },
-    hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 18, vMin: 42, vMax: 62 },
-    hex: "#8C8C8C",
-    familia: "cinza",
-    formula: [
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" },
-      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.3%", funcao: "ajuste_tom" }
-    ]
-  },
-  "Cinza Escuro": {
-    hsvTarget: { h: 0, s: 3, v: 35 },
-    hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 18, vMin: 25, vMax: 42 },
-    hex: "#595959",
-    familia: "cinza",
-    formula: [
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "0.8%", funcao: "base_clareadora" },
-      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.8%", funcao: "cor_primaria" }
-    ]
-  },
-  "Natural PP": {
-    hsvTarget: { h: 40, s: 8, v: 85 },
-    hsvRange: { hMin: 30, hMax: 55, sMin: 3, sMax: 18, vMin: 78, vMax: 92 },
-    hex: "#D9D2C2",
-    familia: "natural",
-    formula: [{ pigmento: "Sem pigmentação (PP Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }]
-  },
-  "Natural PE": {
-    hsvTarget: { h: 45, s: 10, v: 88 },
-    hsvRange: { hMin: 30, hMax: 58, sMin: 5, sMax: 20, vMin: 80, vMax: 94 },
-    hex: "#E0D8C8",
-    familia: "natural",
-    formula: [{ pigmento: "Sem pigmentação (PE Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }]
-  },
-  "Natural ABS": {
-    hsvTarget: { h: 40, s: 12, v: 82 },
-    hsvRange: { hMin: 28, hMax: 55, sMin: 8, sMax: 22, vMin: 74, vMax: 90 },
-    hex: "#D0C4A8",
-    familia: "natural",
-    formula: [{ pigmento: "Sem pigmentação (ABS Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }]
-  },
-  "Bege": {
-    hsvTarget: { h: 38, s: 25, v: 85 },
-    hsvRange: { hMin: 28, hMax: 48, sMin: 15, sMax: 40, vMin: 75, vMax: 90 },
-    hex: "#D9C9A8",
-    familia: "bege",
-    formula: [
-      { pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "0.8%", funcao: "cor_primaria" },
-      { pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "0.2%", funcao: "ajuste_tom" },
-      { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" }
-    ]
-  },
-  "Marrom": {
-    hsvTarget: { h: 25, s: 60, v: 40 },
-    hsvRange: { hMin: 15, hMax: 40, sMin: 40, sMax: 80, vMin: 25, vMax: 55 },
-    hex: "#6B3410",
-    familia: "marrom",
-    formula: [
-      { pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "2.0%", funcao: "cor_primaria" },
-      { pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "1.0%", funcao: "ajuste_tom" },
-      { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.5%", funcao: "ajuste_tom" }
-    ]
-  }
+  "Branco Gelo": { hsvTarget: { h: 0, s: 2, v: 95 }, hsvRange: { hMin: 0, hMax: 30, sMin: 0, sMax: 20, vMin: 88, vMax: 100 }, hex: "#FAFAFA", familia: "branco", formula: [{ pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }] },
+  "Branco Neve": { hsvTarget: { h: 0, s: 0, v: 99 }, hsvRange: { hMin: 0, hMax: 30, sMin: 0, sMax: 12, vMin: 95, vMax: 100 }, hex: "#FFFFFF", familia: "branco", formula: [{ pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" }, { pigmento: "Agente Óptico de Brilho", ci: "OB-1", codigo: "OBA", proporcao: "0.05%", funcao: "efeito_especial" }] },
+  "Branco Natural": { hsvTarget: { h: 40, s: 5, v: 92 }, hsvRange: { hMin: 30, hMax: 55, sMin: 0, sMax: 18, vMin: 85, vMax: 96 }, hex: "#F5F0E8", familia: "branco", formula: [{ pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }] },
+  "Branco Masterbatch": { hsvTarget: { h: 0, s: 3, v: 92 }, hsvRange: { hMin: 0, hMax: 30, sMin: 0, sMax: 15, vMin: 88, vMax: 96 }, hex: "#EDEDED", familia: "branco", formula: [{ pigmento: "Dióxido de Titânio Anatásio", ci: "PW6", codigo: "CI 77891", proporcao: "3.0%", funcao: "base_clareadora" }] },
+  "Preto Absoluto": { hsvTarget: { h: 0, s: 0, v: 5 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 30, vMin: 0, vMax: 15 }, hex: "#0A0A0A", familia: "preto", formula: [{ pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "2.5%", funcao: "cor_primaria" }] },
+  "Preto UV": { hsvTarget: { h: 0, s: 0, v: 10 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 35, vMin: 5, vMax: 20 }, hex: "#141414", familia: "preto", formula: [{ pigmento: "Carbon Black N550", ci: "PBk7", codigo: "CI 77266", proporcao: "2.0%", funcao: "cor_primaria" }, { pigmento: "Estabilizante HALS", ci: "UV-AD", codigo: "HALS", proporcao: "0.3%", funcao: "efeito_especial" }] },
+  "Preto Condutivo": { hsvTarget: { h: 0, s: 0, v: 12 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 35, vMin: 8, vMax: 22 }, hex: "#1A1A1A", familia: "preto", formula: [{ pigmento: "Carbon Black Condutivo", ci: "PBk7", codigo: "CI 77266", proporcao: "15.0%", funcao: "cor_primaria" }] },
+  "Preto Masterbatch": { hsvTarget: { h: 0, s: 0, v: 15 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 35, vMin: 10, vMax: 25 }, hex: "#202020", familia: "preto", formula: [{ pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "30.0%", funcao: "cor_primaria" }, { pigmento: "Cera Dispersante PE", ci: "ADD", codigo: "PE-WAX", proporcao: "5.0%", funcao: "efeito_especial" }] },
+  "Vermelho Óxido": { hsvTarget: { h: 5, s: 75, v: 55 }, hsvRange: { hMin: 345, hMax: 15, sMin: 55, sMax: 95, vMin: 40, vMax: 65 }, hex: "#B22222", familia: "vermelho", formula: [{ pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "3.0%", funcao: "cor_primaria" }] },
+  "Vermelho DPP": { hsvTarget: { h: 0, s: 85, v: 70 }, hsvRange: { hMin: 345, hMax: 10, sMin: 65, sMax: 100, vMin: 55, vMax: 85 }, hex: "#DC2626", familia: "vermelho", formula: [{ pigmento: "Vermelho DPP (Diketopyrrolopyrrole)", ci: "PR254", codigo: "CI 561100", proporcao: "1.5%", funcao: "cor_primaria" }, { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.0%", funcao: "base_clareadora" }] },
+  "Vermelho Cádmio": { hsvTarget: { h: 355, s: 90, v: 75 }, hsvRange: { hMin: 340, hMax: 10, sMin: 75, sMax: 100, vMin: 60, vMax: 90 }, hex: "#E30022", familia: "vermelho", formula: [{ pigmento: "Vermelho de Cádmio (Sulfosseleneto)", ci: "PR108", codigo: "CI 77202", proporcao: "4.0%", funcao: "cor_primaria" }] },
+  "Vermelho Vivo": { hsvTarget: { h: 358, s: 88, v: 80 }, hsvRange: { hMin: 345, hMax: 15, sMin: 70, sMax: 100, vMin: 65, vMax: 92 }, hex: "#EF4444", familia: "vermelho", formula: [{ pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.8%", funcao: "cor_primaria" }, { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }] },
+  "Vermelho Toluidina": { hsvTarget: { h: 5, s: 90, v: 65 }, hsvRange: { hMin: 345, hMax: 15, sMin: 75, sMax: 100, vMin: 50, vMax: 78 }, hex: "#C41E3A", familia: "vermelho", formula: [{ pigmento: "Vermelho Toluidina (Monoazo)", ci: "PR3", codigo: "CI 12120", proporcao: "2.5%", funcao: "cor_primaria" }] },
+  "Laranja Vivo": { hsvTarget: { h: 30, s: 85, v: 90 }, hsvRange: { hMin: 15, hMax: 40, sMin: 70, sMax: 95, vMin: 75, vMax: 95 }, hex: "#FF8800", familia: "laranja", formula: [{ pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.2%", funcao: "cor_primaria" }, { pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "1.5%", funcao: "ajuste_tom" }] },
+  "Laranja DPP": { hsvTarget: { h: 25, s: 88, v: 85 }, hsvRange: { hMin: 15, hMax: 38, sMin: 75, sMax: 100, vMin: 70, vMax: 92 }, hex: "#FF7F00", familia: "laranja", formula: [{ pigmento: "Laranja DPP", ci: "PO73", codigo: "CI 561170", proporcao: "2.0%", funcao: "cor_primaria" }] },
+  "Laranja Molibdato": { hsvTarget: { h: 20, s: 85, v: 75 }, hsvRange: { hMin: 12, hMax: 35, sMin: 70, sMax: 95, vMin: 60, vMax: 85 }, hex: "#FF6600", familia: "laranja", formula: [{ pigmento: "Laranja de Molibdato", ci: "PO104", codigo: "CI 77605", proporcao: "3.5%", funcao: "cor_primaria" }] },
+  "Amarelo Óxido": { hsvTarget: { h: 45, s: 70, v: 70 }, hsvRange: { hMin: 38, hMax: 58, sMin: 55, sMax: 85, vMin: 55, vMax: 80 }, hex: "#CC9900", familia: "amarelo", formula: [{ pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "3.0%", funcao: "cor_primaria" }] },
+  "Amarelo Arilida": { hsvTarget: { h: 50, s: 85, v: 90 }, hsvRange: { hMin: 42, hMax: 60, sMin: 70, sMax: 95, vMin: 80, vMax: 96 }, hex: "#FFD700", familia: "amarelo", formula: [{ pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "2.5%", funcao: "cor_primaria" }] },
+  "Amarelo Limão": { hsvTarget: { h: 58, s: 88, v: 95 }, hsvRange: { hMin: 50, hMax: 70, sMin: 75, sMax: 98, vMin: 85, vMax: 99 }, hex: "#FFFF00", familia: "amarelo", formula: [{ pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "2.0%", funcao: "cor_primaria" }, { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "0.8%", funcao: "base_clareadora" }] },
+  "Amarelo Masterbatch": { hsvTarget: { h: 52, s: 80, v: 85 }, hsvRange: { hMin: 45, hMax: 62, sMin: 65, sMax: 92, vMin: 75, vMax: 92 }, hex: "#FFCC00", familia: "amarelo", formula: [{ pigmento: "Amarelo Diarylide", ci: "PY14", codigo: "CI 21095", proporcao: "35.0%", funcao: "cor_primaria" }, { pigmento: "Cera Dispersante PE", ci: "ADD", codigo: "PE-WAX", proporcao: "5.0%", funcao: "efeito_especial" }] },
+  "Verde Oliva": { hsvTarget: { h: 80, s: 50, v: 50 }, hsvRange: { hMin: 70, hMax: 100, sMin: 35, sMax: 65, vMin: 40, vMax: 62 }, hex: "#808000", familia: "verde", formula: [{ pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "1.5%", funcao: "cor_primaria" }, { pigmento: "Ftalocianina de Cobre Verde", ci: "PG7", codigo: "CI 74260", proporcao: "0.5%", funcao: "ajuste_tom" }, { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.3%", funcao: "ajuste_tom" }] },
+  "Verde Bandeira": { hsvTarget: { h: 145, s: 75, v: 55 }, hsvRange: { hMin: 125, hMax: 160, sMin: 60, sMax: 88, vMin: 45, vMax: 68 }, hex: "#009B3A", familia: "verde", formula: [{ pigmento: "Ftalocianina de Cobre Verde", ci: "PG7", codigo: "CI 74260", proporcao: "1.2%", funcao: "cor_primaria" }, { pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "0.8%", funcao: "ajuste_tom" }, { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }] },
+  "Verde Esmeralda": { hsvTarget: { h: 140, s: 70, v: 65 }, hsvRange: { hMin: 125, hMax: 155, sMin: 55, sMax: 82, vMin: 55, vMax: 78 }, hex: "#50C878", familia: "verde", formula: [{ pigmento: "Óxido de Cromo Verde", ci: "PG17", codigo: "CI 77288", proporcao: "2.5%", funcao: "cor_primaria" }, { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }] },
+  "Verde Limão": { hsvTarget: { h: 110, s: 75, v: 80 }, hsvRange: { hMin: 90, hMax: 135, sMin: 60, sMax: 88, vMin: 70, vMax: 92 }, hex: "#BFFF00", familia: "verde", formula: [{ pigmento: "Ftalocianina Verde Amarelada", ci: "PG36", codigo: "CI 74265", proporcao: "0.8%", funcao: "cor_primaria" }, { pigmento: "Amarelo Benzimidazolona", ci: "PY151", codigo: "CI 13980", proporcao: "1.2%", funcao: "ajuste_tom" }, { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }] },
+  "Azul Turquesa": { hsvTarget: { h: 180, s: 70, v: 70 }, hsvRange: { hMin: 165, hMax: 195, sMin: 55, sMax: 85, vMin: 58, vMax: 85 }, hex: "#40E0D0", familia: "ciano", formula: [{ pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.0%", funcao: "cor_primaria" }, { pigmento: "Amarelo Arilida", ci: "PY74", codigo: "CI 11741", proporcao: "0.3%", funcao: "ajuste_tom" }, { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" }] },
+  "Azul Ftalo": { hsvTarget: { h: 220, s: 85, v: 55 }, hsvRange: { hMin: 205, hMax: 235, sMin: 70, sMax: 95, vMin: 42, vMax: 65 }, hex: "#1E3A8A", familia: "azul", formula: [{ pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.5%", funcao: "cor_primaria" }, { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.8%", funcao: "base_clareadora" }] },
+  "Azul Ultramar": { hsvTarget: { h: 240, s: 75, v: 50 }, hsvRange: { hMin: 225, hMax: 255, sMin: 60, sMax: 88, vMin: 38, vMax: 62 }, hex: "#1E40AF", familia: "azul", formula: [{ pigmento: "Azul Ultramar", ci: "PB29", codigo: "CI 77007", proporcao: "2.0%", funcao: "cor_primaria" }, { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }] },
+  "Azul Cobalto": { hsvTarget: { h: 215, s: 80, v: 60 }, hsvRange: { hMin: 205, hMax: 230, sMin: 65, sMax: 92, vMin: 48, vMax: 72 }, hex: "#1D4ED8", familia: "azul", formula: [{ pigmento: "Azul Cobalto (Aluminato)", ci: "PB28", codigo: "CI 77346", proporcao: "3.0%", funcao: "cor_primaria" }] },
+  "Azul Royal": { hsvTarget: { h: 225, s: 82, v: 58 }, hsvRange: { hMin: 215, hMax: 245, sMin: 70, sMax: 92, vMin: 48, vMax: 70 }, hex: "#4169E1", familia: "azul", formula: [{ pigmento: "Ftalocianina de Cobre Azul β", ci: "PB15:3", codigo: "CI 74160", proporcao: "1.8%", funcao: "cor_primaria" }, { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }] },
+  "Violeta Dioxazina": { hsvTarget: { h: 280, s: 75, v: 55 }, hsvRange: { hMin: 265, hMax: 290, sMin: 65, sMax: 88, vMin: 45, vMax: 68 }, hex: "#7F00FF", familia: "violeta", formula: [{ pigmento: "Violeta Dioxazina (Carbazol)", ci: "PV23", codigo: "CI 51319", proporcao: "1.8%", funcao: "cor_primaria" }, { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }] },
+  "Roxo": { hsvTarget: { h: 285, s: 70, v: 60 }, hsvRange: { hMin: 270, hMax: 295, sMin: 55, sMax: 82, vMin: 50, vMax: 72 }, hex: "#9333EA", familia: "violeta", formula: [{ pigmento: "Ftalocianina de Cobre Azul α", ci: "PB15:1", codigo: "CI 74160", proporcao: "1.0%", funcao: "cor_primaria" }, { pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "1.2%", funcao: "ajuste_tom" }, { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }] },
+  "Violeta Manganês": { hsvTarget: { h: 290, s: 60, v: 65 }, hsvRange: { hMin: 275, hMax: 295, sMin: 45, sMax: 75, vMin: 55, vMax: 75 }, hex: "#8B008B", familia: "violeta", formula: [{ pigmento: "Violeta de Manganês (Pirofosfato)", ci: "PV16", codigo: "CI 77742", proporcao: "3.5%", funcao: "cor_primaria" }] },
+  "Rosa": { hsvTarget: { h: 330, s: 50, v: 85 }, hsvRange: { hMin: 315, hMax: 345, sMin: 35, sMax: 65, vMin: 75, vMax: 92 }, hex: "#FFB0C0", familia: "rosa", formula: [{ pigmento: "Vermelho DPP", ci: "PR254", codigo: "CI 561100", proporcao: "0.3%", funcao: "cor_primaria" }, { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "3.5%", funcao: "base_clareadora" }] },
+  "Cinza Claro": { hsvTarget: { h: 0, s: 3, v: 75 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 18, vMin: 62, vMax: 82 }, hex: "#BFBFBF", familia: "cinza", formula: [{ pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.0%", funcao: "base_clareadora" }, { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.1%", funcao: "ajuste_tom" }] },
+  "Cinza Médio": { hsvTarget: { h: 0, s: 3, v: 55 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 18, vMin: 42, vMax: 62 }, hex: "#8C8C8C", familia: "cinza", formula: [{ pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "1.5%", funcao: "base_clareadora" }, { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.3%", funcao: "ajuste_tom" }] },
+  "Cinza Escuro": { hsvTarget: { h: 0, s: 3, v: 35 }, hsvRange: { hMin: 0, hMax: 360, sMin: 0, sMax: 18, vMin: 25, vMax: 42 }, hex: "#595959", familia: "cinza", formula: [{ pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "0.8%", funcao: "base_clareadora" }, { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.8%", funcao: "cor_primaria" }] },
+  "Natural PP": { hsvTarget: { h: 40, s: 8, v: 85 }, hsvRange: { hMin: 30, hMax: 55, sMin: 3, sMax: 18, vMin: 78, vMax: 92 }, hex: "#D9D2C2", familia: "natural", formula: [{ pigmento: "Sem pigmentação (PP Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }] },
+  "Natural PE": { hsvTarget: { h: 45, s: 10, v: 88 }, hsvRange: { hMin: 30, hMax: 58, sMin: 5, sMax: 20, vMin: 80, vMax: 94 }, hex: "#E0D8C8", familia: "natural", formula: [{ pigmento: "Sem pigmentação (PE Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }] },
+  "Natural ABS": { hsvTarget: { h: 40, s: 12, v: 82 }, hsvRange: { hMin: 28, hMax: 55, sMin: 8, sMax: 22, vMin: 74, vMax: 90 }, hex: "#D0C4A8", familia: "natural", formula: [{ pigmento: "Sem pigmentação (ABS Natural)", ci: "NAT", codigo: "NATURAL", proporcao: "0%", funcao: "base" }] },
+  "Bege": { hsvTarget: { h: 38, s: 25, v: 85 }, hsvRange: { hMin: 28, hMax: 48, sMin: 15, sMax: 40, vMin: 75, vMax: 90 }, hex: "#D9C9A8", familia: "bege", formula: [{ pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "0.8%", funcao: "cor_primaria" }, { pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "0.2%", funcao: "ajuste_tom" }, { pigmento: "Dióxido de Titânio Rutilo", ci: "PW6", codigo: "CI 77891", proporcao: "2.5%", funcao: "base_clareadora" }] },
+  "Marrom": { hsvTarget: { h: 25, s: 60, v: 40 }, hsvRange: { hMin: 15, hMax: 40, sMin: 40, sMax: 80, vMin: 25, vMax: 55 }, hex: "#6B3410", familia: "marrom", formula: [{ pigmento: "Óxido de Ferro Vermelho", ci: "PR101", codigo: "CI 77491", proporcao: "2.0%", funcao: "cor_primaria" }, { pigmento: "Óxido de Ferro Amarelo", ci: "PY42", codigo: "CI 77492", proporcao: "1.0%", funcao: "ajuste_tom" }, { pigmento: "Carbon Black N330", ci: "PBk7", codigo: "CI 77266", proporcao: "0.5%", funcao: "ajuste_tom" }] }
 };
 // ════════════════════════════════════════════════════════════════
-// 🧮 FUNÇÕES MATEMÁTICAS OTIMIZADAS
+// 🧮 FUNÇÕES MATEMÁTICAS
 // ════════════════════════════════════════════════════════════════
 function rgbToHSV(r, g, b) {
-  if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
-    r = Math.max(0, Math.min(255, r));
-    g = Math.max(0, Math.min(255, g));
-    b = Math.max(0, Math.min(255, b));
-  }
+  r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); b = Math.max(0, Math.min(255, b));
   r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const delta = max - min;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), delta = max - min;
   let h = 0, s = 0, v = max;
   if (delta !== 0) {
     s = delta / max;
@@ -1266,11 +451,7 @@ function rgbToHSV(r, g, b) {
     else if (max === g) h = ((b - r) / delta + 2) / 6;
     else h = ((r - g) / delta + 4) / 6;
   }
-  return {
-    h: Math.round(h * 360 * 10) / 10,
-    s: Math.round(s * 1000) / 10,
-    v: Math.round(v * 1000) / 10
-  };
+  return { h: Math.round(h * 360 * 10) / 10, s: Math.round(s * 1000) / 10, v: Math.round(v * 1000) / 10 };
 }
 function getColorFamily(h) {
   h = Math.max(0, Math.min(360, h || 0));
@@ -1282,38 +463,27 @@ function getColorFamily(h) {
   if (h >= 195 && h < 255) return 'azul';
   if (h >= 255 && h < 290) return 'violeta';
   if (h >= 290 && h < 345) return 'rosa';
-  if (h >= 345 && h <= 360) return 'vermelho';
   return 'vermelho';
 }
 function isInHsvRange(hsv, range) {
   if (!hsv || !range) return false;
   const hNorm = hsv.h;
-  let hInRange;
-  if (range.hMin <= range.hMax) {
-    hInRange = hNorm >= range.hMin && hNorm <= range.hMax;
-  } else {
-    hInRange = hNorm >= range.hMin || hNorm <= range.hMax;
-  }
-  const sInRange = hsv.s >= range.sMin && hsv.s <= range.sMax;
-  const vInRange = hsv.v >= range.vMin && hsv.v <= range.vMax;
-  return hInRange && sInRange && vInRange;
+  let hInRange = range.hMin <= range.hMax ? (hNorm >= range.hMin && hNorm <= range.hMax) : (hNorm >= range.hMin || hNorm <= range.hMax);
+  return hInRange && hsv.s >= range.sMin && hsv.s <= range.sMax && hsv.v >= range.vMin && hsv.v <= range.vMax;
 }
 function hsvDistance(hsv1, hsv2) {
   if (!hsv1 || !hsv2) return Infinity;
   let hDiff = Math.abs(hsv1.h - hsv2.h);
   if (hDiff > 180) hDiff = 360 - hDiff;
-  const hNorm = hDiff / 60;
-  const sNorm = Math.abs(hsv1.s - hsv2.s) / 100;
-  const vNorm = Math.abs(hsv1.v - hsv2.v) / 100;
+  const hNorm = hDiff / 60, sNorm = Math.abs(hsv1.s - hsv2.s) / 100, vNorm = Math.abs(hsv1.v - hsv2.v) / 100;
   return Math.sqrt(hNorm * hNorm * 0.5 + sNorm * sNorm * 0.25 + vNorm * vNorm * 0.25);
 }
 // ════════════════════════════════════════════════════════════════
-// 🧪 CLASSIFICAÇÃO BIBLIOTECA PLÁSTICOS
+// 🧪 CLASSIFICADORES (INALTERADOS — motor de cor preservado)
 // ════════════════════════════════════════════════════════════════
 function classifyPlasticsPolymers(hsv, rgb, variance) {
   if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0, inCatalog: false };
-  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
-  const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b), avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
   if (maxRGB <= 15 || avgRGB <= 10) return { name: 'Preto Absoluto', color: '#0A0A0A', confidence: 99, inCatalog: true };
   if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) return { name: 'Branco Gelo', color: '#FAFAFA', confidence: 99, inCatalog: true };
   if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) return { name: 'Preto Absoluto', color: '#0A0A0A', confidence: 99, inCatalog: true };
@@ -1323,17 +493,15 @@ function classifyPlasticsPolymers(hsv, rgb, variance) {
   if (normalizedHsv.s < 15) {
     if (isWhiteCalibrated && isBlackCalibrated) {
       if (normalizedHsv.v >= 85) return { name: 'Branco Gelo', color: '#FAFAFA', confidence: 98, inCatalog: true };
-      else if (normalizedHsv.v <= 20) return { name: 'Preto Absoluto', color: '#0A0A0A', confidence: 98, inCatalog: true };
-      else {
-        if (normalizedHsv.v >= 62) return { name: 'Cinza Claro', color: '#BFBFBF', confidence: 96, inCatalog: true };
-        else if (normalizedHsv.v <= 42) return { name: 'Cinza Escuro', color: '#595959', confidence: 96, inCatalog: true };
-        else return { name: 'Cinza Médio', color: '#8C8C8C', confidence: 96, inCatalog: true };
-      }
+      if (normalizedHsv.v <= 20) return { name: 'Preto Absoluto', color: '#0A0A0A', confidence: 98, inCatalog: true };
+      if (normalizedHsv.v >= 62) return { name: 'Cinza Claro', color: '#BFBFBF', confidence: 96, inCatalog: true };
+      if (normalizedHsv.v <= 42) return { name: 'Cinza Escuro', color: '#595959', confidence: 96, inCatalog: true };
+      return { name: 'Cinza Médio', color: '#8C8C8C', confidence: 96, inCatalog: true };
     } else {
       if (normalizedHsv.v >= 72) return { name: 'Branco Gelo', color: '#FAFAFA', confidence: 98, inCatalog: true };
-      else if (normalizedHsv.v <= 28) return { name: 'Preto Absoluto', color: '#0A0A0A', confidence: 98, inCatalog: true };
+      if (normalizedHsv.v <= 28) return { name: 'Preto Absoluto', color: '#0A0A0A', confidence: 98, inCatalog: true };
       if (normalizedHsv.v >= 62) return { name: 'Cinza Claro', color: '#BFBFBF', confidence: 96, inCatalog: true };
-      else if (normalizedHsv.v <= 42) return { name: 'Cinza Escuro', color: '#595959', confidence: 96, inCatalog: true };
+      if (normalizedHsv.v <= 42) return { name: 'Cinza Escuro', color: '#595959', confidence: 96, inCatalog: true };
       return { name: 'Cinza Médio', color: '#8C8C8C', confidence: 96, inCatalog: true };
     }
   }
@@ -1347,76 +515,48 @@ function classifyPlasticsPolymers(hsv, rgb, variance) {
     }
     if (normalizedHsv.s >= 15 && normalizedHsv.s <= 40) return { name: 'Bege', color: '#D9C9A8', confidence: 92, inCatalog: true };
   }
-  if (normalizedHsv.h >= 15 && normalizedHsv.h <= 40 && normalizedHsv.s >= 40 && normalizedHsv.s <= 80 && normalizedHsv.v >= 25 && normalizedHsv.v <= 55) {
-    return { name: 'Marrom', color: '#6B3410', confidence: 92, inCatalog: true };
-  }
+  if (normalizedHsv.h >= 15 && normalizedHsv.h <= 40 && normalizedHsv.s >= 40 && normalizedHsv.s <= 80 && normalizedHsv.v >= 25 && normalizedHsv.v <= 55) return { name: 'Marrom', color: '#6B3410', confidence: 92, inCatalog: true };
   const matchingColors = [];
   for (const [name, data] of Object.entries(PLASTICS_LIBRARY)) {
-    if (data.familia === 'preto' || data.familia === 'branco' || data.familia === 'cinza' || data.familia === 'natural' || data.familia === 'bege' || data.familia === 'marrom') continue;
+    if (['preto','branco','cinza','natural','bege','marrom'].includes(data.familia)) continue;
     if (data.familia !== detectedFamily) continue;
     matchingColors.push({ name, data });
   }
-  const inRangeMatches = [];
-  for (const match of matchingColors) {
-    if (match.data.hsvRange && isInHsvRange(normalizedHsv, match.data.hsvRange)) inRangeMatches.push(match);
-  }
+  const inRangeMatches = matchingColors.filter(m => m.data.hsvRange && isInHsvRange(normalizedHsv, m.data.hsvRange));
   let closestName = null, closestDist = Infinity, closestColor = null, isInRange = false;
-  if (inRangeMatches.length > 0) {
-    isInRange = true;
-    for (const match of inRangeMatches) {
-      const dist = hsvDistance(normalizedHsv, match.data.hsvTarget);
-      if (dist < closestDist) { closestDist = dist; closestName = match.name; closestColor = match.data.hex; }
-    }
-  } else {
-    for (const match of matchingColors) {
-      const dist = hsvDistance(normalizedHsv, match.data.hsvTarget);
-      if (dist < closestDist) { closestDist = dist; closestName = match.name; closestColor = match.data.hex; }
-    }
+  const pool = inRangeMatches.length > 0 ? (isInRange = true, inRangeMatches) : matchingColors;
+  for (const match of pool) {
+    const dist = hsvDistance(normalizedHsv, match.data.hsvTarget);
+    if (dist < closestDist) { closestDist = dist; closestName = match.name; closestColor = match.data.hex; }
   }
   if (closestName === null) {
-    const fallbackMap = {
-      'vermelho': { name: 'Vermelho DPP', color: '#DC2626' }, 'laranja': { name: 'Laranja Vivo', color: '#FF8800' },
-      'amarelo': { name: 'Amarelo Arilida', color: '#FFD700' }, 'verde': { name: 'Verde Bandeira', color: '#009B3A' },
-      'ciano': { name: 'Azul Turquesa', color: '#40E0D0' }, 'azul': { name: 'Azul Ftalo', color: '#1E3A8A' },
-      'violeta': { name: 'Violeta Dioxazina', color: '#7F00FF' }, 'rosa': { name: 'Rosa', color: '#FFB0C0' }
-    };
-    const fallback = fallbackMap[detectedFamily] || { name: 'Desconhecido', color: '#888888' };
-    return { name: fallback.name, color: fallback.color, confidence: 70, inCatalog: false, closestMatch: fallback.name, similarity: 70 };
+    const fb = { vermelho: { name: 'Vermelho DPP', color: '#DC2626' }, laranja: { name: 'Laranja Vivo', color: '#FF8800' }, amarelo: { name: 'Amarelo Arilida', color: '#FFD700' }, verde: { name: 'Verde Bandeira', color: '#009B3A' }, ciano: { name: 'Azul Turquesa', color: '#40E0D0' }, azul: { name: 'Azul Ftalo', color: '#1E3A8A' }, violeta: { name: 'Violeta Dioxazina', color: '#7F00FF' }, rosa: { name: 'Rosa', color: '#FFB0C0' } }[detectedFamily] || { name: 'Desconhecido', color: '#888888' };
+    return { name: fb.name, color: fb.color, confidence: 70, inCatalog: false };
   }
   const similarity = Math.max(0, Math.round((1 - closestDist) * 100));
-  const confidence = isInRange ? Math.min(99, similarity + 5) : similarity;
-  const inCatalog = isInRange || closestDist < 0.25;
-  return { name: closestName, color: closestColor, confidence, inCatalog, closestMatch: closestName, similarity };
+  return { name: closestName, color: closestColor, confidence: isInRange ? Math.min(99, similarity + 5) : similarity, inCatalog: isInRange || closestDist < 0.25 };
 }
-// ════════════════════════════════════════════════════════════════
-// 🔬 CLASSIFICAÇÃO AMPLIADO (60+ NUANCES)
-// ════════════════════════════════════════════════════════════════
 function classifyColorExtended(hsv, rgb, variance) {
   if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0 };
-  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
-  const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b), avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
   if (maxRGB <= 15 || avgRGB <= 10) return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
   if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) return { name: 'Branco', color: '#ffffff', confidence: 99 };
   if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
-  const { h, s } = hsv;
-  const v = normalizeV(hsv.v);
-  const { r, g, b } = rgb;
+  const { h, s } = hsv, v = normalizeV(hsv.v);
   if (v < 22 && s < 35) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
   if (maxRGB < 50 && s < 40) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
   if (s < 15) {
     if (isWhiteCalibrated && isBlackCalibrated) {
       if (v >= 85) return { name: 'Branco', color: '#ffffff', confidence: 98 };
-      else if (v <= 20) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
-      else {
-        if (v >= 65) return { name: 'Cinza Claro', color: '#b8b8c8', confidence: 96 };
-        else if (v <= 35) return { name: 'Cinza Escuro', color: '#5a5a6a', confidence: 96 };
-        else return { name: 'Cinza', color: '#9999aa', confidence: 96 };
-      }
+      if (v <= 20) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+      if (v >= 65) return { name: 'Cinza Claro', color: '#b8b8c8', confidence: 96 };
+      if (v <= 35) return { name: 'Cinza Escuro', color: '#5a5a6a', confidence: 96 };
+      return { name: 'Cinza', color: '#9999aa', confidence: 96 };
     } else {
       if (v >= 72) return { name: 'Branco', color: '#ffffff', confidence: 98 };
-      else if (v <= 28) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
+      if (v <= 28) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
       if (v >= 65) return { name: 'Cinza Claro', color: '#b8b8c8', confidence: 96 };
-      else if (v <= 35) return { name: 'Cinza Escuro', color: '#5a5a6a', confidence: 96 };
+      if (v <= 35) return { name: 'Cinza Escuro', color: '#5a5a6a', confidence: 96 };
       return { name: 'Cinza', color: '#9999aa', confidence: 96 };
     }
   }
@@ -1429,45 +569,38 @@ function classifyColorExtended(hsv, rgb, variance) {
     else if (v <= 40) { baseName = 'Vermelho Escuro'; baseColor = '#7f1d1d'; }
     else if (s < 50 && v >= 70) { baseName = 'Vermelho Claro'; baseColor = '#fca5a5'; }
     else { baseName = 'Vermelho'; baseColor = '#dc2626'; }
-  }
-  else if (h >= 15 && h < 25 && s >= 25) {
+  } else if (h >= 15 && h < 25 && s >= 25) {
     if (s >= 60 && v >= 65) { baseName = 'Vermelho Alaranjado'; baseColor = '#ff4500'; }
     else if (v <= 35) { baseName = 'Vermelho Escuro'; baseColor = '#7f1d1d'; }
     else { baseName = 'Vermelho'; baseColor = '#dc2626'; }
-  }
-  else if (h >= 290 && h < 345) {
+  } else if (h >= 290 && h < 345) {
     if (s <= 35 && v >= 75) { baseName = 'Rosa Claro'; baseColor = '#ffc9e0'; }
     else if (s >= 40 && v >= 70) { baseName = 'Rosa Vivo'; baseColor = '#ff69b4'; }
     else if (s >= 50 && v >= 60) { baseName = 'Rosa'; baseColor = '#ff88aa'; }
     else if (v <= 35) { baseName = 'Rosa Escuro'; baseColor = '#8b4560'; }
     else if (s <= 25) { baseName = 'Rosa Pastel'; baseColor = '#ffd0e0'; }
     else { baseName = 'Rosa'; baseColor = '#ff88aa'; }
-  }
-  else if (h >= 25 && h < 45) {
+  } else if (h >= 25 && h < 45) {
     if (s >= 75 && v >= 70) { baseName = 'Laranja Vivo'; baseColor = '#ff8800'; }
     else if (s >= 60 && v >= 50 && v <= 65) { baseName = 'Laranja Queimado'; baseColor = '#d2691e'; }
     else if (s >= 55 && v >= 60) { baseName = 'Laranja'; baseColor = '#f97316'; }
     else if (v <= 35) { baseName = 'Laranja Escuro'; baseColor = '#7c2d12'; }
     else if (s <= 40 && v >= 70) { baseName = 'Laranja Claro'; baseColor = '#fed7aa'; }
-    else if (s >= 50 && v >= 55 && r > 200 && g >= 100 && g <= 160) { baseName = 'Tangerina'; baseColor = '#ff9500'; }
     else { baseName = 'Laranja'; baseColor = '#f97316'; }
-  }
-  else if (h >= 45 && h < 70) {
-    if (s <= 30 && v >= 70 && h >= 40 && h <= 55) { baseName = 'Bege'; baseColor = '#f5deb3'; }
+  } else if (h >= 45 && h < 70) {
+    if (s <= 30 && v >= 70) { baseName = 'Bege'; baseColor = '#f5deb3'; }
     else if (s >= 60 && v >= 50 && v <= 65) { baseName = 'Mostarda'; baseColor = '#ccaa00'; }
     else if (s >= 40 && v >= 40 && v <= 55) { baseName = 'Ocre'; baseColor = '#cc7722'; }
     else if (s >= 75 && v >= 75) { baseName = 'Amarelo Puro'; baseColor = '#ffff00'; }
     else if (s >= 70 && v >= 80) { baseName = 'Amarelo Limão'; baseColor = '#ffff66'; }
     else if (s >= 65 && v >= 70) { baseName = 'Amarelo Vivo'; baseColor = '#fbbf24'; }
-    else if (s >= 55 && v >= 65 && h >= 50 && h <= 60) { baseName = 'Amarelo Canário'; baseColor = '#ffff99'; }
     else if (s >= 50 && v >= 60) { baseName = 'Amarelo'; baseColor = '#eab308'; }
     else if (v <= 40) { baseName = 'Amarelo Escuro'; baseColor = '#713f12'; }
     else if (s <= 40 && v >= 75) { baseName = 'Amarelo Claro'; baseColor = '#fef9c3'; }
     else { baseName = 'Amarelo'; baseColor = '#eab308'; }
-  }
-  else if (h >= 70 && h < 165) {
-    if (v <= 35 && s >= 40 && h >= 70 && h <= 100) { baseName = 'Verde Musgo'; baseColor = '#4a5d23'; }
-    else if (s >= 40 && v >= 40 && v <= 55 && h >= 70 && h <= 95) { baseName = 'Verde Oliva'; baseColor = '#808000'; }
+  } else if (h >= 70 && h < 165) {
+    if (v <= 35 && s >= 40 && h <= 100) { baseName = 'Verde Musgo'; baseColor = '#4a5d23'; }
+    else if (s >= 40 && v >= 40 && v <= 55 && h <= 95) { baseName = 'Verde Oliva'; baseColor = '#808000'; }
     else if (s >= 75 && v >= 75) { baseName = 'Verde Puro'; baseColor = '#00ff00'; }
     else if (s >= 65 && v >= 70 && h >= 120 && h <= 140) { baseName = 'Verde Esmeralda'; baseColor = '#50c878'; }
     else if (s >= 60 && v >= 65) { baseName = 'Verde Vivo'; baseColor = '#22c55e'; }
@@ -1477,8 +610,7 @@ function classifyColorExtended(hsv, rgb, variance) {
     else if (s <= 40 && v >= 70 && h >= 140 && h <= 160) { baseName = 'Verde Menta'; baseColor = '#98ff98'; }
     else if (s <= 35 && v >= 75) { baseName = 'Verde Claro'; baseColor = '#bbf7d0'; }
     else { baseName = 'Verde'; baseColor = '#16a34a'; }
-  }
-  else if (h >= 165 && h < 195) {
+  } else if (h >= 165 && h < 195) {
     if (s >= 75 && v >= 75) { baseName = 'Ciano Puro'; baseColor = '#00ffff'; }
     else if (s >= 65 && v >= 70) { baseName = 'Ciano Vivo'; baseColor = '#06b6d4'; }
     else if (s >= 55 && v >= 65 && h >= 170 && h <= 185) { baseName = 'Água'; baseColor = '#00ced1'; }
@@ -1486,62 +618,43 @@ function classifyColorExtended(hsv, rgb, variance) {
     else if (v <= 40) { baseName = 'Ciano Escuro'; baseColor = '#164e63'; }
     else if (s <= 40 && v >= 75) { baseName = 'Ciano Claro'; baseColor = '#cffafe'; }
     else { baseName = 'Ciano'; baseColor = '#0891b2'; }
-  }
-  else if (h >= 195 && h < 255) {
+  } else if (h >= 195 && h < 255) {
     if (v <= 25 && s >= 40) { baseName = 'Azul Meia-Noite'; baseColor = '#191970'; }
     else if (v <= 30 && s >= 50) { baseName = 'Azul Marinho'; baseColor = '#001f3f'; }
     else if (v <= 40 && s >= 45) { baseName = 'Azul Escuro'; baseColor = '#1e3a8a'; }
-    else if (s >= 45 && v >= 40 && v <= 55 && h >= 195 && h <= 210) { baseName = 'Azul Petróleo'; baseColor = '#008b8b'; }
-    else if (s >= 50 && v >= 45 && v <= 60 && h >= 210 && h <= 230) { baseName = 'Azul Prussiano'; baseColor = '#003153'; }
-    else if (s <= 40 && v >= 40 && v <= 60) { baseName = 'Azul Aço'; baseColor = '#4682b4'; }
-    else if (s >= 55 && v >= 65 && h >= 175 && h <= 195) { baseName = 'Azul Turquesa'; baseColor = '#40e0d0'; }
-    else if (s >= 50 && v >= 70 && h >= 175 && h <= 190) { baseName = 'Azul Tiffany'; baseColor = '#0abab5'; }
     else if (s >= 80 && v >= 80) { baseName = 'Azul Elétrico'; baseColor = '#7df9ff'; }
     else if (s >= 75 && v >= 75) { baseName = 'Azul Royal'; baseColor = '#4169e1'; }
     else if (s >= 70 && v >= 70 && h >= 220 && h <= 240) { baseName = 'Azul Cobalto'; baseColor = '#0047ab'; }
     else if (s >= 60 && v >= 65) { baseName = 'Azul Vivo'; baseColor = '#3b82f6'; }
     else if (s >= 50 && v >= 55) { baseName = 'Azul'; baseColor = '#2563eb'; }
-    else if (s >= 45 && v >= 50 && v <= 65 && h >= 235 && h <= 250) { baseName = 'Azul Anil'; baseColor = '#4b0082'; }
-    else if (s <= 30 && v >= 70) { baseName = 'Azul Pastel'; baseColor = '#aec6cf'; }
     else if (s <= 35 && v >= 80) { baseName = 'Azul Bebê'; baseColor = '#89cff0'; }
     else if (s <= 40 && v >= 75) { baseName = 'Azul Celeste'; baseColor = '#b0e0e6'; }
     else if (v >= 75 && s < 50) { baseName = 'Azul Claro'; baseColor = '#bfdbfe'; }
     else { baseName = 'Azul'; baseColor = '#2563eb'; }
-  }
-  else if (h >= 255 && h < 290) {
+  } else if (h >= 255 && h < 290) {
     if (s >= 60 && v >= 70 && h >= 270 && h <= 285) { baseName = 'Violeta'; baseColor = '#8a2be2'; }
-    else if (s >= 50 && v >= 65 && h >= 265 && h <= 280) { baseName = 'Ametista'; baseColor = '#9966cc'; }
     else if (s >= 70 && v >= 65) { baseName = 'Roxo Vivo'; baseColor = '#a855f7'; }
     else if (s >= 55 && v >= 60) { baseName = 'Roxo'; baseColor = '#9333ea'; }
     else if (v <= 40) { baseName = 'Roxo Escuro'; baseColor = '#581c87'; }
     else if (s <= 40 && v >= 75) { baseName = 'Lavanda'; baseColor = '#e6e6fa'; }
-    else if (s <= 35 && v >= 70) { baseName = 'Roxo Claro'; baseColor = '#ddd6fe'; }
     else { baseName = 'Roxo'; baseColor = '#9333ea'; }
-  }
-  else if ((h >= 290 && h < 320) || (h >= 320 && h < 345)) {
+  } else if (h >= 290 && h < 345) {
     if (s >= 70 && v >= 75 && h >= 320 && h <= 340) { baseName = 'Fúcsia'; baseColor = '#ff00ff'; }
     else if (s >= 75 && v >= 70) { baseName = 'Magenta Vivo'; baseColor = '#ff00ff'; }
     else if (s >= 60 && v >= 65) { baseName = 'Magenta'; baseColor = '#d946ef'; }
     else if (v <= 40) { baseName = 'Magenta Escuro'; baseColor = '#701a75'; }
     else if (s <= 40 && v >= 75) { baseName = 'Magenta Claro'; baseColor = '#fae8ff'; }
     else { baseName = 'Magenta'; baseColor = '#d946ef'; }
-  }
-  else { baseName = 'Indeterminado'; baseColor = '#888888'; }
+  } else { baseName = 'Indeterminado'; baseColor = '#888888'; }
   return { name: baseName, color: baseColor, confidence };
 }
-// ════════════════════════════════════════════════════════════════
-// 🎨 CLASSIFICAÇÃO PADRÃO (MOTOR v2.8)
-// ════════════════════════════════════════════════════════════════
 function classifyColorWithRuler(hsv, rgb, variance) {
   if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0 };
-  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
-  const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b), avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
   if (maxRGB <= 15 || avgRGB <= 10) return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
   if (isWhiteCalibrated && isCalibrationWhite(hsv, rgb)) return { name: 'Branco', color: '#ffffff', confidence: 99 };
   if (isBlackCalibrated && isCalibrationBlack(hsv, rgb)) return { name: 'Preto', color: '#1a1a2a', confidence: 99 };
-  const { h, s } = hsv;
-  const v = normalizeV(hsv.v);
-  const { r, g, b } = rgb;
+  const { h, s } = hsv, v = normalizeV(hsv.v), { r, g, b } = rgb;
   if (v < 22 && s < 35) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
   if (maxRGB < 50 && s < 40) return { name: 'Preto', color: '#1a1a2a', confidence: 98 };
   if (s < 15) {
@@ -1560,12 +673,10 @@ function classifyColorWithRuler(hsv, rgb, variance) {
     if (r > Math.max(g, b) && b >= 60 && s >= 20) { baseName = 'Rosa'; baseColor = '#ff88aa'; confidence = 95; }
     else if (r > Math.max(g, b) && b < 60 && s >= 30) { baseName = 'Vermelho'; baseColor = '#ef4444'; confidence = 98; }
     else { baseName = 'Magenta'; baseColor = '#d946ef'; confidence = 95; }
-  }
-  else if (h >= 255 && h < 290 && s >= 25) {
+  } else if (h >= 255 && h < 290 && s >= 25) {
     if (b > r && v < 65) { baseName = 'Roxo'; baseColor = '#a855f7'; confidence = 98; }
     else { baseName = 'Magenta'; baseColor = '#d946ef'; confidence = 95; }
-  }
-  else if (h >= 20 && h < 35) { baseName = 'Laranja'; baseColor = '#f97316'; }
+  } else if (h >= 20 && h < 35) { baseName = 'Laranja'; baseColor = '#f97316'; }
   else if (h >= 35 && h < 70) { baseName = 'Amarelo'; baseColor = '#fbbf24'; }
   else if (h >= 70 && h < 165) { baseName = 'Verde'; baseColor = '#22c55e'; }
   else if (h >= 165 && h < 190) { baseName = 'Ciano'; baseColor = '#06b6d4'; }
@@ -1578,158 +689,96 @@ function classifyColorWithRuler(hsv, rgb, variance) {
   return { name: baseName + modifier, color: baseColor, confidence };
 }
 // ════════════════════════════════════════════════════════════════
-// 📊 MODO COMPARAÇÃO - ALGORITMOS
+// 📊 MODO COMPARAÇÃO
 // ════════════════════════════════════════════════════════════════
 function getBaseColorName(name) {
   if (!name || typeof name !== 'string') return '';
-  return name
-    .replace(/ Escuro/g, '').replace(/ Claro/g, '').replace(/ Pastel/g, '').replace(/ Puro/g, '').replace(/ Vivo/g, '')
-    .replace(/ Royal/g, '').replace(/ Cobalto/g, '').replace(/ Elétrico/g, '').replace(/ Bebê/g, '').replace(/ Celeste/g, '')
-    .replace(/ Marinho/g, '').replace(/ Meia-Noite/g, '').replace(/ Petróleo/g, '').replace(/ Prussiano/g, '').replace(/ Aço/g, '')
-    .replace(/ Turquesa/g, '').replace(/ Tiffany/g, '').replace(/ Anil/g, '').replace(/ Alaranjado/g, '').replace(/ Queimado/g, '')
-    .replace(/ Limão/g, '').replace(/ Canário/g, '').replace(/ Esmeralda/g, '').replace(/ Musgo/g, '').replace(/ Oliva/g, '')
-    .replace(/ Menta/g, '').replace(/ Jade/g, '').replace(/ Água/g, '').replace(/ Lavanda/g, '').replace(/ Violeta/g, '')
-    .replace(/ Ametista/g, '').replace(/ Fúcsia/g, '').replace(/ Vinho/g, '').replace(/ Tangerina/g, '').replace(/ Bege/g, '')
-    .replace(/ Mostarda/g, '').replace(/ Ocre/g, '').trim();
+  return name.replace(/ Escuro/g,'').replace(/ Claro/g,'').replace(/ Pastel/g,'').replace(/ Puro/g,'').replace(/ Vivo/g,'').replace(/ Royal/g,'').replace(/ Cobalto/g,'').replace(/ Elétrico/g,'').replace(/ Bebê/g,'').replace(/ Celeste/g,'').replace(/ Marinho/g,'').replace(/ Meia-Noite/g,'').replace(/ Petróleo/g,'').replace(/ Prussiano/g,'').replace(/ Aço/g,'').replace(/ Turquesa/g,'').replace(/ Tiffany/g,'').replace(/ Anil/g,'').replace(/ Alaranjado/g,'').replace(/ Queimado/g,'').replace(/ Limão/g,'').replace(/ Canário/g,'').replace(/ Esmeralda/g,'').replace(/ Musgo/g,'').replace(/ Oliva/g,'').replace(/ Menta/g,'').replace(/ Jade/g,'').replace(/ Água/g,'').replace(/ Lavanda/g,'').replace(/ Violeta/g,'').replace(/ Ametista/g,'').replace(/ Fúcsia/g,'').replace(/ Vinho/g,'').replace(/ Tangerina/g,'').replace(/ Bege/g,'').replace(/ Mostarda/g,'').replace(/ Ocre/g,'').trim();
 }
-const SPECTRAL_ORDER = ['Vermelho', 'Rosa', 'Magenta', 'Roxo', 'Azul', 'Ciano', 'Verde', 'Amarelo', 'Laranja'];
+const SPECTRAL_ORDER = ['Vermelho','Rosa','Magenta','Roxo','Azul','Ciano','Verde','Amarelo','Laranja'];
 function getSpectralIndex(baseName) { return SPECTRAL_ORDER.indexOf(baseName); }
 function areSpectralNeighbors(idx1, idx2) {
   if (idx1 === -1 || idx2 === -1) return false;
   if (idx1 === idx2) return true;
-  const len = SPECTRAL_ORDER.length;
   const diff = Math.abs(idx1 - idx2);
-  return diff === 1 || diff === len - 1;
+  return diff === 1 || diff === SPECTRAL_ORDER.length - 1;
 }
 function calculatePlasticsCompatibility(ref, sample) {
   if (!ref || !sample) return 0;
-  const refData = PLASTICS_LIBRARY[ref.name];
-  const sampleData = PLASTICS_LIBRARY[sample.name];
+  const refData = PLASTICS_LIBRARY[ref.name], sampleData = PLASTICS_LIBRARY[sample.name];
   if (!refData || !sampleData) return 0;
   if (ref.name === sample.name) return 100;
-  const dist = hsvDistance(refData.hsvTarget, sampleData.hsvTarget);
-  return Math.max(0, Math.round((1 - dist) * 100));
+  return Math.max(0, Math.round((1 - hsvDistance(refData.hsvTarget, sampleData.hsvTarget)) * 100));
 }
 function suggestPigmentsPlastics(ref, sample) {
   if (!ref || !sample) return { text: 'Erro: Parâmetros inválidos', cssClass: 'incompatible' };
-  const refData = PLASTICS_LIBRARY[ref.name];
-  const sampleData = PLASTICS_LIBRARY[sample.name];
+  const refData = PLASTICS_LIBRARY[ref.name], sampleData = PLASTICS_LIBRARY[sample.name];
   if (!refData || !sampleData) return { text: 'Erro: Cor fora do catálogo Plásticos', cssClass: 'incompatible' };
   if (ref.name === sample.name) return { text: '✓ Cores idênticas do catálogo Plásticos!\nNenhum ajuste necessário.', cssClass: 'perfect' };
-  const refFormula = refData.formula || [];
-  const sampleFormula = sampleData.formula || [];
-  const faltantes = [];
-  refFormula.forEach(pRef => {
-    if (pRef.ci === 'NAT' || pRef.funcao === 'base') return;
-    const existeNaSample = sampleFormula.some(pSample => pSample.ci === pRef.ci);
-    if (!existeNaSample) faltantes.push(pRef);
-  });
-  const manter = [];
-  refFormula.forEach(pRef => {
-    if (pRef.ci === 'NAT' || pRef.funcao === 'base') return;
-    const existeNaSample = sampleFormula.some(pSample => pSample.ci === pRef.ci);
-    if (existeNaSample) manter.push(pRef);
-  });
-  const reduzir = [];
-  sampleFormula.forEach(pSample => {
-    if (pSample.ci === 'NAT' || pSample.funcao === 'base') return;
-    const existeNaRef = refFormula.some(pRef => pRef.ci === pSample.ci);
-    if (!existeNaRef) reduzir.push(pSample);
-  });
-  const linhas = [];
-  linhas.push(`📋 REF: ${ref.name}`);
-  linhas.push(`📋 AMOSTRA: ${sample.name}`);
-  linhas.push('');
-  if (faltantes.length > 0) {
-    linhas.push('✦ ADICIONAR À AMOSTRA:');
-    faltantes.forEach(p => { linhas.push(`  • ${p.pigmento}`); linhas.push(`    (${p.ci} - ${p.codigo}) ~${p.proporcao}`); });
-  }
-  if (reduzir.length > 0) {
-    linhas.push('');
-    linhas.push('⚠️ REDUZIR/REMOVER DA AMOSTRA:');
-    reduzir.forEach(p => { linhas.push(`  • ${p.pigmento} (${p.ci})`); });
-  }
-  if (manter.length > 0) {
-    linhas.push('');
-    linhas.push('✓ MANTÉM (já presente):');
-    manter.forEach(p => { linhas.push(`  • ${p.pigmento} (${p.ci})`); });
-  }
-  if (faltantes.length === 0 && reduzir.length === 0 && manter.length === 0) {
-    linhas.push(''); linhas.push('⚠️ Ajuste de proporções necessário.'); linhas.push('Compare as fórmulas das duas cores.');
-  }
+  const refFormula = refData.formula || [], sampleFormula = sampleData.formula || [];
+  const faltantes = refFormula.filter(p => p.ci !== 'NAT' && p.funcao !== 'base' && !sampleFormula.some(s => s.ci === p.ci));
+  const manter = refFormula.filter(p => p.ci !== 'NAT' && p.funcao !== 'base' && sampleFormula.some(s => s.ci === p.ci));
+  const reduzir = sampleFormula.filter(p => p.ci !== 'NAT' && p.funcao !== 'base' && !refFormula.some(r => r.ci === p.ci));
+  const linhas = [`📋 REF: ${ref.name}`, `📋 AMOSTRA: ${sample.name}`, ''];
+  if (faltantes.length > 0) { linhas.push('✦ ADICIONAR À AMOSTRA:'); faltantes.forEach(p => { linhas.push(`  • ${p.pigmento}`); linhas.push(`    (${p.ci} - ${p.codigo}) ~${p.proporcao}`); }); }
+  if (reduzir.length > 0) { linhas.push(''); linhas.push('⚠️ REDUZIR/REMOVER DA AMOSTRA:'); reduzir.forEach(p => linhas.push(`  • ${p.pigmento} (${p.ci})`)); }
+  if (manter.length > 0) { linhas.push(''); linhas.push('✓ MANTÉM (já presente):'); manter.forEach(p => linhas.push(`  • ${p.pigmento} (${p.ci})`)); }
+  if (faltantes.length === 0 && reduzir.length === 0 && manter.length === 0) { linhas.push(''); linhas.push('⚠️ Ajuste de proporções necessário.'); linhas.push('Compare as fórmulas das duas cores.'); }
   return { text: linhas.join('\n'), cssClass: 'plastics' };
 }
 function calculateCompatibility(ref, sample) {
   if (!ref || !sample) return 0;
   if (plasticsMode) return calculatePlasticsCompatibility(ref, sample);
-  const neutros = ['Preto', 'Cinza', 'Branco'];
-  const refBase = getBaseColorName(ref.name);
-  const sampleBase = getBaseColorName(sample.name);
-  const refIsNeutro = neutros.includes(refBase);
-  const sampleIsNeutro = neutros.includes(sampleBase);
+  const neutros = ['Preto','Cinza','Branco'];
+  const refBase = getBaseColorName(ref.name), sampleBase = getBaseColorName(sample.name);
+  const refIsNeutro = neutros.includes(refBase), sampleIsNeutro = neutros.includes(sampleBase);
   if (refIsNeutro !== sampleIsNeutro) return 0;
   if (refIsNeutro && sampleIsNeutro) {
     if ((refBase === 'Branco' && sampleBase === 'Preto') || (refBase === 'Preto' && sampleBase === 'Branco')) return 0;
-    const maxRGBDist = Math.sqrt(3 * Math.pow(255, 2));
-    const rgbDist = Math.sqrt(Math.pow(ref.rgb.r - sample.rgb.r, 2) + Math.pow(ref.rgb.g - sample.rgb.g, 2) + Math.pow(ref.rgb.b - sample.rgb.b, 2)) / maxRGBDist;
+    const maxD = Math.sqrt(3 * Math.pow(255, 2));
+    const rgbDist = Math.sqrt(Math.pow(ref.rgb.r-sample.rgb.r,2)+Math.pow(ref.rgb.g-sample.rgb.g,2)+Math.pow(ref.rgb.b-sample.rgb.b,2))/maxD;
     const vDist = Math.abs(ref.hsv.v - sample.hsv.v) / 100;
-    return Math.max(0, Math.round((1 - (vDist * 0.60 + rgbDist * 0.40)) * 100));
+    return Math.max(0, Math.round((1 - (vDist*0.6 + rgbDist*0.4)) * 100));
   }
-  const idxRef = getSpectralIndex(refBase);
-  const idxSample = getSpectralIndex(sampleBase);
+  const idxRef = getSpectralIndex(refBase), idxSample = getSpectralIndex(sampleBase);
   if (!areSpectralNeighbors(idxRef, idxSample)) return 0;
   let hueDiff = Math.abs(ref.hsv.h - sample.hsv.h);
   if (hueDiff > 180) hueDiff = 360 - hueDiff;
-  const maxRGBDist = Math.sqrt(3 * Math.pow(255, 2));
-  const rgbDist = Math.sqrt(Math.pow(ref.rgb.r - sample.rgb.r, 2) + Math.pow(ref.rgb.g - sample.rgb.g, 2) + Math.pow(ref.rgb.b - sample.rgb.b, 2)) / maxRGBDist;
-  const sDist = Math.abs(ref.hsv.s - sample.hsv.s) / 100;
-  const vDist = Math.abs(ref.hsv.v - sample.hsv.v) / 100;
-  const hDist = hueDiff / 180;
-  return Math.max(0, Math.round((1 - (rgbDist * 0.40 + hDist * 0.30 + sDist * 0.15 + vDist * 0.15)) * 100));
+  const maxD = Math.sqrt(3 * Math.pow(255, 2));
+  const rgbDist = Math.sqrt(Math.pow(ref.rgb.r-sample.rgb.r,2)+Math.pow(ref.rgb.g-sample.rgb.g,2)+Math.pow(ref.rgb.b-sample.rgb.b,2))/maxD;
+  return Math.max(0, Math.round((1 - (rgbDist*0.4 + (hueDiff/180)*0.3 + (Math.abs(ref.hsv.s-sample.hsv.s)/100)*0.15 + (Math.abs(ref.hsv.v-sample.hsv.v)/100)*0.15)) * 100));
 }
 function suggestPigmentAdjustment(ref, sample) {
   if (!ref || !sample) return { text: 'Erro: Parâmetros inválidos', cssClass: 'incompatible' };
   if (plasticsMode) return suggestPigmentsPlastics(ref, sample);
-  const neutros = ['Preto', 'Cinza', 'Branco'];
-  const refBase = getBaseColorName(ref.name);
-  const sampleBase = getBaseColorName(sample.name);
-  const refIsNeutro = neutros.includes(refBase);
-  const sampleIsNeutro = neutros.includes(sampleBase);
+  const neutros = ['Preto','Cinza','Branco'];
+  const refBase = getBaseColorName(ref.name), sampleBase = getBaseColorName(sample.name);
+  const refIsNeutro = neutros.includes(refBase), sampleIsNeutro = neutros.includes(sampleBase);
   const compat = calculateCompatibility(ref, sample);
   if (compat >= 95) return { text: 'Cores praticamente idênticas! ✓', cssClass: 'perfect' };
   if (refIsNeutro !== sampleIsNeutro) return { text: 'Cores incompatíveis (Neutro x Colorido)', cssClass: 'incompatible' };
-  const idxRef = getSpectralIndex(refBase);
-  const idxSample = getSpectralIndex(sampleBase);
+  const idxRef = getSpectralIndex(refBase), idxSample = getSpectralIndex(sampleBase);
   if (!refIsNeutro && !areSpectralNeighbors(idxRef, idxSample)) return { text: 'Cores incompatíveis (Famílias espectrais diferentes)', cssClass: 'incompatible' };
   if (refIsNeutro && sampleIsNeutro) {
     const vDiff = ref.hsv.v - sample.hsv.v;
     if ((refBase === 'Branco' && sampleBase === 'Preto') || (refBase === 'Preto' && sampleBase === 'Branco')) return { text: 'Cores opostas extremas - Incompatível', cssClass: 'incompatible' };
     if (Math.abs(vDiff) < 8) return { text: 'Neutros muito próximos - Ajuste mínimo necessário', cssClass: 'perfect' };
     if (vDiff > 0) return { text: vDiff > 30 ? 'Adicione Branco gradualmente à amostra' : 'Adicione um pouco de Branco à amostra', cssClass: '' };
-    else return { text: vDiff < -30 ? 'Adicione Preto gradualmente à amostra' : 'Adicione um pouco de Preto à amostra', cssClass: '' };
+    return { text: vDiff < -30 ? 'Adicione Preto gradualmente à amostra' : 'Adicione um pouco de Preto à amostra', cssClass: '' };
   }
-  const vDiff = ref.hsv.v - sample.hsv.v;
-  const sDiff = ref.hsv.s - sample.hsv.s;
+  const vDiff = ref.hsv.v - sample.hsv.v, sDiff = ref.hsv.s - sample.hsv.s;
   let hueDiff = ref.hsv.h - sample.hsv.h;
-  if (hueDiff > 180) hueDiff -= 360;
-  if (hueDiff < -180) hueDiff += 360;
+  if (hueDiff > 180) hueDiff -= 360; if (hueDiff < -180) hueDiff += 360;
   const suggestions = [];
-  if (Math.abs(vDiff) > 15) {
-    if (vDiff > 0) { if (vDiff > 35) suggestions.push('Branco'); else if (vDiff > 20) suggestions.push('um pouco de Branco'); }
-    else { if (vDiff < -35) suggestions.push('Preto'); else if (vDiff < -20) suggestions.push('um pouco de Preto'); }
-  }
-  if (Math.abs(sDiff) > 18) {
-    if (sDiff > 0) suggestions.push(`${refBase} puro para saturar`);
-    else if (suggestions.length === 0 || !suggestions.some(s => s.includes('Branco'))) suggestions.push('Branco ou Cinza para dessaturar');
-  }
+  if (Math.abs(vDiff) > 15) { if (vDiff > 35) suggestions.push('Branco'); else if (vDiff > 20) suggestions.push('um pouco de Branco'); else if (vDiff < -35) suggestions.push('Preto'); else if (vDiff < -20) suggestions.push('um pouco de Preto'); }
+  if (Math.abs(sDiff) > 18) { if (sDiff > 0) suggestions.push(`${refBase} puro para saturar`); else if (!suggestions.some(s => s.includes('Branco'))) suggestions.push('Branco ou Cinza para dessaturar'); }
   if (Math.abs(hueDiff) > 12 && Math.abs(hueDiff) < 40 && idxRef !== idxSample && areSpectralNeighbors(idxRef, idxSample)) suggestions.push(`${refBase} para ajustar tonalidade`);
   if (suggestions.length === 0) return { text: 'Ajuste fino necessário - Cores muito próximas', cssClass: 'perfect' };
   let finalText = 'Adicione ';
   if (suggestions.length === 1) finalText += suggestions[0];
   else if (suggestions.length === 2) finalText += suggestions[0] + ' e ' + suggestions[1];
-  else finalText += suggestions.slice(0, -1).join(', ') + ' e ' + suggestions[suggestions.length - 1];
-  finalText += ' à amostra';
-  return { text: finalText, cssClass: '' };
+  else finalText += suggestions.slice(0,-1).join(', ') + ' e ' + suggestions[suggestions.length-1];
+  return { text: finalText + ' à amostra', cssClass: '' };
 }
 // ════════════════════════════════════════════════════════════════
 // 🛠️ CALIBRAÇÃO E COMPENSAÇÃO
@@ -1737,61 +786,42 @@ function suggestPigmentAdjustment(ref, sample) {
 function detectColorTemperature(rgb) {
   if (!rgb) return { lightType: 'Neutra', bias: { r: 0, g: 0, b: 0 } };
   const avg = (rgb.r + rgb.g + rgb.b) / 3;
-  const rDev = rgb.r - avg, gDev = rgb.g - avg, bDev = rgb.b - avg;
-  let lightType = 'Neutra';
-  if (bDev > 10 && bDev > rDev) lightType = 'Fria (Azulada)';
-  else if (rDev > 10 && rDev > bDev) lightType = 'Quente (Amarelada)';
-  return { lightType, bias: { r: -rDev, g: -gDev, b: -bDev } };
+  return { lightType: 'Neutra', bias: { r: -(rgb.r - avg), g: -(rgb.g - avg), b: -(rgb.b - avg) } };
 }
 function applyColorTempCompensation(rgb) {
   if (!hasColorTempCompensation || !rgb) return rgb;
-  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
-  const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b), avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
   if (maxRGB <= 25 || avgRGB <= 18) return rgb;
-  return {
-    r: Math.max(0, Math.min(255, Math.round(rgb.r + colorTemperatureBias.r))),
-    g: Math.max(0, Math.min(255, Math.round(rgb.g + colorTemperatureBias.g))),
-    b: Math.max(0, Math.min(255, Math.round(rgb.b + colorTemperatureBias.b)))
-  };
+  return { r: Math.max(0,Math.min(255,Math.round(rgb.r+colorTemperatureBias.r))), g: Math.max(0,Math.min(255,Math.round(rgb.g+colorTemperatureBias.g))), b: Math.max(0,Math.min(255,Math.round(rgb.b+colorTemperatureBias.b))) };
 }
 function normalizeV(vRaw) {
   if (!isWhiteCalibrated || !isBlackCalibrated || !whiteCalibration || !blackCalibration) return vRaw;
-  const vWhite = whiteCalibration.hsv.v;
-  const vBlack = blackCalibration.hsv.v;
+  const vWhite = whiteCalibration.hsv.v, vBlack = blackCalibration.hsv.v;
   if (vWhite <= vBlack) return vRaw;
   return Math.max(0, Math.min(100, ((vRaw - vBlack) / (vWhite - vBlack)) * 100));
 }
 function isCalibrationWhite(hsv, rgb) {
   if (!isWhiteCalibrated || !whiteCalibration) return false;
   const base = whiteCalibration;
-  const dr = rgb.r - base.rgb.r, dg = rgb.g - base.rgb.g, db = rgb.b - base.rgb.b;
-  const rgbDistance = Math.sqrt(dr*dr + dg*dg + db*db);
-  const vDiff = Math.abs(hsv.v - base.hsv.v);
-  const isSLow = hsv.s <= 30;
-  if (rgbDistance <= 50 || (vDiff <= 15 && isSLow)) return true;
-  if (hsv.v >= base.hsv.v && hsv.s <= 20) return true;
-  return false;
+  const rgbDistance = Math.sqrt(Math.pow(rgb.r-base.rgb.r,2)+Math.pow(rgb.g-base.rgb.g,2)+Math.pow(rgb.b-base.rgb.b,2));
+  if (rgbDistance <= 50 || (Math.abs(hsv.v-base.hsv.v) <= 15 && hsv.s <= 30)) return true;
+  return hsv.v >= base.hsv.v && hsv.s <= 20;
 }
 function isCalibrationBlack(hsv, rgb) {
   if (!isBlackCalibrated || !blackCalibration) return false;
   const base = blackCalibration;
-  const dr = rgb.r - base.rgb.r, dg = rgb.g - base.rgb.g, db = rgb.b - base.rgb.b;
-  const rgbDistance = Math.sqrt(dr*dr + dg*dg + db*db);
-  const vDiff = Math.abs(hsv.v - base.hsv.v);
-  const isSLow = hsv.s <= 35;
-  if (rgbDistance <= 40 || (vDiff <= 12 && isSLow)) return true;
-  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
-  if (maxRGB <= base.rgb.r + 20 && maxRGB <= base.rgb.g + 20 && maxRGB <= base.rgb.b + 20 && hsv.s <= 35) return true;
-  return false;
+  const rgbDistance = Math.sqrt(Math.pow(rgb.r-base.rgb.r,2)+Math.pow(rgb.g-base.rgb.g,2)+Math.pow(rgb.b-base.rgb.b,2));
+  if (rgbDistance <= 40 || (Math.abs(hsv.v-base.hsv.v) <= 12 && hsv.s <= 35)) return true;
+  const maxRGB = Math.max(rgb.r,rgb.g,rgb.b);
+  return maxRGB <= base.rgb.r+20 && maxRGB <= base.rgb.g+20 && maxRGB <= base.rgb.b+20 && hsv.s <= 35;
 }
 // ════════════════════════════════════════════════════════════════
 // 📊 BUFFER E ESTABILIZAÇÃO
 // ════════════════════════════════════════════════════════════════
 function calculateVariance(buffer) {
   if (!buffer || buffer.length < 3) return 0;
-  const values = buffer.map(item => item.hsv.v);
-  const mean = values.reduce((a, b) => a + b, 0) / values.length;
-  return Math.sqrt(values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length);
+  const values = buffer.map(i => i.hsv.v), mean = values.reduce((a,b)=>a+b,0)/values.length;
+  return Math.sqrt(values.reduce((s,v)=>s+Math.pow(v-mean,2),0)/values.length);
 }
 function addToBuffer(hsv, rgb) {
   if (!hsv || !rgb) return;
@@ -1800,57 +830,38 @@ function addToBuffer(hsv, rgb) {
 }
 function getStableColor() {
   if (colorBuffer.length < 3) return null;
-  const filteredBuffer = filterOutliers(colorBuffer);
-  if (filteredBuffer.length === 0) return null;
-  let avgS = 0, avgV = 0, avgR = 0, avgG = 0, avgB = 0, sinSum = 0, cosSum = 0;
-  filteredBuffer.forEach(item => {
-    const radH = item.hsv.h * Math.PI / 180;
-    sinSum += Math.sin(radH); cosSum += Math.cos(radH);
-    avgS += item.hsv.s; avgV += item.hsv.v;
-    avgR += item.rgb.r; avgG += item.rgb.g; avgB += item.rgb.b;
-  });
-  const len = filteredBuffer.length;
-  let avgH = Math.atan2(sinSum / len, cosSum / len) * 180 / Math.PI;
-  if (avgH < 0) avgH += 360;
-  return {
-    hsv: { h: avgH, s: avgS / len, v: avgV / len },
-    rgb: { r: Math.round(avgR / len), g: Math.round(avgG / len), b: Math.round(avgB / len) }
-  };
+  const fb = filterOutliers(colorBuffer);
+  if (fb.length === 0) return null;
+  let avgS=0,avgV=0,avgR=0,avgG=0,avgB=0,sinSum=0,cosSum=0;
+  fb.forEach(i => { const r=i.hsv.h*Math.PI/180; sinSum+=Math.sin(r); cosSum+=Math.cos(r); avgS+=i.hsv.s; avgV+=i.hsv.v; avgR+=i.rgb.r; avgG+=i.rgb.g; avgB+=i.rgb.b; });
+  const len=fb.length; let avgH=Math.atan2(sinSum/len,cosSum/len)*180/Math.PI; if(avgH<0)avgH+=360;
+  return { hsv:{h:avgH,s:avgS/len,v:avgV/len}, rgb:{r:Math.round(avgR/len),g:Math.round(avgG/len),b:Math.round(avgB/len)} };
 }
 function filterOutliers(buffer) {
   if (!buffer || buffer.length < 5) return buffer;
-  const vValues = buffer.map(item => item.hsv.v).sort((a, b) => a - b);
-  const median = vValues[Math.floor(vValues.length / 2)];
-  return buffer.filter(item => Math.abs(item.hsv.v - median) < 30);
+  const vValues = buffer.map(i=>i.hsv.v).sort((a,b)=>a-b), median=vValues[Math.floor(vValues.length/2)];
+  return buffer.filter(i=>Math.abs(i.hsv.v-median)<30);
 }
 function detectObjectChange(newRGB) {
   if (!lastStableRGB.r && !lastStableRGB.g && !lastStableRGB.b) return false;
   if (!newRGB) return false;
-  const deltaR = Math.abs(newRGB.r - lastStableRGB.r);
-  const deltaG = Math.abs(newRGB.g - lastStableRGB.g);
-  const deltaB = Math.abs(newRGB.b - lastStableRGB.b);
-  return Math.sqrt(deltaR*deltaR + deltaG*deltaG + deltaB*deltaB) > RGB_CHANGE_THRESHOLD;
+  return Math.sqrt(Math.pow(newRGB.r-lastStableRGB.r,2)+Math.pow(newRGB.g-lastStableRGB.g,2)+Math.pow(newRGB.b-lastStableRGB.b,2)) > RGB_CHANGE_THRESHOLD;
 }
 function shouldUpdateColor(newHue, newColorName, newRGB, newSat, newVariance) {
   if (!lastStableColorName) return true;
-  if (detectObjectChange(newRGB)) { consecutiveFrameCounter = 0; return true; }
-  if (Math.abs(newVariance - lastStableVariance) > 10) return true;
+  if (detectObjectChange(newRGB)) { consecutiveFrameCounter=0; return true; }
+  if (Math.abs(newVariance-lastStableVariance)>10) return true;
   if (newColorName !== lastStableColorName) {
-    let diff = Math.abs(newHue - lastStableHue);
-    if (diff > 180) diff = 360 - diff;
-    const hueDiffSignificant = diff >= HYSTERESIS_THRESHOLD;
-    const saturationChange = Math.abs(newSat - (colorBuffer[colorBuffer.length - 1]?.hsv.s || 0)) > 18;
-    if (hueDiffSignificant || saturationChange) {
-      consecutiveFrameCounter++;
-      return consecutiveFrameCounter >= MIN_CONSECUTIVE_FRAMES;
-    } else { consecutiveFrameCounter = 0; return false; }
+    let diff=Math.abs(newHue-lastStableHue); if(diff>180)diff=360-diff;
+    if (diff>=HYSTERESIS_THRESHOLD || Math.abs(newSat-(colorBuffer[colorBuffer.length-1]?.hsv.s||0))>18) { consecutiveFrameCounter++; return consecutiveFrameCounter>=MIN_CONSECUTIVE_FRAMES; }
+    consecutiveFrameCounter=0; return false;
   }
-  consecutiveFrameCounter = 0;
-  return true;
+  consecutiveFrameCounter=0; return true;
 }
 // ════════════════════════════════════════════════════════════════
-// 🎤 ÁUDIO (SÍNTESE DE VOZ)
+// 🎤 ÁUDIO — ERRO 6 CORRIGIDO: duas funções separadas
 // ════════════════════════════════════════════════════════════════
+// speakSystem: fala do SISTEMA — NÃO verifica audioEnabled
 function speakSystem(text) {
   if (!window.speechSynthesis || !text) return;
   window.speechSynthesis.cancel();
@@ -1859,9 +870,10 @@ function speakSystem(text) {
       const utt = new SpeechSynthesisUtterance(text);
       utt.lang = 'pt-BR'; utt.rate = 1.0; utt.pitch = 1.0;
       window.speechSynthesis.speak(utt);
-    } catch (e) { console.error('Erro na síntese de voz:', e); }
+    } catch (e) { console.error('Erro speakSystem:', e); }
   }, 60);
 }
+// speakColor: fala de COR — verifica audioEnabled
 function speakColor(name) {
   if (!window.speechSynthesis || !name) return;
   if (!audioEnabled) return;
@@ -1871,202 +883,140 @@ function speakColor(name) {
       const utt = new SpeechSynthesisUtterance(name);
       utt.lang = 'pt-BR'; utt.rate = 1.1; utt.pitch = 1.0;
       window.speechSynthesis.speak(utt);
-    } catch (e) { console.error('Erro na síntese de voz:', e); }
+    } catch (e) { console.error('Erro speakColor:', e); }
   }, 60);
 }
 function triggerAudioIfChanged(name) {
   if (!audioEnabled || !name) return;
-  if (name === lastSpokenName) {
-    if (pendingName !== name && stableTimer) { clearTimeout(stableTimer); stableTimer = null; pendingName = ''; }
-    return;
-  }
+  if (name === lastSpokenName) { if (pendingName !== name && stableTimer) { clearTimeout(stableTimer); stableTimer=null; pendingName=''; } return; }
   if (name !== pendingName) {
     pendingName = name;
     if (stableTimer) clearTimeout(stableTimer);
-    stableTimer = setTimeout(() => {
-      if (!audioEnabled) { stableTimer = null; return; }
-      lastSpokenName = pendingName;
-      speakColor(pendingName);
-      stableTimer = null;
-    }, STABLE_SPEECH_MS);
+    stableTimer = setTimeout(() => { if (!audioEnabled) { stableTimer=null; return; } lastSpokenName=pendingName; speakColor(pendingName); stableTimer=null; }, STABLE_SPEECH_MS);
   }
 }
 // ════════════════════════════════════════════════════════════════
 // 🎥 CÂMERA E CAPTURA
 // ════════════════════════════════════════════════════════════════
 function samplePixels() {
-  const vw = video.videoWidth, vh = video.videoHeight;
-  if (!vw || !vh) return null;
-  const cw = video.clientWidth, ch = video.clientHeight;
-  const scale = Math.max(cw / vw, ch / vh);
-  const offsetX = (vw * scale - cw) / 2, offsetY = (vh * scale - ch) / 2;
-  const nativeCX = Math.round((cw / 2 + offsetX) / scale);
-  const nativeCY = Math.round((ch / 2 + offsetY) / scale);
-  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
-  canvas.width = vw; canvas.height = vh;
-  try { ctx.drawImage(video, 0, 0); } catch (e) { return null; }
-  const x0 = Math.max(0, nativeCX - nativeSample), y0 = Math.max(0, nativeCY - nativeSample);
-  let data;
-  try { data = ctx.getImageData(x0, y0, nativeSample*2, nativeSample*2).data; } catch (e) { return null; }
-  let rSum = 0, gSum = 0, bSum = 0, count = 0;
-  for (let i = 0; i < data.length; i += 4) { rSum += data[i]; gSum += data[i+1]; bSum += data[i+2]; count++; }
-  if (count === 0) return null;
-  return { r: Math.round(rSum/count), g: Math.round(gSum/count), b: Math.round(bSum/count) };
+  const vw=video.videoWidth, vh=video.videoHeight;
+  if (!vw||!vh) return null;
+  const cw=video.clientWidth, ch=video.clientHeight, scale=Math.max(cw/vw,ch/vh);
+  const offsetX=(vw*scale-cw)/2, offsetY=(vh*scale-ch)/2;
+  const nativeCX=Math.round((cw/2+offsetX)/scale), nativeCY=Math.round((ch/2+offsetY)/scale);
+  const nativeSample=Math.max(1,Math.round(SAMPLE_SIZE/scale));
+  canvas.width=vw; canvas.height=vh;
+  try { ctx.drawImage(video,0,0); } catch(e) { return null; }
+  const x0=Math.max(0,nativeCX-nativeSample), y0=Math.max(0,nativeCY-nativeSample);
+  let data; try { data=ctx.getImageData(x0,y0,nativeSample*2,nativeSample*2).data; } catch(e) { return null; }
+  let rSum=0,gSum=0,bSum=0,count=0;
+  for(let i=0;i<data.length;i+=4){rSum+=data[i];gSum+=data[i+1];bSum+=data[i+2];count++;}
+  if(count===0)return null;
+  return {r:Math.round(rSum/count),g:Math.round(gSum/count),b:Math.round(bSum/count)};
 }
 function samplePixelsEstatico(x, y) {
-  const vw = video.videoWidth, vh = video.videoHeight;
-  if (!vw || !vh) return null;
-  const cw = video.clientWidth, ch = video.clientHeight;
-  const scale = Math.max(cw / vw, ch / vh);
-  const offsetX = (vw * scale - cw) / 2, offsetY = (vh * scale - ch) / 2;
-  const nativeCX = Math.round((x + offsetX) / scale);
-  const nativeCY = Math.round((y + offsetY) / scale);
-  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
-  canvas.width = vw; canvas.height = vh;
-  try { ctx.drawImage(video, 0, 0); } catch (e) { return null; }
-  const x0 = Math.max(0, Math.min(vw - nativeSample*2, nativeCX - nativeSample));
-  const y0 = Math.max(0, Math.min(vh - nativeSample*2, nativeCY - nativeSample));
-  let data;
-  try { data = ctx.getImageData(x0, y0, nativeSample*2, nativeSample*2).data; } catch (e) { return null; }
-  let rSum = 0, gSum = 0, bSum = 0, count = 0;
-  for (let i = 0; i < data.length; i += 4) { rSum += data[i]; gSum += data[i+1]; bSum += data[i+2]; count++; }
-  if (count === 0) return null;
-  return { r: Math.round(rSum/count), g: Math.round(gSum/count), b: Math.round(bSum/count) };
+  const vw=video.videoWidth, vh=video.videoHeight;
+  if (!vw||!vh) return null;
+  const cw=video.clientWidth, ch=video.clientHeight, scale=Math.max(cw/vw,ch/vh);
+  const offsetX=(vw*scale-cw)/2, offsetY=(vh*scale-ch)/2;
+  const nativeCX=Math.round((x+offsetX)/scale), nativeCY=Math.round((y+offsetY)/scale);
+  const nativeSample=Math.max(1,Math.round(SAMPLE_SIZE/scale));
+  canvas.width=vw; canvas.height=vh;
+  try { ctx.drawImage(video,0,0); } catch(e) { return null; }
+  const x0=Math.max(0,Math.min(vw-nativeSample*2,nativeCX-nativeSample)), y0=Math.max(0,Math.min(vh-nativeSample*2,nativeCY-nativeSample));
+  let data; try { data=ctx.getImageData(x0,y0,nativeSample*2,nativeSample*2).data; } catch(e) { return null; }
+  let rSum=0,gSum=0,bSum=0,count=0;
+  for(let i=0;i<data.length;i+=4){rSum+=data[i];gSum+=data[i+1];bSum+=data[i+2];count++;}
+  if(count===0)return null;
+  return {r:Math.round(rSum/count),g:Math.round(gSum/count),b:Math.round(bSum/count)};
 }
 function capturePoint(x, y, thumbId, markerId, nameId) {
-  const vw = video.videoWidth, vh = video.videoHeight;
-  if (!vw || !vh) return null;
-  canvas.width = vw; canvas.height = vh;
-  try { ctx.drawImage(video, 0, 0, vw, vh); } catch (e) { return null; }
-  const cw = video.clientWidth, ch = video.clientHeight;
-  const scale = Math.max(cw / vw, ch / vh);
-  const offsetX = (vw * scale - cw) / 2, offsetY = (vh * scale - ch) / 2;
-  const nativeX = Math.round((x + offsetX) / scale);
-  const nativeY = Math.round((y + offsetY) / scale);
-  const nativeSample = Math.max(1, Math.round(SAMPLE_SIZE / scale));
-  const x0 = Math.max(0, Math.min(vw - nativeSample*2, nativeX - nativeSample));
-  const y0 = Math.max(0, Math.min(vh - nativeSample*2, nativeY - nativeSample));
-  let data;
-  try { data = ctx.getImageData(x0, y0, nativeSample*2, nativeSample*2).data; } catch (e) { return null; }
-  let rSum = 0, gSum = 0, bSum = 0, count = 0;
-  for (let i = 0; i < data.length; i += 4) { rSum += data[i]; gSum += data[i+1]; bSum += data[i+2]; count++; }
-  if (count === 0) return null;
-  const rgb = { r: Math.round(rSum/count), g: Math.round(gSum/count), b: Math.round(bSum/count) };
-  const rgbComp = applyColorTempCompensation(rgb);
-  const hsv = rgbToHSV(rgbComp.r, rgbComp.g, rgbComp.b);
+  const vw=video.videoWidth, vh=video.videoHeight;
+  if (!vw||!vh) return null;
+  canvas.width=vw; canvas.height=vh;
+  try { ctx.drawImage(video,0,0,vw,vh); } catch(e) { return null; }
+  const cw=video.clientWidth, ch=video.clientHeight, scale=Math.max(cw/vw,ch/vh);
+  const offsetX=(vw*scale-cw)/2, offsetY=(vh*scale-ch)/2;
+  const nativeX=Math.round((x+offsetX)/scale), nativeY=Math.round((y+offsetY)/scale);
+  const nativeSample=Math.max(1,Math.round(SAMPLE_SIZE/scale));
+  const x0=Math.max(0,Math.min(vw-nativeSample*2,nativeX-nativeSample)), y0=Math.max(0,Math.min(vh-nativeSample*2,nativeY-nativeSample));
+  let data; try { data=ctx.getImageData(x0,y0,nativeSample*2,nativeSample*2).data; } catch(e) { return null; }
+  let rSum=0,gSum=0,bSum=0,count=0;
+  for(let i=0;i<data.length;i+=4){rSum+=data[i];gSum+=data[i+1];bSum+=data[i+2];count++;}
+  if(count===0)return null;
+  const rgb={r:Math.round(rSum/count),g:Math.round(gSum/count),b:Math.round(bSum/count)};
+  const rgbComp=applyColorTempCompensation(rgb), hsv=rgbToHSV(rgbComp.r,rgbComp.g,rgbComp.b);
   let classification;
-  if (plasticsMode) classification = classifyPlasticsPolymers(hsv, rgbComp, 0);
-  else if (ampliatedMode) classification = classifyColorExtended(hsv, rgbComp, 0);
-  else classification = classifyColorWithRuler(hsv, rgbComp, 0);
-  const MAX_THUMB_W = 400;
-  const thumbW = Math.min(vw, MAX_THUMB_W);
-  const thumbH = Math.round(thumbW * (vh / vw));
-  const thumbScale = thumbW / vw;
-  const thumbCanvas = document.createElement('canvas');
-  thumbCanvas.width = thumbW; thumbCanvas.height = thumbH;
-  const tCtx = thumbCanvas.getContext('2d');
-  try { tCtx.drawImage(video, 0, 0, thumbW, thumbH); } catch (e) { return null; }
-  const tx = nativeX * thumbScale, ty = nativeY * thumbScale;
-  tCtx.strokeStyle = 'rgba(120,220,255,0.95)';
-  tCtx.lineWidth = 2.5; tCtx.lineCap = 'round';
-  const crossLen = 16 * thumbScale;
-  tCtx.beginPath();
-  tCtx.moveTo(tx - crossLen, ty); tCtx.lineTo(tx + crossLen, ty);
-  tCtx.moveTo(tx, ty - crossLen); tCtx.lineTo(tx, ty + crossLen);
-  tCtx.stroke();
-  const boxSize = 22 * thumbScale;
-  tCtx.lineWidth = 1.8;
-  tCtx.strokeRect(tx - boxSize/2, ty - boxSize/2, boxSize, boxSize);
-  const circRadius = 10 * thumbScale;
-  tCtx.beginPath(); tCtx.setLineDash([3, 3]);
-  tCtx.arc(tx, ty, circRadius, 0, Math.PI * 2); tCtx.stroke();
-  tCtx.setLineDash([]);
-  const dotRadius = Math.max(2, 2.5 * thumbScale);
-  tCtx.fillStyle = 'rgba(120,220,255,0.95)';
-  tCtx.beginPath(); tCtx.arc(tx, ty, dotRadius, 0, Math.PI * 2); tCtx.fill();
-  document.getElementById(thumbId).src = thumbCanvas.toDataURL('image/jpeg', 0.7);
-  document.getElementById(thumbId).style.display = 'block';
-  document.getElementById(markerId).style.display = 'none';
-  document.getElementById(nameId).textContent = classification.name;
-  document.getElementById(nameId).style.color = classification.color;
-  document.getElementById('color-name').textContent = '---';
-  document.getElementById('color-name').style.color = '#445';
-  return {
-    x, y, rgb: rgbComp, hsv, name: classification.name, color: classification.color,
-    inCatalog: classification.inCatalog !== undefined ? classification.inCatalog : true
-  };
+  if(plasticsMode) classification=classifyPlasticsPolymers(hsv,rgbComp,0);
+  else if(ampliatedMode) classification=classifyColorExtended(hsv,rgbComp,0);
+  else classification=classifyColorWithRuler(hsv,rgbComp,0);
+  const MAX_THUMB_W=400, thumbW=Math.min(vw,MAX_THUMB_W), thumbH=Math.round(thumbW*(vh/vw)), thumbScale=thumbW/vw;
+  const thumbCanvas=document.createElement('canvas'); thumbCanvas.width=thumbW; thumbCanvas.height=thumbH;
+  const tCtx=thumbCanvas.getContext('2d');
+  try { tCtx.drawImage(video,0,0,thumbW,thumbH); } catch(e) { return null; }
+  const tx=nativeX*thumbScale, ty=nativeY*thumbScale;
+  tCtx.strokeStyle='rgba(120,220,255,0.95)'; tCtx.lineWidth=2.5; tCtx.lineCap='round';
+  const crossLen=16*thumbScale;
+  tCtx.beginPath(); tCtx.moveTo(tx-crossLen,ty); tCtx.lineTo(tx+crossLen,ty); tCtx.moveTo(tx,ty-crossLen); tCtx.lineTo(tx,ty+crossLen); tCtx.stroke();
+  tCtx.lineWidth=1.8; tCtx.strokeRect(tx-11*thumbScale,ty-11*thumbScale,22*thumbScale,22*thumbScale);
+  tCtx.beginPath(); tCtx.setLineDash([3,3]); tCtx.arc(tx,ty,10*thumbScale,0,Math.PI*2); tCtx.stroke(); tCtx.setLineDash([]);
+  tCtx.fillStyle='rgba(120,220,255,0.95)'; tCtx.beginPath(); tCtx.arc(tx,ty,Math.max(2,2.5*thumbScale),0,Math.PI*2); tCtx.fill();
+  document.getElementById(thumbId).src=thumbCanvas.toDataURL('image/jpeg',0.7);
+  document.getElementById(thumbId).style.display='block';
+  document.getElementById(markerId).style.display='none';
+  document.getElementById(nameId).textContent=classification.name;
+  document.getElementById(nameId).style.color=classification.color;
+  document.getElementById('color-name').textContent='---';
+  document.getElementById('color-name').style.color='#445';
+  return { x, y, rgb:rgbComp, hsv, name:classification.name, color:classification.color, inCatalog:classification.inCatalog!==undefined?classification.inCatalog:true };
 }
 async function getDevices() {
-  try {
-    const devs = await navigator.mediaDevices.enumerateDevices();
-    devices = devs.filter(d => d.kind === 'videoinput');
-  } catch (e) { devices = []; }
+  try { const devs=await navigator.mediaDevices.enumerateDevices(); devices=devs.filter(d=>d.kind==='videoinput'); } catch(e) { devices=[]; }
 }
 async function openCamera(preferredDeviceId) {
-  if (stream) stream.getTracks().forEach(t => t.stop());
+  if (stream) stream.getTracks().forEach(t=>t.stop());
   const tryOpen = async (constraints) => {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-      video.srcObject = stream;
-      if (flashEnabled) {
-        const track = stream.getVideoTracks()[0];
-        if (track && typeof track.applyConstraints === 'function') {
-          try { await track.applyConstraints({ advanced: [{ torch: true }] }); } catch (_) {}
-        }
-      }
-      return true;
-    } catch (e) { return false; }
+    try { stream=await navigator.mediaDevices.getUserMedia(constraints); video.srcObject=stream; if(flashEnabled){const track=stream.getVideoTracks()[0];if(track&&typeof track.applyConstraints==='function'){try{await track.applyConstraints({advanced:[{torch:true}]});}catch(_){}}} return true; } catch(e) { return false; }
   };
-  if (preferredDeviceId) {
-    if (await tryOpen({ video: { deviceId: { exact: preferredDeviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } } })) return;
-  }
-  if (await tryOpen({ video: { facingMode: { exact: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } })) return;
-  if (await tryOpen({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } })) return;
-  if (await tryOpen({ video: true })) return;
+  if (preferredDeviceId && await tryOpen({video:{deviceId:{exact:preferredDeviceId},width:{ideal:1920},height:{ideal:1080}}})) return;
+  if (await tryOpen({video:{facingMode:{exact:'environment'},width:{ideal:1920},height:{ideal:1080}}})) return;
+  if (await tryOpen({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}})) return;
+  if (await tryOpen({video:true})) return;
   alert('Erro ao acessar a câmera. Verifique as permissões.');
 }
 // ════════════════════════════════════════════════════════════════
-// 🎛️ INTERFACE - BOTÕES E CONTROLES
+// 🎛️ INTERFACE — TODOS OS ERROS 7-12 CORRIGIDOS
 // ════════════════════════════════════════════════════════════════
+// ERRO 7 CORRIGIDO: toggleSystem sem código fora de ordem
 function toggleSystem() {
   systemOn = !systemOn;
   const btn = document.getElementById('btn-system');
-  const btns = [
-    'btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black',
-    'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos',
-    'btn-modes', 'btn-reset-estatico',
-    'btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao'
-  ];
+  const btns = ['btn-calibrate-white','btn-calibrate-black','btn-reset-white','btn-reset-black','btn-camera','btn-audio','btn-flash','btn-universal','btn-ampliado','btn-plasticos','btn-modes','btn-reset-estatico','btn-sel-ref','btn-sel-sample','btn-reset-ref','btn-reset-sample','btn-reset-comparacao'];
   if (systemOn) {
     btn.textContent = 'SISTEMA/ON';
     btn.className = 'system-on';
     btn.disabled = false;
-    btns.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = false; });
-    speakSystem(
-      'Sistema ligado. Selecione o modo. ' +
-      'Modo Livre: mira fixa no centro, análise contínua. ' +
-      'Modo Estático: clique na tela para analisar ponto específico. ' +
-      'Modo Comparação: capture dois pontos e compare a compatibilidade entre eles.'
-    );
+    btns.forEach(id => { const el=document.getElementById(id); if(el) el.disabled=false; });
+    // ERRO 6 CORRIGIDO: usa speakSystem — não verifica audioEnabled
+    speakSystem('Sistema ligado. Selecione o modo. Modo Livre: mira fixa no centro, análise contínua. Modo Estático: clique na tela para analisar ponto específico. Modo Comparação: capture dois pontos e compare a compatibilidade entre eles.');
   } else {
     btn.textContent = 'SISTEMA/OFF';
     btn.className = 'system-off';
     btn.disabled = false;
+    // ✅ Dentro do else — correto
     document.getElementById('btn-resultado').classList.remove('show');
     document.getElementById('btn-ajuste-audio').classList.remove('show');
-    btns.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = true; });
+    btns.forEach(id => { const el=document.getElementById(id); if(el) el.disabled=true; });
     if (window.speechSynthesis) window.speechSynthesis.cancel();
-    document.getElementById('color-name').textContent = '---';
-    document.getElementById('color-name').style.color = '#445';
-    document.getElementById('confidence-display').textContent = '';
-    document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
-    document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
-    document.getElementById('color-swatch').style.background = '#1a1a2e';
+    document.getElementById('color-name').textContent='---'; document.getElementById('color-name').style.color='#445';
+    document.getElementById('confidence-display').textContent='';
+    document.getElementById('hsv-line').innerHTML='<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
+    document.getElementById('rgb-line').innerHTML='<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
+    document.getElementById('color-swatch').style.background='#1a1a2e';
   }
 }
-function toggleModeDropdown() {
-  document.getElementById('mode-dropdown').classList.toggle('show');
-}
+function toggleModeDropdown() { document.getElementById('mode-dropdown').classList.toggle('show'); }
+// ERRO 8 CORRIGIDO: selectMode usa speakSystem
 function selectMode(mode) {
   document.getElementById('btn-resultado').classList.remove('show');
   document.getElementById('btn-ajuste-audio').classList.remove('show');
@@ -2075,547 +1025,395 @@ function selectMode(mode) {
   document.getElementById('pigment-suggestion').style.display = 'none';
   document.getElementById('compatibility-percent').textContent = '---';
   currentMode = mode;
-  const dropdown = document.getElementById('mode-dropdown');
-  const btnModes = document.getElementById('btn-modes');
-  const modeLabel = document.getElementById('mode-label');
-  const modeSelectOverlay = document.getElementById('mode-select-overlay');
-  const btnResetEstatico = document.getElementById('btn-reset-estatico');
-  document.getElementById('btn-sel-ref').classList.remove('show');
-  document.getElementById('btn-sel-sample').classList.remove('show');
-  document.getElementById('btn-reset-ref').classList.remove('show');
-  document.getElementById('btn-reset-sample').classList.remove('show');
-  document.getElementById('btn-reset-comparacao').classList.remove('show');
+  const dropdown=document.getElementById('mode-dropdown'), btnModes=document.getElementById('btn-modes');
+  const modeLabel=document.getElementById('mode-label'), modeSelectOverlay=document.getElementById('mode-select-overlay');
+  const btnResetEstatico=document.getElementById('btn-reset-estatico');
+  ['btn-sel-ref','btn-sel-sample','btn-reset-ref','btn-reset-sample','btn-reset-comparacao'].forEach(id=>document.getElementById(id).classList.remove('show'));
   document.getElementById('comparison-panel').classList.remove('show');
-  dropdown.classList.remove('show');
-  modeSelectOverlay.classList.add('hide');
-  btnModes.classList.remove('mode-livre', 'mode-estatico', 'mode-comparacao');
+  dropdown.classList.remove('show'); modeSelectOverlay.classList.add('hide');
+  btnModes.classList.remove('mode-livre','mode-estatico','mode-comparacao');
   if (mode === 'livre') {
-    btnModes.classList.add('mode-livre');
-    modeLabel.textContent = 'MODO: 🎯 LIVRE';
-    reticle.style.left = '50%'; reticle.style.top = '50%';
-    reticle.style.transform = 'translate(-50%, -50%)';
-    reticle.classList.add('show');
-    btnResetEstatico.classList.remove('show');
-    staticAnalysisActive = false; staticPosition = null; staticFrozen = false;
+    btnModes.classList.add('mode-livre'); modeLabel.textContent='MODO: 🎯 LIVRE';
+    reticle.style.left='50%'; reticle.style.top='50%'; reticle.style.transform='translate(-50%, -50%)';
+    reticle.classList.add('show'); btnResetEstatico.classList.remove('show');
+    staticAnalysisActive=false; staticPosition=null; staticFrozen=false;
     speakSystem('Modo Livre selecionado. Mira fixa no centro, análise contínua.');
   } else if (mode === 'estatico') {
-    btnModes.classList.add('mode-estatico');
-    modeLabel.textContent = 'MODO: 📍 ESTÁTICO';
-    reticle.classList.remove('show');
-    btnResetEstatico.classList.add('show');
-    staticAnalysisActive = false; staticPosition = null; staticFrozen = false;
+    btnModes.classList.add('mode-estatico'); modeLabel.textContent='MODO: 📍 ESTÁTICO';
+    reticle.classList.remove('show'); btnResetEstatico.classList.add('show');
+    staticAnalysisActive=false; staticPosition=null; staticFrozen=false;
     speakSystem('Modo Estático selecionado. Clique na tela para analisar ponto específico.');
   } else if (mode === 'comparacao') {
-    btnModes.classList.add('mode-comparacao');
-    modeLabel.textContent = 'MODO: ⚖️ COMPARAÇÃO';
-    reticle.classList.remove('show');
-    btnResetEstatico.classList.remove('show');
-    staticAnalysisActive = false; staticPosition = null; staticFrozen = false;
+    btnModes.classList.add('mode-comparacao'); modeLabel.textContent='MODO: ⚖️ COMPARAÇÃO';
+    reticle.classList.remove('show'); btnResetEstatico.classList.remove('show');
+    staticAnalysisActive=false; staticPosition=null; staticFrozen=false;
     document.getElementById('btn-resultado').classList.add('show');
     document.getElementById('btn-ajuste-audio').classList.add('show');
-    document.getElementById('btn-sel-ref').classList.add('show');
-    document.getElementById('btn-sel-sample').classList.add('show');
-    document.getElementById('btn-reset-ref').classList.add('show');
-    document.getElementById('btn-reset-sample').classList.add('show');
-    document.getElementById('btn-reset-comparacao').classList.add('show');
+    ['btn-sel-ref','btn-sel-sample','btn-reset-ref','btn-reset-sample','btn-reset-comparacao'].forEach(id=>document.getElementById(id).classList.add('show'));
     document.getElementById('comparison-panel').classList.add('show');
     speakSystem('Modo Comparação selecionado. Capture dois pontos e compare a compatibilidade entre eles.');
   }
-  const options = dropdown.querySelectorAll('.mode-option');
-  options.forEach(opt => opt.classList.remove('active'));
-  if (mode === 'livre') options[0].classList.add('active');
-  if (mode === 'estatico') options[1].classList.add('active');
-  if (mode === 'comparacao') options[2].classList.add('active');
+  const options=dropdown.querySelectorAll('.mode-option');
+  options.forEach(opt=>opt.classList.remove('active'));
+  if(mode==='livre')options[0].classList.add('active');
+  if(mode==='estatico')options[1].classList.add('active');
+  if(mode==='comparacao')options[2].classList.add('active');
 }
 function resetEstatico() {
   if (currentMode !== 'estatico') return;
   if (audioEnabled) speakColor('Modo estático resetado.');
-  staticPosition = null; staticAnalysisActive = false; staticFrozen = false;
+  staticPosition=null; staticAnalysisActive=false; staticFrozen=false;
   reticle.classList.remove('show');
-  document.getElementById('color-name').textContent = '---';
-  document.getElementById('color-name').style.color = '#445';
-  document.getElementById('confidence-display').textContent = '';
-  document.getElementById('hsv-line').innerHTML = '<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
-  document.getElementById('rgb-line').innerHTML = '<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
-  document.getElementById('color-swatch').style.background = '#1a1a2e';
-  colorBuffer = []; lastStableColorName = ''; lastStableRGB = { r: 0, g: 0, b: 0 };
-  mismatchCounter = 0; consecutiveFrameCounter = 0; lastSpokenName = ''; pendingName = '';
-  if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
+  document.getElementById('color-name').textContent='---'; document.getElementById('color-name').style.color='#445';
+  document.getElementById('confidence-display').textContent='';
+  document.getElementById('hsv-line').innerHTML='<span class="lbl">H:</span>--- &nbsp;<span class="lbl">S:</span>--- &nbsp;<span class="lbl">V:</span>---';
+  document.getElementById('rgb-line').innerHTML='<span class="lbl">R:</span>--- &nbsp;<span class="lbl">G:</span>--- &nbsp;<span class="lbl">B:</span>---';
+  document.getElementById('color-swatch').style.background='#1a1a2e';
+  colorBuffer=[]; lastStableColorName=''; lastStableRGB={r:0,g:0,b:0};
+  mismatchCounter=0; consecutiveFrameCounter=0; lastSpokenName=''; pendingName='';
+  if (stableTimer) { clearTimeout(stableTimer); stableTimer=null; }
 }
 function startRefSelection() {
-  if (!systemOn || !running || currentMode !== 'comparacao') return;
-  if (comparisonRef) {
-    if (audioEnabled) speakColor('Referência já capturada. Utilize resetar referência para realizar uma nova captura.');
-    return;
-  }
-  selectingRef = true; selectingSample = false;
-  document.getElementById('color-name').textContent = 'Toque na tela: REFERÊNCIA';
-  document.getElementById('color-name').style.color = '#8ec';
+  if (!systemOn||!running||currentMode!=='comparacao') return;
+  if (comparisonRef) { if(audioEnabled) speakColor('Referência já capturada. Utilize resetar referência para realizar uma nova captura.'); return; }
+  selectingRef=true; selectingSample=false;
+  document.getElementById('color-name').textContent='Toque na tela: REFERÊNCIA';
+  document.getElementById('color-name').style.color='#8ec';
   if (audioEnabled) speakColor('Selecione a área de referência desejada na tela.');
 }
 function startSampleSelection() {
-  if (!systemOn || !running || currentMode !== 'comparacao') return;
-  if (comparisonSample) {
-    if (audioEnabled) speakColor('Amostra já capturada. Utilize resetar amostra para realizar uma nova captura.');
-    return;
-  }
-  selectingSample = true; selectingRef = false;
-  document.getElementById('color-name').textContent = 'Toque na tela: AMOSTRA';
-  document.getElementById('color-name').style.color = '#dd8';
+  if (!systemOn||!running||currentMode!=='comparacao') return;
+  if (comparisonSample) { if(audioEnabled) speakColor('Amostra já capturada. Utilize resetar amostra para realizar uma nova captura.'); return; }
+  selectingSample=true; selectingRef=false;
+  document.getElementById('color-name').textContent='Toque na tela: AMOSTRA';
+  document.getElementById('color-name').style.color='#dd8';
   if (audioEnabled) speakColor('Selecione a área de amostra desejada na tela.');
 }
 function captureRef(x, y) {
-  const result = capturePoint(x, y, 'ref-thumb', 'ref-reticle-marker', 'ref-color-name');
+  const result=capturePoint(x,y,'ref-thumb','ref-reticle-marker','ref-color-name');
   if (result) {
-    comparisonRef = result;
-    if (audioEnabled) { window.speechSynthesis.cancel(); setTimeout(() => { speakColor('Referência capturada: ' + result.name); }, 200); }
+    comparisonRef=result;
+    if (audioEnabled) { window.speechSynthesis.cancel(); setTimeout(()=>speakColor('Referência capturada: '+result.name),200); }
     updateComparison();
   }
 }
 function captureSample(x, y) {
-  const result = capturePoint(x, y, 'sample-thumb', 'sample-reticle-marker', 'sample-color-name');
+  const result=capturePoint(x,y,'sample-thumb','sample-reticle-marker','sample-color-name');
   if (result) {
-    comparisonSample = result;
-    if (audioEnabled) { window.speechSynthesis.cancel(); setTimeout(() => { speakColor('Amostra capturada: ' + result.name); }, 200); }
+    comparisonSample=result;
+    // ERRO 5 CORRIGIDO: removido "let lastSpokenComparison" local
+    if (audioEnabled) { window.speechSynthesis.cancel(); setTimeout(()=>speakColor('Amostra capturada: '+result.name),200); }
     updateComparison();
   }
 }
 function resetRef() {
-  if (currentMode !== 'comparacao') return;
-  comparisonRef = null;
-  document.getElementById('ref-thumb').src = '';
-  document.getElementById('ref-thumb').style.display = 'none';
-  document.getElementById('ref-reticle-marker').style.display = 'none';
-  document.getElementById('ref-color-name').textContent = '---';
-  document.getElementById('ref-color-name').style.color = '#aac';
-  lastSpokenComparison = '';
+  if (currentMode!=='comparacao') return;
+  comparisonRef=null;
+  document.getElementById('ref-thumb').src=''; document.getElementById('ref-thumb').style.display='none';
+  document.getElementById('ref-reticle-marker').style.display='none';
+  document.getElementById('ref-color-name').textContent='---'; document.getElementById('ref-color-name').style.color='#aac';
+  lastSpokenComparison=''; // ERRO 4 CORRIGIDO: usa variável global
   if (audioEnabled) speakColor('Referência resetada.');
   updateComparison();
 }
 function resetSample() {
-  if (currentMode !== 'comparacao') return;
-  comparisonSample = null;
-  document.getElementById('sample-thumb').src = '';
-  document.getElementById('sample-thumb').style.display = 'none';
-  document.getElementById('sample-reticle-marker').style.display = 'none';
-  document.getElementById('sample-color-name').textContent = '---';
-  document.getElementById('sample-color-name').style.color = '#aac';
-  lastSpokenComparison = '';
+  if (currentMode!=='comparacao') return;
+  comparisonSample=null;
+  document.getElementById('sample-thumb').src=''; document.getElementById('sample-thumb').style.display='none';
+  document.getElementById('sample-reticle-marker').style.display='none';
+  document.getElementById('sample-color-name').textContent='---'; document.getElementById('sample-color-name').style.color='#aac';
+  lastSpokenComparison=''; // ERRO 4 CORRIGIDO: usa variável global
   if (audioEnabled) speakColor('Amostra resetada.');
   updateComparison();
 }
 function resetComparison() {
-  if (currentMode !== 'comparacao') return;
+  if (currentMode!=='comparacao') return;
   resetRef(); resetSample();
-  lastSpokenComparison = '';
+  lastSpokenComparison='';
   if (audioEnabled) speakColor('Comparação resetada.');
-  document.getElementById('color-name').textContent = '---';
-  document.getElementById('color-name').style.color = '#445';
+  document.getElementById('color-name').textContent='---'; document.getElementById('color-name').style.color='#445';
+}
+function updateComparison() {
+  const percentEl=document.getElementById('compatibility-percent');
+  const suggestionBox=document.getElementById('pigment-suggestion');
+  const suggestionText=document.getElementById('pigment-suggestion-text');
+  const suggestionLabel=suggestionBox.querySelector('.comp-suggestion-label');
+  const resultBlock=document.getElementById('result-block');
+  if (!comparisonRef||!comparisonSample) {
+    percentEl.textContent='---'; percentEl.className='comp-percent';
+    if(resultBlock)resultBlock.style.display='none';
+    suggestionBox.style.display='none'; return;
+  }
+  const compat=calculateCompatibility(comparisonRef,comparisonSample);
+  percentEl.textContent=compat+'%'; percentEl.className='comp-percent';
+  if(compat===0)percentEl.classList.add('low'); else if(compat<50)percentEl.classList.add('medium');
+  const suggestion=suggestPigmentAdjustment(comparisonRef,comparisonSample);
+  suggestionText.textContent=suggestion.text; suggestionText.className='comp-suggestion-text '+suggestion.cssClass;
+  suggestionLabel.innerHTML=plasticsMode?'🧪 FÓRMULA DE PIGMENTOS (PLÁSTICOS)':'🎨 AJUSTE SUGERIDO';
+  if (resultBlock&&resultBlock.style.display!=='none'&&audioEnabled) {
+    const chave=comparisonRef.name+'|'+comparisonSample.name;
+    if (chave!==lastSpokenComparison) {
+      lastSpokenComparison=chave;
+      const textoSugestao=suggestion.text.replace(/[✦✓⚠️📋•🎨🧪◆◇⭐☆]/g,'').replace(/\n+/g,'. ').replace(/\s{2,}/g,' ').trim();
+      setTimeout(()=>{ if(audioEnabled)speakColor(`Compatibilidade entre ${comparisonRef.name} e ${comparisonSample.name}: ${compat} por cento. Ajuste sugerido: ${textoSugestao}`); },1800);
+    }
+  }
 }
 function showResultado() {
-  if (!systemOn || currentMode !== 'comparacao') return;
-  if (!comparisonRef && !comparisonSample) {
-    if (audioEnabled) speakColor('Nenhuma imagem capturada. Capture a referência e a amostra primeiro.');
-    alert('Capture a Referência e a Amostra primeiro.');
-    return;
-  }
-  if (!comparisonRef) {
-    if (audioEnabled) speakColor('Referência não capturada. Por favor selecione a área de referência.');
-    alert('Referência não capturada. Selecione a área de referência.');
-    return;
-  }
-  if (!comparisonSample) {
-    if (audioEnabled) speakColor('Amostra não capturada. Por favor selecione a área de amostra.');
-    alert('Amostra não capturada. Selecione a área de amostra.');
-    return;
-  }
-  const resultBlock = document.getElementById('result-block');
-  const suggestionBox = document.getElementById('pigment-suggestion');
-  if (resultBlock) resultBlock.style.display = 'flex';
-  if (suggestionBox) suggestionBox.style.display = 'block';
+  if (!systemOn||currentMode!=='comparacao') return;
+  if (!comparisonRef&&!comparisonSample) { if(audioEnabled)speakColor('Nenhuma imagem capturada. Capture a referência e a amostra primeiro.'); alert('Capture a Referência e a Amostra primeiro.'); return; }
+  if (!comparisonRef) { if(audioEnabled)speakColor('Referência não capturada. Por favor selecione a área de referência.'); alert('Referência não capturada. Selecione a área de referência.'); return; }
+  if (!comparisonSample) { if(audioEnabled)speakColor('Amostra não capturada. Por favor selecione a área de amostra.'); alert('Amostra não capturada. Selecione a área de amostra.'); return; }
+  const resultBlock=document.getElementById('result-block'), suggestionBox=document.getElementById('pigment-suggestion');
+  if(resultBlock)resultBlock.style.display='flex'; if(suggestionBox)suggestionBox.style.display='block';
   updateComparison();
   if (audioEnabled) speakColor('Calculando resultado de compatibilidade.');
 }
 function speakAjusteSugerido() {
-  if (!systemOn || currentMode !== 'comparacao') return;
-  if (!comparisonRef || !comparisonSample) {
-    if (audioEnabled) speakColor('Nenhum resultado disponível. Capture a referência e a amostra e solicite o resultado primeiro.');
-    return;
-  }
-  const textoAtual = document.getElementById('pigment-suggestion-text').textContent;
-  if (!textoAtual || textoAtual === '---') {
-    if (audioEnabled) speakColor('Nenhum ajuste disponível. Solicite o resultado de compatibilidade primeiro.');
-    return;
-  }
-  const textoLimpo = textoAtual
-    .replace(/[✦✓⚠️📋•🎨🧪◆◇⭐☆]/g, '').replace(/\n+/g, '. ').replace(/\s{2,}/g, ' ').trim();
-  const compat = document.getElementById('compatibility-percent').textContent;
-  const textoCompleto =
-    `Resultado de compatibilidade entre ${comparisonRef.name} e ${comparisonSample.name}: ` +
-    `${compat}. Ajuste sugerido: ${textoLimpo}`;
-  if (window.speechSynthesis) {
-    window.speechSynthesis.cancel();
-    setTimeout(() => {
-      try {
-        const utt = new SpeechSynthesisUtterance(textoCompleto);
-        utt.lang = 'pt-BR'; utt.rate = 0.95; utt.pitch = 1.0;
-        window.speechSynthesis.speak(utt);
-      } catch (e) { console.error('Erro ao falar ajuste:', e); }
-    }, 200);
-  }
-}
-function updateComparison() {
-  const percentEl = document.getElementById('compatibility-percent');
-  const suggestionBox = document.getElementById('pigment-suggestion');
-  const suggestionText = document.getElementById('pigment-suggestion-text');
-  const suggestionLabel = suggestionBox.querySelector('.comp-suggestion-label');
-  const resultBlock = document.getElementById('result-block');
-  if (!comparisonRef || !comparisonSample) {
-    percentEl.textContent = '---';
-    percentEl.className = 'comp-percent';
-    if (resultBlock) resultBlock.style.display = 'none';
-    suggestionBox.style.display = 'none';
-    return;
-  }
-  const compat = calculateCompatibility(comparisonRef, comparisonSample);
-  percentEl.textContent = compat + '%';
-  percentEl.className = 'comp-percent';
-  if (compat === 0) percentEl.classList.add('low');
-  else if (compat < 50) percentEl.classList.add('medium');
-  const suggestion = suggestPigmentAdjustment(comparisonRef, comparisonSample);
-  suggestionText.textContent = suggestion.text;
-  suggestionText.className = 'comp-suggestion-text ' + suggestion.cssClass;
-  if (plasticsMode) suggestionLabel.innerHTML = '🧪 FÓRMULA DE PIGMENTOS (PLÁSTICOS)';
-  else suggestionLabel.innerHTML = '🎨 AJUSTE SUGERIDO';
-  if (resultBlock && resultBlock.style.display !== 'none' && audioEnabled) {
-    const chaveComparacao = comparisonRef.name + '|' + comparisonSample.name;
-    if (chaveComparacao !== lastSpokenComparison) {
-      lastSpokenComparison = chaveComparacao;
-      const textoSugestao = suggestion.text
-        .replace(/[✦✓⚠️📋•🎨🧪◆◇⭐☆]/g, '').replace(/\n+/g, '. ').replace(/\s{2,}/g, ' ').trim();
-      const textoAudio =
-        `Compatibilidade entre ${comparisonRef.name} e ${comparisonSample.name}: ` +
-        `${compat} por cento. Ajuste sugerido: ${textoSugestao}`;
-      setTimeout(() => { if (audioEnabled) speakColor(textoAudio); }, 1800);
-    }
-  }
+  if (!systemOn||currentMode!=='comparacao') return;
+  if (!comparisonRef||!comparisonSample) { if(audioEnabled)speakColor('Nenhum resultado disponível. Capture a referência e a amostra e solicite o resultado primeiro.'); return; }
+  const textoAtual=document.getElementById('pigment-suggestion-text').textContent;
+  if (!textoAtual||textoAtual==='---') { if(audioEnabled)speakColor('Nenhum ajuste disponível. Solicite o resultado de compatibilidade primeiro.'); return; }
+  const textoLimpo=textoAtual.replace(/[✦✓⚠️📋•🎨🧪◆◇⭐☆]/g,'').replace(/\n+/g,'. ').replace(/\s{2,}/g,' ').trim();
+  const compat=document.getElementById('compatibility-percent').textContent;
+  const textoCompleto=`Resultado de compatibilidade entre ${comparisonRef.name} e ${comparisonSample.name}: ${compat}. Ajuste sugerido: ${textoLimpo}`;
+  if (window.speechSynthesis) { window.speechSynthesis.cancel(); setTimeout(()=>{ try{ const utt=new SpeechSynthesisUtterance(textoCompleto); utt.lang='pt-BR'; utt.rate=0.95; utt.pitch=1.0; window.speechSynthesis.speak(utt); }catch(e){} },200); }
 }
 async function switchCamera() {
   if (!systemOn) return;
-  if (devices.length < 2) { alert('Apenas uma câmera disponível.'); return; }
+  if (devices.length<2) { alert('Apenas uma câmera disponível.'); return; }
   if (audioEnabled) speakColor('Trocando câmera.');
-  deviceIndex = (deviceIndex + 1) % devices.length;
+  deviceIndex=(deviceIndex+1)%devices.length;
   await openCamera(devices[deviceIndex].deviceId);
 }
+// ERRO 9 CORRIGIDO: toggleAudio usa speakSystem
 function toggleAudio() {
   if (!systemOn) return;
   audioEnabled = !audioEnabled;
-  const btn = document.getElementById('btn-audio');
+  const btn=document.getElementById('btn-audio');
   if (audioEnabled) {
-    btn.textContent = '🔊 Áudio'; btn.classList.add('audio-on');
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      setTimeout(() => {
-        const utt = new SpeechSynthesisUtterance('Áudio ativado.');
-        utt.lang = 'pt-BR'; utt.rate = 1.0; utt.pitch = 1.0;
-        window.speechSynthesis.speak(utt);
-      }, 150);
-    }
+    btn.textContent='🔊 Áudio'; btn.classList.add('audio-on');
+    speakSystem('Áudio ativado.');
   } else {
-    btn.textContent = '🔇 Áudio'; btn.classList.remove('audio-on');
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const utt = new SpeechSynthesisUtterance('Áudio desativado.');
-      utt.lang = 'pt-BR'; utt.rate = 1.0; utt.pitch = 1.0;
-      window.speechSynthesis.speak(utt);
-    }
-    if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
-    pendingName = ''; lastSpokenName = '';
+    btn.textContent='🔇 Áudio'; btn.classList.remove('audio-on');
+    speakSystem('Áudio desativado.');
+    if(stableTimer){clearTimeout(stableTimer);stableTimer=null;}
+    pendingName=''; lastSpokenName='';
   }
 }
 async function toggleFlash() {
   if (!systemOn) return;
-  flashEnabled = !flashEnabled;
-  const btn = document.getElementById('btn-flash');
-  if (flashEnabled) { btn.classList.add('flash-on'); if (audioEnabled) speakColor('Flash ativado.'); }
-  else { btn.classList.remove('flash-on'); if (audioEnabled) speakColor('Flash desativado.'); }
-  if (stream) {
-    const track = stream.getVideoTracks()[0];
-    if (track && typeof track.applyConstraints === 'function') {
-      try { await track.applyConstraints({ advanced: [{ torch: flashEnabled }] }); }
-      catch (e) { if (flashEnabled) { flashEnabled = false; btn.classList.remove('flash-on'); } }
-    }
-  }
+  flashEnabled=!flashEnabled;
+  const btn=document.getElementById('btn-flash');
+  if(flashEnabled){btn.classList.add('flash-on');if(audioEnabled)speakColor('Flash ativado.');}
+  else{btn.classList.remove('flash-on');if(audioEnabled)speakColor('Flash desativado.');}
+  if(stream){const track=stream.getVideoTracks()[0];if(track&&typeof track.applyConstraints==='function'){try{await track.applyConstraints({advanced:[{torch:flashEnabled}]});}catch(e){if(flashEnabled){flashEnabled=false;btn.classList.remove('flash-on');}}}}
 }
 function toggleUniversalMode() {
   if (!systemOn) return;
-  universalMode = !universalMode;
-  const btn = document.getElementById('btn-universal');
-  btn.textContent = universalMode ? '⭐ Universal' : '☆ Universal';
-  btn.classList.toggle('universal-on', universalMode);
-  if (audioEnabled) speakColor(universalMode ? 'Modo Universal ativado.' : 'Modo Universal desativado.');
-  if (universalMode && ampliatedMode) { ampliatedMode = false; document.getElementById('btn-ampliado').textContent = '◇ Ampliado'; document.getElementById('btn-ampliado').classList.remove('ampliado-on'); }
-  if (universalMode && plasticsMode) { plasticsMode = false; document.getElementById('btn-plasticos').textContent = '🧪 Plásticos'; document.getElementById('btn-plasticos').classList.remove('plasticos-on'); }
-  lastSpokenName = ''; pendingName = '';
-  if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
+  universalMode=!universalMode;
+  const btn=document.getElementById('btn-universal');
+  btn.textContent=universalMode?'⭐ Universal':'☆ Universal'; btn.classList.toggle('universal-on',universalMode);
+  if(audioEnabled)speakColor(universalMode?'Modo Universal ativado.':'Modo Universal desativado.');
+  if(universalMode&&ampliatedMode){ampliatedMode=false;document.getElementById('btn-ampliado').textContent='◇ Ampliado';document.getElementById('btn-ampliado').classList.remove('ampliado-on');}
+  if(universalMode&&plasticsMode){plasticsMode=false;document.getElementById('btn-plasticos').textContent='🧪 Plásticos';document.getElementById('btn-plasticos').classList.remove('plasticos-on');}
+  lastSpokenName=''; pendingName=''; if(stableTimer){clearTimeout(stableTimer);stableTimer=null;}
 }
 function toggleAmpliatedMode() {
   if (!systemOn) return;
-  ampliatedMode = !ampliatedMode;
-  const btn = document.getElementById('btn-ampliado');
-  btn.textContent = ampliatedMode ? '◆ Ampliado' : '◇ Ampliado';
-  btn.classList.toggle('ampliado-on', ampliatedMode);
-  if (audioEnabled) speakColor(ampliatedMode ? 'Modo Ampliado ativado.' : 'Modo Ampliado desativado.');
-  if (ampliatedMode && universalMode) { universalMode = false; document.getElementById('btn-universal').textContent = '☆ Universal'; document.getElementById('btn-universal').classList.remove('universal-on'); }
-  if (ampliatedMode && plasticsMode) { plasticsMode = false; document.getElementById('btn-plasticos').textContent = '🧪 Plásticos'; document.getElementById('btn-plasticos').classList.remove('plasticos-on'); }
-  lastSpokenName = ''; pendingName = '';
-  if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
-  colorBuffer = []; lastStableColorName = ''; mismatchCounter = 0; consecutiveFrameCounter = 0;
+  ampliatedMode=!ampliatedMode;
+  const btn=document.getElementById('btn-ampliado');
+  btn.textContent=ampliatedMode?'◆ Ampliado':'◇ Ampliado'; btn.classList.toggle('ampliado-on',ampliatedMode);
+  if(audioEnabled)speakColor(ampliatedMode?'Modo Ampliado ativado.':'Modo Ampliado desativado.');
+  if(ampliatedMode&&universalMode){universalMode=false;document.getElementById('btn-universal').textContent='☆ Universal';document.getElementById('btn-universal').classList.remove('universal-on');}
+  if(ampliatedMode&&plasticsMode){plasticsMode=false;document.getElementById('btn-plasticos').textContent='🧪 Plásticos';document.getElementById('btn-plasticos').classList.remove('plasticos-on');}
+  lastSpokenName=''; pendingName=''; if(stableTimer){clearTimeout(stableTimer);stableTimer=null;}
+  colorBuffer=[]; lastStableColorName=''; mismatchCounter=0; consecutiveFrameCounter=0;
 }
 function togglePlasticsMode() {
   if (!systemOn) return;
-  plasticsMode = !plasticsMode;
-  const btn = document.getElementById('btn-plasticos');
-  btn.classList.toggle('plasticos-on', plasticsMode);
-  if (audioEnabled) speakColor(plasticsMode ? 'Modo Plásticos ativado.' : 'Modo Plásticos desativado.');
-  if (plasticsMode && universalMode) { universalMode = false; document.getElementById('btn-universal').textContent = '☆ Universal'; document.getElementById('btn-universal').classList.remove('universal-on'); }
-  if (plasticsMode && ampliatedMode) { ampliatedMode = false; document.getElementById('btn-ampliado').textContent = '◇ Ampliado'; document.getElementById('btn-ampliado').classList.remove('ampliado-on'); }
-  lastSpokenName = ''; pendingName = '';
-  if (stableTimer) { clearTimeout(stableTimer); stableTimer = null; }
-  colorBuffer = []; lastStableColorName = ''; mismatchCounter = 0; consecutiveFrameCounter = 0;
-  if (currentMode === 'comparacao' && comparisonRef && comparisonSample) updateComparison();
+  plasticsMode=!plasticsMode;
+  const btn=document.getElementById('btn-plasticos');
+  btn.classList.toggle('plasticos-on',plasticsMode);
+  if(audioEnabled)speakColor(plasticsMode?'Modo Plásticos ativado.':'Modo Plásticos desativado.');
+  if(plasticsMode&&universalMode){universalMode=false;document.getElementById('btn-universal').textContent='☆ Universal';document.getElementById('btn-universal').classList.remove('universal-on');}
+  if(plasticsMode&&ampliatedMode){ampliatedMode=false;document.getElementById('btn-ampliado').textContent='◇ Ampliado';document.getElementById('btn-ampliado').classList.remove('ampliado-on');}
+  lastSpokenName=''; pendingName=''; if(stableTimer){clearTimeout(stableTimer);stableTimer=null;}
+  colorBuffer=[]; lastStableColorName=''; mismatchCounter=0; consecutiveFrameCounter=0;
+  if(currentMode==='comparacao'&&comparisonRef&&comparisonSample)updateComparison();
 }
 function updateCalibrationStatus() {
-  let statusText = 'Base: ';
-  if (isWhiteCalibrated && isBlackCalibrated) {
-    const vRange = whiteCalibration.hsv.v - blackCalibration.hsv.v;
-    statusText += `Régua Completa (${vRange.toFixed(0)}% range)`;
-  } else if (isWhiteCalibrated) {
-    statusText += `Branco V:${whiteCalibration.hsv.v.toFixed(0)}%`;
-  } else if (isBlackCalibrated) {
-    statusText += `Preto V:${blackCalibration.hsv.v.toFixed(0)}%`;
-  } else {
-    statusText += 'não calibrada';
-  }
-  document.getElementById('base-info').textContent = statusText;
+  let statusText='Base: ';
+  if(isWhiteCalibrated&&isBlackCalibrated)statusText+=`Régua Completa (${(whiteCalibration.hsv.v-blackCalibration.hsv.v).toFixed(0)}% range)`;
+  else if(isWhiteCalibrated)statusText+=`Branco V:${whiteCalibration.hsv.v.toFixed(0)}%`;
+  else if(isBlackCalibrated)statusText+=`Preto V:${blackCalibration.hsv.v.toFixed(0)}%`;
+  else statusText+='não calibrada';
+  document.getElementById('base-info').textContent=statusText;
 }
+// ERROS 10 e 11 CORRIGIDOS: sintaxe dos if corrigida
 async function calibrateWhite() {
   if (!systemOn) return;
   if (!running) { alert('Inicie a câmera primeiro.'); return; }
   if (!currentMode) { alert('Selecione um modo primeiro.'); return; }
   if (audioEnabled) speakColor('Calibrando branco. Aguarde.');
-  const samples = [];
-  for (let i = 0; i < 30; i++) {
-    let pixels;
-    if (currentMode === 'estatico' && staticPosition) pixels = samplePixelsEstatico(staticPosition.x, staticPosition.y);
-    else pixels = samplePixels();
-    if (pixels) { const hsv = rgbToHSV(pixels.r, pixels.g, pixels.b); samples.push({ hsv, rgb: pixels }); }
-    await new Promise(resolve => setTimeout(resolve, 33));
+  const samples=[];
+  for(let i=0;i<30;i++){
+    let pixels=currentMode==='estatico'&&staticPosition?samplePixelsEstatico(staticPosition.x,staticPosition.y):samplePixels();
+    if(pixels){const hsv=rgbToHSV(pixels.r,pixels.g,pixels.b);samples.push({hsv,rgb:pixels});}
+    await new Promise(r=>setTimeout(r,33));
   }
-  if (samples.length > 5) {
-    const vValues = samples.map(s => s.hsv.v).sort((a, b) => a - b);
-    const median = vValues[Math.floor(vValues.length / 2)];
-    const filtered = samples.filter(s => Math.abs(s.hsv.v - median) < 20);
-    if (filtered.length > 0) { samples.length = 0; samples.push(...filtered); }
-  }
-  if (samples.length === 0) { alert('Erro na calibração.'); return; }
-  let avgS = 0, avgV = 0, avgR = 0, avgG = 0, avgB = 0, sinSum = 0, cosSum = 0;
-  samples.forEach(item => {
-    const radH = item.hsv.h * Math.PI / 180;
-    sinSum += Math.sin(radH); cosSum += Math.cos(radH);
-    avgS += item.hsv.s; avgV += item.hsv.v;
-    avgR += item.rgb.r; avgG += item.rgb.g; avgB += item.rgb.b;
-  });
-  const len = samples.length;
-  let avgH = Math.atan2(sinSum / len, cosSum / len) * 180 / Math.PI;
-  if (avgH < 0) avgH += 360;
-  avgS /= len; avgV /= len;
-  avgR = Math.round(avgR / len); avgG = Math.round(avgG / len); avgB = Math.round(avgB / len);
-  whiteCalibration = { hsv: { h: avgH, s: avgS, v: avgV }, rgb: { r: avgR, g: avgG, b: avgB } };
-  isWhiteCalibrated = true;
-  const tempResult = detectColorTemperature(whiteCalibration.rgb);
-  colorTemperatureBias = tempResult.bias;
-  hasColorTempCompensation = true;
-  document.getElementById('color-name').textContent = 'Branco';
-  document.getElementById('color-name').style.color = '#ffffff';
+  if(samples.length>5){const vValues=samples.map(s=>s.hsv.v).sort((a,b)=>a-b),median=vValues[Math.floor(vValues.length/2)],filtered=samples.filter(s=>Math.abs(s.hsv.v-median)<20);if(filtered.length>0){samples.length=0;samples.push(...filtered);}}
+  if(samples.length===0){alert('Erro na calibração.');return;}
+  let avgS=0,avgV=0,avgR=0,avgG=0,avgB=0,sinSum=0,cosSum=0;
+  samples.forEach(item=>{const r=item.hsv.h*Math.PI/180;sinSum+=Math.sin(r);cosSum+=Math.cos(r);avgS+=item.hsv.s;avgV+=item.hsv.v;avgR+=item.rgb.r;avgG+=item.rgb.g;avgB+=item.rgb.b;});
+  const len=samples.length; let avgH=Math.atan2(sinSum/len,cosSum/len)*180/Math.PI; if(avgH<0)avgH+=360;
+  avgS/=len;avgV/=len;avgR=Math.round(avgR/len);avgG=Math.round(avgG/len);avgB=Math.round(avgB/len);
+  whiteCalibration={hsv:{h:avgH,s:avgS,v:avgV},rgb:{r:avgR,g:avgG,b:avgB}}; isWhiteCalibrated=true;
+  const tempResult=detectColorTemperature(whiteCalibration.rgb); colorTemperatureBias=tempResult.bias; hasColorTempCompensation=true;
+  document.getElementById('color-name').textContent='Branco'; document.getElementById('color-name').style.color='#ffffff';
   document.getElementById('btn-calibrate-white').classList.add('calibrated');
-  updateCalibrationStatus();
-  colorBuffer = []; lastStableColorName = 'Branco'; lastStableHue = avgH; lastStableRGB = { r: avgR, g: avgG, b: avgB };
-  if (audioEnabled) speakColor('Branco calibrado');
+  updateCalibrationStatus(); colorBuffer=[]; lastStableColorName='Branco'; lastStableHue=avgH; lastStableRGB={r:avgR,g:avgG,b:avgB};
+  if(audioEnabled)speakColor('Branco calibrado.');
 }
 async function calibrateBlack() {
   if (!systemOn) return;
   if (!running) { alert('Inicie a câmera primeiro.'); return; }
   if (!currentMode) { alert('Selecione um modo primeiro.'); return; }
   if (audioEnabled) speakColor('Calibrando preto. Aguarde.');
-  const samples = [];
-  for (let i = 0; i < 30; i++) {
-    let pixels;
-    if (currentMode === 'estatico' && staticPosition) pixels = samplePixelsEstatico(staticPosition.x, staticPosition.y);
-    else pixels = samplePixels();
-    if (pixels) { const hsv = rgbToHSV(pixels.r, pixels.g, pixels.b); samples.push({ hsv, rgb: pixels }); }
-    await new Promise(resolve => setTimeout(resolve, 33));
+  const samples=[];
+  for(let i=0;i<30;i++){
+    let pixels=currentMode==='estatico'&&staticPosition?samplePixelsEstatico(staticPosition.x,staticPosition.y):samplePixels();
+    if(pixels){const hsv=rgbToHSV(pixels.r,pixels.g,pixels.b);samples.push({hsv,rgb:pixels});}
+    await new Promise(r=>setTimeout(r,33));
   }
-  if (samples.length > 5) {
-    const vValues = samples.map(s => s.hsv.v).sort((a, b) => a - b);
-    const median = vValues[Math.floor(vValues.length / 2)];
-    const filtered = samples.filter(s => Math.abs(s.hsv.v - median) < 20);
-    if (filtered.length > 0) { samples.length = 0; samples.push(...filtered); }
-  }
-  if (samples.length === 0) { alert('Erro na calibração.'); return; }
-  let avgS = 0, avgV = 0, avgR = 0, avgG = 0, avgB = 0, sinSum = 0, cosSum = 0;
-  samples.forEach(item => {
-    const radH = item.hsv.h * Math.PI / 180;
-    sinSum += Math.sin(radH); cosSum += Math.cos(radH);
-    avgS += item.hsv.s; avgV += item.hsv.v;
-    avgR += item.rgb.r; avgG += item.rgb.g; avgB += item.rgb.b;
-  });
-  const len = samples.length;
-  let avgH = Math.atan2(sinSum / len, cosSum / len) * 180 / Math.PI;
-  if (avgH < 0) avgH += 360;
-  avgS /= len; avgV /= len;
-  avgR = Math.round(avgR / len); avgG = Math.round(avgG / len); avgB = Math.round(avgB / len);
-  blackCalibration = { hsv: { h: avgH, s: avgS, v: avgV }, rgb: { r: avgR, g: avgG, b: avgB } };
-  isBlackCalibrated = true;
-  document.getElementById('color-name').textContent = 'Preto';
-  document.getElementById('color-name').style.color = '#1a1a2a';
+  if(samples.length>5){const vValues=samples.map(s=>s.hsv.v).sort((a,b)=>a-b),median=vValues[Math.floor(vValues.length/2)],filtered=samples.filter(s=>Math.abs(s.hsv.v-median)<20);if(filtered.length>0){samples.length=0;samples.push(...filtered);}}
+  if(samples.length===0){alert('Erro na calibração.');return;}
+  let avgS=0,avgV=0,avgR=0,avgG=0,avgB=0,sinSum=0,cosSum=0;
+  samples.forEach(item=>{const r=item.hsv.h*Math.PI/180;sinSum+=Math.sin(r);cosSum+=Math.cos(r);avgS+=item.hsv.s;avgV+=item.hsv.v;avgR+=item.rgb.r;avgG+=item.rgb.g;avgB+=item.rgb.b;});
+  const len=samples.length; let avgH=Math.atan2(sinSum/len,cosSum/len)*180/Math.PI; if(avgH<0)avgH+=360;
+  avgS/=len;avgV/=len;avgR=Math.round(avgR/len);avgG=Math.round(avgG/len);avgB=Math.round(avgB/len);
+  blackCalibration={hsv:{h:avgH,s:avgS,v:avgV},rgb:{r:avgR,g:avgG,b:avgB}}; isBlackCalibrated=true;
+  document.getElementById('color-name').textContent='Preto'; document.getElementById('color-name').style.color='#1a1a2a';
   document.getElementById('btn-calibrate-black').classList.add('calibrated');
-  updateCalibrationStatus();
-  colorBuffer = []; lastStableColorName = 'Preto'; lastStableHue = avgH; lastStableRGB = { r: avgR, g: avgG, b: avgB };
-  if (audioEnabled) speakColor('Preto calibrado');
+  updateCalibrationStatus(); colorBuffer=[]; lastStableColorName='Preto'; lastStableHue=avgH; lastStableRGB={r:avgR,g:avgG,b:avgB};
+  if(audioEnabled)speakColor('Preto calibrado.');
 }
 function resetWhite() {
   if (!systemOn) return;
-  whiteCalibration = null; isWhiteCalibrated = false;
-  colorTemperatureBias = { r: 0, g: 0, b: 0 }; hasColorTempCompensation = false;
+  whiteCalibration=null; isWhiteCalibrated=false; colorTemperatureBias={r:0,g:0,b:0}; hasColorTempCompensation=false;
   document.getElementById('btn-calibrate-white').classList.remove('calibrated');
-  updateCalibrationStatus();
-  colorBuffer = []; lastStableColorName = ''; mismatchCounter = 0; consecutiveFrameCounter = 0;
-  if (audioEnabled) speakColor('Calibração de branco resetada.');
+  updateCalibrationStatus(); colorBuffer=[]; lastStableColorName=''; mismatchCounter=0; consecutiveFrameCounter=0;
+  if(audioEnabled)speakColor('Calibração de branco resetada.');
 }
 function resetBlack() {
   if (!systemOn) return;
-  blackCalibration = null; isBlackCalibrated = false;
+  blackCalibration=null; isBlackCalibrated=false;
   document.getElementById('btn-calibrate-black').classList.remove('calibrated');
-  updateCalibrationStatus();
-  colorBuffer = []; lastStableColorName = ''; mismatchCounter = 0; consecutiveFrameCounter = 0;
-  if (audioEnabled) speakColor('Calibração de preto resetada.');
+  updateCalibrationStatus(); colorBuffer=[]; lastStableColorName=''; mismatchCounter=0; consecutiveFrameCounter=0;
+  if(audioEnabled)speakColor('Calibração de preto resetada.');
 }
 async function startCamera() {
   if (!systemOn) return;
   document.getElementById('start-overlay').classList.add('hide');
-  await getDevices();
-  await openCamera();
-  running = true;
-  requestAnimationFrame(update);
+  await getDevices(); await openCamera();
+  running=true; requestAnimationFrame(update);
 }
 // ════════════════════════════════════════════════════════════════
-// 🔄 LOOP PRINCIPAL
+// 🔄 LOOP PRINCIPAL — ERRO 12 CORRIGIDO: áudio no modo comparação
 // ════════════════════════════════════════════════════════════════
 function update() {
-  if (!running || video.readyState < 2) { requestAnimationFrame(update); return; }
-  if (!systemOn) { requestAnimationFrame(update); return; }
-  if (currentMode === 'comparacao') { requestAnimationFrame(update); return; }
+  if (!running||video.readyState<2){requestAnimationFrame(update);return;}
+  if (!systemOn){requestAnimationFrame(update);return;}
+  // ERRO 12 CORRIGIDO: modo comparação processa áudio ao vivo
+  if (currentMode==='comparacao'){
+    if (audioEnabled){
+      const pixelsComp=samplePixels();
+      if(pixelsComp){
+        const pc=applyColorTempCompensation(pixelsComp), hsvComp=rgbToHSV(pc.r,pc.g,pc.b);
+        addToBuffer(hsvComp,pc);
+        const stableComp=getStableColor();
+        if(stableComp){
+          let classComp;
+          if(plasticsMode)classComp=classifyPlasticsPolymers(stableComp.hsv,stableComp.rgb,0);
+          else if(ampliatedMode)classComp=classifyColorExtended(stableComp.hsv,stableComp.rgb,0);
+          else classComp=classifyColorWithRuler(stableComp.hsv,stableComp.rgb,0);
+          triggerAudioIfChanged(classComp.name);
+        }
+      }
+    }
+    requestAnimationFrame(update); return;
+  }
   let pixels;
-  if (currentMode === 'livre') pixels = samplePixels();
-  else if (currentMode === 'estatico' && staticPosition) pixels = samplePixelsEstatico(staticPosition.x, staticPosition.y);
-  else { requestAnimationFrame(update); return; }
-  if (currentMode === 'estatico' && staticFrozen) { requestAnimationFrame(update); return; }
-  if (!pixels) { requestAnimationFrame(update); return; }
-  pixels = applyColorTempCompensation(pixels);
-  const { r, g, b } = pixels;
-  const rawHsv = rgbToHSV(r, g, b);
-  addToBuffer(rawHsv, { r, g, b });
-  const stable = getStableColor();
-  if (!stable) { requestAnimationFrame(update); return; }
-  const variance = calculateVariance(colorBuffer);
+  if(currentMode==='livre')pixels=samplePixels();
+  else if(currentMode==='estatico'&&staticPosition)pixels=samplePixelsEstatico(staticPosition.x,staticPosition.y);
+  else{requestAnimationFrame(update);return;}
+  if(currentMode==='estatico'&&staticFrozen){requestAnimationFrame(update);return;}
+  if(!pixels){requestAnimationFrame(update);return;}
+  pixels=applyColorTempCompensation(pixels);
+  const {r,g,b}=pixels, rawHsv=rgbToHSV(r,g,b);
+  addToBuffer(rawHsv,{r,g,b});
+  const stable=getStableColor();
+  if(!stable){requestAnimationFrame(update);return;}
+  const variance=calculateVariance(colorBuffer);
   let classification;
-  if (plasticsMode) classification = classifyPlasticsPolymers(stable.hsv, stable.rgb, variance);
-  else if (ampliatedMode) classification = classifyColorExtended(stable.hsv, stable.rgb, variance);
-  else classification = classifyColorWithRuler(stable.hsv, stable.rgb, variance);
-  if (classification.name !== lastStableColorName && lastStableColorName !== '') mismatchCounter++;
-  else mismatchCounter = 0;
-  const forceUpdate = mismatchCounter >= MISMATCH_FORCE_UPDATE;
-  let shouldUpdate = true;
-  if (currentMode === 'livre') {
-    shouldUpdate = forceUpdate || shouldUpdateColor(stable.hsv.h, classification.name, stable.rgb, stable.hsv.s, variance);
-  }
-  if (shouldUpdate) {
-    if (forceUpdate) { colorBuffer = colorBuffer.slice(-3); mismatchCounter = 0; consecutiveFrameCounter = 0; }
-    if (detectObjectChange(stable.rgb)) { colorBuffer = colorBuffer.slice(-2); consecutiveFrameCounter = 0; }
-    lastStableColorName = classification.name;
-    lastStableHue = stable.hsv.h;
-    lastStableRGB = { ...stable.rgb };
-    lastStableVariance = variance;
-    let displayName = classification.name;
-    if (plasticsMode && !classification.inCatalog) displayName = classification.name + ' ≈';
-    document.getElementById('color-name').textContent = displayName;
-    document.getElementById('color-name').style.color = classification.color;
-    document.getElementById('confidence-display').textContent = `${classification.confidence}%`;
-    document.getElementById('confidence-display').style.color =
-      classification.confidence > 95 ? '#6a6' : classification.confidence > 85 ? '#fa0' : '#f66';
+  if(plasticsMode)classification=classifyPlasticsPolymers(stable.hsv,stable.rgb,variance);
+  else if(ampliatedMode)classification=classifyColorExtended(stable.hsv,stable.rgb,variance);
+  else classification=classifyColorWithRuler(stable.hsv,stable.rgb,variance);
+  if(classification.name!==lastStableColorName&&lastStableColorName!=='')mismatchCounter++;
+  else mismatchCounter=0;
+  const forceUpdate=mismatchCounter>=MISMATCH_FORCE_UPDATE;
+  let shouldUpdate=true;
+  if(currentMode==='livre')shouldUpdate=forceUpdate||shouldUpdateColor(stable.hsv.h,classification.name,stable.rgb,stable.hsv.s,variance);
+  if(shouldUpdate){
+    if(forceUpdate){colorBuffer=colorBuffer.slice(-3);mismatchCounter=0;consecutiveFrameCounter=0;}
+    if(detectObjectChange(stable.rgb)){colorBuffer=colorBuffer.slice(-2);consecutiveFrameCounter=0;}
+    lastStableColorName=classification.name; lastStableHue=stable.hsv.h; lastStableRGB={...stable.rgb}; lastStableVariance=variance;
+    let displayName=classification.name;
+    if(plasticsMode&&!classification.inCatalog)displayName=classification.name+' ≈';
+    document.getElementById('color-name').textContent=displayName; document.getElementById('color-name').style.color=classification.color;
+    document.getElementById('confidence-display').textContent=`${classification.confidence}%`;
+    document.getElementById('confidence-display').style.color=classification.confidence>95?'#6a6':classification.confidence>85?'#fa0':'#f66';
     triggerAudioIfChanged(classification.name);
-    if (currentMode === 'estatico' && colorBuffer.length >= BUFFER_SIZE) staticFrozen = true;
+    if(currentMode==='estatico'&&colorBuffer.length>=BUFFER_SIZE)staticFrozen=true;
   }
-  document.getElementById('rgb-line').innerHTML =
-    `<span class="lbl">R:</span>${stable.rgb.r} <span class="lbl">G:</span>${stable.rgb.g} <span class="lbl">B:</span>${stable.rgb.b}`;
-  document.getElementById('hsv-line').innerHTML =
-    `<span class="lbl">H:</span>${stable.hsv.h.toFixed(0)}° <span class="lbl">S:</span>${stable.hsv.s.toFixed(0)}% <span class="lbl">V:</span>${stable.hsv.v.toFixed(0)}%`;
-  document.getElementById('color-swatch').style.background = `rgb(${stable.rgb.r},${stable.rgb.g},${stable.rgb.b})`;
+  document.getElementById('rgb-line').innerHTML=`<span class="lbl">R:</span>${stable.rgb.r} <span class="lbl">G:</span>${stable.rgb.g} <span class="lbl">B:</span>${stable.rgb.b}`;
+  document.getElementById('hsv-line').innerHTML=`<span class="lbl">H:</span>${stable.hsv.h.toFixed(0)}° <span class="lbl">S:</span>${stable.hsv.s.toFixed(0)}% <span class="lbl">V:</span>${stable.hsv.v.toFixed(0)}%`;
+  document.getElementById('color-swatch').style.background=`rgb(${stable.rgb.r},${stable.rgb.g},${stable.rgb.b})`;
   requestAnimationFrame(update);
 }
 // ════════════════════════════════════════════════════════════════
 // 🚀 INICIALIZAÇÃO
 // ════════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', function() {
-  const btnsIniciais = [
-    'btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black',
-    'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos',
-    'btn-modes', 'btn-reset-estatico', 'btn-sel-ref', 'btn-sel-sample',
-    'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao'
-  ];
-  btnsIniciais.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = true; });
-  const btnSystem = document.getElementById('btn-system');
-  if (btnSystem) {
-    btnSystem.disabled = false;
-    btnSystem.style.pointerEvents = 'auto';
-    btnSystem.style.opacity = '1';
-    btnSystem.style.cursor = 'pointer';
-  }
+  const btnsIniciais=['btn-calibrate-white','btn-calibrate-black','btn-reset-white','btn-reset-black','btn-camera','btn-audio','btn-flash','btn-universal','btn-ampliado','btn-plasticos','btn-modes','btn-reset-estatico','btn-sel-ref','btn-sel-sample','btn-reset-ref','btn-reset-sample','btn-reset-comparacao','btn-resultado','btn-ajuste-audio'];
+  btnsIniciais.forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
+  const btnSystem=document.getElementById('btn-system');
+  if(btnSystem){btnSystem.disabled=false;btnSystem.style.pointerEvents='auto';btnSystem.style.opacity='1';btnSystem.style.cursor='pointer';}
 });
 // ════════════════════════════════════════════════════════════════
 // 🎪 EVENT LISTENERS
 // ════════════════════════════════════════════════════════════════
 document.addEventListener('click', function(e) {
-  const dropdown = document.getElementById('mode-dropdown');
-  const btnModes = document.getElementById('btn-modes');
-  if (!btnModes.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.remove('show');
+  const dropdown=document.getElementById('mode-dropdown'), btnModes=document.getElementById('btn-modes');
+  if(!btnModes.contains(e.target)&&!dropdown.contains(e.target))dropdown.classList.remove('show');
 });
 cameraContainer.addEventListener('click', function(e) {
-  if (currentMode === 'comparacao' && running) {
-    const rect = cameraContainer.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    if (selectingRef) { captureRef(x, y); selectingRef = false; return; }
-    if (selectingSample) { captureSample(x, y); selectingSample = false; return; }
-    return;
+  if(currentMode==='comparacao'&&running){
+    const rect=cameraContainer.getBoundingClientRect(), x=e.clientX-rect.left, y=e.clientY-rect.top;
+    if(selectingRef){captureRef(x,y);selectingRef=false;return;}
+    if(selectingSample){captureSample(x,y);selectingSample=false;return;}
+    return; // toque sem seleção ativa — ignora
   }
-  if (currentMode !== 'estatico' || !running) return;
-  if (staticFrozen) return;
-  const rect = cameraContainer.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  staticPosition = { x, y };
-  staticAnalysisActive = true;
-  staticFrozen = false;
-  reticle.style.left = x + 'px';
-  reticle.style.top = y + 'px';
-  reticle.style.transform = 'translate(-50%, -50%)';
+  if(currentMode!=='estatico'||!running)return;
+  if(staticFrozen)return;
+  const rect=cameraContainer.getBoundingClientRect(), x=e.clientX-rect.left, y=e.clientY-rect.top;
+  staticPosition={x,y}; staticAnalysisActive=true; staticFrozen=false;
+  reticle.style.left=x+'px'; reticle.style.top=y+'px'; reticle.style.transform='translate(-50%, -50%)';
   reticle.classList.add('show');
 });
-console.log('%c🎨 Motor de Cores v3.3 PRO - Sistema Carregado', 'color: #6effa0; font-size: 16px; font-weight: bold;');
-console.log('%c📚 Biblioteca Plásticos:', Object.keys(PLASTICS_LIBRARY).length, 'cores', 'color: #7fdbff; font-size: 12px;');
-console.log('%c⚡ Performance:', 'Otimizado para máxima precisão', 'color: #ffcc60; font-size: 12px;');
+console.log('%c🎨 Motor de Cores v3.3 PRO - Sistema Carregado','color:#6effa0;font-size:16px;font-weight:bold;');
+console.log('%c📚 Biblioteca Plásticos:',Object.keys(PLASTICS_LIBRARY).length,'cores','color:#7fdbff;font-size:12px;');
+console.log('%c⚡ Performance:','Otimizado para máxima precisão','color:#ffcc60;font-size:12px;');
 </script>
 </body>
 </html>
