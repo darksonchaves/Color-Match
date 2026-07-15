@@ -267,7 +267,7 @@
 </head>
 <body>
 <div id="header">
-  <button id="btn-system" class="system-on" onclick="toggleSystem()" style="pointer-events:auto!important;opacity:1!important;cursor:pointer!important;">SISTEMA/ON</button>
+  <button id="btn-system" class="system-off" onclick="toggleSystem()" style="pointer-events:auto!important;opacity:1!important;cursor:pointer!important;">SISTEMA/OFF</button>
   <span style="font-size:0.6rem;color:#334;letter-spacing:1px;">Motor de Cores v3.5 PRO++ - CATÁLOGO DIGITAL MÁXIMA COMPATIBILIDADE</span>
 </div>
 <div id="top-bar">
@@ -397,7 +397,7 @@ let stream = null;
 let devices = [];
 let deviceIndex = 0;
 let running = false;
-let systemOn = true;
+let systemOn = false;
 let universalMode = false;
 let ampliatedMode = false;
 let plasticsMode = false;
@@ -1653,22 +1653,64 @@ async function openCamera(preferredDeviceId) {
 // ════════════════════════════════════════════════════════════════
 // 🎛️ INTERFACE
 // ════════════════════════════════════════════════════════════════
+function setControlState(id, enabled) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.disabled = !enabled;
+  el.style.pointerEvents = enabled ? 'auto' : 'none';
+  el.style.opacity = enabled ? '1' : '0.3';
+}
+function disableAllControls() {
+  ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos', 'btn-modes', 'btn-reset-estatico', 'btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao', 'btn-resultado-compatibilidade', 'btn-ajuste-sugerido'].forEach(id => setControlState(id, false));
+}
+// Liberação progressiva: funções liberadas SOMENTE após a escolha do modo
+function releaseModeButtons(mode) {
+  if (!systemOn) return;
+  // Funções comuns (como no projeto base)
+  ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos'].forEach(id => setControlState(id, true));
+  setControlState('btn-modes', true);
+  setControlState('btn-reset-estatico', mode === 'estatico');
+  ['btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao', 'btn-resultado-compatibilidade', 'btn-ajuste-sugerido'].forEach(id => setControlState(id, mode === 'comparacao'));
+}
+function setControlState(id, enabled) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.disabled = !enabled;
+  el.style.pointerEvents = enabled ? 'auto' : 'none';
+  el.style.opacity = enabled ? '1' : '0.3';
+}
+
+function disableAllControls() {
+  ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos', 'btn-modes', 'btn-reset-estatico', 'btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao', 'btn-resultado-compatibilidade', 'btn-ajuste-sugerido'].forEach(id => setControlState(id, false));
+}
+
+// Liberação progressiva: funções liberadas SOMENTE após a escolha do modo
+function releaseModeButtons(mode) {
+  if (!systemOn) return;
+  // Funções comuns dos modos (como no projeto base)
+  ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos'].forEach(id => setControlState(id, true));
+  setControlState('btn-modes', true);
+  setControlState('btn-reset-estatico', mode === 'estatico');
+  ['btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao', 'btn-resultado-compatibilidade', 'btn-ajuste-sugerido'].forEach(id => setControlState(id, mode === 'comparacao'));
+}
+
 function toggleSystem() {
   systemOn = !systemOn;
   const btn = document.getElementById('btn-system');
-  // btn-resultado-compatibilidade e btn-ajuste-sugerido NÃO entram nesta lista
-  // São controlados exclusivamente pelo selectMode
-  const btns = ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos', 'btn-modes', 'btn-reset-estatico', 'btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao'];
   if (systemOn) {
-    btn.textContent = 'SISTEMA/ON'; btn.className = 'system-on';
-    btns.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = false; });
+       btn.textContent = 'SISTEMA/ON'; btn.className = 'system-on';
     btn.disabled = false;
     btn.style.pointerEvents = 'auto';
     btn.style.opacity = '1';
-    speakSystem('Sistema ativado');
+    // Somente a SELEÇÃO DE MODO fica clicável; demais funções liberadas após a escolha
+    disableAllControls();
+    setControlState('btn-modes', true);
+    if (currentMode) releaseModeButtons(currentMode);
+    // Ao ligar: solicita seleção de modo + descreve cada modo
+    speakSystem('Sistema ligado. Selecione o modo. Modo Livre: mira fixa no centro, análise contínua. Modo Estático: clique na tela para analisar ponto específico. Modo Comparação: capture dois pontos e compare a compatibilidade entre eles.');
   } else {
-    btn.textContent = 'SISTEMA/OFF'; btn.className = 'system-off';
-    btns.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = true; });
+       btn.textContent = 'SISTEMA/OFF'; btn.className = 'system-off';
+    disableAllControls();
     // btn-system SEMPRE permanece clicável
     btn.disabled = false;
     btn.style.pointerEvents = 'auto';
@@ -1755,9 +1797,10 @@ function selectMode(mode) {
     document.querySelectorAll('.mode-option')[2].classList.add('active');
     speakSystem('Modo Comparação selecionado. Selecione a referência e a amostra para comparar.');
   }
-  staticAnalysisActive = false; staticFrozen = false; staticPosition = null;
+    staticAnalysisActive = false; staticFrozen = false; staticPosition = null;
+  // Libera as funções correspondentes ao modo escolhido
+  if (systemOn) releaseModeButtons(mode);
 }
-
 function resetEstatico() {
   if (currentMode !== 'estatico') return;
   staticPosition = null; staticAnalysisActive = false; staticFrozen = false;
@@ -2354,6 +2397,28 @@ function update() {
 // 🚀 INICIALIZAÇÃO
 // ════════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', function() {
+  // Sistema inicia OFF: botões gerais desabilitados até o usuário ligar
+  // btn-resultado-compatibilidade e btn-ajuste-sugerido NÃO entram nesta lista
+  const btnsIniciais = [
+    'btn-calibrate-white', 'btn-calibrate-black',
+    'btn-reset-white', 'btn-reset-black',
+    'btn-camera', 'btn-audio', 'btn-flash',
+    'btn-universal', 'btn-ampliado', 'btn-plasticos',
+    'btn-modes', 'btn-reset-estatico',
+    'btn-sel-ref', 'btn-sel-sample',
+    'btn-reset-ref', 'btn-reset-sample',
+    'btn-reset-comparacao'
+  ];
+  btnsIniciais.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.disabled = true;
+      el.style.pointerEvents = 'none';
+      el.style.opacity = '0.3';
+    }
+  });
+
+  // Novos botões: ocultos via display:none, SEM entrar na lista geral de disabled
   // Novos botões: ocultos via display:none, SEM entrar na lista geral de disabled
   // São controlados exclusivamente pelo selectMode
   ['btn-resultado-compatibilidade', 'btn-ajuste-sugerido'].forEach(id => {
