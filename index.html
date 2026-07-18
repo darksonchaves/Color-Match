@@ -1651,27 +1651,8 @@ async function openCamera(preferredDeviceId) {
 }
 
 // ════════════════════════════════════════════════════════════════
-// 🎛️ INTERFACE
+// 🎛️ INTERFACE - CONTROLE DE ESTADO DOS BOTÕES
 // ════════════════════════════════════════════════════════════════
-function setControlState(id, enabled) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.disabled = !enabled;
-  el.style.pointerEvents = enabled ? 'auto' : 'none';
-  el.style.opacity = enabled ? '1' : '0.3';
-}
-function disableAllControls() {
-  ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos', 'btn-modes', 'btn-reset-estatico', 'btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao', 'btn-resultado-compatibilidade', 'btn-ajuste-sugerido'].forEach(id => setControlState(id, false));
-}
-// Liberação progressiva: funções liberadas SOMENTE após a escolha do modo
-function releaseModeButtons(mode) {
-  if (!systemOn) return;
-  // Funções comuns (como no projeto base)
-  ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos'].forEach(id => setControlState(id, true));
-  setControlState('btn-modes', true);
-  setControlState('btn-reset-estatico', mode === 'estatico');
-  ['btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao', 'btn-resultado-compatibilidade', 'btn-ajuste-sugerido'].forEach(id => setControlState(id, mode === 'comparacao'));
-}
 function setControlState(id, enabled) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -1698,7 +1679,7 @@ function toggleSystem() {
   systemOn = !systemOn;
   const btn = document.getElementById('btn-system');
   if (systemOn) {
-       btn.textContent = 'SISTEMA/ON'; btn.className = 'system-on';
+    btn.textContent = 'SISTEMA/ON'; btn.className = 'system-on';
     btn.disabled = false;
     btn.style.pointerEvents = 'auto';
     btn.style.opacity = '1';
@@ -1709,7 +1690,7 @@ function toggleSystem() {
     // Ao ligar: solicita seleção de modo + descreve cada modo
     speakSystem('Sistema ligado. Selecione o modo. Modo Livre: mira fixa no centro, análise contínua. Modo Estático: clique na tela para analisar ponto específico. Modo Comparação: capture dois pontos e compare a compatibilidade entre eles.');
   } else {
-       btn.textContent = 'SISTEMA/OFF'; btn.className = 'system-off';
+    btn.textContent = 'SISTEMA/OFF'; btn.className = 'system-off';
     disableAllControls();
     // btn-system SEMPRE permanece clicável
     btn.disabled = false;
@@ -1736,6 +1717,7 @@ function toggleSystem() {
 function toggleModeDropdown() { document.getElementById('mode-dropdown').classList.toggle('show'); }
 
 function selectMode(mode) {
+  if (!systemOn) return;
   currentMode = mode;
   document.getElementById('mode-select-overlay').classList.add('hide');
   document.getElementById('mode-dropdown').classList.remove('show');
@@ -1752,8 +1734,6 @@ function selectMode(mode) {
     if (el) {
       el.classList.remove('show');
       el.style.display = 'none';
-      el.disabled = true;
-      el.style.pointerEvents = 'none';
     }
   });
   resultadoCalculado = false;
@@ -1782,25 +1762,23 @@ function selectMode(mode) {
     reticle.classList.remove('show');
     document.getElementById('btn-reset-estatico').classList.remove('show');
     ['btn-sel-ref','btn-sel-sample','btn-reset-ref','btn-reset-sample','btn-reset-comparacao'].forEach(id => document.getElementById(id).classList.add('show'));
-    // Exibe e reativa os novos botões SOMENTE no modo comparação
+    // Exibe os novos botões SOMENTE no modo comparação
     ['btn-resultado-compatibilidade', 'btn-ajuste-sugerido'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
         el.classList.add('show');
         el.style.display = 'inline-block';
-        el.disabled = false;
-        el.style.pointerEvents = 'auto';
-        el.style.opacity = '1';
       }
     });
     document.getElementById('comparison-panel').classList.add('show');
     document.querySelectorAll('.mode-option')[2].classList.add('active');
     speakSystem('Modo Comparação selecionado. Selecione a referência e a amostra para comparar.');
   }
-    staticAnalysisActive = false; staticFrozen = false; staticPosition = null;
+  staticAnalysisActive = false; staticFrozen = false; staticPosition = null;
   // Libera as funções correspondentes ao modo escolhido
-  if (systemOn) releaseModeButtons(mode);
+  releaseModeButtons(mode);
 }
+
 function resetEstatico() {
   if (currentMode !== 'estatico') return;
   staticPosition = null; staticAnalysisActive = false; staticFrozen = false;
@@ -2397,47 +2375,9 @@ function update() {
 // 🚀 INICIALIZAÇÃO
 // ════════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', function() {
-  // Sistema inicia OFF: botões gerais desabilitados até o usuário ligar
-  // btn-resultado-compatibilidade e btn-ajuste-sugerido NÃO entram nesta lista
-  const btnsIniciais = [
-    'btn-calibrate-white', 'btn-calibrate-black',
-    'btn-reset-white', 'btn-reset-black',
-    'btn-camera', 'btn-audio', 'btn-flash',
-    'btn-universal', 'btn-ampliado', 'btn-plasticos',
-    'btn-modes', 'btn-reset-estatico',
-    'btn-sel-ref', 'btn-sel-sample',
-    'btn-reset-ref', 'btn-reset-sample',
-    'btn-reset-comparacao'
-  ];
-  btnsIniciais.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.disabled = true;
-      el.style.pointerEvents = 'none';
-      el.style.opacity = '0.3';
-    }
-  });
-
-  // Novos botões: ocultos via display:none, SEM entrar na lista geral de disabled
-  // Novos botões: ocultos via display:none, SEM entrar na lista geral de disabled
-  // São controlados exclusivamente pelo selectMode
-  ['btn-resultado-compatibilidade', 'btn-ajuste-sugerido'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.style.display = 'none';
-      el.disabled = true;
-      el.style.pointerEvents = 'none';
-    }
-  });
-
-  // btn-system SEMPRE clicável — nunca desabilitado
-  const btnSystem = document.getElementById('btn-system');
-  if (btnSystem) {
-    btnSystem.disabled = false;
-    btnSystem.style.pointerEvents = 'auto';
-    btnSystem.style.opacity = '1';
-    btnSystem.style.cursor = 'pointer';
-  }
+  // Sistema inicia OFF: TODOS os controles bloqueados (incluindo MODOS)
+  // btn-system é o ÚNICO clicável
+  disableAllControls();
 });
 
 // ════════════════════════════════════════════════════════════════
