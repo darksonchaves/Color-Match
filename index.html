@@ -1511,6 +1511,7 @@ function speakImmediate(text) {
 }
 
 // speakSystem: narrações de SISTEMA/CONFIRMAÇÕES — SEMPRE ativas
+// (independentes de audioEnabled, conforme modificações)
 function speakSystem(text) {
   if (!window.speechSynthesis || !text) return;
   window.speechSynthesis.cancel();
@@ -1650,8 +1651,27 @@ async function openCamera(preferredDeviceId) {
 }
 
 // ════════════════════════════════════════════════════════════════
-// 🎛️ INTERFACE - LIBERAÇÃO PROGRESSIVA DE CONTROLES
+// 🎛️ INTERFACE
 // ════════════════════════════════════════════════════════════════
+function setControlState(id, enabled) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.disabled = !enabled;
+  el.style.pointerEvents = enabled ? 'auto' : 'none';
+  el.style.opacity = enabled ? '1' : '0.3';
+}
+function disableAllControls() {
+  ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos', 'btn-modes', 'btn-reset-estatico', 'btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao', 'btn-resultado-compatibilidade', 'btn-ajuste-sugerido'].forEach(id => setControlState(id, false));
+}
+// Liberação progressiva: funções liberadas SOMENTE após a escolha do modo
+function releaseModeButtons(mode) {
+  if (!systemOn) return;
+  // Funções comuns (como no projeto base)
+  ['btn-calibrate-white', 'btn-calibrate-black', 'btn-reset-white', 'btn-reset-black', 'btn-camera', 'btn-audio', 'btn-flash', 'btn-universal', 'btn-ampliado', 'btn-plasticos'].forEach(id => setControlState(id, true));
+  setControlState('btn-modes', true);
+  setControlState('btn-reset-estatico', mode === 'estatico');
+  ['btn-sel-ref', 'btn-sel-sample', 'btn-reset-ref', 'btn-reset-sample', 'btn-reset-comparacao', 'btn-resultado-compatibilidade', 'btn-ajuste-sugerido'].forEach(id => setControlState(id, mode === 'comparacao'));
+}
 function setControlState(id, enabled) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -1678,7 +1698,7 @@ function toggleSystem() {
   systemOn = !systemOn;
   const btn = document.getElementById('btn-system');
   if (systemOn) {
-    btn.textContent = 'SISTEMA/ON'; btn.className = 'system-on';
+       btn.textContent = 'SISTEMA/ON'; btn.className = 'system-on';
     btn.disabled = false;
     btn.style.pointerEvents = 'auto';
     btn.style.opacity = '1';
@@ -1689,7 +1709,7 @@ function toggleSystem() {
     // Ao ligar: solicita seleção de modo + descreve cada modo
     speakSystem('Sistema ligado. Selecione o modo. Modo Livre: mira fixa no centro, análise contínua. Modo Estático: clique na tela para analisar ponto específico. Modo Comparação: capture dois pontos e compare a compatibilidade entre eles.');
   } else {
-    btn.textContent = 'SISTEMA/OFF'; btn.className = 'system-off';
+       btn.textContent = 'SISTEMA/OFF'; btn.className = 'system-off';
     disableAllControls();
     // btn-system SEMPRE permanece clicável
     btn.disabled = false;
@@ -1777,11 +1797,10 @@ function selectMode(mode) {
     document.querySelectorAll('.mode-option')[2].classList.add('active');
     speakSystem('Modo Comparação selecionado. Selecione a referência e a amostra para comparar.');
   }
-  staticAnalysisActive = false; staticFrozen = false; staticPosition = null;
+    staticAnalysisActive = false; staticFrozen = false; staticPosition = null;
   // Libera as funções correspondentes ao modo escolhido
   if (systemOn) releaseModeButtons(mode);
 }
-
 function resetEstatico() {
   if (currentMode !== 'estatico') return;
   staticPosition = null; staticAnalysisActive = false; staticFrozen = false;
@@ -1949,13 +1968,13 @@ function formatFormula(formula) {
   return formula.map(p => `• ${p.pigmento}\n  (${p.ci} - ${p.codigo}) ~${p.proporcao}`).join('\n');
 }
 
-// updateComparison mantida para compatibilidade interna — não exibe resultado
+// updateComparison mantida apenas para compatibilidade interna — não exibe resultado
 // O resultado é exibido exclusivamente por mostrarResultadoCompatibilidade()
 function updateComparison() {
   return;
 }
 
-// Botão "RESULTADO DE COMPATIBILIDADE"
+// NOVO: Botão "RESULTADO DE COMPATIBILIDADE"
 function mostrarResultadoCompatibilidade() {
   if (!systemOn || currentMode !== 'comparacao') return;
 
@@ -1990,12 +2009,15 @@ function mostrarResultadoCompatibilidade() {
   const suggestionLabel = suggestionBox.querySelector('.comp-suggestion-label');
   const formulasSection = document.getElementById('comp-formulas-section');
 
+  // Garante painel visível
   document.getElementById('comparison-panel').classList.add('show');
 
+  // Compatibilidade
   const compat = calculateCompatibility(comparisonRef, comparisonSample);
   percentEl.textContent = compat + '%';
   percentEl.className = 'comp-percent' + (compat === 0 ? ' low' : (compat < 50 ? ' medium' : ''));
 
+  // Fórmulas (modo plásticos, se disponíveis)
   if (plasticsMode && comparisonRef.formula && comparisonSample.formula && comparisonRef.formula.length > 0) {
     formulasSection.style.display = 'block';
     document.getElementById('ref-formula-list').textContent = formatFormula(comparisonRef.formula);
@@ -2004,6 +2026,7 @@ function mostrarResultadoCompatibilidade() {
     formulasSection.style.display = 'none';
   }
 
+  // Ajuste sugerido
   const sug = suggestPigmentAdjustment(comparisonRef, comparisonSample);
   suggestionText.textContent = sug.text;
   suggestionText.className = 'comp-suggestion-text ' + (sug.cssClass || '');
@@ -2015,11 +2038,13 @@ function mostrarResultadoCompatibilidade() {
     suggestionLabel.innerHTML = '🎨 AJUSTE SUGERIDO';
   }
 
+  // Resumo no color-name
   document.getElementById('color-name').textContent =
     'Compatibilidade: ' + compat + '% | ' + comparisonRef.name + ' × ' + comparisonSample.name;
   document.getElementById('color-name').style.color =
     compat >= 80 ? '#6effa0' : compat >= 50 ? '#ffcc60' : '#ff5050';
 
+  // Texto limpo para narração
   const textoSugestao = sug.text
     .replace(/[\u2726\u2713\u26A0\uFE0F\u{1F4CB}\u{1F3A8}\u{1F9EA}\u25C6\u25C7\u2B50\u2606\u2705\u2699\uFE0F•]/gu, '')
     .replace(/\n+/g, '. ')
@@ -2035,7 +2060,7 @@ function mostrarResultadoCompatibilidade() {
   speakSystem(textoAudio);
 }
 
-// Botão "AJUSTE SUGERIDO" — lê do DOM e narra SEMPRE
+// NOVO: Botão "AJUSTE SUGERIDO" — lê do DOM e narra SEMPRE
 function narrarAjusteSugerido() {
   if (!systemOn || currentMode !== 'comparacao') return;
 
@@ -2369,7 +2394,7 @@ function update() {
 }
 
 // ════════════════════════════════════════════════════════════════
-// 🚀 INICIALIZAÇÃO — Estado inicial com SISTEMA/OFF
+// 🚀 INICIALIZAÇÃO
 // ════════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', function() {
   // Sistema inicia OFF: botões gerais desabilitados até o usuário ligar
@@ -2393,7 +2418,9 @@ window.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Novos botões: ocultos via display:none, SEM entrar na lista geral
+  // Novos botões: ocultos via display:none, SEM entrar na lista geral de disabled
+  // Novos botões: ocultos via display:none, SEM entrar na lista geral de disabled
+  // São controlados exclusivamente pelo selectMode
   ['btn-resultado-compatibilidade', 'btn-ajuste-sugerido'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
