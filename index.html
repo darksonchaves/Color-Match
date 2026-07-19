@@ -529,6 +529,10 @@ let refCaptured = false;
 let sampleCaptured = false;
 let resultadoCalculado = false;
 let lastSpokenComparison = '';
+
+// ════════════════════════════════════════════════════════════════
+// 📦 BIBLIOTECA DE PIGMENTOS PARA PLÁSTICOS (CATÁLOGO DIGITAL)
+// ════════════════════════════════════════════════════════════════
 const PLASTICS_LIBRARY = {
   "Branco Gelo": {
     hsvTarget: { h: 0, s: 2, v: 95 }, hsvRange: { hMin: 0, hMax: 30, sMin: 0, sMax: 20, vMin: 88, vMax: 100 },
@@ -816,7 +820,7 @@ const PLASTICS_LIBRARY = {
   }
 };
 // ════════════════════════════════════════════════════════════════
-// 🔒 FUNÇÕES AUXILIARES (RGB/HSV)
+// 🔒 FUNÇÕES AUXILIARES (RGB/HSV) - INTOCADAS
 // ════════════════════════════════════════════════════════════════
 function hexToRGB(hex) {
   if (!hex || typeof hex !== 'string') return { r: 0, g: 0, b: 0 };
@@ -849,33 +853,131 @@ function rgbToHSV(r, g, b) {
   };
 }
 // ════════════════════════════════════════════════════════════════
-// 🔒 TRAVA DE SEGURANÇA MÁXIMA (CATÁLOGO DIGITAL)
+// 🔬 ESPAÇO CIELAB E DELTA E 2000 (NOVO MOTOR DE PRECISÃO)
+// ════════════════════════════════════════════════════════════════
+// Converte sRGB (0-255) para espaço linear (0-1)
+function srgbToLinear(c) {
+  const v = c / 255;
+  return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+}
+// Converte RGB linear para CIE XYZ (D65 illuminant)
+function rgbToXYZ(r, g, b) {
+  const rL = srgbToLinear(r);
+  const gL = srgbToLinear(g);
+  const bL = srgbToLinear(b);
+  return {
+    x: rL * 0.4124564 + gL * 0.3575761 + bL * 0.1804375,
+    y: rL * 0.2126729 + gL * 0.7151522 + bL * 0.0721750,
+    z: rL * 0.0193339 + gL * 0.1191920 + bL * 0.9503041
+  };
+}
+// Converte CIE XYZ para CIE L*a*b* (D65, 2° observer)
+function xyzToLab(x, y, z) {
+  const refX = 0.95047, refY = 1.00000, refZ = 1.08883;
+  const fx = (t) => t > 0.008856 ? Math.pow(t, 1/3) : (7.787 * t + 16/116);
+  const xr = fx(x / refX);
+  const yr = fx(y / refY);
+  const zr = fx(z / refZ);
+  return {
+    l: Math.round((116 * yr - 16) * 100) / 100,
+    a: Math.round((500 * (xr - yr)) * 100) / 100,
+    b: Math.round((200 * (yr - zr)) * 100) / 100
+  };
+}
+// Converte RGB (0-255) diretamente para CIE L*a*b*
+function rgbToLab(r, g, b) {
+  const xyz = rgbToXYZ(r, g, b);
+  return xyzToLab(xyz.x, xyz.y, xyz.z);
+}
+// Calcula delta E 2000 entre duas cores em L*a*b*
+// Implementação baseada no padrão CIE DE2000
+function deltaE2000(lab1, lab2) {
+  const L1 = lab1.l, a1 = lab1.a, b1 = lab1.b;
+  const L2 = lab2.l, a2 = lab2.a, b2 = lab2.b;
+  const kL = 1.0, kC = 1.0, kH = 1.0;
+  const C1 = Math.sqrt(a1 * a1 + b1 * b1);
+  const C2 = Math.sqrt(a2 * a2 + b2 * b2);
+  const avgC = (C1 + C2) / 2;
+  const G = 0.5 * (1 - Math.sqrt(Math.pow(avgC, 7) / (Math.pow(avgC, 7) + Math.pow(25, 7))));
+  const a1p = a1 * (1 + G);
+  const a2p = a2 * (1 + G);
+  const C1p = Math.sqrt(a1p * a1p + b1 * b1);
+  const C2p = Math.sqrt(a2p * a2p + b2 * b2);
+  const h1p = (a1p === 0 && b1 === 0) ? 0 : (Math.atan2(b1, a1p) * 180 / Math.PI + 360) % 360;
+  const h2p = (a2p === 0 && b2 === 0) ? 0 : (Math.atan2(b2, a2p) * 180 / Math.PI + 360) % 360;
+  const deltaLp = L2 - L1;
+  const deltaCp = C2p - C1p;
+  let deltahp;
+  if (C1p === 0 || C2p === 0) {
+    deltahp = 0;
+  } else {
+    const diff = h2p - h1p;
+    if (Math.abs(diff) <= 180) deltahp = diff;
+    else if (diff > 180) deltahp = diff - 360;
+    else deltahp = diff + 360;
+  }
+  const deltaHp = 2 * Math.sqrt(C1p * C2p) * Math.sin(deltahp * Math.PI / 360);
+  const avgLp = (L1 + L2) / 2;
+  const avgCp = (C1p + C2p) / 2;
+  let avghp;
+  if (C1p === 0 || C2p === 0) {
+    avghp = h1p + h2p;
+  } else {
+    const diff = Math.abs(h1p - h2p);
+    if (diff <= 180) avghp = (h1p + h2p) / 2;
+    else if (h1p + h2p < 360) avghp = (h1p + h2p + 360) / 2;
+    else avghp = (h1p + h2p - 360) / 2;
+  }
+  const T = 1 - 0.17 * Math.cos((avghp - 30) * Math.PI / 180)
+              + 0.24 * Math.cos((2 * avghp) * Math.PI / 180)
+              + 0.32 * Math.cos((3 * avghp + 6) * Math.PI / 180)
+              - 0.20 * Math.cos((4 * avghp - 63) * Math.PI / 180);
+  const SL = 1 + (0.015 * Math.pow(avgLp - 50, 2)) / Math.sqrt(20 + Math.pow(avgLp - 50, 2));
+  const SC = 1 + 0.045 * avgCp;
+  const SH = 1 + 0.015 * avgCp * T;
+  const deltaTheta = 30 * Math.exp(-Math.pow((avghp - 275) / 25, 2));
+  const RC = 2 * Math.sqrt(Math.pow(avgCp, 7) / (Math.pow(avgCp, 7) + Math.pow(25, 7)));
+  const RT = -RC * Math.sin(2 * deltaTheta * Math.PI / 180);
+  return Math.sqrt(
+    Math.pow(deltaLp / (kL * SL), 2) +
+    Math.pow(deltaCp / (kC * SC), 2) +
+    Math.pow(deltaHp / (kH * SH), 2) +
+    RT * (deltaCp / (kC * SC)) * (deltaHp / (kH * SH))
+  );
+}
+// ════════════════════════════════════════════════════════════════
+// 🎯 NOVO SCORE VISUAL BASEADO EM CIEDE2000
 // ════════════════════════════════════════════════════════════════
 function calculateVisualScore(readHSV, readRGB, hex) {
   const candRGB = hexToRGB(hex);
-  const candHSV = rgbToHSV(candRGB.r, candRGB.g, candRGB.b);
-  const rgbDist = Math.sqrt(
-    Math.pow(readRGB.r - candRGB.r, 2) +
-    Math.pow(readRGB.g - candRGB.g, 2) +
-    Math.pow(readRGB.b - candRGB.b, 2)
-  );
-  let hDiff = Math.abs(readHSV.h - candHSV.h);
-  if (hDiff > 180) hDiff = 360 - hDiff;
-  const sDiff = Math.abs(readHSV.s - candHSV.s);
-  const vDiff = Math.abs(readHSV.v - candHSV.v);
-  const maxRGBDist = Math.sqrt(3 * Math.pow(255, 2));
-  const normalizedRGBDist = rgbDist / maxRGBDist;
-  const normalizedHDiff = hDiff / 180;
-  const normalizedSDiff = sDiff / 100;
-  const normalizedVDiff = vDiff / 100;
-  const score = 100 - (
-    normalizedRGBDist * 45 +
-    normalizedVDiff * 25 +
-    normalizedHDiff * 20 +
-    normalizedSDiff * 10
-  );
-  return Math.max(0, Math.min(100, score));
+  // Converte ambas as cores para CIELAB
+  const labRead = rgbToLab(readRGB.r, readRGB.g, readRGB.b);
+  const labCand = rgbToLab(candRGB.r, candRGB.g, candRGB.b);
+  // Calcula deltaE2000 (0 = idênticas, ~100 = completamente diferentes)
+  const de2000 = deltaE2000(labRead, labCand);
+  // Converte DE2000 para score percentual
+  // DE2000 de ~2.3 é o limiar de percepção humana (JND)
+  // DE2000 > 30 é considerado cor completamente diferente
+  // Usamos escala logarítmica suave para melhor discriminação
+  let score;
+  if (de2000 <= 2.3) {
+    // Abaixo do limiar de percepção humana — essencialmente idêntico
+    score = 100 - (de2000 / 2.3) * 5;
+  } else if (de2000 <= 10) {
+    // Diferença sutil — queda suave
+    score = 95 - ((de2000 - 2.3) / 7.7) * 25;
+  } else if (de2000 <= 30) {
+    // Diferença moderada
+    score = 70 - ((de2000 - 10) / 20) * 40;
+  } else {
+    // Cores muito diferentes — queda acentuada
+    score = Math.max(0, 30 - ((de2000 - 30) / 70) * 30);
+  }
+  return Math.max(0, Math.min(100, Math.round(score)));
 }
+// ════════════════════════════════════════════════════════════════
+// 🔒 FUNÇÃO DE FAMÍLIA ESPECTRAL - INTOCADA
+// ════════════════════════════════════════════════════════════════
 function getColorFamily(h, s) {
   if (s < 15) return 'neutro';
   if (h >= 0 && h < 15) return 'vermelho';
@@ -890,7 +992,7 @@ function getColorFamily(h, s) {
   return 'neutro';
 }
 // ════════════════════════════════════════════════════════════════
-// 🧪 CLASSIFICADOR COM CATÁLOGO DIGITAL (PLÁSTICOS)
+// 🧪 CLASSIFICADOR COM CATÁLOGO DIGITAL (PLÁSTICOS) - INTOCADO
 // ════════════════════════════════════════════════════════════════
 function classifyPlasticsPolymers(hsv, rgb, variance) {
   if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0, formula: [] };
@@ -946,7 +1048,7 @@ function classifyPlasticsPolymers(hsv, rgb, variance) {
   return { name: 'Desconhecido', color: '#888888', confidence: 0, formula: [] };
 }
 // ════════════════════════════════════════════════════════════════
-// 🔬 CLASSIFICAÇÃO AMPLIADA (60+ NUANCES)
+// 🔬 CLASSIFICAÇÃO AMPLIADA (60+ NUANCES) - INTOCADA
 // ════════════════════════════════════════════════════════════════
 function classifyColorExtended(hsv, rgb, variance) {
   if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0 };
@@ -1090,7 +1192,7 @@ function classifyColorExtended(hsv, rgb, variance) {
   return { name: baseName, color: baseColor, confidence };
 }
 // ════════════════════════════════════════════════════════════════
-// 🎨 CLASSIFICAÇÃO PADRÃO (MOTOR v2.8)
+// 🎨 CLASSIFICAÇÃO PADRÃO (MOTOR v2.8) - INTOCADA
 // ════════════════════════════════════════════════════════════════
 function classifyColorWithRuler(hsv, rgb, variance) {
   if (!hsv || !rgb) return { name: 'Erro: Dados Inválidos', color: '#888888', confidence: 0 };
@@ -1259,19 +1361,17 @@ function calculateCompatibility(ref, sample) {
   const idxRef = getSpectralIndex(refBase);
   const idxSample = getSpectralIndex(sampleBase);
   if (!areSpectralNeighbors(idxRef, idxSample)) return 0;
-  let hueDiff = Math.abs(ref.hsv.h - sample.hsv.h);
-  if (hueDiff > 180) hueDiff = 360 - hueDiff;
-  const maxRGBDist = Math.sqrt(3 * Math.pow(255, 2));
-  const rgbDist = Math.sqrt(
-    Math.pow(ref.rgb.r - sample.rgb.r, 2) +
-    Math.pow(ref.rgb.g - sample.rgb.g, 2) +
-    Math.pow(ref.rgb.b - sample.rgb.b, 2)
-  ) / maxRGBDist;
-  const sDist = Math.abs(ref.hsv.s - sample.hsv.s) / 100;
-  const vDist = Math.abs(ref.hsv.v - sample.hsv.v) / 100;
-  const hDist = hueDiff / 180;
-  const weightedDist = rgbDist * 0.40 + hDist * 0.30 + sDist * 0.15 + vDist * 0.15;
-  return Math.max(0, Math.round((1 - weightedDist) * 100));
+  // Usa CIELAB para o cálculo de compatibilidade entre cores espectrais vizinhas
+  const labRef = rgbToLab(ref.rgb.r, ref.rgb.g, ref.rgb.b);
+  const labSample = rgbToLab(sample.rgb.r, sample.rgb.g, sample.rgb.b);
+  const de2000 = deltaE2000(labRef, labSample);
+  // Converte DE2000 para percentual de compatibilidade
+  let compat;
+  if (de2000 <= 2.3) compat = 100 - de2000 * 2;
+  else if (de2000 <= 10) compat = 95 - ((de2000 - 2.3) / 7.7) * 25;
+  else if (de2000 <= 30) compat = 70 - ((de2000 - 10) / 20) * 40;
+  else compat = Math.max(0, 30 - ((de2000 - 30) / 70) * 30);
+  return Math.max(0, Math.min(100, Math.round(compat)));
 }
 function suggestPigmentsPlastics(ref, sample) {
   if (!ref || !sample) return { text: 'Erro: Parâmetros inválidos', cssClass: 'incompatible' };
@@ -1787,7 +1887,7 @@ function toggleSystem() {
     document.getElementById('mode-select-overlay').classList.remove('hide');
     speakSystem('Sistema ligado. Selecione o modo. Modo Livre: mira fixa no centro, análise contínua. Modo Estático: clique na tela para analisar ponto específico. Modo Comparação: capture dois pontos e compare a compatibilidade entre eles.');
   } else {
-    // Exibir overlay de confirmação de desligamento (apenas se não estiver já exibindo)
+    // Exibir overlay de confirmação de desligamento
     if (confirmingShutdown) return;
     confirmingShutdown = true;
     document.getElementById('confirm-shutdown-overlay').classList.add('show');
@@ -2434,7 +2534,7 @@ cameraContainer.addEventListener('click', function(e) {
 // ════════════════════════════════════════════════════════════════
 console.log('%c🎨 Motor de Cores v3.5 PRO++ - CATÁLOGO DIGITAL ATIVADO!', 'color: #6effa0; font-size: 14px; font-weight: bold;');
 console.log('%c📚 Biblioteca Plásticos: ' + Object.keys(PLASTICS_LIBRARY).length + ' cores', 'color: #7fdbff; font-size: 12px;');
-console.log('%c🔒 Validação por Maior Score: ATIVA', 'color: #ffcc60; font-size: 12px;');
+console.log('%c🧪 Motor CIELAB + CIEDE2000: ATIVO', 'color: #ffcc60; font-size: 12px;');
 console.log('%c🎤 Sistema de Áudio Completo: ATIVO', 'color: #ff88aa; font-size: 12px;');
 </script>
 </body>
