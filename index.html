@@ -1,1603 +1,1975 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Motor de Cor RAL Plásticos P1 — Identificação Colorimétrica</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: #0a0a0f; color: #e0e0f0;
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    height: 100vh; overflow: hidden;
-    display: flex; flex-direction: column;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-  #header {
-    background: rgba(0,0,0,0.6); padding: 6px 12px;
-    display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(99,102,241,0.15);
-    z-index: 30; position: relative; flex-shrink: 0;
-  }
-  #btn-system {
-    padding: 6px 12px; border-radius: 6px;
-    cursor: pointer; font-size: 0.68rem; font-weight: 700;
-    letter-spacing: 1.5px; text-transform: uppercase;
-    transition: all 0.2s ease; border: 1px solid;
-  }
-  #btn-system.system-on {
-    background: linear-gradient(135deg, #052e16, #166534);
-    color: #86efac; border-color: rgba(74,222,128,0.45);
-    box-shadow: 0 0 8px rgba(60,200,100,0.25);
-  }
-  #btn-system.system-off {
-    background: linear-gradient(135deg, #450a0a, #7f1d1d);
-    color: #f87171; border-color: rgba(248,113,113,0.45);
-    box-shadow: 0 0 8px rgba(200,50,50,0.2);
-  }
-  #header-title {
-    font-size: 0.6rem; color: #475569; letter-spacing: 1px;
-    display: none;
-  }
-  @media (min-width: 640px) { #header-title { display: block; } }
-  /* TOP BAR */
-  #top-bar {
-    background: rgba(0,0,0,0.5);
-    border-bottom: 1px solid rgba(99,102,241,0.10);
-    padding: 6px 10px; display: flex; align-items: center;
-    gap: 8px; z-index: 25; position: relative; flex-shrink: 0;
-    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-    flex-wrap: wrap;
-  }
-  #top-bar.hidden-bar { display: none; }
-  /* MODE SELECTOR */
-  .mode-selector { position: relative; }
-  #btn-modes {
-    padding: 6px 12px; border-radius: 6px; cursor: pointer;
-    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.8px;
-    text-transform: uppercase; transition: all 0.2s ease;
-    display: flex; align-items: center; gap: 6px; border: 2px solid;
-  }
-  #btn-modes.mode-default {
-    border-color: rgba(99,102,241,0.4);
-    background: linear-gradient(135deg, #1e1b4b, #312e81);
-    color: #c7d2fe;
-  }
-  #btn-modes.mode-livre {
-    border-color: rgba(74,222,128,0.5);
-    background: linear-gradient(135deg, #052e16, #166534);
-    color: #86efac;
-  }
-  #btn-modes.mode-estatico {
-    border-color: rgba(56,189,248,0.5);
-    background: linear-gradient(135deg, #082f49, #0c4a6e);
-    color: #7dd3fc;
-  }
-  #btn-modes.mode-comparacao {
-    border-color: rgba(251,191,36,0.5);
-    background: linear-gradient(135deg, #431407, #7c2d12);
-    color: #fcd34d;
-  }
-  #mode-dropdown {
-    position: absolute; top: 100%; left: 0; margin-top: 4px;
-    background: #0f0f28; border: 1px solid rgba(99,102,241,0.3);
-    border-radius: 6px; overflow: hidden; display: none;
-    min-width: 210px; box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-    z-index: 100;
-  }
-  #mode-dropdown.show { display: block; }
-  .mode-option {
-    padding: 10px 14px; cursor: pointer; font-size: 0.68rem;
-    font-weight: 600; letter-spacing: 0.5px;
-    transition: background 0.15s ease;
-    border-bottom: 1px solid rgba(99,102,241,0.10);
-    display: flex; align-items: center; gap: 8px; color: #c7d2fe;
-  }
-  .mode-option:last-child { border-bottom: none; }
-  .mode-option:hover { background: rgba(99,102,241,0.15); }
-  .mode-option.active { background: rgba(74,222,128,0.2); color: #86efac; }
-  /* COLOR SWATCH */
-  #color-swatch {
-    width: 28px; height: 28px; border-radius: 5px;
-    border: 1px solid rgba(255,255,255,0.12); flex-shrink: 0;
-    transition: background 0.25s ease;
-    box-shadow: 0 0 8px rgba(0,0,0,0.5);
-  }
-  /* COLOR INFO */
-  #color-name {
-    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.4px;
-    min-width: 180px; text-align: left; color: #e2e8f0;
-  }
-  #ral-code-display {
-    font-size: 0.58rem; color: #4ade80; white-space: nowrap;
-    font-weight: 700; letter-spacing: 0.5px;
-  }
-  .sep { color: rgba(99,102,241,0.3); font-size: 0.7rem; flex-shrink: 0; }
-  .data-inline {
-    font-size: 0.62rem; font-family: 'Courier New', monospace;
-    color: #94a3b8; white-space: nowrap;
-  }
-  .data-inline .lbl { color: #475569; margin-right: 2px; }
-  #base-info { font-size: 0.56rem; color: #64748b; white-space: nowrap; }
-  /* TOP BUTTONS */
-  .btn-top {
-    padding: 4px 8px; border-radius: 5px;
-    cursor: pointer; font-size: 0.58rem; font-weight: 600;
-    letter-spacing: 0.5px; text-transform: uppercase;
-    transition: all 0.18s ease; white-space: nowrap; flex-shrink: 0;
-    border: 1px solid;
-  }
-  .btn-top:disabled { opacity: 0.25; cursor: not-allowed; }
-  .btn-default {
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    color: #94a3b8; border-color: rgba(99,102,241,0.25);
-  }
-  .btn-default:hover:not(:disabled) {
-    background: linear-gradient(135deg, #1e293b, #334155);
-    color: #e2e8f0;
-  }
-  .btn-active {
-    background: linear-gradient(135deg, #052e16, #166534);
-    color: #86efac; border-color: rgba(74,222,128,0.45);
-    box-shadow: 0 0 6px rgba(60,200,100,0.2);
-  }
-  .btn-danger {
-    background: linear-gradient(135deg, #450a0a, #7f1d1d);
-    color: #fca5a5; border-color: rgba(248,113,113,0.3);
-  }
-  .btn-danger:hover:not(:disabled) {
-    background: linear-gradient(135deg, #7f1d1d, #991b1b);
-    color: #fecaca;
-  }
-  .btn-warn {
-    background: linear-gradient(135deg, #431407, #7c2d12);
-    color: #fdba74; border-color: rgba(251,146,60,0.4);
-  }
-  .btn-warn:hover:not(:disabled) {
-    background: linear-gradient(135deg, #7c2d12, #9a3412);
-    color: #fed7aa;
-  }
-  .btn-teal {
-    background: linear-gradient(135deg, #042f2e, #134e4a);
-    color: #5eead4; border-color: rgba(45,212,191,0.4);
-  }
-  .btn-teal:hover:not(:disabled) {
-    background: linear-gradient(135deg, #134e4a, #115e59);
-    color: #99f6e4;
-  }
-  .btn-yellow {
-    background: linear-gradient(135deg, #422006, #78350f);
-    color: #fde68a; border-color: rgba(253,224,71,0.4);
-  }
-  .btn-yellow:hover:not(:disabled) {
-    background: linear-gradient(135deg, #78350f, #92400e);
-    color: #fef3c7;
-  }
-  .btn-indigo {
-    background: linear-gradient(135deg, #1e1b4b, #312e81);
-    color: #a5b4fc; border-color: rgba(99,102,241,0.3);
-  }
-  .btn-indigo:hover:not(:disabled) {
-    background: linear-gradient(135deg, #312e81, #3730a3);
-    color: #c7d2fe;
-  }
-  .btn-blue {
-    background: linear-gradient(135deg, #0c2a4a, #1e4976);
-    color: #7dd3fc; border-color: rgba(56,189,248,0.4);
-  }
-  .btn-blue:hover:not(:disabled) {
-    background: linear-gradient(135deg, #1e4976, #1d4ed8);
-    color: #bae6fd;
-  }
-  .btn-audio-on {
-    background: linear-gradient(135deg, #052e16, #166534);
-    color: #86efac; border-color: rgba(74,222,128,0.45);
-    box-shadow: 0 0 6px rgba(60,200,100,0.2);
-  }
-  .btn-flash-on {
-    background: linear-gradient(135deg, #422006, #78350f);
-    color: #fcd34d; border-color: rgba(253,224,71,0.45);
-    box-shadow: 0 0 6px rgba(200,200,80,0.2);
-  }
-  /* MAIN */
-  #main { flex: 1; position: relative; overflow: hidden; }
-  #camera-container { position: absolute; inset: 0; background: #000; }
-  #videoEl {
-    position: absolute; inset: 0; width: 100%; height: 100%;
-    object-fit: cover; z-index: 1;
-  }
-  #canvasEl { display: none; }
-  /* RETICLE */
-  #reticle {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 56px; height: 56px;
-    pointer-events: none; z-index: 20; display: none;
-  }
-  #reticle.show { display: block; }
-  .reticle-h {
-    position: absolute; top: 50%; left: 0; width: 100%; height: 2px;
-    background: rgba(103,232,249,0.9); transform: translateY(-50%);
-    box-shadow: 0 0 4px rgba(103,232,249,0.6);
-  }
-  .reticle-v {
-    position: absolute; left: 50%; top: 0; height: 100%; width: 2px;
-    background: rgba(103,232,249,0.9); transform: translateX(-50%);
-    box-shadow: 0 0 4px rgba(103,232,249,0.6);
-  }
-  .reticle-circle {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 20px; height: 20px; border-radius: 50%;
-    border: 1px dashed rgba(103,232,249,0.6);
-  }
-  .reticle-dot {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 4px; height: 4px; border-radius: 50%;
-    background: rgba(103,232,249,0.9);
-    box-shadow: 0 0 4px rgba(103,232,249,0.9);
-  }
-  /* CAP BADGES */
-  #cap-badges {
-    position: absolute; right: 8px; top: 8px;
-    z-index: 20; display: flex; flex-direction: column;
-    align-items: flex-end; gap: 4px;
-  }
-  .cap-badge {
-    border-radius: 4px; padding: 2px 6px;
-    font-size: 0.5rem; font-weight: 600; border: 1px solid;
-    backdrop-filter: blur(4px);
-  }
-  .cap-badge.ok {
-    border-color: rgba(74,222,128,0.4);
-    background: rgba(5,46,22,0.7); color: #86efac;
-  }
-  .cap-badge.no {
-    border-color: rgba(71,85,105,0.4);
-    background: rgba(15,23,42,0.7); color: #64748b;
-  }
-  /* RAL DETAIL PANEL */
-  #ral-panel {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    background: rgba(0,0,0,0.85);
-    border-top: 1px solid rgba(99,102,241,0.2);
-    padding: 10px 16px; display: none;
-    flex-direction: column; gap: 6px; z-index: 22;
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  }
-  #ral-panel.show { display: flex; }
-  #ral-panel-title {
-    font-size: 0.62rem; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 1.2px; color: #22d3ee;
-  }
-  #ral-detail-row {
-    display: flex; flex-wrap: wrap;
-    gap: 8px 20px; align-items: center;
-  }
-  .ral-field { display: flex; align-items: baseline; gap: 5px; }
-  .ral-field-lbl {
-    font-size: 0.55rem; text-transform: uppercase;
-    letter-spacing: 0.8px; color: #64748b;
-  }
-  .ral-field-val {
-    font-size: 0.7rem; font-weight: 600; color: #e2e8f0;
-  }
-  .ral-field-val.highlight { color: #4ade80; }
-  /* COMPARISON PANEL */
-  #comparison-panel {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    background: rgba(0,0,0,0.9);
-    border-top: 1px solid rgba(99,102,241,0.2);
-    padding: 10px 16px; display: none;
-    flex-direction: column; align-items: center;
-    gap: 8px; z-index: 22;
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    max-height: 60vh; overflow-y: auto;
-  }
-  #comparison-panel.show { display: flex; }
-  .comp-row {
-    display: flex; align-items: center;
-    justify-content: center; gap: 16px; width: 100%;
-  }
-  .comp-block {
-    display: flex; flex-direction: column;
-    align-items: center; gap: 4px;
-    flex: 1; max-width: 26vw;
-  }
-  .comp-block.comp-center {
-    flex: 0 0 auto; min-width: 120px;
-  }
-  .comp-label {
-    font-size: 0.55rem; font-weight: 700;
-    letter-spacing: 1px; color: #64748b; text-transform: uppercase;
-  }
-  .comp-img-wrap {
-    position: relative; width: 100%; aspect-ratio: 4/3;
-    border-radius: 6px; overflow: hidden;
-    border: 1px solid rgba(99,102,241,0.25); background: #000;
-  }
-  .comp-thumb { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .comp-color-name {
-    font-size: 0.68rem; font-weight: 700; color: #cbd5e1;
-    text-align: center; line-height: 1.2;
-  }
-  .comp-compat-label {
-    font-size: 0.55rem; font-weight: 700;
-    letter-spacing: 1px; color: #475569; text-align: center;
-    text-transform: uppercase;
-  }
-  .comp-percent {
-    font-size: 1.5rem; font-weight: 800;
-    color: #64748b; text-align: center; line-height: 1;
-  }
-  .comp-percent.high { color: #4ade80; text-shadow: 0 0 10px rgba(74,222,128,0.35); }
-  .comp-percent.med { color: #fbbf24; text-shadow: 0 0 10px rgba(251,191,36,0.35); }
-  .comp-percent.low { color: #f87171; text-shadow: 0 0 10px rgba(248,113,113,0.35); }
-  .comp-de {
-    font-size: 0.5rem; color: #475569; text-align: center;
-  }
-  .comp-suggestion-box {
-    width: 100%; max-width: 720px;
-    border: 1px solid rgba(103,232,249,0.3);
-    background: rgba(15,23,42,0.7);
-    border-radius: 6px; padding: 8px 16px;
-  }
-  .comp-suggestion-title {
-    font-size: 0.55rem; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 1.2px;
-    color: #475569; text-align: center; margin-bottom: 4px;
-  }
-  .comp-suggestion-text {
-    font-size: 0.68rem; font-weight: 500; color: #a5f3fc;
-    text-align: center; white-space: pre-line; line-height: 1.4;
-  }
-  .comp-suggestion-text.perfect { color: #86efac; text-align: center; }
-  .comp-selecting-hint {
-    font-size: 0.65rem; font-weight: 600; color: #fcd34d;
-  }
-  /* OVERLAYS */
-  #mode-select-overlay {
-    position: absolute; inset: 0; background: rgba(0,0,0,0.9);
-    display: flex; flex-direction: column; align-items: center;
-    justify-content: center; z-index: 35; gap: 20px; padding: 24px;
-    text-align: center;
-  }
-  #mode-select-overlay.hide { display: none; }
-  #mode-select-overlay h2 {
-    color: #c7d2fe; font-size: 1.2rem;
-    letter-spacing: 1px; font-weight: 600;
-  }
-  #mode-select-overlay p {
-    color: #64748b; font-size: 0.88rem;
-    max-width: 400px; line-height: 1.6;
-  }
-  .mode-select-buttons { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-  .mode-select-btn {
-    border: 1px solid rgba(99,102,241,0.4);
-    background: rgba(30,27,75,0.6);
-    color: #c7d2fe; border-radius: 8px;
-    padding: 8px 16px; font-size: 0.75rem;
-    font-weight: 700; cursor: pointer;
-    text-transform: uppercase; letter-spacing: 0.8px;
-    transition: all 0.2s;
-  }
-  .mode-select-btn:hover { background: rgba(49,46,129,0.6); }
-  #confirm-shutdown-overlay {
-    position: absolute; inset: 0; background: rgba(0,0,0,0.92);
-    display: none; flex-direction: column;
-    align-items: center; justify-content: center;
-    z-index: 40; gap: 24px; text-align: center; padding: 24px;
-  }
-  #confirm-shutdown-overlay.show { display: flex; }
-  #confirm-shutdown-overlay h2 {
-    color: #f87171; font-size: 1.2rem;
-    max-width: 360px; line-height: 1.4; font-weight: 600;
-  }
-  .confirm-buttons { display: flex; gap: 32px; }
-  .confirm-btn {
-    padding: 14px 40px; border-radius: 10px;
-    font-size: 0.95rem; font-weight: 700; cursor: pointer;
-    letter-spacing: 1.5px; text-transform: uppercase;
-    transition: all 0.2s; border: 1px solid;
-  }
-  .confirm-btn:hover { transform: scale(1.06); }
-  .confirm-btn-sim {
-    background: linear-gradient(135deg, #450a0a, #7f1d1d);
-    color: #f87171; border-color: rgba(248,113,113,0.5);
-    box-shadow: 0 0 12px rgba(200,50,50,0.25);
-  }
-  .confirm-btn-nao {
-    background: linear-gradient(135deg, #052e16, #166534);
-    color: #86efac; border-color: rgba(74,222,128,0.45);
-    box-shadow: 0 0 12px rgba(60,200,100,0.2);
-  }
-  #start-overlay {
-    position: absolute; inset: 0; background: rgba(0,0,0,0.85);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    z-index: 30; gap: 14px; text-align: center; padding: 24px;
-  }
-  #start-overlay.hide { display: none; }
-  #start-overlay p { color: #64748b; font-size: 0.88rem; }
-  #btn-start {
-    padding: 14px 32px;
-    background: linear-gradient(135deg, #3730a3, #7c3aed);
-    color: #fff; border: none; border-radius: 10px;
-    font-size: 0.95rem; font-weight: 700; cursor: pointer;
-    letter-spacing: 1px; transition: all 0.2s;
-  }
-  #btn-start:hover { transform: scale(1.05); }
-  #system-off-overlay {
-    position: absolute; inset: 0; z-index: 10;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.95); gap: 12px;
-    text-align: center; padding: 24px;
-  }
-  #system-off-overlay.hide { display: none; }
-  #system-off-overlay .emoji { font-size: 2.5rem; }
-  #system-off-overlay h1 {
-    font-size: 1.1rem; font-weight: 700;
-    color: #cbd5e1; letter-spacing: 0.5px;
-  }
-  #system-off-overlay p {
-    font-size: 0.85rem; color: #475569;
-    max-width: 400px; line-height: 1.5;
-  }
-  #system-off-overlay .hw-note {
-    font-size: 0.6rem; color: #334155;
-    max-width: 400px; line-height: 1.4; margin-top: 4px;
-  }
-  @media (max-width: 640px) {
-    #top-bar { gap: 5px; padding: 4px 8px; }
-    .btn-top { padding: 3px 6px; font-size: 0.54rem; }
-    #btn-modes { padding: 5px 9px; font-size: 0.62rem; }
-    #color-name { font-size: 0.72rem; min-width: 130px; }
-    .data-inline { font-size: 0.56rem; }
-    .comp-block { max-width: 30vw; }
-    .comp-block.comp-center { min-width: 90px; }
-  }
-</style>
-</head>
-<body>
-<div id="header">
-  <button id="btn-system" class="system-off" onclick="toggleSystem()">SISTEMA/OFF</button>
-  <span id="header-title">MOTOR DE COR — CATÁLOGO OFICIAL RAL PLÁSTICOS P1 · CIELAB + ΔE2000</span>
-</div>
-<div id="top-bar" class="hidden-bar">
-  <div class="mode-selector">
-    <button id="btn-modes" class="mode-default" onclick="toggleModeDropdown()">
-      <span id="mode-label">MODOS</span>
-      <span style="font-size:0.5rem;">▼</span>
-    </button>
-    <div id="mode-dropdown">
-      <div class="mode-option" onclick="selectMode('livre')">🎯 LIVRE</div>
-      <div class="mode-option" onclick="selectMode('estatico')">📍 ESTÁTICO</div>
-      <div class="mode-option" onclick="selectMode('comparacao')">⚖️ COMPARAÇÃO</div>
-    </div>
-  </div>
-  <div id="color-swatch" style="background:#1a1a2e;"></div>
-  <div id="color-name" style="color:#334155;">---</div>
-  <div id="ral-code-display"></div>
-  <span class="sep">│</span>
-  <div class="data-inline" id="hsv-line">
-    <span class="lbl">H:</span>---° <span class="lbl">S:</span>---% <span class="lbl">V:</span>---%
-  </div>
-  <span class="sep">│</span>
-  <div class="data-inline" id="rgb-line">
-    <span class="lbl">R:</span>--- <span class="lbl">G:</span>--- <span class="lbl">B:</span>---
-  </div>
-  <span class="sep">│</span>
-  <div id="base-info">Base: não calibrada</div>
-  <div style="margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px;">
-    <button class="btn-top btn-default" id="btn-calibrate-white" onclick="calibrateWhite()" disabled>◆ Calibrar Branco</button>
-    <button class="btn-top btn-default" id="btn-calibrate-black" onclick="calibrateBlack()" disabled>◆ Calibrar Preto</button>
-    <button class="btn-top btn-danger" id="btn-reset-white" onclick="resetWhite()" style="display:none;">✖ Reset Branco</button>
-    <button class="btn-top btn-danger" id="btn-reset-black" onclick="resetBlack()" style="display:none;">✖ Reset Preto</button>
-    <button class="btn-top btn-warn" id="btn-reset-estatico" onclick="resetEstatico()" style="display:none;">↺ Resetar Estático</button>
-    <button class="btn-top btn-teal" id="btn-sel-ref" onclick="startRefSelection()" style="display:none;">⚖️ Selecionar Referência</button>
-    <button class="btn-top btn-yellow" id="btn-sel-sample" onclick="startSampleSelection()" style="display:none;">⚖️ Selecionar Amostra</button>
-    <button class="btn-top btn-danger" id="btn-reset-ref" onclick="resetRef()" style="display:none;">✖ Resetar Referência</button>
-    <button class="btn-top btn-indigo" id="btn-reset-sample" onclick="resetSample()" style="display:none;">✖ Resetar Amostra</button>
-    <button class="btn-top btn-warn" id="btn-reset-comparacao" onclick="resetComparison()" style="display:none;">↺ Reset Comparação</button>
-    <button class="btn-top btn-blue" id="btn-resultado" onclick="computeComparisonResult()" style="display:none;" disabled>⚖ Resultado</button>
-    <button class="btn-top btn-default" id="btn-camera" onclick="switchCamera()" disabled>↺ Câmera</button>
-    <button class="btn-top btn-default" id="btn-audio" onclick="toggleAudio()" disabled>🔇 Áudio</button>
-    <button class="btn-top btn-default" id="btn-flash" onclick="toggleFlash()" disabled>⚡ Flash</button>
-  </div>
-</div>
-<div id="main">
-  <div id="camera-container">
-    <video id="videoEl" autoplay playsinline muted></video>
-    <canvas id="canvasEl"></canvas>
-    <!-- Reticle -->
-    <div id="reticle">
-      <div class="reticle-h"></div>
-      <div class="reticle-v"></div>
-      <div class="reticle-circle"></div>
-      <div class="reticle-dot"></div>
-    </div>
-    <!-- Cap badges -->
-    <div id="cap-badges" style="display:none;">
-      <div class="cap-badge no" id="badge-exposure">✕ Exposição manual</div>
-      <div class="cap-badge no" id="badge-wb">✕ Balanço de branco manual</div>
-      <div class="cap-badge no" id="badge-focus">✕ Foco manual</div>
-    </div>
-    <!-- RAL Detail Panel -->
-    <div id="ral-panel">
-      <div id="ral-panel-title">📋 Correspondência oficial RAL Plásticos P1</div>
-      <div id="ral-detail-row"></div>
-    </div>
-    <!-- Comparison Panel -->
-    <div id="comparison-panel">
-      <div class="comp-row">
-        <div class="comp-block">
-          <div class="comp-label">REFERÊNCIA</div>
-          <div class="comp-img-wrap">
-            <img id="ref-thumb" class="comp-thumb" src="" alt="" style="display:none;">
-          </div>
-          <div id="ref-color-name" class="comp-color-name">---</div>
-        </div>
-        <div class="comp-block comp-center">
-          <div class="comp-compat-label">Compatibilidade</div>
-          <div id="compatibility-percent" class="comp-percent">---</div>
-          <div id="delta-e-display" class="comp-de"></div>
-        </div>
-        <div class="comp-block">
-          <div class="comp-label">AMOSTRA</div>
-          <div class="comp-img-wrap">
-            <img id="sample-thumb" class="comp-thumb" src="" alt="" style="display:none;">
-          </div>
-          <div id="sample-color-name" class="comp-color-name">---</div>
-        </div>
-      </div>
-      <div class="comp-suggestion-box" id="comp-suggestion-box" style="display:none;">
-        <div class="comp-suggestion-title">🎨 Ajuste sugerido</div>
-        <div class="comp-suggestion-text" id="comp-suggestion-text"></div>
-      </div>
-      <div class="comp-selecting-hint" id="comp-selecting-hint" style="display:none;"></div>
-    </div>
-    <!-- Mode select overlay -->
-    <div id="mode-select-overlay" class="hide">
-      <h2>SELECIONE O MODO</h2>
-      <p>
-        🎯 <strong>LIVRE</strong> — mira fixa no centro, análise contínua<br>
-        📍 <strong>ESTÁTICO</strong> — toque na tela para analisar um ponto específico<br>
-        ⚖️ <strong>COMPARAÇÃO</strong> — capture dois pontos e compare a compatibilidade
-      </p>
-      <div class="mode-select-buttons">
-        <button class="mode-select-btn" onclick="selectMode('livre')">🎯 Livre</button>
-        <button class="mode-select-btn" onclick="selectMode('estatico')">📍 Estático</button>
-        <button class="mode-select-btn" onclick="selectMode('comparacao')">⚖️ Comparação</button>
-      </div>
-    </div>
-    <!-- Confirm shutdown overlay -->
-    <div id="confirm-shutdown-overlay">
-      <h2>DESEJA REALMENTE DESLIGAR O SISTEMA?</h2>
-      <div class="confirm-buttons">
-        <button class="confirm-btn confirm-btn-sim" onclick="confirmShutdown(true)">SIM</button>
-        <button class="confirm-btn confirm-btn-nao" onclick="confirmShutdown(false)">NÃO</button>
-      </div>
-    </div>
-    <!-- Start overlay (camera not running) -->
-    <div id="start-overlay" class="hide">
-      <p>Toque para iniciar a câmera</p>
-      <button id="btn-start" onclick="startCamera()">▶ Iniciar Câmera</button>
-    </div>
-    <!-- System OFF overlay -->
-    <div id="system-off-overlay">
-      <div class="emoji">🎨</div>
-      <h1>Motor de Cor — Biblioteca Oficial RAL Plásticos P1</h1>
-      <p>Ligue o sistema para identificar cores em tempo real por comparação colorimétrica (CIELAB + Delta-E 2000) contra o catálogo oficial da série P1.</p>
-      <div class="hw-note">* Controle manual de câmera (exposição, foco, balanço de branco) será testado ao iniciar. Dispositivos sem suporte usam calibração Branco/Preto como compensação.</div>
-    </div>
-  </div>
-</div>
-<script>
-"use strict";
-// ════════════════════════════════════════════════════════════════
-// 📦 BIBLIOTECA OFICIAL RAL PLÁSTICOS P1
-// ════════════════════════════════════════════════════════════════
-function makeEntry(ralNumber, hex, pt, de, en, fr, es, it, nl) {
-  return { code: "RAL " + ralNumber + "-P", ralNumber, hex, names: { pt, de, en, fr, es, it, nl } };
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Motor de Cor RAL Plásticos P1 — Identificação Colorimétrica</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+// ════════════════════════════════════════════════════════════════════════════
+// BIBLIOTECA OFICIAL DE CORES — RAL PLÁSTICOS SÉRIE P1 (RAL Plastics P1)
+// Fonte dos nomes/códigos: catálogo oficial RAL Colours / PDF "Lista de cores
+// RAL Plastic". Nomes em Português e Inglês mantidos EXATAMENTE como no
+// material oficial. Valores HEX/sRGB: aproximações sRGB reconhecidas a partir
+// dos valores colorimétricos RAL Classic (série "-P" replica a tonalidade do
+// RAL Classic de mesmo número). O motor de comparação usa CIELAB + Delta-E
+// 2000 e calibração Branco/Preto — nunca a leitura crua de pixel de tela.
+// ════════════════════════════════════════════════════════════════════════════
+export interface RalColorNames {
+  pt: string;
+  en: string;
+  de: string;
+  fr: string;
+  es: string;
+  it: string;
+  nl: string;
 }
-const RAL_P1_LIBRARY = [
-  makeEntry("1000","#CDBA88","Bege esverdeado","Grünbeige","Green beige","Beige vert","Beige verdoso","Beige verdastro","Groenbeige"),
-  makeEntry("1001","#D0B084","Beige","Beige","Beige","Beige","Beige","Beige","Beige"),
-  makeEntry("1002","#D2AA6D","Amarelo areia","Sandgelb","Sand yellow","Jaune sable","Amarillo arena","Giallo sabbia","Zandgeel"),
-  makeEntry("1004","#E49E00","Amarelo ouro","Goldgelb","Golden yellow","Jaune or","Amarillo oro","Giallo oro","Goudgeel"),
-  makeEntry("1011","#AF8050","Castanho","Braunbeige","Brown beige","Beige brun","Beige pardo","Beige marrone","Bruinbeige"),
-  makeEntry("1012","#DDAF28","Amarelo limão","Zitronengelb","Lemon yellow","Jaune citron","Amarillo limón","Giallo limone","Citroengeel"),
-  makeEntry("1013","#E3D9C7","Pérola","Perlweiß","Oyster white","Blanc perlé","Blanco perla","Bianco perla","Parelwit"),
-  makeEntry("1015","#E6D2B5","Marfim claro","Hellelfenbein","Light ivory","Ivoire clair","Marfil claro","Avorio chiaro","Licht ivoorkleurig"),
-  makeEntry("1016","#F1DD39","Amarelo enxofre","Schwefelgelb","Sulfur yellow","Jaune soufre","Amarillo azufre","Giallo zolfo","Zwavelgeel"),
-  makeEntry("1017","#F6A951","Amarelo açafrão","Safrangelb","Saffron yellow","Jaune safran","Amarillo azafrán","Giallo zafferano","Saffraangeel"),
-  makeEntry("1018","#FACA31","Amarelo zinco","Zinkgelb","Zinc yellow","Jaune de zinc","Amarillo de zinc","Giallo zinco","Zinkgeel"),
-  makeEntry("1020","#A08F65","Amarelo oliva","Olivgelb","Olive yellow","Jaune olive","Amarillo oliva","Giallo olivastro","Olijfgeel"),
-  makeEntry("1021","#F6B600","Amarelo canola","Rapsgelb","Colza yellow","Jaune colza","Amarillo colza","Giallo navone","Koolzaadgeel"),
-  makeEntry("1028","#FF9C00","Amarelo melão","Melonengelb","Melon yellow","Jaune melon","Amarillo melón","Giallo melone","Meloengeel"),
-  makeEntry("1033","#F99A1D","Amarelo dália","Dahliengelb","Dahlia yellow","Jaune dahlia","Amarillo dalia","Giallo dalia","Dahliageel"),
-  makeEntry("2000","#DA6E00","Laranja escuro","Gelborange","Yellow orange","Orangé jaune","Amarillo naranja","Arancio giallastro","Geeloranje"),
-  makeEntry("2002","#BF3922","Laranja sangue","Blutorange","Vermilion","Orangé sang","Naranja sanguíneo","Arancio sanguigno","Vermiljoen"),
-  makeEntry("2003","#F67829","Laranja pastel","Pastellorange","Pastel orange","Orangé pastel","Naranja pálido","Arancio pastello","Pasteloranje"),
-  makeEntry("2004","#E25304","Laranja puro","Reinorange","Pure orange","Orangé pur","Naranja puro","Arancio puro","Zuiver oranje"),
-  makeEntry("2008","#EC6B22","Laranja","Hellrotorange","Bright red orange","Orangé rouge clair","Rojo claro anaranjado","Rosso arancio chiaro","Licht roodoranje"),
-  makeEntry("2012","#D5654E","Laranja salmão","Lachsorange","Salmon orange","Orangé saumon","Naranja salmón","Arancio salmone","Zalmoranje"),
-  makeEntry("3000","#A72920","Vermelho vivo","Feuerrot","Flame red","Rouge feu","Rojo vivo","Rosso fuoco","Vuurrood"),
-  makeEntry("3002","#9B2321","Carmim","Karminrot","Carmine red","Rouge carmin","Rojo carmín","Rosso carminio","Karmijnrood"),
-  makeEntry("3003","#861A22","Vermelho rubi","Rubinrot","Ruby red","Rouge rubis","Rojo rubí","Rosso rubino","Robijnrood"),
-  makeEntry("3004","#6B1C23","Vermelho púrpura","Purpurrot","Purple red","Rouge pourpre","Rojo púrpura","Rosso porpora","Purperrood"),
-  makeEntry("3012","#C5856D","Bege avermelhado","Beigerot","Beige red","Rouge beige","Rojo beige","Rosso beige","Beigerood"),
-  makeEntry("3014","#CB7375","Rosa envelhecido","Altrosa","Antique pink","Vieux rose","Rosa viejo","Rosa antico","Oudroze"),
-  makeEntry("3015","#D8A0A6","Rosa claro","Hellrosa","Light pink","Rose clair","Rosa claro","Rosa chiaro","Lichtroze"),
-  makeEntry("3016","#A63D30","Coral","Korallenrot","Coral red","Rouge corail","Rojo coral","Rosso corallo","Koraalrood"),
-  makeEntry("3018","#C63F4A","Vermelho morango","Erdbeerrot","Strawberry red","Rouge fraise","Rojo fresa","Rosso fragola","Aardbeirood"),
-  makeEntry("3020","#BB1F11","Vermelho sinalização","Verkehrsrot","Traffic red","Rouge signalisation","Rojo tráfico","Rosso traffico","Verkeersrood"),
-  makeEntry("3027","#AB273C","Vermelho framboesa","Himbeerrot","Raspberry red","Rouge framboise","Rojo frambuesa","Rosso lampone","Framboosrood"),
-  makeEntry("3028","#CC2C24","Vermelho puro","Reinrot","Pure red","Rouge pur","Rojo puro","Rosso puro","Zuiver rood"),
-  makeEntry("4001","#816183","Roxo","Rotlila","Red lilac","Lilas rouge","Rojo lila","Lilla rossastro","Roodlila"),
-  makeEntry("4002","#8D3C4B","Violeta avermelhado","Rotviolett","Red violet","Violet rouge","Rojo violeta","Viola rossastro","Roodpaars"),
-  makeEntry("4003","#C4618C","Violeta rosado","Erikaviolett","Heather violet","Violet bruyère","Violeta érica","Viola erica","Heidepaars"),
-  makeEntry("4005","#76689A","Lilás","Blaulila","Blue lilac","Lilas bleu","Lila azulado","Lilla bluastro","Blauwlila"),
-  makeEntry("4006","#903373","Roxo sinalização","Verkehrspurpur","Traffic purple","Pourpre signalisation","Púrpura tráfico","Porpora traffico","Verkeerspurper"),
-  makeEntry("4007","#47243C","Roxo escuro","Purpurviolett","Purple violet","Violet pourpre","Violeta púrpura","Porpora violetto","Purperviolet"),
-  makeEntry("4008","#844C82","Roxo segurança","Signalviolett","Signal violet","Violet de sécurité","Violeta señales","Violetto segnale","Signaalviolet"),
-  makeEntry("4009","#9D8692","Roxo pastel","Pastellviolett","Pastel violet","Violet pastel","Violeta pastel","Violetto pastello","Pastelviolet"),
-  makeEntry("5002","#00387A","Azul marinho","Ultramarinblau","Ultramarine blue","Bleu outremer","Azul ultramar","Blu oltremare","Ultramarijn blauw"),
-  makeEntry("5005","#005387","Azul segurança","Signalblau","Signal blue","Bleu de sécurité","Azul señales","Blu segnale","Signaalblauw"),
-  makeEntry("5009","#215F78","Azul","Azurblau","Azure blue","Bleu azur","Azul azur","Blu azzurro","Azuurblauw"),
-  makeEntry("5010","#13447C","Azul gênciano","Enzianblau","Gentian blue","Bleu gentiane","Azul genciana","Blu genziana","Gentiaanblauw"),
-  makeEntry("5011","#232C3F","Azul aço","Stahlblau","Steel blue","Bleu acier","Azul acero","Blu acciaio","Staalblauw"),
-  makeEntry("5012","#3481B8","Azul claro","Lichtblau","Light blue","Bleu clair","Azul luminoso","Blu luce","Lichtblauw"),
-  makeEntry("5013","#232D53","Azul cobalto","Kobaltblau","Cobalt blue","Bleu cobalt","Azul cobalto","Blu cobalto","Kobaltblauw"),
-  makeEntry("5014","#6C7C98","Azul pombo","Taubenblau","Pigeon blue","Bleu pigeon","Azul colombino","Blu colombino","Duifblauw"),
-  makeEntry("5015","#2874B2","Azul celeste","Himmelblau","Sky blue","Bleu ciel","Azul celeste","Blu cielo","Hemelsblauw"),
-  makeEntry("5017","#0E518D","Azul sinalização","Verkehrsblau","Traffic blue","Bleu signalisation","Azul tráfico","Blu traffico","Verkeersblauw"),
-  makeEntry("5018","#21888F","Azul turquesa","Türkisblau","Turquoise blue","Bleu turquoise","Azul turquesa","Blu turchese","Turkoois blauw"),
-  makeEntry("5020","#0B4151","Azul oceano","Ozeanblau","Ocean blue","Bleu océano","Azul oceano","Blu oceano","Oceaanblauw"),
-  makeEntry("5022","#2F2A5A","Azul noturno","Nachtblau","Night blue","Bleu nocturne","Azul noche","Blu notte","Nachtblauw"),
-  makeEntry("5023","#41698C","Azul distante","Fernblau","Distant blue","Bleu distant","Azul lejanía","Blu distante","Verblauw"),
-  makeEntry("5024","#5D9B9B","Azul pastel","Pastellblau","Pastel blue","Bleu pastel","Azul pastel","Blu pastello","Pastelblauw"),
-  makeEntry("6000","#316650","Verde platina","Patinagrün","Patina green","Vert patine","Verde patina","Verde patina","Patinagroen"),
-  makeEntry("6002","#2D572C","Verde folha","Laubgrün","Leaf green","Vert feuillage","Verde hoja","Verde foglia","Loofgroen"),
-  makeEntry("6003","#424632","Verde oliva","Olivgrün","Olive green","Vert olive","Verde oliva","Verde oliva","Olijfgroen"),
-  makeEntry("6005","#2F4538","Verde musgo","Moosgrün","Moss green","Vert mousse","Verde musgo","Verde muschio","Mosgroen"),
-  makeEntry("6009","#31372B","Verde couve","Tannengrün","Fir green","Vert sapin","Verde abeto","Verde abete","Dennengroen"),
-  makeEntry("6011","#6B7C59","Verde aspargo","Resedagrün","Reseda green","Vert réséda","Verde reseda","Verde reseda","Resedagroen"),
-  makeEntry("6017","#587F40","Verde seiva","Maigrün","May green","Vert mai","Verde mayo","Verde maggio","Meigroen"),
-  makeEntry("6018","#60993B","Verde amarelado","Gelbgrün","Yellow green","Vert jaune","Verde amarillento","Verde giallastro","Geelgroen"),
-  makeEntry("6019","#B9CEAC","Verde pastel","Weißgrün","Pastel green","Vert blanc","Verde blanquecino","Verde biancastro","Witgroen"),
-  makeEntry("6024","#008351","Verde sinalização","Verkehrsgrün","Traffic green","Vert signalisation","Verde tráfico","Verde traffico","Verkeersgroen"),
-  makeEntry("6026","#005F4E","Verde opala","Opalgrün","Opal green","Vert opale","Verde ópalo","Verde opale","Opaalgroen"),
-  makeEntry("6037","#008B29","Verde vivo","Reingrün","Pure green","Vert pur","Verde puro","Verde puro","Zuiver groen"),
-  makeEntry("7001","#8C979C","Cinza prateado","Silbergrau","Silver grey","Gris argent","Gris plata","Grigio argento","Zilvergrijs"),
-  makeEntry("7004","#9A9B9B","Cinza segurança","Signalgrau","Signal grey","Gris de sécurité","Gris señales","Grigio segnale","Signaalgrijs"),
-  makeEntry("7011","#52595D","Cinza ferro","Eisengrau","Iron grey","Gris fer","Gris hierro","Grigio ferro","IJzergrijs"),
-  makeEntry("7012","#575D5E","Cinza basalto","Basaltgrau","Basalt grey","Gris basalte","Gris basalto","Grigio basalto","Bazaltgrijs"),
-  makeEntry("7015","#4F5358","Cinza ardósia","Schiefergrau","Slate grey","Gris ardoise","Gris pizarra","Grigio ardesia","Leigrijs"),
-  makeEntry("7016","#383E42","Carvão","Anthrazitgrau","Anthracite grey","Gris anthracite","Gris antracita","Grigio antracite","Antracietgrijs"),
-  makeEntry("7021","#2F3234","Cinza escuro","Schwarzgrau","Black grey","Gris noir","Gris negruzco","Grigio nerastro","Zwartgrijs"),
-  makeEntry("7031","#5B686D","Cinza azulado","Blaugrau","Blue grey","Gris bleu","Gris azulado","Grigio bluastro","Blauwgrijs"),
-  makeEntry("7035","#C5C7C4","Cinza claro","Lichtgrau","Light grey","Gris clair","Gris luminoso","Grigio luce","Lichtgrijs"),
-  makeEntry("7037","#7A7B7A","Cinza poeira","Staubgrau","Dusty grey","Gris poussière","Gris polvo","Grigio polvere","Stofgrijs"),
-  makeEntry("7038","#B0B0A9","Cinza água","Achatgrau","Agate grey","Gris agate","Gris ágata","Grigio agata","Agaatgrijs"),
-  makeEntry("7040","#989EA1","Cinza janela","Fenstergrau","Window grey","Gris fenêtre","Gris ventana","Grigio finestra","Venstergrijs"),
-  makeEntry("7042","#8E9291","Cinza sinalização A","Verkehrsgrau A","Traffic grey A","Gris signalisation A","Gris tráfico A","Grigio traffico A","Verkeersgrijs A"),
-  makeEntry("7045","#8D9295","Cinza tele 1","Telegrau 1","Telegrey 1","Telegris 1","Gris tele 1","Grigio tele 1","Telegrijs 1"),
-  makeEntry("8001","#9D622B","Marrom ocre","Ockerbraun","Ochre brown","Brun terre de Sienne","Pardo ocre","Marrone ocra","Okerbruin"),
-  makeEntry("8004","#8D4931","Marrom cobre","Kupferbraun","Copper brown","Brun cuivré","Pardo cobre","Marrone rame","Koperbruin"),
-  makeEntry("8007","#70462B","Marrom alce","Rehbraun","Fawn brown","Brun fauve","Pardo corzo","Marrone capriolo","Reebruin"),
-  makeEntry("8008","#724A25","Marrom oliva","Olivbraun","Olive brown","Brun olive","Pardo oliva","Marrone oliva","Olijfbruin"),
-  makeEntry("8011","#5A3827","Marrom castanha","Nussbraun","Nut brown","Brun noisette","Pardo nuez","Marrone noce","Notenbruin"),
-  makeEntry("8014","#4A3526","Marrom sépia","Sepiabraun","Sepia brown","Brun sépia","Sepia","Marrone seppia","Sepiabruin"),
-  makeEntry("8015","#5E2F26","Castanho","Kastanienbraun","Chestnut brown","Marron","Castaño","Marrone castagna","Kastanjebruin"),
-  makeEntry("8017","#442F29","Chocolate","Schokoladenbraun","Chocolate brown","Brun chocolat","Chocolate","Marrone cioccolato","Chocoladebruin"),
-  makeEntry("8023","#A45729","Marrom alaranjado","Orangebraun","Orange brown","Brun orangé","Pardo anaranjado","Marrone arancio","Oranjebruin"),
-  makeEntry("8025","#755847","Marrom pálido","Blassbraun","Pale brown","Brun pâle","Pardo pálido","Marrone pallido","Bleekbruin"),
-  makeEntry("9001","#E9E0D2","Creme","Cremeweiß","Cream","Blanc crème","Blanco crema","Bianco crema","Crèmewit"),
-  makeEntry("9002","#D6D5CB","Branco acinzentado","Grauweiß","Grey white","Blanc gris","Blanco grisáceo","Bianco grigiastro","Grijswit"),
-  makeEntry("9003","#ECECE7","Branco segurança","Signalweiß","Signal white","Blanc de sécurité","Blanco señales","Bianco segnale","Signaalwit"),
-  makeEntry("9010","#F1EDE1","Branco puro","Reinweiß","Pure white","Blanc pur","Blanco puro","Bianco puro","Zuiver wit"),
-  makeEntry("9011","#27292B","Grafite escuro","Graphitschwarz","Graphite black","Noir graphite","Negro grafito","Nero grafite","Grafietzwart"),
-  makeEntry("9016","#F1F1EA","Branco sinalização","Verkehrsweiß","Traffic white","Blanc signalisation","Blanco tráfico","Bianco traffico","Verkeerswit"),
+export interface RalColorEntry {
+  code: string;
+  ralNumber: string;
+  hex: string;
+  names: RalColorNames;
+}
+function entry(
+  ralNumber: string,
+  hex: string,
+  pt: string,
+  de: string,
+  en: string,
+  fr: string,
+  es: string,
+  it: string,
+  nl: string
+): RalColorEntry {
+  return {
+    code: `RAL ${ralNumber}-P`,
+    ralNumber,
+    hex,
+    names: { pt, de, en, fr, es, it, nl },
+  };
+}
+export const RAL_P1_LIBRARY: RalColorEntry[] = [
+  entry("1000","#CDBA88","Bege esverdeado","Grünbeige","Green beige","Beige vert","Beige verdoso","Beige verdastro","Groenbeige"),
+  entry("1001","#D0B084","Beige","Beige","Beige","Beige","Beige","Beige","Beige"),
+  entry("1002","#D2AA6D","Amarelo areia","Sandgelb","Sand yellow","Jaune sable","Amarillo arena","Giallo sabbia","Zandgeel"),
+  entry("1004","#E49E00","Amarelo ouro","Goldgelb","Golden yellow","Jaune or","Amarillo oro","Giallo oro","Goudgeel"),
+  entry("1011","#AF8050","Castanho","Braunbeige","Brown beige","Beige brun","Beige pardo","Beige marrone","Bruinbeige"),
+  entry("1012","#DDAF28","Amarelo limão","Zitronengelb","Lemon yellow","Jaune citron","Amarillo limón","Giallo limone","Citroengeel"),
+  entry("1013","#E3D9C7","Pérola","Perlweiß","Oyster white","Blanc perlé","Blanco perla","Bianco perla","Parelwit"),
+  entry("1015","#E6D2B5","Marfim claro","Hellelfenbein","Light ivory","Ivoire clair","Marfil claro","Avorio chiaro","Licht ivoorkleurig"),
+  entry("1016","#F1DD39","Amarelo enxofre","Schwefelgelb","Sulfur yellow","Jaune soufre","Amarillo azufre","Giallo zolfo","Zwavelgeel"),
+  entry("1017","#F6A951","Amarelo açafrão","Safrangelb","Saffron yellow","Jaune safran","Amarillo azafrán","Giallo zafferano","Saffraangeel"),
+  entry("1018","#FACA31","Amarelo zinco","Zinkgelb","Zinc yellow","Jaune de zinc","Amarillo de zinc","Giallo zinco","Zinkgeel"),
+  entry("1020","#A08F65","Amarelo oliva","Olivgelb","Olive yellow","Jaune olive","Amarillo oliva","Giallo olivastro","Olijfgeel"),
+  entry("1021","#F6B600","Amarelo canola","Rapsgelb","Colza yellow","Jaune colza","Amarillo colza","Giallo navone","Koolzaadgeel"),
+  entry("1028","#FF9C00","Amarelo melão","Melonengelb","Melon yellow","Jaune melon","Amarillo melón","Giallo melone","Meloengeel"),
+  entry("1033","#F99A1D","Amarelo dália","Dahliengelb","Dahlia yellow","Jaune dahlia","Amarillo dalia","Giallo dalia","Dahliageel"),
+  entry("2000","#DA6E00","Laranja escuro","Gelborange","Yellow orange","Orangé jaune","Amarillo naranja","Arancio giallastro","Geeloranje"),
+  entry("2002","#BF3922","Laranja sangue","Blutorange","Vermilion","Orangé sang","Naranja sanguíneo","Arancio sanguigno","Vermiljoen"),
+  entry("2003","#F67829","Laranja pastel","Pastellorange","Pastel orange","Orangé pastel","Naranja pálido","Arancio pastello","Pasteloranje"),
+  entry("2004","#E25304","Laranja puro","Reinorange","Pure orange","Orangé pur","Naranja puro","Arancio puro","Zuiver oranje"),
+  entry("2008","#EC6B22","Laranja","Hellrotorange","Bright red orange","Orangé rouge clair","Rojo claro anaranjado","Rosso arancio chiaro","Licht roodoranje"),
+  entry("2012","#D5654E","Laranja salmão","Lachsorange","Salmon orange","Orangé saumon","Naranja salmón","Arancio salmone","Zalmoranje"),
+  entry("3000","#A72920","Vermelho vivo","Feuerrot","Flame red","Rouge feu","Rojo vivo","Rosso fuoco","Vuurrood"),
+  entry("3002","#9B2321","Carmim","Karminrot","Carmine red","Rouge carmin","Rojo carmín","Rosso carminio","Karmijnrood"),
+  entry("3003","#861A22","Vermelho rubi","Rubinrot","Ruby red","Rouge rubis","Rojo rubí","Rosso rubino","Robijnrood"),
+  entry("3004","#6B1C23","Vermelho púrpura","Purpurrot","Purple red","Rouge pourpre","Rojo púrpura","Rosso porpora","Purperrood"),
+  entry("3012","#C5856D","Bege avermelhado","Beigerot","Beige red","Rouge beige","Rojo beige","Rosso beige","Beigerood"),
+  entry("3014","#CB7375","Rosa envelhecido","Altrosa","Antique pink","Vieux rose","Rosa viejo","Rosa antico","Oudroze"),
+  entry("3015","#D8A0A6","Rosa claro","Hellrosa","Light pink","Rose clair","Rosa claro","Rosa chiaro","Lichtroze"),
+  entry("3016","#A63D30","Coral","Korallenrot","Coral red","Rouge corail","Rojo coral","Rosso corallo","Koraalrood"),
+  entry("3018","#C63F4A","Vermelho morango","Erdbeerrot","Strawberry red","Rouge fraise","Rojo fresa","Rosso fragola","Aardbeirood"),
+  entry("3020","#BB1F11","Vermelho sinalização","Verkehrsrot","Traffic red","Rouge signalisation","Rojo tráfico","Rosso traffico","Verkeersrood"),
+  entry("3027","#AB273C","Vermelho framboesa","Himbeerrot","Raspberry red","Rouge framboise","Rojo frambuesa","Rosso lampone","Framboosrood"),
+  entry("3028","#CC2C24","Vermelho puro","Reinrot","Pure red","Rouge pur","Rojo puro","Rosso puro","Zuiver rood"),
+  entry("4001","#816183","Roxo","Rotlila","Red lilac","Lilas rouge","Rojo lila","Lilla rossastro","Roodlila"),
+  entry("4002","#8D3C4B","Violeta avermelhado","Rotviolett","Red violet","Violet rouge","Rojo violeta","Viola rossastro","Roodpaars"),
+  entry("4003","#C4618C","Violeta rosado","Erikaviolett","Heather violet","Violet bruyère","Violeta érica","Viola erica","Heidepaars"),
+  entry("4005","#76689A","Lilás","Blaulila","Blue lilac","Lilas bleu","Lila azulado","Lilla bluastro","Blauwlila"),
+  entry("4006","#903373","Roxo sinalização","Verkehrspurpur","Traffic purple","Pourpre signalisation","Púrpura tráfico","Porpora traffico","Verkeerspurper"),
+  entry("4007","#47243C","Roxo escuro","Purpurviolett","Purple violet","Violet pourpre","Violeta púrpura","Porpora violetto","Purperviolet"),
+  entry("4008","#844C82","Roxo segurança","Signalviolett","Signal violet","Violet de sécurité","Violeta señales","Violetto segnale","Signaalviolet"),
+  entry("4009","#9D8692","Roxo pastel","Pastellviolett","Pastel violet","Violet pastel","Violeta pastel","Violetto pastello","Pastelviolet"),
+  entry("5002","#00387A","Azul marinho","Ultramarinblau","Ultramarine blue","Bleu outremer","Azul ultramar","Blu oltremare","Ultramarijn blauw"),
+  entry("5005","#005387","Azul segurança","Signalblau","Signal blue","Bleu de sécurité","Azul señales","Blu segnale","Signaalblauw"),
+  entry("5009","#215F78","Azul","Azurblau","Azure blue","Bleu azur","Azul azur","Blu azzurro","Azuurblauw"),
+  entry("5010","#13447C","Azul gênciano","Enzianblau","Gentian blue","Bleu gentiane","Azul genciana","Blu genziana","Gentiaanblauw"),
+  entry("5011","#232C3F","Azul aço","Stahlblau","Steel blue","Bleu acier","Azul acero","Blu acciaio","Staalblauw"),
+  entry("5012","#3481B8","Azul claro","Lichtblau","Light blue","Bleu clair","Azul luminoso","Blu luce","Lichtblauw"),
+  entry("5013","#232D53","Azul cobalto","Kobaltblau","Cobalt blue","Bleu cobalt","Azul cobalto","Blu cobalto","Kobaltblauw"),
+  entry("5014","#6C7C98","Azul pombo","Taubenblau","Pigeon blue","Bleu pigeon","Azul colombino","Blu colombino","Duifblauw"),
+  entry("5015","#2874B2","Azul celeste","Himmelblau","Sky blue","Bleu ciel","Azul celeste","Blu cielo","Hemelsblauw"),
+  entry("5017","#0E518D","Azul sinalização","Verkehrsblau","Traffic blue","Bleu signalisation","Azul tráfico","Blu traffico","Verkeersblauw"),
+  entry("5018","#21888F","Azul turquesa","Türkisblau","Turquoise blue","Bleu turquoise","Azul turquesa","Blu turchese","Turkoois blauw"),
+  entry("5020","#0B4151","Azul oceano","Ozeanblau","Ocean blue","Bleu océano","Azul oceano","Blu oceano","Oceaanblauw"),
+  entry("5022","#2F2A5A","Azul noturno","Nachtblau","Night blue","Bleu nocturne","Azul noche","Blu notte","Nachtblauw"),
+  entry("5023","#41698C","Azul distante","Fernblau","Distant blue","Bleu distant","Azul lejanía","Blu distante","Verblauw"),
+  entry("5024","#5D9B9B","Azul pastel","Pastellblau","Pastel blue","Bleu pastel","Azul pastel","Blu pastello","Pastelblauw"),
+  entry("6000","#316650","Verde platina","Patinagrün","Patina green","Vert patine","Verde patina","Verde patina","Patinagroen"),
+  entry("6002","#2D572C","Verde folha","Laubgrün","Leaf green","Vert feuillage","Verde hoja","Verde foglia","Loofgroen"),
+  entry("6003","#424632","Verde oliva","Olivgrün","Olive green","Vert olive","Verde oliva","Verde oliva","Olijfgroen"),
+  entry("6005","#2F4538","Verde musgo","Moosgrün","Moss green","Vert mousse","Verde musgo","Verde muschio","Mosgroen"),
+  entry("6009","#31372B","Verde couve","Tannengrün","Fir green","Vert sapin","Verde abeto","Verde abete","Dennengroen"),
+  entry("6011","#6B7C59","Verde aspargo","Resedagrün","Reseda green","Vert réséda","Verde reseda","Verde reseda","Resedagroen"),
+  entry("6017","#587F40","Verde seiva","Maigrün","May green","Vert mai","Verde mayo","Verde maggio","Meigroen"),
+  entry("6018","#60993B","Verde amarelado","Gelbgrün","Yellow green","Vert jaune","Verde amarillento","Verde giallastro","Geelgroen"),
+  entry("6019","#B9CEAC","Verde pastel","Weißgrün","Pastel green","Vert blanc","Verde blanquecino","Verde biancastro","Witgroen"),
+  entry("6024","#008351","Verde sinalização","Verkehrsgrün","Traffic green","Vert signalisation","Verde tráfico","Verde traffico","Verkeersgroen"),
+  entry("6026","#005F4E","Verde opala","Opalgrün","Opal green","Vert opale","Verde ópalo","Verde opale","Opaalgroen"),
+  entry("6037","#008B29","Verde vivo","Reingrün","Pure green","Vert pur","Verde puro","Verde puro","Zuiver groen"),
+  entry("7001","#8C979C","Cinza prateado","Silbergrau","Silver grey","Gris argent","Gris plata","Grigio argento","Zilvergrijs"),
+  entry("7004","#9A9B9B","Cinza segurança","Signalgrau","Signal grey","Gris de sécurité","Gris señales","Grigio segnale","Signaalgrijs"),
+  entry("7011","#52595D","Cinza ferro","Eisengrau","Iron grey","Gris fer","Gris hierro","Grigio ferro","IJzergrijs"),
+  entry("7012","#575D5E","Cinza basalto","Basaltgrau","Basalt grey","Gris basalte","Gris basalto","Grigio basalto","Bazaltgrijs"),
+  entry("7015","#4F5358","Cinza ardósia","Schiefergrau","Slate grey","Gris ardoise","Gris pizarra","Grigio ardesia","Leigrijs"),
+  entry("7016","#383E42","Carvão","Anthrazitgrau","Anthracite grey","Gris anthracite","Gris antracita","Grigio antracite","Antracietgrijs"),
+  entry("7021","#2F3234","Cinza escuro","Schwarzgrau","Black grey","Gris noir","Gris negruzco","Grigio nerastro","Zwartgrijs"),
+  entry("7031","#5B686D","Cinza azulado","Blaugrau","Blue grey","Gris bleu","Gris azulado","Grigio bluastro","Blauwgrijs"),
+  entry("7035","#C5C7C4","Cinza claro","Lichtgrau","Light grey","Gris clair","Gris luminoso","Grigio luce","Lichtgrijs"),
+  entry("7037","#7A7B7A","Cinza poeira","Staubgrau","Dusty grey","Gris poussière","Gris polvo","Grigio polvere","Stofgrijs"),
+  entry("7038","#B0B0A9","Cinza água","Achatgrau","Agate grey","Gris agate","Gris ágata","Grigio agata","Agaatgrijs"),
+  entry("7040","#989EA1","Cinza janela","Fenstergrau","Window grey","Gris fenêtre","Gris ventana","Grigio finestra","Venstergrijs"),
+  entry("7042","#8E9291","Cinza sinalização A","Verkehrsgrau A","Traffic grey A","Gris signalisation A","Gris tráfico A","Grigio traffico A","Verkeersgrijs A"),
+  entry("7045","#8D9295","Cinza tele 1","Telegrau 1","Telegrey 1","Telegris 1","Gris tele 1","Grigio tele 1","Telegrijs 1"),
+  entry("8001","#9D622B","Marrom ocre","Ockerbraun","Ochre brown","Brun terre de Sienne","Pardo ocre","Marrone ocra","Okerbruin"),
+  entry("8004","#8D4931","Marrom cobre","Kupferbraun","Copper brown","Brun cuivré","Pardo cobre","Marrone rame","Koperbruin"),
+  entry("8007","#70462B","Marrom alce","Rehbraun","Fawn brown","Brun fauve","Pardo corzo","Marrone capriolo","Reebruin"),
+  entry("8008","#724A25","Marrom oliva","Olivbraun","Olive brown","Brun olive","Pardo oliva","Marrone oliva","Olijfbruin"),
+  entry("8011","#5A3827","Marrom castanha","Nussbraun","Nut brown","Brun noisette","Pardo nuez","Marrone noce","Notenbruin"),
+  entry("8014","#4A3526","Marrom sépia","Sepiabraun","Sepia brown","Brun sépia","Sepia","Marrone seppia","Sepiabruin"),
+  entry("8015","#5E2F26","Castanho","Kastanienbraun","Chestnut brown","Marron","Castaño","Marrone castagna","Kastanjebruin"),
+  entry("8017","#442F29","Chocolate","Schokoladenbraun","Chocolate brown","Brun chocolat","Chocolate","Marrone cioccolato","Chocoladebruin"),
+  entry("8023","#A45729","Marrom alaranjado","Orangebraun","Orange brown","Brun orangé","Pardo anaranjado","Marrone arancio","Oranjebruin"),
+  entry("8025","#755847","Marrom pálido","Blassbraun","Pale brown","Brun pâle","Pardo pálido","Marrone pallido","Bleekbruin"),
+  entry("9001","#E9E0D2","Creme","Cremeweiß","Cream","Blanc crème","Blanco crema","Bianco crema","Crèmewit"),
+  entry("9002","#D6D5CB","Branco acinzentado","Grauweiß","Grey white","Blanc gris","Blanco grisáceo","Bianco grigiastro","Grijswit"),
+  entry("9003","#ECECE7","Branco segurança","Signalweiß","Signal white","Blanc de sécurité","Blanco señales","Bianco segnale","Signaalwit"),
+  entry("9010","#F1EDE1","Branco puro","Reinweiß","Pure white","Blanc pur","Blanco puro","Bianco puro","Zuiver wit"),
+  entry("9011","#27292B","Grafite escuro","Graphitschwarz","Graphite black","Noir graphite","Negro grafito","Nero grafite","Grafietzwart"),
+  entry("9016","#F1F1EA","Branco sinalização","Verkehrsweiß","Traffic white","Blanc signalisation","Blanco tráfico","Bianco traffico","Verkeerswit"),
 ];
-// ════════════════════════════════════════════════════════════════
-// 🔬 MOTOR COLORIMÉTRICO — CIELAB + CIEDE2000
-// ════════════════════════════════════════════════════════════════
-function hexToRGB(hex) {
-  let h = hex.replace("#","");
-  if (h.length === 3) h = h.split("").map(c => c+c).join("");
-  const r = parseInt(h.substring(0,2),16);
-  const g = parseInt(h.substring(2,4),16);
-  const b = parseInt(h.substring(4,6),16);
-  return { r: isNaN(r)?0:r, g: isNaN(g)?0:g, b: isNaN(b)?0:b };
+// ════════════════════════════════════════════════════════════════════════════
+// MOTOR COLORIMÉTRICO — CIELAB + CIEDE2000 + Classificadores Espectrais
+// Contém:
+//   • Conversões RGB → HSV / XYZ / Lab
+//   • deltaE2000 (padrão-ouro industrial)
+//   • findClosestRalColor — motor RAL P1 (modo Plásticos)
+//   • classifyUniversal  — espectro cromático básico (modo Universal)
+//   • classifyExtended   — 60+ nuances (modo Ampliado = RAL + Universal + Extended)
+//   • generateAdjustmentSuggestion — sugestão Lab de ajuste
+// ════════════════════════════════════════════════════════════════════════════
+import { RAL_P1_LIBRARY, RalColorEntry } from "../data/ralP1Library";
+export interface RGB { r: number; g: number; b: number; }
+export interface HSV { h: number; s: number; v: number; }
+export interface Lab { l: number; a: number; b: number; }
+// ─── Conversões básicas ──────────────────────────────────────────────────────
+export function hexToRGB(hex: string): RGB {
+  let h = hex.replace("#", "");
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return { r: isNaN(r) ? 0 : r, g: isNaN(g) ? 0 : g, b: isNaN(b) ? 0 : b };
 }
-function rgbToHSV(r,g,b) {
-  r=Math.max(0,Math.min(255,r))/255;
-  g=Math.max(0,Math.min(255,g))/255;
-  b=Math.max(0,Math.min(255,b))/255;
-  const max=Math.max(r,g,b), min=Math.min(r,g,b), delta=max-min;
-  let h=0,s=0; const v=max;
-  if (delta!==0) {
-    s=delta/max;
-    if (max===r) h=((g-b)/delta+(g<b?6:0))/6;
-    else if (max===g) h=((b-r)/delta+2)/6;
-    else h=((r-g)/delta+4)/6;
+export function rgbToHex(rgb: RGB): string {
+  const c = (n: number) =>
+    Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
+  return `#${c(rgb.r)}${c(rgb.g)}${c(rgb.b)}`.toUpperCase();
+}
+export function rgbToHSV(r: number, g: number, b: number): HSV {
+  r = Math.max(0, Math.min(255, r)) / 255;
+  g = Math.max(0, Math.min(255, g)) / 255;
+  b = Math.max(0, Math.min(255, b)) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), delta = max - min;
+  let h = 0, s = 0;
+  const v = max;
+  if (delta !== 0) {
+    s = delta / max;
+    if (max === r) h = ((g - b) / delta + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / delta + 2) / 6;
+    else h = ((r - g) / delta + 4) / 6;
   }
   return {
-    h: Math.round(h*3600)/10,
-    s: Math.round(s*1000)/10,
-    v: Math.round(v*1000)/10
+    h: Math.round(h * 3600) / 10,
+    s: Math.round(s * 1000) / 10,
+    v: Math.round(v * 1000) / 10,
   };
 }
-function srgbToLinear(c) {
-  const v=c/255;
-  return v<=0.04045 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4);
+function srgbToLinear(c: number): number {
+  const v = c / 255;
+  return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
 }
-function rgbToXYZ(r,g,b) {
-  const rl=srgbToLinear(r), gl=srgbToLinear(g), bl=srgbToLinear(b);
+function rgbToXYZ(r: number, g: number, b: number) {
+  const rl = srgbToLinear(r), gl = srgbToLinear(g), bl = srgbToLinear(b);
   return {
-    x: rl*0.4124564 + gl*0.3575761 + bl*0.1804375,
-    y: rl*0.2126729 + gl*0.7151522 + bl*0.0721750,
-    z: rl*0.0193339 + gl*0.1191920 + bl*0.9503041
+    x: rl * 0.4124564 + gl * 0.3575761 + bl * 0.1804375,
+    y: rl * 0.2126729 + gl * 0.7151522 + bl * 0.0721750,
+    z: rl * 0.0193339 + gl * 0.1191920 + bl * 0.9503041,
   };
 }
-function xyzToLab(x,y,z) {
-  const refX=0.95047, refY=1.0, refZ=1.08883;
-  const fx = t => t>0.008856 ? Math.pow(t,1/3) : 7.787*t+16/116;
-  const xr=fx(x/refX), yr=fx(y/refY), zr=fx(z/refZ);
+function xyzToLab(x: number, y: number, z: number): Lab {
+  const refX = 0.95047, refY = 1.0, refZ = 1.08883;
+  const fx = (t: number) =>
+    t > 0.008856 ? Math.pow(t, 1 / 3) : 7.787 * t + 16 / 116;
+  const xr = fx(x / refX), yr = fx(y / refY), zr = fx(z / refZ);
   return {
-    l: Math.round((116*yr-16)*100)/100,
-    a: Math.round(500*(xr-yr)*100)/100,
-    b: Math.round(200*(yr-zr)*100)/100
+    l: Math.round((116 * yr - 16) * 100) / 100,
+    a: Math.round(500 * (xr - yr) * 100) / 100,
+    b: Math.round(200 * (yr - zr) * 100) / 100,
   };
 }
-function rgbToLab(r,g,b) {
-  const xyz=rgbToXYZ(r,g,b);
-  return xyzToLab(xyz.x,xyz.y,xyz.z);
+export function rgbToLab(r: number, g: number, b: number): Lab {
+  const xyz = rgbToXYZ(r, g, b);
+  return xyzToLab(xyz.x, xyz.y, xyz.z);
 }
-function deltaE2000(lab1, lab2) {
-  const {l:L1,a:a1,b:b1}=lab1, {l:L2,a:a2,b:b2}=lab2;
-  const kL=1,kC=1,kH=1;
-  const C1=Math.sqrt(a1*a1+b1*b1), C2=Math.sqrt(a2*a2+b2*b2);
-  const avgC=(C1+C2)/2;
-  const G=0.5*(1-Math.sqrt(Math.pow(avgC,7)/(Math.pow(avgC,7)+Math.pow(25,7))));
-  const a1p=a1*(1+G), a2p=a2*(1+G);
-  const C1p=Math.sqrt(a1p*a1p+b1*b1), C2p=Math.sqrt(a2p*a2p+b2*b2);
-  const h1p=(a1p===0&&b1===0)?0:(Math.atan2(b1,a1p)*180/Math.PI+360)%360;
-  const h2p=(a2p===0&&b2===0)?0:(Math.atan2(b2,a2p)*180/Math.PI+360)%360;
-  const deltaLp=L2-L1, deltaCp=C2p-C1p;
-  let deltahp=0;
-  if (C1p!==0&&C2p!==0) {
-    const diff=h2p-h1p;
-    if (Math.abs(diff)<=180) deltahp=diff;
-    else if (diff>180) deltahp=diff-360;
-    else deltahp=diff+360;
+// ─── CIEDE2000 (padrão-ouro de diferença perceptual) ─────────────────────────
+export function deltaE2000(lab1: Lab, lab2: Lab): number {
+  const { l: L1, a: a1, b: b1 } = lab1;
+  const { l: L2, a: a2, b: b2 } = lab2;
+  const kL = 1, kC = 1, kH = 1;
+  const C1 = Math.sqrt(a1 * a1 + b1 * b1);
+  const C2 = Math.sqrt(a2 * a2 + b2 * b2);
+  const avgC = (C1 + C2) / 2;
+  const G =
+    0.5 *
+    (1 -
+      Math.sqrt(
+        Math.pow(avgC, 7) / (Math.pow(avgC, 7) + Math.pow(25, 7))
+      ));
+  const a1p = a1 * (1 + G), a2p = a2 * (1 + G);
+  const C1p = Math.sqrt(a1p * a1p + b1 * b1);
+  const C2p = Math.sqrt(a2p * a2p + b2 * b2);
+  const h1p =
+    a1p === 0 && b1 === 0
+      ? 0
+      : (Math.atan2(b1, a1p) * 180) / Math.PI < 0
+      ? (Math.atan2(b1, a1p) * 180) / Math.PI + 360
+      : (Math.atan2(b1, a1p) * 180) / Math.PI;
+  const h2p =
+    a2p === 0 && b2 === 0
+      ? 0
+      : (Math.atan2(b2, a2p) * 180) / Math.PI < 0
+      ? (Math.atan2(b2, a2p) * 180) / Math.PI + 360
+      : (Math.atan2(b2, a2p) * 180) / Math.PI;
+  const deltaLp = L2 - L1;
+  const deltaCp = C2p - C1p;
+  let deltahp = 0;
+  if (C1p !== 0 && C2p !== 0) {
+    const diff = h2p - h1p;
+    if (Math.abs(diff) <= 180) deltahp = diff;
+    else if (diff > 180) deltahp = diff - 360;
+    else deltahp = diff + 360;
   }
-  const deltaHp=2*Math.sqrt(C1p*C2p)*Math.sin(deltahp*Math.PI/360);
-  const avgLp=(L1+L2)/2, avgCp=(C1p+C2p)/2;
-  let avghp=h1p+h2p;
-  if (C1p!==0&&C2p!==0) {
-    const diff=Math.abs(h1p-h2p);
-    if (diff<=180) avghp=(h1p+h2p)/2;
-    else if (h1p+h2p<360) avghp=(h1p+h2p+360)/2;
-    else avghp=(h1p+h2p-360)/2;
+  const deltaHp =
+    2 * Math.sqrt(C1p * C2p) * Math.sin((deltahp * Math.PI) / 360);
+  const avgLp = (L1 + L2) / 2;
+  const avgCp = (C1p + C2p) / 2;
+  let avghp = h1p + h2p;
+  if (C1p !== 0 && C2p !== 0) {
+    const diff = Math.abs(h1p - h2p);
+    if (diff <= 180) avghp = (h1p + h2p) / 2;
+    else if (h1p + h2p < 360) avghp = (h1p + h2p + 360) / 2;
+    else avghp = (h1p + h2p - 360) / 2;
   }
-  const T=1-0.17*Math.cos((avghp-30)*Math.PI/180)
-           +0.24*Math.cos(2*avghp*Math.PI/180)
-           +0.32*Math.cos((3*avghp+6)*Math.PI/180)
-           -0.20*Math.cos((4*avghp-63)*Math.PI/180);
-  const SL=1+(0.015*Math.pow(avgLp-50,2))/Math.sqrt(20+Math.pow(avgLp-50,2));
-  const SC=1+0.045*avgCp;
-  const SH=1+0.015*avgCp*T;
-  const deltaTheta=30*Math.exp(-Math.pow((avghp-275)/25,2));
-  const RC=2*Math.sqrt(Math.pow(avgCp,7)/(Math.pow(avgCp,7)+Math.pow(25,7)));
-  const RT=-RC*Math.sin(2*deltaTheta*Math.PI/180);
+  const T =
+    1 -
+    0.17 * Math.cos(((avghp - 30) * Math.PI) / 180) +
+    0.24 * Math.cos((2 * avghp * Math.PI) / 180) +
+    0.32 * Math.cos(((3 * avghp + 6) * Math.PI) / 180) -
+    0.2 * Math.cos(((4 * avghp - 63) * Math.PI) / 180);
+  const SL =
+    1 +
+    (0.015 * Math.pow(avgLp - 50, 2)) /
+      Math.sqrt(20 + Math.pow(avgLp - 50, 2));
+  const SC = 1 + 0.045 * avgCp;
+  const SH = 1 + 0.015 * avgCp * T;
+  const deltaTheta =
+    30 * Math.exp(-Math.pow((avghp - 275) / 25, 2));
+  const RC =
+    2 *
+    Math.sqrt(
+      Math.pow(avgCp, 7) / (Math.pow(avgCp, 7) + Math.pow(25, 7))
+    );
+  const RT = -RC * Math.sin((2 * deltaTheta * Math.PI) / 180);
   return Math.sqrt(
-    Math.pow(deltaLp/(kL*SL),2)+
-    Math.pow(deltaCp/(kC*SC),2)+
-    Math.pow(deltaHp/(kH*SH),2)+
-    RT*(deltaCp/(kC*SC))*(deltaHp/(kH*SH))
+    Math.pow(deltaLp / (kL * SL), 2) +
+      Math.pow(deltaCp / (kC * SC), 2) +
+      Math.pow(deltaHp / (kH * SH), 2) +
+      RT * (deltaCp / (kC * SC)) * (deltaHp / (kH * SH))
   );
 }
-function deltaEToScore(de) {
-  let score;
-  if (de<=2.3) score=100-(de/2.3)*5;
-  else if (de<=10) score=95-((de-2.3)/7.7)*25;
-  else if (de<=30) score=70-((de-10)/20)*40;
-  else score=Math.max(0,30-((de-30)/70)*30);
-  return Math.max(0,Math.min(100,Math.round(score)));
+// Converte ΔE2000 → percentual de compatibilidade (0–100)
+export function deltaEToScore(de: number): number {
+  let score: number;
+  if (de <= 2.3) score = 100 - (de / 2.3) * 5;
+  else if (de <= 10) score = 95 - ((de - 2.3) / 7.7) * 25;
+  else if (de <= 30) score = 70 - ((de - 10) / 20) * 40;
+  else score = Math.max(0, 30 - ((de - 30) / 70) * 30);
+  return Math.max(0, Math.min(100, Math.round(score)));
 }
-// Motor principal: encontra a cor RAL P1 mais próxima por CIEDE2000
-function findClosestRalColor(rgb) {
-  const lab=rgbToLab(rgb.r,rgb.g,rgb.b);
-  let best=null;
+// ─── Resultado de match ───────────────────────────────────────────────────────
+export interface MatchResult {
+  entry: RalColorEntry;
+  deltaE: number;
+  confidence: number;
+  /** Modo de detecção utilizado */
+  mode: "plasticos" | "universal" | "ampliado";
+}
+// ─── MODO PLÁSTICOS — busca exclusivamente na biblioteca RAL P1 ───────────────
+export function findClosestRalColor(rgb: RGB): MatchResult {
+  const lab = rgbToLab(rgb.r, rgb.g, rgb.b);
+  let best: { entry: RalColorEntry; de: number } | null = null;
   for (const item of RAL_P1_LIBRARY) {
-    const refRgb=hexToRGB(item.hex);
-    const refLab=rgbToLab(refRgb.r,refRgb.g,refRgb.b);
-    const de=deltaE2000(lab,refLab);
-    if (!best||de<best.deltaE) {
-      best={ entry:item, deltaE:de, confidence:deltaEToScore(de) };
-    }
+    const refRgb = hexToRGB(item.hex);
+    const refLab = rgbToLab(refRgb.r, refRgb.g, refRgb.b);
+    const de = deltaE2000(lab, refLab);
+    if (!best || de < best.de) best = { entry: item, de };
   }
-  return best;
+  const b = best!;
+  return {
+    entry: b.entry,
+    deltaE: b.de,
+    confidence: deltaEToScore(b.de),
+    mode: "plasticos",
+  };
 }
-// Compatibilidade entre dois RGBs
-function compareRGB(a,b) {
-  const labA=rgbToLab(a.r,a.g,a.b);
-  const labB=rgbToLab(b.r,b.g,b.b);
-  const de=deltaE2000(labA,labB);
-  return { deltaE:de, percent:deltaEToScore(de) };
+// ─── Descritor espectral genérico (usado pelos modos Universal e Ampliado) ────
+export interface SpectrumEntry {
+  name: string;
+  hex: string;
+  confidence: number;
+  /** Entry RAL equivalente (se encontrado na biblioteca P1) */
+  ralEntry?: RalColorEntry;
+  deltaE?: number;
 }
-// Sugestão de ajuste baseada em diferenças L*a*b*
-function generateAdjustmentSuggestion(readRgb, refEntry) {
-  const refRgb=hexToRGB(refEntry.hex);
-  const labRead=rgbToLab(readRgb.r,readRgb.g,readRgb.b);
-  const labRef=rgbToLab(refRgb.r,refRgb.g,refRgb.b);
-  const de=deltaE2000(labRead,labRef);
-  const score=deltaEToScore(de);
-  if (score>=95) {
+// ─── MODO UNIVERSAL — espectro cromático de 9 famílias básicas ───────────────
+export function classifyUniversal(rgb: RGB, whiteCal: RGB | null, blackCal: RGB | null): SpectrumEntry {
+  const hsv = rgbToHSV(rgb.r, rgb.g, rgb.b);
+  const { h, s } = hsv;
+  let v = hsv.v;
+  // Normaliza V se calibrado
+  if (whiteCal && blackCal) {
+    const wHsv = rgbToHSV(whiteCal.r, whiteCal.g, whiteCal.b);
+    const bHsv = rgbToHSV(blackCal.r, blackCal.g, blackCal.b);
+    const range = wHsv.v - bHsv.v;
+    if (range > 5) v = Math.max(0, Math.min(100, ((v - bHsv.v) / range) * 100));
+  }
+  const maxRGB = Math.max(rgb.r, rgb.g, rgb.b);
+  const avgRGB = (rgb.r + rgb.g + rgb.b) / 3;
+  if (maxRGB <= 15 || avgRGB <= 10) return { name: "Preto", hex: "#1a1a2a", confidence: 99 };
+  if (v < 22 && s < 35) return { name: "Preto", hex: "#1a1a2a", confidence: 98 };
+  if (maxRGB < 50 && s < 40) return { name: "Preto", hex: "#1a1a2a", confidence: 97 };
+  if (s < 15) {
+    if (v >= 72) return { name: "Branco", hex: "#ffffff", confidence: 98 };
+    if (v <= 28) return { name: "Preto", hex: "#1a1a2a", confidence: 97 };
+    if (v >= 65) return { name: "Cinza Claro", hex: "#b8b8c8", confidence: 96 };
+    if (v <= 35) return { name: "Cinza Escuro", hex: "#5a5a6a", confidence: 96 };
+    return { name: "Cinza", hex: "#9999aa", confidence: 96 };
+  }
+  let name = "", hex = "", confidence = 97;
+  if ((h >= 290 || h < 20) && s >= 30) {
+    if (rgb.r > Math.max(rgb.g, rgb.b) && rgb.b >= 60 && s >= 20) { name = "Rosa"; hex = "#ff88aa"; confidence = 95; }
+    else if (rgb.r > Math.max(rgb.g, rgb.b) && rgb.b < 60 && s >= 30) { name = "Vermelho"; hex = "#ef4444"; }
+    else { name = "Magenta"; hex = "#d946ef"; confidence = 95; }
+  } else if (h >= 255 && h < 290 && s >= 25) {
+    if (rgb.b > rgb.r && v < 65) { name = "Roxo"; hex = "#a855f7"; }
+    else { name = "Magenta"; hex = "#d946ef"; confidence = 95; }
+  } else if (h >= 20 && h < 35) { name = "Laranja"; hex = "#f97316"; }
+  else if (h >= 35 && h < 70) { name = "Amarelo"; hex = "#fbbf24"; }
+  else if (h >= 70 && h < 165) { name = "Verde"; hex = "#22c55e"; }
+  else if (h >= 165 && h < 190) { name = "Ciano"; hex = "#06b6d4"; }
+  else if (h >= 190 && h < 255) { name = "Azul"; hex = "#3b82f6"; }
+  else { name = "Indeterminado"; hex = "#888888"; confidence = 40; }
+  // Modificador claro/escuro
+  if (v < 28) name += " Escuro";
+  else if (v > 82 && s < 45) name += " Claro";
+  return { name, hex, confidence };
+}
+// ─── MODO AMPLIADO — 60+ nuances (junção RAL P1 + Espectro Estendido) ────────
+// Tenta primeiro o match CIELAB contra a biblioteca RAL P1.
+// Se ΔE2000 ≤ 18 retorna o match RAL enriquecido com o nome em PT.
+// Se ΔE2000 > 18 aplica o classificador estendido de 60+ nuances.
+// Isso garante cobertura total: cores RAL recebem nome oficial,
+// cores fora do catálogo recebem o nome espectral mais próximo.
+export function classifyAmpliado(rgb: RGB, whiteCal: RGB | null, blackCal: RGB | null): SpectrumEntry {
+  // 1) Tenta match RAL P1
+  const ralMatch = findClosestRalColor(rgb);
+  if (ralMatch.deltaE <= 18) {
     return {
-      text:"✅ PRATICAMENTE PERFEITO!\nCompatibilidade de "+score+"% com "+refEntry.code+" — "+refEntry.names.pt+".",
-      cssClass:"perfect"
+      name: `${ralMatch.entry.names.pt} (${ralMatch.entry.code})`,
+      hex: ralMatch.entry.hex,
+      confidence: ralMatch.confidence,
+      ralEntry: ralMatch.entry,
+      deltaE: ralMatch.deltaE,
     };
   }
-  const dL=labRef.l-labRead.l;
-  const dA=labRef.a-labRead.a;
-  const dB=labRef.b-labRead.b;
-  const lines=[];
-  if (Math.abs(dL)>6) {
-    lines.push(dL>0
-      ?"Objeto está mais ESCURO que a referência (aumentar luminosidade)."
-      :"Objeto está mais CLARO que a referência (reduzir luminosidade).");
+  // 2) Classificador estendido de 60+ nuances
+  const hsv = rgbToHSV(rgb.r, rgb.g, rgb.b);
+  const { h, s } = hsv;
+  let v = hsv.v;
+  const { r, g, b } = rgb;
+  if (whiteCal && blackCal) {
+    const wHsv = rgbToHSV(whiteCal.r, whiteCal.g, whiteCal.b);
+    const bHsv = rgbToHSV(blackCal.r, blackCal.g, blackCal.b);
+    const range = wHsv.v - bHsv.v;
+    if (range > 5) v = Math.max(0, Math.min(100, ((v - bHsv.v) / range) * 100));
   }
-  if (Math.abs(dA)>6) {
-    lines.push(dA>0
-      ?"Falta componente vermelho/magenta em relação à referência."
-      :"Excesso de componente vermelho/magenta em relação à referência.");
+  const maxRGB = Math.max(r, g, b);
+  const avgRGB = (r + g + b) / 3;
+  if (maxRGB <= 15 || avgRGB <= 10) return { name: "Preto", hex: "#1a1a2a", confidence: 99 };
+  if (v < 22 && s < 35) return { name: "Preto", hex: "#1a1a2a", confidence: 98 };
+  if (maxRGB < 50 && s < 40) return { name: "Preto", hex: "#1a1a2a", confidence: 97 };
+  if (s < 15) {
+    if (v >= 72) return { name: "Branco", hex: "#ffffff", confidence: 98 };
+    if (v <= 28) return { name: "Preto", hex: "#1a1a2a", confidence: 97 };
+    if (v >= 65) return { name: "Cinza Claro", hex: "#b8b8c8", confidence: 96 };
+    if (v <= 35) return { name: "Cinza Escuro", hex: "#5a5a6a", confidence: 96 };
+    return { name: "Cinza", hex: "#9999aa", confidence: 96 };
   }
-  if (Math.abs(dB)>6) {
-    lines.push(dB>0
-      ?"Falta componente amarelo em relação à referência."
-      :"Excesso de componente amarelo (ou falta de azul) em relação à referência.");
+  let name = "", hex = "", confidence = 97;
+  // Vermelho / Rosa / Vinho
+  if ((h >= 345 || h < 15) && s >= 30) {
+    if (v <= 30 && s >= 50) { name = "Vinho"; hex = "#581c1c"; }
+    else if (v >= 75 && s >= 70) { name = "Vermelho Puro"; hex = "#ff0000"; }
+    else if (v >= 60 && s >= 65) { name = "Vermelho Vivo"; hex = "#ef4444"; }
+    else if (v >= 55 && s >= 55) { name = "Vermelho"; hex = "#dc2626"; }
+    else if (v <= 40) { name = "Vermelho Escuro"; hex = "#7f1d1d"; }
+    else if (s < 50 && v >= 70) { name = "Vermelho Claro"; hex = "#fca5a5"; }
+    else { name = "Vermelho"; hex = "#dc2626"; }
   }
-  if (lines.length===0) lines.push("Diferença sutil — ajuste fino de tonalidade recomendado.");
-  const header=score<60
-    ?`⚠️ DIVERGÊNCIA SIGNIFICATIVA (${score}%):`
-    :`🎨 AJUSTE FINO (${score}% → 100%):`;
-  return { text:header+"\n"+lines.join("\n"), cssClass:"" };
+  else if (h >= 15 && h < 25 && s >= 25) {
+    if (s >= 60 && v >= 65) { name = "Vermelho Alaranjado"; hex = "#ff4500"; }
+    else if (v <= 35) { name = "Vermelho Escuro"; hex = "#7f1d1d"; }
+    else { name = "Vermelho"; hex = "#dc2626"; }
+  }
+  // Rosa / Magenta descendente
+  else if (h >= 290 && h < 345) {
+    if (s <= 35 && v >= 75) { name = "Rosa Claro"; hex = "#ffc9e0"; }
+    else if (s >= 40 && v >= 70) { name = "Rosa Vivo"; hex = "#ff69b4"; }
+    else if (s >= 50 && v >= 60) { name = "Rosa"; hex = "#ff88aa"; }
+    else if (v <= 35) { name = "Rosa Escuro"; hex = "#8b4560"; }
+    else if (s <= 25) { name = "Rosa Pastel"; hex = "#ffd0e0"; }
+    else { name = "Rosa"; hex = "#ff88aa"; }
+  }
+  // Laranja
+  else if (h >= 25 && h < 45) {
+    if (s >= 75 && v >= 70) { name = "Laranja Vivo"; hex = "#ff8800"; }
+    else if (s >= 60 && v >= 50 && v <= 65) { name = "Laranja Queimado"; hex = "#d2691e"; }
+    else if (s >= 55 && v >= 60) { name = "Laranja"; hex = "#f97316"; }
+    else if (v <= 35) { name = "Laranja Escuro"; hex = "#7c2d12"; }
+    else if (s <= 40 && v >= 70) { name = "Laranja Claro"; hex = "#fed7aa"; }
+    else if (s >= 50 && v >= 55 && r > 200 && g >= 100 && g <= 160) { name = "Tangerina"; hex = "#ff9500"; }
+    else { name = "Laranja"; hex = "#f97316"; }
+  }
+  // Amarelo / Bege / Mostarda
+  else if (h >= 45 && h < 70) {
+    if (s <= 30 && v >= 70 && h >= 40 && h <= 55) { name = "Bege"; hex = "#f5deb3"; }
+    else if (s >= 60 && v >= 50 && v <= 65) { name = "Mostarda"; hex = "#ccaa00"; }
+    else if (s >= 40 && v >= 40 && v <= 55) { name = "Ocre"; hex = "#cc7722"; }
+    else if (s >= 75 && v >= 75) { name = "Amarelo Puro"; hex = "#ffff00"; }
+    else if (s >= 70 && v >= 80) { name = "Amarelo Limão"; hex = "#ffff66"; }
+    else if (s >= 65 && v >= 70) { name = "Amarelo Vivo"; hex = "#fbbf24"; }
+    else if (s >= 55 && v >= 65 && h >= 50 && h <= 60) { name = "Amarelo Canário"; hex = "#ffff99"; }
+    else if (s >= 50 && v >= 60) { name = "Amarelo"; hex = "#eab308"; }
+    else if (v <= 40) { name = "Amarelo Escuro"; hex = "#713f12"; }
+    else if (s <= 40 && v >= 75) { name = "Amarelo Claro"; hex = "#fef9c3"; }
+    else { name = "Amarelo"; hex = "#eab308"; }
+  }
+  // Verde
+  else if (h >= 70 && h < 165) {
+    if (v <= 35 && s >= 40 && h >= 70 && h <= 100) { name = "Verde Musgo"; hex = "#4a5d23"; }
+    else if (s >= 40 && v >= 40 && v <= 55 && h >= 70 && h <= 95) { name = "Verde Oliva"; hex = "#808000"; }
+    else if (s >= 75 && v >= 75) { name = "Verde Puro"; hex = "#00ff00"; }
+    else if (s >= 65 && v >= 70 && h >= 120 && h <= 140) { name = "Verde Esmeralda"; hex = "#50c878"; }
+    else if (s >= 60 && v >= 65) { name = "Verde Vivo"; hex = "#22c55e"; }
+    else if (s >= 55 && v >= 60 && h >= 145 && h <= 160) { name = "Verde Jade"; hex = "#00a86b"; }
+    else if (s >= 50 && v >= 55) { name = "Verde"; hex = "#16a34a"; }
+    else if (v <= 40) { name = "Verde Escuro"; hex = "#14532d"; }
+    else if (s <= 40 && v >= 70 && h >= 140 && h <= 160) { name = "Verde Menta"; hex = "#98ff98"; }
+    else if (s <= 35 && v >= 75) { name = "Verde Claro"; hex = "#bbf7d0"; }
+    else { name = "Verde"; hex = "#16a34a"; }
+  }
+  // Ciano
+  else if (h >= 165 && h < 195) {
+    if (s >= 75 && v >= 75) { name = "Ciano Puro"; hex = "#00ffff"; }
+    else if (s >= 65 && v >= 70) { name = "Ciano Vivo"; hex = "#06b6d4"; }
+    else if (s >= 55 && v >= 65 && h >= 170 && h <= 185) { name = "Água"; hex = "#00ced1"; }
+    else if (s >= 50 && v >= 60) { name = "Ciano"; hex = "#0891b2"; }
+    else if (v <= 40) { name = "Ciano Escuro"; hex = "#164e63"; }
+    else if (s <= 40 && v >= 75) { name = "Ciano Claro"; hex = "#cffafe"; }
+    else { name = "Ciano"; hex = "#0891b2"; }
+  }
+  // Azul
+  else if (h >= 195 && h < 255) {
+    if (v <= 25 && s >= 40) { name = "Azul Meia-Noite"; hex = "#191970"; }
+    else if (v <= 30 && s >= 50) { name = "Azul Marinho"; hex = "#001f3f"; }
+    else if (v <= 40 && s >= 45) { name = "Azul Escuro"; hex = "#1e3a8a"; }
+    else if (s >= 80 && v >= 80) { name = "Azul Elétrico"; hex = "#7df9ff"; }
+    else if (s >= 75 && v >= 75) { name = "Azul Royal"; hex = "#4169e1"; }
+    else if (s >= 70 && v >= 70 && h >= 220 && h <= 240) { name = "Azul Cobalto"; hex = "#0047ab"; }
+    else if (s >= 60 && v >= 65) { name = "Azul Vivo"; hex = "#3b82f6"; }
+    else if (s >= 50 && v >= 55) { name = "Azul"; hex = "#2563eb"; }
+    else if (s <= 30 && v >= 70) { name = "Azul Pastel"; hex = "#aec6cf"; }
+    else if (s <= 35 && v >= 80) { name = "Azul Bebê"; hex = "#89cff0"; }
+    else if (s <= 40 && v >= 75) { name = "Azul Celeste"; hex = "#b0e0e6"; }
+    else if (v >= 75 && s < 50) { name = "Azul Claro"; hex = "#bfdbfe"; }
+    else { name = "Azul"; hex = "#2563eb"; }
+  }
+  // Roxo
+  else if (h >= 255 && h < 290) {
+    if (s >= 60 && v >= 70 && h >= 270 && h <= 285) { name = "Violeta"; hex = "#8a2be2"; }
+    else if (s >= 50 && v >= 65 && h >= 265 && h <= 280) { name = "Ametista"; hex = "#9966cc"; }
+    else if (s >= 70 && v >= 65) { name = "Roxo Vivo"; hex = "#a855f7"; }
+    else if (s >= 55 && v >= 60) { name = "Roxo"; hex = "#9333ea"; }
+    else if (v <= 40) { name = "Roxo Escuro"; hex = "#581c87"; }
+    else if (s <= 40 && v >= 75) { name = "Lavanda"; hex = "#e6e6fa"; }
+    else if (s <= 35 && v >= 70) { name = "Roxo Claro"; hex = "#ddd6fe"; }
+    else { name = "Roxo"; hex = "#9333ea"; }
+  }
+  // Magenta / Fúcsia
+  else if ((h >= 290 && h < 320) || (h >= 320 && h < 345)) {
+    if (s >= 70 && v >= 75 && h >= 320 && h <= 340) { name = "Fúcsia"; hex = "#ff00ff"; }
+    else if (s >= 75 && v >= 70) { name = "Magenta Vivo"; hex = "#ff00ff"; }
+    else if (s >= 60 && v >= 65) { name = "Magenta"; hex = "#d946ef"; }
+    else if (v <= 40) { name = "Magenta Escuro"; hex = "#701a75"; }
+    else if (s <= 40 && v >= 75) { name = "Magenta Claro"; hex = "#fae8ff"; }
+    else { name = "Magenta"; hex = "#d946ef"; }
+  } else {
+    name = "Indeterminado";
+    hex = "#888888";
+    confidence = 40;
+  }
+  return { name, hex, confidence };
 }
-// Calibração por canal: corrige leitura com base no branco e preto capturados
-function applyCalibration(rgb, whiteCal, blackCal) {
-  if (!whiteCal||!blackCal) return rgb;
-  const corr=(raw,w,bk)=>{
-    const range=w-bk;
-    if (range<=5) return raw;
-    return Math.max(0,Math.min(255,((raw-bk)/range)*255));
-  };
+// ─── Compatibilidade entre dois pontos capturados ─────────────────────────────
+export function compareRGB(a: RGB, b: RGB): { deltaE: number; percent: number } {
+  const labA = rgbToLab(a.r, a.g, a.b);
+  const labB = rgbToLab(b.r, b.g, b.b);
+  const de = deltaE2000(labA, labB);
+  return { deltaE: de, percent: deltaEToScore(de) };
+}
+// ─── Sugestão de ajuste baseada em Lab ────────────────────────────────────────
+export function generateAdjustmentSuggestion(
+  readRgb: RGB,
+  refEntry: RalColorEntry
+): { text: string; cssClass: string } {
+  const refRgb = hexToRGB(refEntry.hex);
+  const labRead = rgbToLab(readRgb.r, readRgb.g, readRgb.b);
+  const labRef = rgbToLab(refRgb.r, refRgb.g, refRgb.b);
+  const de = deltaE2000(labRead, labRef);
+  const score = deltaEToScore(de);
+  if (score >= 95) {
+    return {
+      text: `✅ PRATICAMENTE PERFEITO!\nCompatibilidade de ${score}% com ${refEntry.code} — ${refEntry.names.pt}.`,
+      cssClass: "perfect",
+    };
+  }
+  const dL = labRef.l - labRead.l;
+  const dA = labRef.a - labRead.a;
+  const dB = labRef.b - labRead.b;
+  const lines: string[] = [];
+  if (Math.abs(dL) > 6) {
+    lines.push(
+      dL > 0
+        ? "Objeto está mais ESCURO que a referência (aumentar luminosidade)."
+        : "Objeto está mais CLARO que a referência (reduzir luminosidade)."
+    );
+  }
+  if (Math.abs(dA) > 6) {
+    lines.push(
+      dA > 0
+        ? "Falta componente vermelho/magenta em relação à referência."
+        : "Excesso de componente vermelho/magenta em relação à referência."
+    );
+  }
+  if (Math.abs(dB) > 6) {
+    lines.push(
+      dB > 0
+        ? "Falta componente amarelo em relação à referência."
+        : "Excesso de componente amarelo (ou falta de azul) em relação à referência."
+    );
+  }
+  if (lines.length === 0) {
+    lines.push("Diferença sutil — ajuste fino de tonalidade recomendado.");
+  }
+  const header =
+    score < 60
+      ? `⚠️ DIVERGÊNCIA SIGNIFICATIVA (${score}%):`
+      : `🎨 AJUSTE FINO (${score}% → 100%):`;
+  return { text: `${header}\n${lines.join("\n")}`, cssClass: "" };
+}
+import { useCallback, useRef, useState } from "react";
+export interface ManualCaps {
+  exposure: boolean;
+  whiteBalance: boolean;
+  focus: boolean;
+  torch: boolean;
+}
+export function useCamera() {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [deviceIndex, setDeviceIndex] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [manualCaps, setManualCaps] = useState<ManualCaps>({
+    exposure: false,
+    whiteBalance: false,
+    focus: false,
+    torch: false,
+  });
+  const [flashOn, setFlashOn] = useState(false);
+  const refreshDevices = useCallback(async () => {
+    try {
+      const list = await navigator.mediaDevices.enumerateDevices();
+      const vids = list.filter((d) => d.kind === "videoinput");
+      setDevices(vids);
+      return vids;
+    } catch {
+      setDevices([]);
+      return [];
+    }
+  }, []);
+  // Tenta travar exposição/foco/balanço de branco em modo manual para
+  // reduzir ao máximo a interferência do ISP do dispositivo.
+  // Funciona principalmente em Chrome/Android; iOS/Safari não suporta.
+  const tryLockManualControls = useCallback(
+    async (track: MediaStreamTrack) => {
+      const caps: ManualCaps = {
+        exposure: false,
+        whiteBalance: false,
+        focus: false,
+        torch: false,
+      };
+      try {
+        const capabilities = (track.getCapabilities?.() ??
+          {}) as Record<string, unknown>;
+        const advanced: MediaTrackConstraintSet[] = [];
+        if ("exposureMode" in capabilities) {
+          advanced.push({
+            exposureMode: "manual",
+          } as unknown as MediaTrackConstraintSet);
+          caps.exposure = true;
+        }
+        if ("whiteBalanceMode" in capabilities) {
+          advanced.push({
+            whiteBalanceMode: "manual",
+          } as unknown as MediaTrackConstraintSet);
+          caps.whiteBalance = true;
+        }
+        if ("focusMode" in capabilities) {
+          advanced.push({
+            focusMode: "manual",
+          } as unknown as MediaTrackConstraintSet);
+          caps.focus = true;
+        }
+        if ("torch" in capabilities) caps.torch = true;
+        if (advanced.length > 0) {
+          await track.applyConstraints({
+            advanced,
+          } as MediaTrackConstraints);
+        }
+      } catch {
+        // silencioso — nem todo hardware permite
+      }
+      setManualCaps(caps);
+    },
+    []
+  );
+  const openCamera = useCallback(
+    async (preferredId?: string) => {
+      if (streamRef.current)
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      const tryOpen = async (constraints: MediaStreamConstraints) => {
+        try {
+          const stream =
+            await navigator.mediaDevices.getUserMedia(constraints);
+          streamRef.current = stream;
+          if (videoRef.current) videoRef.current.srcObject = stream;
+          const track = stream.getVideoTracks()[0];
+          if (track) await tryLockManualControls(track);
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      if (
+        preferredId &&
+        (await tryOpen({
+          video: {
+            deviceId: { exact: preferredId },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
+        }))
+      )
+        return true;
+      if (
+        await tryOpen({
+          video: {
+            facingMode: { exact: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
+        })
+      )
+        return true;
+      if (
+        await tryOpen({
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        })
+      )
+        return true;
+      if (await tryOpen({ video: true })) return true;
+      return false;
+    },
+    [tryLockManualControls]
+  );
+  const start = useCallback(async () => {
+    await refreshDevices();
+    const ok = await openCamera();
+    setRunning(ok);
+    return ok;
+  }, [openCamera, refreshDevices]);
+  const stop = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    setRunning(false);
+    setManualCaps({
+      exposure: false,
+      whiteBalance: false,
+      focus: false,
+      torch: false,
+    });
+  }, []);
+  const switchCamera = useCallback(async () => {
+    const list = await refreshDevices();
+    if (list.length < 2) return false;
+    const nextIndex = (deviceIndex + 1) % list.length;
+    setDeviceIndex(nextIndex);
+    return openCamera(list[nextIndex].deviceId);
+  }, [deviceIndex, openCamera, refreshDevices]);
+  const toggleFlash = useCallback(async () => {
+    const stream = streamRef.current;
+    if (!stream) return false;
+    const track = stream.getVideoTracks()[0];
+    if (!track) return false;
+    const next = !flashOn;
+    try {
+      await track.applyConstraints({
+        advanced: [{ torch: next } as unknown as MediaTrackConstraintSet],
+      });
+      setFlashOn(next);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [flashOn]);
   return {
-    r: corr(rgb.r,whiteCal.r,blackCal.r),
-    g: corr(rgb.g,whiteCal.g,blackCal.g),
-    b: corr(rgb.b,whiteCal.b,blackCal.b)
+    videoRef,
+    streamRef,
+    devices,
+    running,
+    manualCaps,
+    flashOn,
+    start,
+    stop,
+    switchCamera,
+    toggleFlash,
+    refreshDevices,
   };
 }
-// ════════════════════════════════════════════════════════════════
-// 🎛️ ESTADO GLOBAL
-// ════════════════════════════════════════════════════════════════
-const video=document.getElementById('videoEl');
-const canvas=document.getElementById('canvasEl');
-const ctx=canvas.getContext('2d',{willReadFrequently:true});
-const reticle=document.getElementById('reticle');
-const cameraContainer=document.getElementById('camera-container');
-let stream=null;
-let devices=[];
-let deviceIndex=0;
-let running=false;
-let systemOn=false;
-let flashEnabled=false;
-let audioEnabled=false;
-let currentMode=null;
-let confirmingShutdown=false;
-// Calibração
-let whiteCal=null;
-let blackCal=null;
-let calibrating=null;
-// Controles manuais da câmera
-let manualCaps={ exposure:false, whiteBalance:false, focus:false, torch:false };
-// Modo estático
-let staticPos=null;
-let staticFrozen=false;
-// Buffer de suavização
-const BUFFER_SIZE=8;
-const SAMPLE_HALF=3;
-let colorBuffer=[];
-// Live read
-let liveRGB=null;
-let liveMatch=null;
-// Comparação
-let selectingRef=false;
-let selectingSample=false;
-let refPoint=null;
-let samplePoint=null;
-let compResult=null;
-let compSuggestion="";
-// Áudio
-let lastSpokenCode="";
-// ════════════════════════════════════════════════════════════════
-// 🎤 SISTEMA DE ÁUDIO (TTS)
-// ════════════════════════════════════════════════════════════════
-function speakSystem(text) {
-  if (!window.speechSynthesis||!text) return;
-  window.speechSynthesis.cancel();
-  setTimeout(()=>{
-    try {
-      const utt=new SpeechSynthesisUtterance(text);
-      utt.lang="pt-BR"; utt.rate=1.0;
-      window.speechSynthesis.speak(utt);
-    } catch(e){}
-  },150);
+import { useCallback, useRef } from "react";
+export function useSpeech() {
+  const enabledRef = useRef(false);
+  const setEnabled = useCallback((v: boolean) => {
+    enabledRef.current = v;
+    if (!v && window.speechSynthesis) window.speechSynthesis.cancel();
+  }, []);
+  const speak = useCallback(
+    (text: string, opts?: { force?: boolean; rate?: number }) => {
+      if (!window.speechSynthesis || !text) return;
+      if (!opts?.force && !enabledRef.current) return;
+      window.speechSynthesis.cancel();
+      setTimeout(() => {
+        try {
+          const utt = new SpeechSynthesisUtterance(text);
+          utt.lang = "pt-BR";
+          utt.rate = opts?.rate ?? 1.05;
+          window.speechSynthesis.speak(utt);
+        } catch {
+          /* noop */
+        }
+      }, 60);
+    },
+    []
+  );
+  return { speak, setEnabled, isEnabled: () => enabledRef.current };
 }
-function speakColor(match) {
-  if (!audioEnabled||!match) return;
-  const code=match.entry.code;
-  if (code===lastSpokenCode) return;
-  lastSpokenCode=code;
-  const numCode=match.entry.ralNumber;
-  const name=match.entry.names.pt;
-  const conf=match.confidence;
-  speakSystem(`${name}, código ${numCode}, ${conf} por cento de compatibilidade.`);
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useCamera } from "./hooks/useCamera";
+import { useSpeech } from "./hooks/useSpeech";
+import {
+  RGB,
+  rgbToHSV,
+  findClosestRalColor,
+  classifyUniversal,
+  classifyAmpliado,
+  MatchResult,
+  SpectrumEntry,
+  compareRGB,
+  generateAdjustmentSuggestion,
+} from "./utils/colorEngine";
+import { RalColorEntry } from "./data/ralP1Library";
+// ─── Tipos ────────────────────────────────────────────────────────────────────
+type AppMode = "livre" | "estatico" | "comparacao" | null;
+type ColorMode = "universal" | "ampliado" | "plasticos";
+interface CapturedPoint {
+  rgb: RGB;
+  ralMatch: MatchResult;         // sempre o match RAL (para fórmula/ajuste)
+  displayEntry: RalColorEntry | null;
+  displayName: string;
+  displayHex: string;
+  confidence: number;
+  thumb: string;
 }
-// ════════════════════════════════════════════════════════════════
-// 📷 CÂMERA
-// ════════════════════════════════════════════════════════════════
-async function tryLockManualControls(track) {
-  const caps={ exposure:false, whiteBalance:false, focus:false, torch:false };
-  try {
-    const capabilities=(track.getCapabilities?.()||{});
-    const advanced=[];
-    if ("exposureMode" in capabilities) { advanced.push({exposureMode:"manual"}); caps.exposure=true; }
-    if ("whiteBalanceMode" in capabilities) { advanced.push({whiteBalanceMode:"manual"}); caps.whiteBalance=true; }
-    if ("focusMode" in capabilities) { advanced.push({focusMode:"manual"}); caps.focus=true; }
-    if ("torch" in capabilities) caps.torch=true;
-    if (advanced.length>0) await track.applyConstraints({advanced});
-  } catch(e){}
-  return caps;
+// ─── Constantes ───────────────────────────────────────────────────────────────
+const SAMPLE_HALF = 4;   // meia-janela de amostragem (pixels nativos)
+const BUFFER_SIZE = 8;
+// ─── Utilitário: swatch de cor com nome escrito na mesma cor ─────────────────
+// Isso realiza a validação visual dupla descrita na especificação:
+// o nome é exibido NA COR OFICIAL do registro, eliminando ambiguidade
+// causada por qualidade de tela.
+function ColorNameDisplay({
+  name,
+  hex,
+  confidence,
+}: {
+  name: string;
+  hex: string;
+  confidence: number;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      {/* Swatch oficial */}
+      <div
+        className="h-8 w-full rounded border border-white/10 shadow-inner"
+        style={{ background: hex }}
+      />
+      {/* Nome escrito COM A COR OFICIAL — validação visual dupla */}
+      <span
+        className="text-center text-[0.78rem] font-extrabold drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
+        style={{ color: hex, textShadow: "0 0 6px rgba(0,0,0,0.95), 0 1px 2px rgba(0,0,0,1)" }}
+      >
+        {name}
+      </span>
+      <span
+        className={`text-[0.6rem] font-bold ${
+          confidence >= 90
+            ? "text-emerald-400"
+            : confidence >= 70
+            ? "text-amber-400"
+            : "text-red-400"
+        }`}
+      >
+        {confidence}%
+      </span>
+    </div>
+  );
 }
-async function getDevices() {
-  try {
-    const list=await navigator.mediaDevices.enumerateDevices();
-    devices=list.filter(d=>d.kind==="videoinput");
-  } catch(e){ devices=[]; }
-}
-async function openCamera(preferredId) {
-  if (stream) stream.getTracks().forEach(t=>t.stop());
-  const tryOpen=async(constraints)=>{
-    try {
-      stream=await navigator.mediaDevices.getUserMedia(constraints);
-      video.srcObject=stream;
-      const track=stream.getVideoTracks()[0];
-      if (track) {
-        manualCaps=await tryLockManualControls(track);
-        if (flashEnabled && manualCaps.torch) {
-          try { await track.applyConstraints({advanced:[{torch:true}]}); } catch(e){}
+// ─── Componente principal ─────────────────────────────────────────────────────
+export default function App() {
+  const cam = useCamera();
+  const speech = useSpeech();
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const rafRef = useRef<number | null>(null);
+  // Estado do sistema
+  const [systemOn, setSystemOn] = useState(false);
+  const [confirmingShutdown, setConfirmingShutdown] = useState(false);
+  const [appMode, setAppMode] = useState<AppMode>(null);
+  const [colorMode, setColorMode] = useState<ColorMode>("universal");
+  const [showModeOverlay, setShowModeOverlay] = useState(false);
+  const [modeDropdownOpen, setModeDropdownOpen] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  // Modo Estático
+  const [staticPos, setStaticPos] = useState<{ x: number; y: number } | null>(null);
+  const [staticFrozen, setStaticFrozen] = useState(false);
+  // Leituras ao vivo (Livre / Estático)
+  const [liveRGB, setLiveRGB] = useState<RGB | null>(null);
+  const [liveDisplay, setLiveDisplay] = useState<{
+    name: string;
+    hex: string;
+    confidence: number;
+    ralEntry: RalColorEntry | null;
+    deltaE: number | null;
+  } | null>(null);
+  // Calibração
+  const [whiteCal, setWhiteCal] = useState<RGB | null>(null);
+  const [blackCal, setBlackCal] = useState<RGB | null>(null);
+  const [calibrating, setCalibrating] = useState<"white" | "black" | null>(null);
+  // Modo Comparação
+  const [selectingRef, setSelectingRef] = useState(false);
+  const [selectingSample, setSelectingSample] = useState(false);
+  const [refPoint, setRefPoint] = useState<CapturedPoint | null>(null);
+  const [samplePoint, setSamplePoint] = useState<CapturedPoint | null>(null);
+  const [compResult, setCompResult] = useState<{ percent: number; deltaE: number } | null>(null);
+  const [compSuggestion, setCompSuggestion] = useState<{ text: string; cssClass: string } | null>(null);
+  const [resultadoCalculado, setResultadoCalculado] = useState(false);
+  const bufferRef = useRef<RGB[]>([]);
+  const lastSpokenRef = useRef<string>("");
+  // ─── Calibração ────────────────────────────────────────────────────────────
+  const applyCalibration = useCallback(
+    (rgb: RGB): RGB => {
+      if (!whiteCal || !blackCal) return rgb;
+      const corr = (raw: number, w: number, bk: number) => {
+        const range = w - bk;
+        if (range <= 5) return raw;
+        return Math.max(0, Math.min(255, ((raw - bk) / range) * 255));
+      };
+      return {
+        r: corr(rgb.r, whiteCal.r, blackCal.r),
+        g: corr(rgb.g, whiteCal.g, blackCal.g),
+        b: corr(rgb.b, whiteCal.b, blackCal.b),
+      };
+    },
+    [whiteCal, blackCal]
+  );
+  // ─── Classificação unificada por modo ──────────────────────────────────────
+  const classify = useCallback(
+    (rgb: RGB): { name: string; hex: string; confidence: number; ralEntry: RalColorEntry | null; deltaE: number | null } => {
+      if (colorMode === "plasticos") {
+        const m = findClosestRalColor(rgb);
+        return {
+          name: `${m.entry.names.pt} (${m.entry.code})`,
+          hex: m.entry.hex,
+          confidence: m.confidence,
+          ralEntry: m.entry,
+          deltaE: m.deltaE,
+        };
+      }
+      if (colorMode === "ampliado") {
+        const s = classifyAmpliado(rgb, whiteCal, blackCal);
+        return {
+          name: s.name,
+          hex: s.hex,
+          confidence: s.confidence,
+          ralEntry: s.ralEntry ?? null,
+          deltaE: s.deltaE ?? null,
+        };
+      }
+      // universal
+      const s: SpectrumEntry = classifyUniversal(rgb, whiteCal, blackCal);
+      // mesmo no universal, faz o match RAL silenciosamente para info
+      const m = findClosestRalColor(rgb);
+      return {
+        name: s.name,
+        hex: s.hex,
+        confidence: s.confidence,
+        ralEntry: m.entry,
+        deltaE: m.deltaE,
+      };
+    },
+    [colorMode, whiteCal, blackCal]
+  );
+  // ─── Amostragem de pixel ────────────────────────────────────────────────────
+  const sampleAt = useCallback(
+    (clientX: number, clientY: number): RGB | null => {
+      const video = cam.videoRef.current;
+      const canvas = canvasRef.current;
+      const container = containerRef.current;
+      if (!video || !canvas || !container) return null;
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (!vw || !vh) return null;
+      const rect = container.getBoundingClientRect();
+      const cw = rect.width, ch = rect.height;
+      const scale = Math.max(cw / vw, ch / vh);
+      const nativeX = Math.round((clientX + (vw * scale - cw) / 2) / scale);
+      const nativeY = Math.round((clientY + (vh * scale - ch) / 2) / scale);
+      const half = Math.max(1, Math.round(SAMPLE_HALF / scale));
+      canvas.width = vw;
+      canvas.height = vh;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return null;
+      try {
+        ctx.drawImage(video, 0, 0, vw, vh);
+        const x0 = Math.max(0, Math.min(vw - half * 2, nativeX - half));
+        const y0 = Math.max(0, Math.min(vh - half * 2, nativeY - half));
+        const data = ctx.getImageData(x0, y0, half * 2, half * 2).data;
+        let r = 0, g = 0, b = 0, c = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i]; g += data[i + 1]; b += data[i + 2]; c++;
+        }
+        if (c === 0) return null;
+        return { r: Math.round(r / c), g: Math.round(g / c), b: Math.round(b / c) };
+      } catch {
+        return null;
+      }
+    },
+    [cam.videoRef]
+  );
+  const makeThumb = useCallback(
+    (clientX: number, clientY: number): string => {
+      const video = cam.videoRef.current;
+      const container = containerRef.current;
+      if (!video || !container) return "";
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (!vw || !vh) return "";
+      const rect = container.getBoundingClientRect();
+      const scale = Math.max(rect.width / vw, rect.height / vh);
+      const nativeX = Math.round((clientX + (vw * scale - rect.width) / 2) / scale);
+      const nativeY = Math.round((clientY + (vh * scale - rect.height) / 2) / scale);
+      const thumbW = Math.min(vw, 360);
+      const thumbH = Math.round(thumbW * (vh / vw));
+      const thumbScale = thumbW / vw;
+      const tCanv = document.createElement("canvas");
+      tCanv.width = thumbW; tCanv.height = thumbH;
+      const tCtx = tCanv.getContext("2d");
+      if (!tCtx) return "";
+      tCtx.drawImage(video, 0, 0, thumbW, thumbH);
+      const tx = nativeX * thumbScale, ty = nativeY * thumbScale;
+      tCtx.strokeStyle = "rgba(120,220,255,0.95)";
+      tCtx.lineWidth = 2;
+      tCtx.beginPath();
+      tCtx.moveTo(tx - 14, ty); tCtx.lineTo(tx + 14, ty);
+      tCtx.moveTo(tx, ty - 14); tCtx.lineTo(tx, ty + 14);
+      tCtx.stroke();
+      tCtx.lineWidth = 1.4;
+      tCtx.strokeRect(tx - 10, ty - 10, 20, 20);
+      return tCanv.toDataURL("image/jpeg", 0.72);
+    },
+    [cam.videoRef]
+  );
+  // ─── Loop principal RAF ─────────────────────────────────────────────────────
+  useEffect(() => {
+    function loop() {
+      rafRef.current = requestAnimationFrame(loop);
+      if (!systemOn || !cam.running || appMode === "comparacao") return;
+      if (appMode === "estatico" && staticFrozen) return;
+      const container = containerRef.current;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      let x = rect.width / 2, y = rect.height / 2;
+      if (appMode === "estatico") {
+        if (!staticPos) return;
+        x = staticPos.x; y = staticPos.y;
+      } else if (appMode !== "livre") {
+        return;
+      }
+      const raw = sampleAt(x, y);
+      if (!raw) return;
+      const corrected = applyCalibration(raw);
+      bufferRef.current.push(corrected);
+      if (bufferRef.current.length > BUFFER_SIZE) bufferRef.current.shift();
+      const buf = bufferRef.current;
+      const avg: RGB = {
+        r: Math.round(buf.reduce((s, p) => s + p.r, 0) / buf.length),
+        g: Math.round(buf.reduce((s, p) => s + p.g, 0) / buf.length),
+        b: Math.round(buf.reduce((s, p) => s + p.b, 0) / buf.length),
+      };
+      setLiveRGB(avg);
+      const result = classify(avg);
+      setLiveDisplay((prev) => {
+        if (!prev || prev.name !== result.name) {
+          if (audioEnabled) {
+            const ralInfo =
+              result.ralEntry && colorMode !== "universal"
+                ? `, código ${result.ralEntry.code.replace("RAL ", "").replace("-P", "")}`
+                : "";
+            speech.speak(
+              `${result.name}${ralInfo}, ${result.confidence} por cento.`
+            );
+            lastSpokenRef.current = result.name;
+          }
+        }
+        return result;
+      });
+      if (appMode === "estatico" && buf.length >= BUFFER_SIZE) {
+        setStaticFrozen(true);
+      }
+    }
+    rafRef.current = requestAnimationFrame(loop);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [systemOn, cam.running, appMode, staticPos, staticFrozen, applyCalibration, sampleAt, classify, audioEnabled, colorMode]);
+  // ─── Ações de sistema ───────────────────────────────────────────────────────
+  const resetAllState = useCallback(() => {
+    setAppMode(null);
+    setShowModeOverlay(false);
+    setStaticPos(null);
+    setStaticFrozen(false);
+    setLiveRGB(null);
+    setLiveDisplay(null);
+    setWhiteCal(null);
+    setBlackCal(null);
+    setSelectingRef(false);
+    setSelectingSample(false);
+    setRefPoint(null);
+    setSamplePoint(null);
+    setCompResult(null);
+    setCompSuggestion(null);
+    setResultadoCalculado(false);
+    bufferRef.current = [];
+    lastSpokenRef.current = "";
+  }, []);
+  const handleToggleSystem = useCallback(() => {
+    if (!systemOn) {
+      setSystemOn(true);
+      setShowModeOverlay(true);
+      speech.speak(
+        "Sistema ligado. Selecione o modo. Livre: mira fixa no centro, análise contínua. Estático: toque na tela para analisar um ponto. Comparação: capture dois pontos e compare.",
+        { force: true }
+      );
+    } else {
+      setConfirmingShutdown(true);
+    }
+  }, [systemOn, speech]);
+  const confirmShutdown = useCallback(
+    (yes: boolean) => {
+      setConfirmingShutdown(false);
+      if (!yes) {
+        speech.speak("Desligamento cancelado. Sistema permanece ativo.", { force: true });
+        return;
+      }
+      cam.stop();
+      setSystemOn(false);
+      setAudioEnabled(false);
+      speech.setEnabled(false);
+      resetAllState();
+      speech.speak("Sistema desativado.", { force: true });
+    },
+    [cam, resetAllState, speech]
+  );
+  const handleSelectAppMode = useCallback(
+    (m: Exclude<AppMode, null>) => {
+      setAppMode(m);
+      setShowModeOverlay(false);
+      setModeDropdownOpen(false);
+      setStaticPos(null);
+      setStaticFrozen(false);
+      setSelectingRef(false);
+      setSelectingSample(false);
+      setRefPoint(null);
+      setSamplePoint(null);
+      setCompResult(null);
+      setCompSuggestion(null);
+      setResultadoCalculado(false);
+      bufferRef.current = [];
+      const labels: Record<string, string> = {
+        livre: "Modo Livre selecionado. Mira fixa no centro, análise contínua.",
+        estatico: "Modo Estático selecionado. Toque na tela para analisar um ponto específico.",
+        comparacao: "Modo Comparação selecionado. Selecione a referência e a amostra.",
+      };
+      speech.speak(labels[m], { force: true });
+    },
+    [speech]
+  );
+  const handleStartCamera = useCallback(async () => {
+    await cam.start();
+  }, [cam]);
+  // ─── Calibração ────────────────────────────────────────────────────────────
+  const runCalibration = useCallback(
+    async (target: "white" | "black") => {
+      if (!systemOn || !cam.running || !appMode) return;
+      setCalibrating(target);
+      speech.speak(
+        `Calibrando ${target === "white" ? "branco" : "preto"}. Aguarde.`,
+        { force: true }
+      );
+      const samples: RGB[] = [];
+      const container = containerRef.current;
+      const rect = container?.getBoundingClientRect();
+      const x =
+        appMode === "estatico" && staticPos
+          ? staticPos.x
+          : rect
+          ? rect.width / 2
+          : 0;
+      const y =
+        appMode === "estatico" && staticPos
+          ? staticPos.y
+          : rect
+          ? rect.height / 2
+          : 0;
+      for (let i = 0; i < 24; i++) {
+        const s = sampleAt(x, y);
+        if (s) samples.push(s);
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((r) => setTimeout(r, 33));
+      }
+      if (samples.length === 0) {
+        setCalibrating(null);
+        return;
+      }
+      const avg: RGB = {
+        r: Math.round(samples.reduce((s, p) => s + p.r, 0) / samples.length),
+        g: Math.round(samples.reduce((s, p) => s + p.g, 0) / samples.length),
+        b: Math.round(samples.reduce((s, p) => s + p.b, 0) / samples.length),
+      };
+      if (target === "white") setWhiteCal(avg);
+      else setBlackCal(avg);
+      bufferRef.current = [];
+      setCalibrating(null);
+      speech.speak(`${target === "white" ? "Branco" : "Preto"} calibrado.`, { force: true });
+    },
+    [systemOn, cam.running, appMode, staticPos, sampleAt, speech]
+  );
+  // ─── Clique na câmera ───────────────────────────────────────────────────────
+  const handleVideoClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!systemOn || !cam.running || !appMode) return;
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      if (appMode === "estatico") {
+        if (staticFrozen) return;
+        setStaticPos({ x, y });
+        setStaticFrozen(false);
+        bufferRef.current = [];
+        return;
+      }
+      if (appMode === "comparacao") {
+        if (selectingRef) {
+          const raw = sampleAt(x, y);
+          if (raw) {
+            const corrected = applyCalibration(raw);
+            const ralM = findClosestRalColor(corrected);
+            const disp = classify(corrected);
+            const thumb = makeThumb(x, y);
+            setRefPoint({
+              rgb: corrected,
+              ralMatch: ralM,
+              displayEntry: disp.ralEntry,
+              displayName: disp.name,
+              displayHex: disp.hex,
+              confidence: disp.confidence,
+              thumb,
+            });
+            setCompResult(null);
+            setCompSuggestion(null);
+            setResultadoCalculado(false);
+            speech.speak(`Referência capturada: ${disp.name}.`, { force: true });
+          }
+          setSelectingRef(false);
+        } else if (selectingSample) {
+          const raw = sampleAt(x, y);
+          if (raw) {
+            const corrected = applyCalibration(raw);
+            const ralM = findClosestRalColor(corrected);
+            const disp = classify(corrected);
+            const thumb = makeThumb(x, y);
+            setSamplePoint({
+              rgb: corrected,
+              ralMatch: ralM,
+              displayEntry: disp.ralEntry,
+              displayName: disp.name,
+              displayHex: disp.hex,
+              confidence: disp.confidence,
+              thumb,
+            });
+            setCompResult(null);
+            setCompSuggestion(null);
+            setResultadoCalculado(false);
+            speech.speak(`Amostra capturada: ${disp.name}.`, { force: true });
+          }
+          setSelectingSample(false);
         }
       }
-      updateCapBadges();
-      return true;
-    } catch(e){ return false; }
-  };
-  if (preferredId && await tryOpen({video:{deviceId:{exact:preferredId},width:{ideal:1920},height:{ideal:1080}}})) return true;
-  if (await tryOpen({video:{facingMode:{exact:"environment"},width:{ideal:1920},height:{ideal:1080}}})) return true;
-  if (await tryOpen({video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720}}})) return true;
-  if (await tryOpen({video:true})) return true;
-  return false;
-}
-function updateCapBadges() {
-  const badgesDiv=document.getElementById('cap-badges');
-  badgesDiv.style.display=running?'flex':'none';
-  setBadge('badge-exposure', manualCaps.exposure, 'Exposição manual');
-  setBadge('badge-wb', manualCaps.whiteBalance, 'Balanço de branco manual');
-  setBadge('badge-focus', manualCaps.focus, 'Foco manual');
-}
-function setBadge(id, ok, label) {
-  const el=document.getElementById(id);
-  el.textContent=(ok?'✓':'✕')+' '+label;
-  el.className='cap-badge '+(ok?'ok':'no');
-}
-// ════════════════════════════════════════════════════════════════
-// 📊 AMOSTRAGEM DE PIXELS
-// ════════════════════════════════════════════════════════════════
-function sampleAt(clientX, clientY) {
-  const vw=video.videoWidth, vh=video.videoHeight;
-  if (!vw||!vh) return null;
-  const rect=cameraContainer.getBoundingClientRect();
-  const cw=rect.width, ch=rect.height;
-  const scale=Math.max(cw/vw,ch/vh);
-  const nativeX=Math.round((clientX+(vw*scale-cw)/2)/scale);
-  const nativeY=Math.round((clientY+(vh*scale-ch)/2)/scale);
-  const half=Math.max(1,Math.round(SAMPLE_HALF/scale));
-  canvas.width=vw; canvas.height=vh;
-  try { ctx.drawImage(video,0,0,vw,vh); } catch(e){ return null; }
-  const x0=Math.max(0,Math.min(vw-half*2,nativeX-half));
-  const y0=Math.max(0,Math.min(vh-half*2,nativeY-half));
-  try {
-    const data=ctx.getImageData(x0,y0,half*2,half*2).data;
-    let r=0,g=0,b=0,c=0;
-    for (let i=0;i<data.length;i+=4){ r+=data[i]; g+=data[i+1]; b+=data[i+2]; c++; }
-    if (c===0) return null;
-    return {r:Math.round(r/c),g:Math.round(g/c),b:Math.round(b/c)};
-  } catch(e){ return null; }
-}
-function makeThumb(clientX, clientY) {
-  const vw=video.videoWidth, vh=video.videoHeight;
-  if (!vw||!vh) return "";
-  const rect=cameraContainer.getBoundingClientRect();
-  const scale=Math.max(rect.width/vw,rect.height/vh);
-  const nativeX=Math.round((clientX+(vw*scale-rect.width)/2)/scale);
-  const nativeY=Math.round((clientY+(vh*scale-rect.height)/2)/scale);
-  const thumbW=Math.min(vw,360);
-  const thumbH=Math.round(thumbW*(vh/vw));
-  const thumbScale=thumbW/vw;
-  const tCanv=document.createElement('canvas');
-  tCanv.width=thumbW; tCanv.height=thumbH;
-  const tCtx=tCanv.getContext('2d');
-  if (!tCtx) return "";
-  try { tCtx.drawImage(video,0,0,thumbW,thumbH); } catch(e){ return ""; }
-  const tx=nativeX*thumbScale, ty=nativeY*thumbScale;
-  tCtx.strokeStyle="rgba(103,232,249,0.95)"; tCtx.lineWidth=2;
-  tCtx.beginPath();
-  tCtx.moveTo(tx-14,ty); tCtx.lineTo(tx+14,ty);
-  tCtx.moveTo(tx,ty-14); tCtx.lineTo(tx,ty+14);
-  tCtx.stroke();
-  tCtx.lineWidth=1.4;
-  tCtx.strokeRect(tx-10,ty-10,20,20);
-  return tCanv.toDataURL('image/jpeg',0.72);
-}
-// ════════════════════════════════════════════════════════════════
-// 🔄 LOOP PRINCIPAL
-// ════════════════════════════════════════════════════════════════
-function mainLoop() {
-  requestAnimationFrame(mainLoop);
-  if (!running||!systemOn||currentMode==='comparacao') return;
-  if (currentMode==='estatico'&&staticFrozen) return;
-  if (video.readyState<2) return;
-  const rect=cameraContainer.getBoundingClientRect();
-  let x=rect.width/2, y=rect.height/2;
-  if (currentMode==='estatico') {
-    if (!staticPos) return;
-    x=staticPos.x; y=staticPos.y;
-  } else if (currentMode!=='livre') {
-    return;
-  }
-  const raw=sampleAt(x,y);
-  if (!raw) return;
-  const corrected=applyCalibration(raw,whiteCal,blackCal);
-  colorBuffer.push(corrected);
-  if (colorBuffer.length>BUFFER_SIZE) colorBuffer.shift();
-  const buf=colorBuffer;
-  const avg={
-    r:Math.round(buf.reduce((s,p)=>s+p.r,0)/buf.length),
-    g:Math.round(buf.reduce((s,p)=>s+p.g,0)/buf.length),
-    b:Math.round(buf.reduce((s,p)=>s+p.b,0)/buf.length)
-  };
-  liveRGB=avg;
-  const match=findClosestRalColor(avg);
-  if (!liveMatch||liveMatch.entry.code!==match.entry.code) {
-    speakColor(match);
-  }
-  liveMatch=match;
-  updateLiveUI();
-  if (currentMode==='estatico'&&buf.length>=BUFFER_SIZE) {
-    staticFrozen=true;
-  }
-}
-// ════════════════════════════════════════════════════════════════
-// 🖥️ ATUALIZAÇÃO DE UI
-// ════════════════════════════════════════════════════════════════
-function updateLiveUI() {
-  if (!liveRGB||!liveMatch) return;
-  const match=liveMatch;
-  const rgb=liveRGB;
-  const hsv=rgbToHSV(rgb.r,rgb.g,rgb.b);
-  document.getElementById('color-swatch').style.background=`rgb(${rgb.r},${rgb.g},${rgb.b})`;
-  document.getElementById('color-name').textContent=match.entry.names.pt+" / "+match.entry.names.en;
-  document.getElementById('color-name').style.color='#e2e8f0';
-  document.getElementById('ral-code-display').textContent=match.entry.code+' · '+match.confidence+'%';
-  document.getElementById('rgb-line').innerHTML=
-    `<span class="lbl">R:</span>${rgb.r} <span class="lbl">G:</span>${rgb.g} <span class="lbl">B:</span>${rgb.b}`;
-  document.getElementById('hsv-line').innerHTML=
-    `<span class="lbl">H:</span>${hsv.h.toFixed(0)}° <span class="lbl">S:</span>${hsv.s.toFixed(0)}% <span class="lbl">V:</span>${hsv.v.toFixed(0)}%`;
-  // RAL panel
-  renderRalPanel(match);
-}
-function renderRalPanel(match) {
-  if (!match) return;
-  const e=match.entry;
-  const row=document.getElementById('ral-detail-row');
-  row.innerHTML=[
-    field('Código',e.code,true),
-    field('PT',e.names.pt),
-    field('EN',e.names.en),
-    field('DE',e.names.de),
-    field('FR',e.names.fr),
-    field('ES',e.names.es),
-    field('Hex ref.',e.hex),
-    field('Confiança',match.confidence+'%',true),
-    field('ΔE2000',match.deltaE.toFixed(2))
-  ].join('');
-}
-function field(label,value,highlight) {
-  return `<div class="ral-field">
-    <span class="ral-field-lbl">${label}:</span>
-    <span class="ral-field-val${highlight?' highlight':''}">${value}</span>
-  </div>`;
-}
-function updateCalibrationStatus() {
-  let txt='Base: ';
-  if (whiteCal&&blackCal) txt+='Calibrada (Branco+Preto)';
-  else if (whiteCal) txt+='Branco calibrado';
-  else if (blackCal) txt+='Preto calibrado';
-  else txt+='não calibrada';
-  document.getElementById('base-info').textContent=txt;
-  document.getElementById('btn-reset-white').style.display=whiteCal?'inline-block':'none';
-  document.getElementById('btn-reset-black').style.display=blackCal?'inline-block':'none';
-}
-// ════════════════════════════════════════════════════════════════
-// 🔌 SISTEMA LIGA/DESLIGA
-// ════════════════════════════════════════════════════════════════
-function toggleSystem() {
-  if (!systemOn) {
-    systemOn=true;
-    document.getElementById('btn-system').textContent='SISTEMA/ON';
-    document.getElementById('btn-system').className='system-on';
-    document.getElementById('top-bar').classList.remove('hidden-bar');
-    document.getElementById('system-off-overlay').classList.add('hide');
-    document.getElementById('mode-select-overlay').classList.remove('hide');
-    setAllControlsEnabled(false);
-    document.getElementById('btn-modes').disabled=false;
-    speakSystem('Sistema ligado. Selecione o modo. Livre: mira fixa no centro, análise contínua. Estático: toque na tela para analisar um ponto. Comparação: capture dois pontos e compare.');
-  } else {
-    if (confirmingShutdown) return;
-    confirmingShutdown=true;
-    document.getElementById('confirm-shutdown-overlay').classList.add('show');
-  }
-}
-function confirmShutdown(yes) {
-  document.getElementById('confirm-shutdown-overlay').classList.remove('show');
-  confirmingShutdown=false;
-  if (!yes) {
-    speakSystem('Desligamento cancelado. Sistema permanece ativo.');
-    return;
-  }
-  // Desliga tudo
-  if (stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; }
-  running=false;
-  systemOn=false;
-  currentMode=null;
-  staticPos=null; staticFrozen=false;
-  whiteCal=null; blackCal=null;
-  liveRGB=null; liveMatch=null;
-  colorBuffer=[];
-  refPoint=null; samplePoint=null;
-  selectingRef=false; selectingSample=false;
-  compResult=null; compSuggestion="";
-  lastSpokenCode="";
-  audioEnabled=false;
-  flashEnabled=false;
-  manualCaps={exposure:false,whiteBalance:false,focus:false,torch:false};
-  if (window.speechSynthesis) window.speechSynthesis.cancel();
-  // Reset UI
-  document.getElementById('btn-system').textContent='SISTEMA/OFF';
-  document.getElementById('btn-system').className='system-off';
-  document.getElementById('top-bar').classList.add('hidden-bar');
-  document.getElementById('system-off-overlay').classList.remove('hide');
-  document.getElementById('mode-select-overlay').classList.add('hide');
-  document.getElementById('start-overlay').classList.add('hide');
-  document.getElementById('ral-panel').classList.remove('show');
-  document.getElementById('comparison-panel').classList.remove('show');
-  document.getElementById('cap-badges').style.display='none';
-  document.getElementById('reticle').classList.remove('show');
-  document.getElementById('color-swatch').style.background='#1a1a2e';
-  document.getElementById('color-name').textContent='---';
-  document.getElementById('color-name').style.color='#334155';
-  document.getElementById('ral-code-display').textContent='';
-  document.getElementById('rgb-line').innerHTML='<span class="lbl">R:</span>--- <span class="lbl">G:</span>--- <span class="lbl">B:</span>---';
-  document.getElementById('hsv-line').innerHTML='<span class="lbl">H:</span>---° <span class="lbl">S:</span>---% <span class="lbl">V:</span>---%';
-  document.getElementById('base-info').textContent='Base: não calibrada';
-  document.getElementById('btn-audio').textContent='🔇 Áudio';
-  document.getElementById('btn-audio').className='btn-top btn-default';
-  document.getElementById('btn-flash').textContent='⚡ Flash';
-  document.getElementById('btn-flash').className='btn-top btn-default';
-  document.getElementById('btn-modes').className='mode-default';
-  document.getElementById('mode-label').textContent='MODOS';
-  hideCompButtons();
-  document.getElementById('btn-reset-white').style.display='none';
-  document.getElementById('btn-reset-black').style.display='none';
-  document.getElementById('btn-reset-estatico').style.display='none';
-  setAllControlsEnabled(false);
-  speakSystem('Sistema desativado.');
-}
-// ════════════════════════════════════════════════════════════════
-// 🎛️ CONTROLE DE BOTÕES
-// ════════════════════════════════════════════════════════════════
-function setAllControlsEnabled(enabled) {
-  ['btn-calibrate-white','btn-calibrate-black','btn-camera','btn-audio','btn-flash','btn-modes'].forEach(id=>{
-    const el=document.getElementById(id);
-    if (el) el.disabled=!enabled;
-  });
-}
-function hideCompButtons() {
-  ['btn-sel-ref','btn-sel-sample','btn-reset-ref','btn-reset-sample','btn-reset-comparacao','btn-resultado'].forEach(id=>{
-    const el=document.getElementById(id);
-    if (el) el.style.display='none';
-  });
-}
-function showCompButtons() {
-  ['btn-sel-ref','btn-sel-sample','btn-reset-ref','btn-reset-sample','btn-reset-comparacao','btn-resultado'].forEach(id=>{
-    const el=document.getElementById(id);
-    if (el) el.style.display='inline-block';
-  });
-  document.getElementById('btn-resultado').disabled=true;
-}
-// ════════════════════════════════════════════════════════════════
-// 🎯 SELEÇÃO DE MODO
-// ════════════════════════════════════════════════════════════════
-function toggleModeDropdown() {
-  document.getElementById('mode-dropdown').classList.toggle('show');
-}
-function selectMode(mode) {
-  if (!systemOn) return;
-  currentMode=mode;
-  document.getElementById('mode-select-overlay').classList.add('hide');
-  document.getElementById('mode-dropdown').classList.remove('show');
-  // Reset estado parcial
-  staticPos=null; staticFrozen=false;
-  colorBuffer=[]; liveRGB=null; liveMatch=null;
-  refPoint=null; samplePoint=null;
-  selectingRef=false; selectingSample=false;
-  compResult=null; compSuggestion="";
-  lastSpokenCode="";
-  // Limpa UI
-  document.getElementById('reticle').classList.remove('show');
-  document.getElementById('ral-panel').classList.remove('show');
-  document.getElementById('comparison-panel').classList.remove('show');
-  document.getElementById('btn-reset-estatico').style.display='none';
-  document.querySelectorAll('.mode-option').forEach(el=>el.classList.remove('active'));
-  hideCompButtons();
-  const btn=document.getElementById('btn-modes');
-  btn.className='mode-default';
-  setAllControlsEnabled(true);
-  if (mode==='livre') {
-    btn.className='mode-livre';
-    document.getElementById('mode-label').textContent='MODO: 🎯 LIVRE';
-    document.getElementById('reticle').style.left='50%';
-    document.getElementById('reticle').style.top='50%';
-    document.getElementById('reticle').style.transform='translate(-50%,-50%)';
-    document.getElementById('reticle').classList.add('show');
-    document.getElementById('ral-panel').classList.add('show');
-    document.querySelectorAll('.mode-option')[0].classList.add('active');
-    speakSystem('Modo Livre selecionado. Mira fixa no centro, análise contínua.');
-  } else if (mode==='estatico') {
-    btn.className='mode-estatico';
-    document.getElementById('mode-label').textContent='MODO: 📍 ESTÁTICO';
-    document.getElementById('btn-reset-estatico').style.display='inline-block';
-    document.getElementById('ral-panel').classList.add('show');
-    document.querySelectorAll('.mode-option')[1].classList.add('active');
-    speakSystem('Modo Estático selecionado. Toque na tela para analisar um ponto específico.');
-  } else if (mode==='comparacao') {
-    btn.className='mode-comparacao';
-    document.getElementById('mode-label').textContent='MODO: ⚖️ COMPARAÇÃO';
-    document.getElementById('comparison-panel').classList.add('show');
-    showCompButtons();
-    document.querySelectorAll('.mode-option')[2].classList.add('active');
-    speakSystem('Modo Comparação selecionado. Selecione a referência e a amostra.');
-  }
-  // Se câmera ainda não iniciada, mostra overlay de start
-  if (!running) {
-    document.getElementById('start-overlay').classList.remove('hide');
-  }
-}
-// ════════════════════════════════════════════════════════════════
-// 🎥 INICIAR CÂMERA
-// ════════════════════════════════════════════════════════════════
-async function startCamera() {
-  if (!systemOn) return;
-  document.getElementById('start-overlay').classList.add('hide');
-  await getDevices();
-  const ok=await openCamera();
-  if (ok) {
-    running=true;
-    document.getElementById('cap-badges').style.display='flex';
-    updateCapBadges();
-  } else {
-    alert('Erro ao acessar a câmera.');
-  }
-}
-// ════════════════════════════════════════════════════════════════
-// 🔧 CALIBRAÇÃO
-// ════════════════════════════════════════════════════════════════
-async function runCalibration(target) {
-  if (!systemOn||!running||!currentMode) return;
-  if (calibrating) return;
-  calibrating=target;
-  speakSystem('Calibrando '+(target==='white'?'branco':'preto')+'. Aguarde.');
-  const rect=cameraContainer.getBoundingClientRect();
-  let x=rect.width/2, y=rect.height/2;
-  if (currentMode==='estatico'&&staticPos) { x=staticPos.x; y=staticPos.y; }
-  const samples=[];
-  for (let i=0;i<24;i++) {
-    const s=sampleAt(x,y);
-    if (s) samples.push(s);
-    await new Promise(r=>setTimeout(r,33));
-  }
-  if (samples.length===0) { calibrating=null; return; }
-  const avg={
-    r:Math.round(samples.reduce((s,p)=>s+p.r,0)/samples.length),
-    g:Math.round(samples.reduce((s,p)=>s+p.g,0)/samples.length),
-    b:Math.round(samples.reduce((s,p)=>s+p.b,0)/samples.length)
-  };
-  if (target==='white') {
-    whiteCal=avg;
-    document.getElementById('btn-calibrate-white').classList.add('btn-active');
-    document.getElementById('btn-calibrate-white').classList.remove('btn-default');
-  } else {
-    blackCal=avg;
-    document.getElementById('btn-calibrate-black').classList.add('btn-active');
-    document.getElementById('btn-calibrate-black').classList.remove('btn-default');
-  }
-  colorBuffer=[];
-  calibrating=null;
-  updateCalibrationStatus();
-  speakSystem((target==='white'?'Branco':'Preto')+' calibrado.');
-}
-function calibrateWhite() { runCalibration('white'); }
-function calibrateBlack() { runCalibration('black'); }
-function resetWhite() {
-  whiteCal=null;
-  document.getElementById('btn-calibrate-white').className='btn-top btn-default';
-  colorBuffer=[];
-  updateCalibrationStatus();
-  speakSystem('Branco resetado.');
-}
-function resetBlack() {
-  blackCal=null;
-  document.getElementById('btn-calibrate-black').className='btn-top btn-default';
-  colorBuffer=[];
-  updateCalibrationStatus();
-  speakSystem('Preto resetado.');
-}
-// ════════════════════════════════════════════════════════════════
-// 📍 MODO ESTÁTICO
-// ════════════════════════════════════════════════════════════════
-function resetEstatico() {
-  staticPos=null; staticFrozen=false;
-  colorBuffer=[]; liveRGB=null; liveMatch=null;
-  lastSpokenCode="";
-  document.getElementById('reticle').classList.remove('show');
-  document.getElementById('color-swatch').style.background='#1a1a2e';
-  document.getElementById('color-name').textContent='---';
-  document.getElementById('color-name').style.color='#334155';
-  document.getElementById('ral-code-display').textContent='';
-  document.getElementById('rgb-line').innerHTML='<span class="lbl">R:</span>--- <span class="lbl">G:</span>--- <span class="lbl">B:</span>---';
-  document.getElementById('hsv-line').innerHTML='<span class="lbl">H:</span>---° <span class="lbl">S:</span>---% <span class="lbl">V:</span>---%';
-  document.getElementById('ral-detail-row').innerHTML='';
-  speakSystem('Modo estático resetado.');
-}
-// ════════════════════════════════════════════════════════════════
-// ⚖️ MODO COMPARAÇÃO
-// ════════════════════════════════════════════════════════════════
-function startRefSelection() {
-  if (!systemOn||!running||currentMode!=='comparacao') return;
-  if (refPoint) {
-    speakSystem('Referência já capturada. Clique em Resetar Referência para substituí-la.');
-    return;
-  }
-  selectingRef=true; selectingSample=false;
-  document.getElementById('comp-selecting-hint').textContent='Toque na tela para capturar a referência...';
-  document.getElementById('comp-selecting-hint').style.display='block';
-  speakSystem('Selecione a área de referência na tela.');
-}
-function startSampleSelection() {
-  if (!systemOn||!running||currentMode!=='comparacao') return;
-  if (samplePoint) {
-    speakSystem('Amostra já capturada. Clique em Resetar Amostra para substituí-la.');
-    return;
-  }
-  selectingSample=true; selectingRef=false;
-  document.getElementById('comp-selecting-hint').textContent='Toque na tela para capturar a amostra...';
-  document.getElementById('comp-selecting-hint').style.display='block';
-  speakSystem('Selecione a área de amostra na tela.');
-}
-function capturePoint(clientX, clientY) {
-  const raw=sampleAt(clientX,clientY);
-  if (!raw) return null;
-  const corrected=applyCalibration(raw,whiteCal,blackCal);
-  const match=findClosestRalColor(corrected);
-  const thumb=makeThumb(clientX,clientY);
-  return { rgb:corrected, match, thumb };
-}
-function resetRef() {
-  refPoint=null; selectingRef=false;
-  compResult=null; compSuggestion="";
-  document.getElementById('ref-thumb').style.display='none';
-  document.getElementById('ref-thumb').src='';
-  document.getElementById('ref-color-name').textContent='---';
-  document.getElementById('compatibility-percent').textContent='---';
-  document.getElementById('compatibility-percent').className='comp-percent';
-  document.getElementById('delta-e-display').textContent='';
-  document.getElementById('comp-suggestion-box').style.display='none';
-  document.getElementById('btn-resultado').disabled=true;
-  speakSystem('Referência resetada.');
-}
-function resetSample() {
-  samplePoint=null; selectingSample=false;
-  compResult=null; compSuggestion="";
-  document.getElementById('sample-thumb').style.display='none';
-  document.getElementById('sample-thumb').src='';
-  document.getElementById('sample-color-name').textContent='---';
-  document.getElementById('compatibility-percent').textContent='---';
-  document.getElementById('compatibility-percent').className='comp-percent';
-  document.getElementById('delta-e-display').textContent='';
-  document.getElementById('comp-suggestion-box').style.display='none';
-  document.getElementById('btn-resultado').disabled=true;
-  speakSystem('Amostra resetada.');
-}
-function resetComparison() {
-  refPoint=null; samplePoint=null;
-  selectingRef=false; selectingSample=false;
-  compResult=null; compSuggestion="";
-  document.getElementById('ref-thumb').style.display='none';
-  document.getElementById('ref-thumb').src='';
-  document.getElementById('sample-thumb').style.display='none';
-  document.getElementById('sample-thumb').src='';
-  document.getElementById('ref-color-name').textContent='---';
-  document.getElementById('sample-color-name').textContent='---';
-  document.getElementById('compatibility-percent').textContent='---';
-  document.getElementById('compatibility-percent').className='comp-percent';
-  document.getElementById('delta-e-display').textContent='';
-  document.getElementById('comp-suggestion-box').style.display='none';
-  document.getElementById('comp-selecting-hint').style.display='none';
-  document.getElementById('btn-resultado').disabled=true;
-  speakSystem('Comparação resetada.');
-}
-function computeComparisonResult() {
-  if (!refPoint||!samplePoint) return;
-  const result=compareRGB(refPoint.rgb,samplePoint.rgb);
-  compResult=result;
-  const pct=result.percent;
-  const percentEl=document.getElementById('compatibility-percent');
-  percentEl.textContent=pct+'%';
-  percentEl.className='comp-percent '+(pct>=80?'high':pct>=50?'med':'low');
-  document.getElementById('delta-e-display').textContent='ΔE2000 = '+result.deltaE.toFixed(2);
-  const sug=generateAdjustmentSuggestion(samplePoint.rgb,refPoint.match.entry);
-  compSuggestion=sug.text;
-  document.getElementById('comp-suggestion-text').textContent=sug.text;
-  document.getElementById('comp-suggestion-text').className='comp-suggestion-text '+(sug.cssClass||'');
-  document.getElementById('comp-suggestion-box').style.display='block';
-  const txt='Resultado: '+pct+' por cento de compatibilidade entre '+
-    refPoint.match.entry.names.pt+' e '+samplePoint.match.entry.names.pt+'.';
-  speakSystem(txt);
-}
-// ════════════════════════════════════════════════════════════════
-// 🎛️ CONTROLES GERAIS
-// ════════════════════════════════════════════════════════════════
-async function switchCamera() {
-  if (!systemOn) return;
-  await getDevices();
-  if (devices.length<2) {
-    speakSystem('Apenas uma câmera disponível neste dispositivo.');
-    return;
-  }
-  deviceIndex=(deviceIndex+1)%devices.length;
-  speakSystem('Trocando câmera.');
-  await openCamera(devices[deviceIndex].deviceId);
-}
-function toggleAudio() {
-  if (!systemOn) return;
-  if (window.speechSynthesis) window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
-  audioEnabled=!audioEnabled;
-  const btn=document.getElementById('btn-audio');
-  if (audioEnabled) {
-    btn.textContent='🔊 Áudio';
-    btn.className='btn-top btn-audio-on';
-    speakSystem('Áudio ativado.');
-  } else {
-    speakSystem('Áudio desativado.');
-    btn.textContent='🔇 Áudio';
-    btn.className='btn-top btn-default';
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
-  }
-}
-async function toggleFlash() {
-  if (!systemOn) return;
-  flashEnabled=!flashEnabled;
-  const btn=document.getElementById('btn-flash');
-  if (flashEnabled) {
-    btn.className='btn-top btn-flash-on';
-  } else {
-    btn.className='btn-top btn-default';
-  }
-  speakSystem(flashEnabled?'Flash ativado.':'Flash desativado.');
-  if (stream) {
-    const track=stream.getVideoTracks()[0];
-    if (track&&typeof track.applyConstraints==='function'&&manualCaps.torch) {
-      try { await track.applyConstraints({advanced:[{torch:flashEnabled}]}); }
-      catch(e){ if (flashEnabled){ flashEnabled=false; btn.className='btn-top btn-default'; } }
+    },
+    [
+      systemOn, cam.running, appMode, staticFrozen,
+      selectingRef, selectingSample,
+      sampleAt, applyCalibration, classify, makeThumb, speech,
+    ]
+  );
+  // ─── Resultado de comparação ────────────────────────────────────────────────
+  const computeComparisonResult = useCallback(() => {
+    if (!refPoint || !samplePoint) {
+      speech.speak("Capture a referência e a amostra primeiro.", { force: true });
+      return;
     }
-  }
-}
-// ════════════════════════════════════════════════════════════════
-// 🚀 INICIALIZAÇÃO
-// ════════════════════════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', function() {
-  setAllControlsEnabled(false);
-  document.getElementById('btn-modes').disabled=true;
-  requestAnimationFrame(mainLoop);
-});
-// ════════════════════════════════════════════════════════════════
-// 🎪 EVENT LISTENERS
-// ════════════════════════════════════════════════════════════════
-document.addEventListener('click', function(e) {
-  const dropdown=document.getElementById('mode-dropdown');
-  const btnModes=document.getElementById('btn-modes');
-  if (!btnModes.contains(e.target)&&!dropdown.contains(e.target)) {
-    dropdown.classList.remove('show');
-  }
-});
-cameraContainer.addEventListener('click', function(e) {
-  if (!systemOn||!running||!currentMode) return;
-  const rect=cameraContainer.getBoundingClientRect();
-  const x=e.clientX-rect.left;
-  const y=e.clientY-rect.top;
-  if (currentMode==='comparacao') {
-    if (selectingRef&&!refPoint) {
-      const pt=capturePoint(x,y);
-      if (pt) {
-        refPoint=pt;
-        document.getElementById('ref-thumb').src=pt.thumb;
-        document.getElementById('ref-thumb').style.display='block';
-        document.getElementById('ref-color-name').textContent=
-          pt.match.entry.names.pt+' · '+pt.match.entry.code;
-        if (samplePoint) document.getElementById('btn-resultado').disabled=false;
-        speakSystem('Referência capturada: '+pt.match.entry.names.pt+'.');
-      }
-      selectingRef=false;
-      document.getElementById('comp-selecting-hint').style.display='none';
-    } else if (selectingSample&&!samplePoint) {
-      const pt=capturePoint(x,y);
-      if (pt) {
-        samplePoint=pt;
-        document.getElementById('sample-thumb').src=pt.thumb;
-        document.getElementById('sample-thumb').style.display='block';
-        document.getElementById('sample-color-name').textContent=
-          pt.match.entry.names.pt+' · '+pt.match.entry.code;
-        if (refPoint) document.getElementById('btn-resultado').disabled=false;
-        speakSystem('Amostra capturada: '+pt.match.entry.names.pt+'.');
-      }
-      selectingSample=false;
-      document.getElementById('comp-selecting-hint').style.display='none';
+    const res = compareRGB(refPoint.rgb, samplePoint.rgb);
+    setCompResult(res);
+    const sug = generateAdjustmentSuggestion(
+      samplePoint.rgb,
+      refPoint.ralMatch.entry
+    );
+    setCompSuggestion(sug);
+    setResultadoCalculado(true);
+    const textoSugestao = sug.text
+      .replace(/[^\w\s%.,!?:áéíóúâêîôûãõçàèìòùÁÉÍÓÚÂÊÎÔÛÃÕÇÀÈÌÒÙ\-]/g, "")
+      .replace(/\n+/g, ". ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+    speech.speak(
+      `Resultado: ${res.percent} por cento de compatibilidade entre ${refPoint.displayName} e ${samplePoint.displayName}. ${textoSugestao}`,
+      { force: true }
+    );
+  }, [refPoint, samplePoint, speech]);
+  const narrarAjusteSugerido = useCallback(() => {
+    if (!resultadoCalculado || !compSuggestion) {
+      speech.speak("Clique em Resultado primeiro para calcular a compatibilidade.", { force: true });
+      return;
     }
-    return;
-  }
-  if (currentMode==='estatico') {
-    if (staticFrozen) return;
-    staticPos={x,y};
-    staticFrozen=false;
-    colorBuffer=[];
-    reticle.style.left=x+'px';
-    reticle.style.top=y+'px';
-    reticle.style.transform='translate(-50%,-50%)';
-    reticle.classList.add('show');
-  }
-});
-// ════════════════════════════════════════════════════════════════
-// ✅ SISTEMA CARREGADO
-// ════════════════════════════════════════════════════════════════
-console.log('%c🎨 Motor de Cor RAL Plásticos P1 — CIELAB + CIEDE2000 ATIVO', 'color:#86efac;font-size:14px;font-weight:bold;');
-console.log('%c📚 Biblioteca RAL P1: '+RAL_P1_LIBRARY.length+' cores oficiais', 'color:#7dd3fc;font-size:12px;');
-console.log('%c🔬 Motor: CIEDE2000 (padrão-ouro industrial)', 'color:#fcd34d;font-size:12px;');
-</script>
-</body>
-</html>
+    const textoLimpo = compSuggestion.text
+      .replace(/[^\w\s%.,!?:áéíóúâêîôûãõçàèìòùÁÉÍÓÚÂÊÎÔÛÃÕÇÀÈÌÒÙ\-]/g, "")
+      .replace(/\n+/g, ". ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+    speech.speak("Ajuste sugerido: " + textoLimpo, { force: true });
+  }, [resultadoCalculado, compSuggestion, speech]);
+  const resetEstatico = useCallback(() => {
+    setStaticPos(null);
+    setStaticFrozen(false);
+    setLiveRGB(null);
+    setLiveDisplay(null);
+    bufferRef.current = [];
+    speech.speak("Modo estático resetado.", { force: true });
+  }, [speech]);
+  const resetComparison = useCallback(() => {
+    setRefPoint(null);
+    setSamplePoint(null);
+    setSelectingRef(false);
+    setSelectingSample(false);
+    setCompResult(null);
+    setCompSuggestion(null);
+    setResultadoCalculado(false);
+    speech.speak("Comparação resetada.", { force: true });
+  }, [speech]);
+  const toggleAudio = useCallback(() => {
+    setAudioEnabled((prev) => {
+      const next = !prev;
+      speech.setEnabled(next);
+      speech.speak(next ? "Áudio ativado." : "Áudio desativado.", { force: true });
+      return next;
+    });
+  }, [speech]);
+  // ─── Dados para exibição ────────────────────────────────────────────────────
+  const hsvToShow = liveRGB ? rgbToHSV(liveRGB.r, liveRGB.g, liveRGB.b) : null;
+  const showLive = appMode !== "comparacao" && liveDisplay;
+  // ─── RENDER ─────────────────────────────────────────────────────────────────
+  return (
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#0a0a0f] font-sans text-[#e0e0f0] antialiased select-none">
+      {/* ── HEADER ── */}
+      <header className="z-30 flex flex-shrink-0 items-center justify-between border-b border-indigo-400/15 bg-black/70 px-3 py-1.5">
+        <button
+          onClick={handleToggleSystem}
+          className={`rounded-md border px-3 py-1.5 text-[0.68rem] font-bold uppercase tracking-wider transition-all ${
+            systemOn
+              ? "border-emerald-400/45 bg-gradient-to-br from-emerald-950 to-emerald-800 text-emerald-300 shadow-[0_0_8px_rgba(60,200,100,0.25)]"
+              : "border-red-400/45 bg-gradient-to-br from-red-950 to-red-800 text-red-400 shadow-[0_0_8px_rgba(200,50,50,0.2)]"
+          }`}
+        >
+          Sistema/{systemOn ? "ON" : "OFF"}
+        </button>
+        <span className="hidden text-[0.58rem] tracking-wider text-slate-600 sm:block">
+          MOTOR DE COR · CIELAB + ΔE2000 · RAL Plásticos P1
+        </span>
+      </header>
+      {/* ── TOP BAR ── */}
+      {systemOn && (
+        <div className="z-20 flex flex-shrink-0 flex-wrap items-center gap-1.5 border-b border-indigo-400/10 bg-black/60 px-2 py-1.5 backdrop-blur-sm">
+          {/* Seletor de modo de aplicação */}
+          <div className="relative">
+            <button
+              onClick={() => setModeDropdownOpen((v) => !v)}
+              className={`flex items-center gap-1.5 rounded-md border-2 px-2.5 py-1.5 text-[0.65rem] font-bold uppercase tracking-wide ${
+                appMode === "livre"
+                  ? "border-emerald-400/50 bg-gradient-to-br from-emerald-950 to-emerald-800 text-emerald-300"
+                  : appMode === "estatico"
+                  ? "border-sky-400/50 bg-gradient-to-br from-sky-950 to-sky-800 text-sky-300"
+                  : appMode === "comparacao"
+                  ? "border-amber-400/50 bg-gradient-to-br from-orange-950 to-orange-800 text-amber-300"
+                  : "border-indigo-400/40 bg-gradient-to-br from-indigo-950 to-indigo-800 text-indigo-200"
+              }`}
+            >
+              {appMode ? `MODO: ${appMode.toUpperCase()}` : "MODOS"}{" "}
+              <span className="text-[0.45rem]">▼</span>
+            </button>
+            {modeDropdownOpen && (
+              <div className="absolute left-0 top-full z-50 mt-1 min-w-[200px] overflow-hidden rounded-md border border-indigo-400/30 bg-[#141428] shadow-xl">
+                {(["livre", "estatico", "comparacao"] as const).map((m) => (
+                  <div
+                    key={m}
+                    onClick={() => handleSelectAppMode(m)}
+                    className={`cursor-pointer border-b border-indigo-400/10 px-3.5 py-2.5 text-[0.65rem] font-semibold last:border-b-0 hover:bg-indigo-500/15 ${
+                      appMode === m ? "bg-emerald-500/20 text-emerald-300" : ""
+                    }`}
+                  >
+                    {m === "livre" && "🎯 LIVRE"}
+                    {m === "estatico" && "📍 ESTÁTICO"}
+                    {m === "comparacao" && "⚖️ COMPARAÇÃO"}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Seletor de modo de cor */}
+          <div className="flex items-center gap-1">
+            {(["universal", "ampliado", "plasticos"] as const).map((cm) => (
+              <button
+                key={cm}
+                onClick={() => {
+                  setColorMode(cm);
+                  bufferRef.current = [];
+                  lastSpokenRef.current = "";
+                  speech.speak(
+                    cm === "universal"
+                      ? "Modo Universal ativado."
+                      : cm === "ampliado"
+                      ? "Modo Ampliado ativado. Cobertura total: RAL P1 mais espectro estendido."
+                      : "Modo Plásticos ativado. Trabalhando exclusivamente na biblioteca RAL P1.",
+                    { force: true }
+                  );
+                }}
+                className={`rounded-md border px-2 py-1 text-[0.6rem] font-bold uppercase tracking-wide transition-all ${
+                  colorMode === cm
+                    ? cm === "plasticos"
+                      ? "border-teal-400/50 bg-gradient-to-br from-teal-900 to-teal-800 text-teal-200"
+                      : cm === "ampliado"
+                      ? "border-violet-400/50 bg-gradient-to-br from-violet-900 to-violet-800 text-violet-200"
+                      : "border-emerald-400/45 bg-gradient-to-br from-emerald-900 to-emerald-800 text-emerald-200"
+                    : "border-indigo-400/20 bg-slate-900/60 text-slate-400 hover:bg-slate-800/60"
+                }`}
+              >
+                {cm === "universal" && "☆ Universal"}
+                {cm === "ampliado" && "◆ Ampliado"}
+                {cm === "plasticos" && "🧪 Plásticos P1"}
+              </button>
+            ))}
+          </div>
+          {/* Swatch e nome ao vivo */}
+          {showLive && (
+            <>
+              <div
+                className="h-6 w-6 flex-shrink-0 rounded border border-white/10 shadow-inner"
+                style={{ background: liveDisplay.hex }}
+              />
+              <span
+                className="text-[0.75rem] font-extrabold"
+                style={{
+                  color: liveDisplay.hex,
+                  textShadow: "0 0 8px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,1)",
+                }}
+              >
+                {liveDisplay.name}
+              </span>
+              {liveDisplay.ralEntry && (
+                <span className="text-[0.55rem] font-bold text-slate-500">
+                  {liveDisplay.ralEntry.code}
+                </span>
+              )}
+              <span
+                className={`text-[0.6rem] font-bold ${
+                  liveDisplay.confidence >= 90
+                    ? "text-emerald-400"
+                    : liveDisplay.confidence >= 70
+                    ? "text-amber-400"
+                    : "text-red-400"
+                }`}
+              >
+                {liveDisplay.confidence}%
+              </span>
+              <span className="text-indigo-400/25">│</span>
+            </>
+          )}
+          {/* HSV / RGB */}
+          <div className="whitespace-nowrap font-mono text-[0.58rem] text-slate-500">
+            H:{hsvToShow ? hsvToShow.h.toFixed(0) : "---"}°
+            S:{hsvToShow ? hsvToShow.s.toFixed(0) : "---"}%
+            V:{hsvToShow ? hsvToShow.v.toFixed(0) : "---"}%
+          </div>
+          <span className="text-indigo-400/25">│</span>
+          <div className="whitespace-nowrap font-mono text-[0.58rem] text-slate-500">
+            R:{liveRGB?.r ?? "---"} G:{liveRGB?.g ?? "---"} B:{liveRGB?.b ?? "---"}
+          </div>
+          <span className="text-indigo-400/25">│</span>
+          <div className="whitespace-nowrap text-[0.52rem] text-slate-600">
+            Base:{" "}
+            {whiteCal && blackCal
+              ? "Calibrada"
+              : whiteCal
+              ? "Branco ✓"
+              : blackCal
+              ? "Preto ✓"
+              : "não calibrada"}
+          </div>
+          {/* Botões de ação */}
+          <div className="ml-auto flex flex-wrap items-center gap-1">
+            <TopBtn
+              onClick={() => runCalibration("white")}
+              active={!!whiteCal}
+              disabled={!cam.running || !appMode}
+              busy={calibrating === "white"}
+            >
+              ◆ Calibrar Branco
+            </TopBtn>
+            <TopBtn
+              onClick={() => runCalibration("black")}
+              active={!!blackCal}
+              disabled={!cam.running || !appMode}
+              busy={calibrating === "black"}
+            >
+              ◆ Calibrar Preto
+            </TopBtn>
+            {whiteCal && (
+              <TopBtn onClick={() => { setWhiteCal(null); bufferRef.current = []; }} tone="danger">
+                ✖ Branco
+              </TopBtn>
+            )}
+            {blackCal && (
+              <TopBtn onClick={() => { setBlackCal(null); bufferRef.current = []; }} tone="danger">
+                ✖ Preto
+              </TopBtn>
+            )}
+            {appMode === "estatico" && (
+              <TopBtn onClick={resetEstatico} tone="warn">
+                ↺ Reset Estático
+              </TopBtn>
+            )}
+            {appMode === "comparacao" && (
+              <>
+                <TopBtn
+                  onClick={() => { setSelectingRef(true); setSelectingSample(false); }}
+                  disabled={!!refPoint}
+                  tone="teal"
+                >
+                  ⊕ Referência
+                </TopBtn>
+                <TopBtn
+                  onClick={() => { setSelectingSample(true); setSelectingRef(false); }}
+                  disabled={!!samplePoint}
+                  tone="yellow"
+                >
+                  ⊕ Amostra
+                </TopBtn>
+                {refPoint && (
+                  <TopBtn onClick={() => { setRefPoint(null); setCompResult(null); setCompSuggestion(null); setResultadoCalculado(false); }} tone="danger">
+                    ✖ Ref
+                  </TopBtn>
+                )}
+                {samplePoint && (
+                  <TopBtn onClick={() => { setSamplePoint(null); setCompResult(null); setCompSuggestion(null); setResultadoCalculado(false); }} tone="danger">
+                    ✖ Amostra
+                  </TopBtn>
+                )}
+                <TopBtn onClick={resetComparison} tone="warn">
+                  ↺ Reset
+                </TopBtn>
+                <TopBtn
+                  onClick={computeComparisonResult}
+                  disabled={!refPoint || !samplePoint}
+                  tone="blue"
+                >
+                  ⚖ Resultado
+                </TopBtn>
+                <TopBtn
+                  onClick={narrarAjusteSugerido}
+                  disabled={!resultadoCalculado}
+                  tone="indigo"
+                >
+                  🔊 Ajuste
+                </TopBtn>
+              </>
+            )}
+            <TopBtn onClick={cam.switchCamera} disabled={!cam.running}>
+              ↺ Câmera
+            </TopBtn>
+            <TopBtn onClick={cam.toggleFlash} active={cam.flashOn} disabled={!cam.running}>
+              ⚡ Flash
+            </TopBtn>
+            <TopBtn onClick={toggleAudio} active={audioEnabled}>
+              {audioEnabled ? "🔊" : "🔇"} Áudio
+            </TopBtn>
+          </div>
+        </div>
+      )}
+      {/* ── MAIN ── */}
+      <div className="relative flex-1 overflow-hidden">
+        <div
+          ref={containerRef}
+          className="absolute inset-0 bg-black"
+          onClick={handleVideoClick}
+        >
+          {/* Vídeo — sem filtros de processamento de imagem para máxima fidelidade */}
+          <video
+            ref={cam.videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ imageRendering: "auto" }}
+          />
+          <canvas ref={canvasRef} className="hidden" />
+          {/* Mira */}
+          {systemOn && cam.running && (appMode === "livre" || (appMode === "estatico" && staticPos)) && (
+            <div
+              className="pointer-events-none absolute z-20 h-14 w-14 -translate-x-1/2 -translate-y-1/2"
+              style={
+                appMode === "livre"
+                  ? { left: "50%", top: "50%" }
+                  : { left: staticPos!.x, top: staticPos!.y }
+              }
+            >
+              <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-cyan-300/90 shadow-[0_0_3px_rgba(120,220,255,0.7)]" />
+              <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-cyan-300/90 shadow-[0_0_3px_rgba(120,220,255,0.7)]" />
+              <div className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-cyan-300/60" />
+              <div className="absolute left-1/2 top-1/2 h-1 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300 shadow-[0_0_4px_rgba(120,220,255,0.9)]" />
+            </div>
+          )}
+          {/* ── Painel inferior — Livre / Estático ── */}
+          {systemOn && appMode !== "comparacao" && liveDisplay && (
+            <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-indigo-400/20 bg-black/88 px-4 py-3 backdrop-blur-md">
+              <div className="mb-1.5 text-[0.58rem] font-bold uppercase tracking-wide text-cyan-400">
+                {colorMode === "plasticos"
+                  ? "🧪 Identificação RAL Plásticos P1"
+                  : colorMode === "ampliado"
+                  ? "◆ Modo Ampliado — RAL P1 + Espectro Estendido"
+                  : "☆ Modo Universal — Espectro Cromático"}
+              </div>
+              {/* Validação visual dupla: swatch + nome na própria cor */}
+              <div className="mb-2 flex items-center gap-3">
+                <div
+                  className="h-12 w-12 flex-shrink-0 rounded-md border border-white/15 shadow-md"
+                  style={{ background: liveDisplay.hex }}
+                />
+                <div className="flex flex-col gap-0.5">
+                  {/* Nome escrito NA COR OFICIAL — validação visual dupla */}
+                  <span
+                    className="text-[1rem] font-extrabold leading-tight"
+                    style={{
+                      color: liveDisplay.hex,
+                      textShadow: "0 0 8px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,1)",
+                    }}
+                  >
+                    {liveDisplay.name}
+                  </span>
+                  {liveDisplay.ralEntry && (
+                    <span className="text-[0.62rem] text-slate-400">
+                      {liveDisplay.ralEntry.code} · {liveDisplay.ralEntry.names.en}
+                    </span>
+                  )}
+                  {liveDisplay.deltaE != null && (
+                    <span className="text-[0.55rem] text-slate-500">
+                      ΔE2000 = {liveDisplay.deltaE.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+                <div className="ml-auto text-right">
+                  <div
+                    className={`text-xl font-extrabold ${
+                      liveDisplay.confidence >= 90
+                        ? "text-emerald-400"
+                        : liveDisplay.confidence >= 70
+                        ? "text-amber-400"
+                        : "text-red-400"
+                    }`}
+                  >
+                    {liveDisplay.confidence}%
+                  </div>
+                  <div className="text-[0.52rem] text-slate-500">compatibilidade</div>
+                </div>
+              </div>
+              {/* Informações detalhadas (quando RAL disponível) */}
+              {liveDisplay.ralEntry && (
+                <RalDetail
+                  entry={liveDisplay.ralEntry}
+                  confidence={liveDisplay.confidence}
+                  deltaE={liveDisplay.deltaE ?? 0}
+                />
+              )}
+            </div>
+          )}
+          {/* ── Painel de comparação ── */}
+          {systemOn && appMode === "comparacao" && (
+            <div className="absolute bottom-0 left-0 right-0 z-20 flex max-h-[62vh] flex-col items-center gap-2 overflow-y-auto border-t border-indigo-400/20 bg-black/90 px-3 py-3 backdrop-blur-md">
+              <div className="flex w-full items-start justify-center gap-3">
+                <CompBlock label="REFERÊNCIA" point={refPoint} />
+                {/* Centro: resultado */}
+                <div className="flex min-w-[120px] flex-col items-center gap-1 pt-4">
+                  <div className="text-[0.52rem] font-bold uppercase tracking-wide text-slate-500">
+                    Compatibilidade
+                  </div>
+                  <div
+                    className={`text-2xl font-extrabold ${
+                      compResult === null
+                        ? "text-slate-600"
+                        : compResult.percent >= 80
+                        ? "text-emerald-400"
+                        : compResult.percent >= 50
+                        ? "text-amber-400"
+                        : "text-red-400"
+                    }`}
+                  >
+                    {compResult ? `${compResult.percent}%` : "---"}
+                  </div>
+                  {compResult && (
+                    <div className="text-[0.5rem] text-slate-500">
+                      ΔE2000 = {compResult.deltaE.toFixed(2)}
+                    </div>
+                  )}
+                </div>
+                <CompBlock label="AMOSTRA" point={samplePoint} />
+              </div>
+              {compSuggestion && (
+                <div className="w-full max-w-2xl rounded-md border border-cyan-400/25 bg-slate-900/70 px-4 py-2">
+                  <div className="mb-1 text-center text-[0.52rem] font-bold uppercase tracking-wide text-slate-500">
+                    🎨 Ajuste sugerido
+                  </div>
+                  <div className="whitespace-pre-line text-center text-[0.65rem] font-medium text-cyan-200">
+                    {compSuggestion.text}
+                  </div>
+                </div>
+              )}
+              {(selectingRef || selectingSample) && (
+                <div className="text-[0.65rem] font-semibold text-amber-300">
+                  👆 Toque na tela para capturar{" "}
+                  {selectingRef ? "a referência" : "a amostra"}...
+                </div>
+              )}
+            </div>
+          )}
+          {/* ── Overlay seleção de modo ── */}
+          {showModeOverlay && (
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-5 bg-black/92 px-6 text-center">
+              <h2 className="text-lg font-semibold tracking-wide text-indigo-200">
+                SELECIONE O MODO
+              </h2>
+              <p className="max-w-md text-sm leading-relaxed text-slate-400">
+                🎯 <strong>LIVRE</strong> — mira fixa no centro, análise contínua
+                <br />
+                📍 <strong>ESTÁTICO</strong> — toque na tela para analisar um ponto específico
+                <br />
+                ⚖️ <strong>COMPARAÇÃO</strong> — capture dois pontos e compare a compatibilidade
+              </p>
+              <div className="flex flex-wrap justify-center gap-3">
+                {(["livre", "estatico", "comparacao"] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => handleSelectAppMode(m)}
+                    className="rounded-lg border border-indigo-400/40 bg-indigo-950/60 px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-indigo-200 hover:bg-indigo-800/60"
+                  >
+                    {m === "livre" && "🎯 Livre"}
+                    {m === "estatico" && "📍 Estático"}
+                    {m === "comparacao" && "⚖️ Comparação"}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[0.6rem] text-slate-600">
+                Modo de cor: selecione Universal, Ampliado ou Plásticos P1 na barra superior após escolher o modo.
+              </p>
+            </div>
+          )}
+          {/* ── Overlay confirmação de desligamento ── */}
+          {confirmingShutdown && (
+            <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-6 bg-black/92 px-6 text-center">
+              <h2 className="max-w-sm text-lg font-semibold leading-snug text-red-400">
+                DESEJA REALMENTE DESLIGAR O SISTEMA?
+              </h2>
+              <div className="flex gap-8">
+                <button
+                  onClick={() => confirmShutdown(true)}
+                  className="rounded-xl border border-red-400/50 bg-gradient-to-br from-red-950 to-red-800 px-10 py-3.5 text-sm font-bold uppercase tracking-widest text-red-400 shadow-[0_0_12px_rgba(200,50,50,0.25)] hover:scale-105"
+                >
+                  Sim
+                </button>
+                <button
+                  onClick={() => confirmShutdown(false)}
+                  className="rounded-xl border border-emerald-400/45 bg-gradient-to-br from-emerald-950 to-emerald-800 px-10 py-3.5 text-sm font-bold uppercase tracking-widest text-emerald-300 shadow-[0_0_12px_rgba(60,200,100,0.2)] hover:scale-105"
+                >
+                  Não
+                </button>
+              </div>
+            </div>
+          )}
+          {/* ── Overlay inicial câmera ── */}
+          {systemOn && !cam.running && !showModeOverlay && !confirmingShutdown && (
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-black/88 px-6 text-center">
+              <p className="text-sm text-slate-400">
+                {appMode ? "Câmera pronta para iniciar" : "Selecione um modo primeiro"}
+              </p>
+              {appMode && (
+                <button
+                  onClick={handleStartCamera}
+                  className="rounded-xl bg-gradient-to-br from-indigo-700 to-violet-600 px-8 py-3.5 text-sm font-bold uppercase tracking-wide text-white hover:scale-105"
+                >
+                  ▶️ Iniciar Câmera
+                </button>
+              )}
+              {!appMode && (
+                <button
+                  onClick={() => setShowModeOverlay(true)}
+                  className="rounded-xl border border-indigo-400/40 bg-indigo-950/60 px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-indigo-200"
+                >
+                  Selecionar Modo
+                </button>
+              )}
+            </div>
+          )}
+          {/* ── Tela de boas-vindas (sistema OFF) ── */}
+          {!systemOn && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-black/97 px-6 text-center">
+              <div className="text-5xl">🎨</div>
+              <h1 className="text-xl font-bold tracking-wide text-slate-200">
+                Motor de Cor — Biblioteca Oficial RAL Plásticos P1
+              </h1>
+              <p className="max-w-md text-sm leading-relaxed text-slate-500">
+                Identificação colorimétrica em tempo real por comparação CIELAB + ΔE2000
+                contra o catálogo oficial RAL série P1. O nome da cor é exibido
+                escrito na própria cor oficial — validação visual dupla
+                independente da qualidade de tela do dispositivo.
+              </p>
+              <div className="mt-1 flex flex-wrap justify-center gap-2 text-[0.58rem] text-slate-700">
+                <span>🧪 Plásticos P1 — exclusivo RAL</span>
+                <span>·</span>
+                <span>◆ Ampliado — RAL + 60 nuances</span>
+                <span>·</span>
+                <span>☆ Universal — espectro básico</span>
+              </div>
+            </div>
+          )}
+          {/* ── Badges de capacidades da câmera ── */}
+          {systemOn && cam.running && (
+            <div className="absolute right-2 top-2 z-20 flex flex-col items-end gap-1">
+              <CapBadge label="Exposição manual" ok={cam.manualCaps.exposure} />
+              <CapBadge label="Balanço branco manual" ok={cam.manualCaps.whiteBalance} />
+              <CapBadge label="Foco manual" ok={cam.manualCaps.focus} />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+// ─── Sub-componentes ──────────────────────────────────────────────────────────
+function TopBtn({
+  children,
+  onClick,
+  active,
+  disabled,
+  tone,
+  busy,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  active?: boolean;
+  disabled?: boolean;
+  busy?: boolean;
+  tone?: "danger" | "warn" | "teal" | "yellow" | "indigo" | "blue";
+}) {
+  const toneClasses: Record<string, string> = {
+    danger: "border-red-400/30 bg-gradient-to-br from-red-950 to-red-900 text-red-300",
+    warn: "border-orange-400/40 bg-gradient-to-br from-orange-950 to-orange-900 text-orange-300",
+    teal: "border-teal-400/40 bg-gradient-to-br from-teal-950 to-teal-900 text-teal-300",
+    yellow: "border-yellow-400/40 bg-gradient-to-br from-yellow-950 to-yellow-900 text-yellow-200",
+    indigo: "border-indigo-400/30 bg-gradient-to-br from-indigo-950 to-indigo-900 text-indigo-300",
+    blue: "border-sky-400/40 bg-gradient-to-br from-sky-950 to-sky-900 text-sky-300",
+  };
+  const base = active
+    ? "border-emerald-400/45 bg-gradient-to-br from-emerald-950 to-emerald-800 text-emerald-300"
+    : tone
+    ? toneClasses[tone]
+    : "border-indigo-400/25 bg-gradient-to-br from-slate-900 to-slate-800 text-slate-300";
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`whitespace-nowrap rounded-md border px-2 py-1 text-[0.56rem] font-semibold uppercase tracking-wide transition-all disabled:cursor-not-allowed disabled:opacity-30 ${base}`}
+    >
+      {busy ? "…" : children}
+    </button>
+  );
+}
+function CapBadge({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <div
+      className={`rounded border px-1.5 py-0.5 text-[0.48rem] font-semibold ${
+        ok
+          ? "border-emerald-400/40 bg-emerald-950/70 text-emerald-300"
+          : "border-slate-600/40 bg-slate-900/70 text-slate-500"
+      }`}
+    >
+      {ok ? "✓" : "✕"} {label}
+    </div>
+  );
+}
+function RalDetail({
+  entry,
+  confidence,
+  deltaE,
+}: {
+  entry: RalColorEntry;
+  confidence: number;
+  deltaE: number;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.65rem]">
+      <Field label="Código" value={entry.code} />
+      <Field label="PT" value={entry.names.pt} />
+      <Field label="EN" value={entry.names.en} />
+      <Field label="DE" value={entry.names.de} />
+      <Field label="FR" value={entry.names.fr} />
+      <Field label="ES" value={entry.names.es} />
+      <Field label="Hex ref." value={entry.hex} />
+      <Field label="Confiança" value={`${confidence}%`} />
+      <Field label="ΔE2000" value={deltaE.toFixed(2)} />
+    </div>
+  );
+}
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline gap-1">
+      <span className="text-[0.52rem] uppercase tracking-wide text-slate-500">
+        {label}:
+      </span>
+      <span className="font-semibold text-slate-200">{value}</span>
+    </div>
+  );
+}
+function CompBlock({
+  label,
+  point,
+}: {
+  label: string;
+  point: CapturedPoint | null;
+}) {
+  return (
+    <div className="flex max-w-[30vw] flex-1 flex-col items-center gap-1">
+      <div className="text-[0.52rem] font-bold uppercase tracking-wide text-slate-500">
+        {label}
+      </div>
+      <div className="aspect-[4/3] w-full overflow-hidden rounded-md border border-indigo-400/25 bg-black">
+        {point?.thumb ? (
+          <img src={point.thumb} alt="" className="h-full w-full object-cover" />
+        ) : null}
+      </div>
+      {point && (
+        <ColorNameDisplay
+          name={point.displayName}
+          hex={point.displayHex}
+          confidence={point.confidence}
+        />
+      )}
+      {!point && (
+        <div className="text-center text-[0.65rem] font-bold text-slate-600">---</div>
+      )}
+      {point?.displayEntry && (
+        <div className="text-center text-[0.52rem] text-slate-500">
+          {point.displayEntry.code}
+        </div>
+      )}
+    </div>
+  );
+}
